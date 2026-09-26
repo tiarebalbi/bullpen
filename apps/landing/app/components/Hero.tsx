@@ -1,15 +1,17 @@
 import type { ReactNode } from "react";
+import { BULLPEN_WEB_URL } from "../lib/webAppUrl.js";
 import { EmptyState } from "./ui.js";
 import { LinkButton } from "./LinkButton.js";
 
 /**
  * The design export's hero (variant 1j, design/README.md) shows a live
  * "214 players" pill and a fake scrolling leaderboard. Neither is real yet
- * (issue #6: no live symbol, no live player data — Coinbase's terms forbid
- * public display of their data and no replacement source is chosen), so
- * this hero drops the player-count pill entirely and replaces the
- * leaderboard with the design system's own EmptyState, using the export's
- * real "Your spot is open" copy rather than fabricated rows.
+ * (no live league until Part 3), so this hero drops the player-count pill
+ * entirely and replaces the leaderboard with the design system's own
+ * EmptyState, using the export's real "Your spot is open" copy rather than
+ * fabricated rows. Rendered directly (no extra bordered wrapper) --
+ * EmptyState is already a single card in the design; nesting it inside
+ * another bordered/padded panel produced a double border, which this fixes.
  */
 export function Hero(): ReactNode {
   return (
@@ -34,12 +36,15 @@ export function Hero(): ReactNode {
         </div>
         <p className="bp-hero__disclaimer">Paper trading. Play money. Not investment advice.</p>
       </div>
-      <div className="bp-hero__panel">
-        <EmptyState
-          title="Your spot is open"
-          description="There's no live leaderboard yet. The trading app's one live symbol is blocked on a compliant market-data source — Coinbase's terms forbid public display of their data, and no replacement has been chosen (issue #6)."
-        />
-      </div>
+      <EmptyState
+        title="Your spot is open"
+        description={
+          <>
+            There&apos;s no live leaderboard yet — the league opens in Part 3. BTC-USD is already live in
+            the <a href={BULLPEN_WEB_URL}>trading app</a>.
+          </>
+        }
+      />
     </section>
   );
 }

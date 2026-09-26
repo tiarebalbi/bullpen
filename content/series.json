@@ -3,36 +3,48 @@
     "part": 1,
     "title": "Why distribute at all",
     "status": "next",
-    "url": ""
+    "url": "",
+    "date": null,
+    "introduced": "Monorepo skeleton, architecture-as-code (ADRs, ADL, CALM), and BTC-USD live via CoinGecko."
   },
   {
     "part": 2,
     "title": "Architecture as code",
     "status": "planned",
-    "url": ""
+    "url": "",
+    "date": null,
+    "introduced": "An interactive architecture explorer, reading the CALM timeline directly."
   },
   {
     "part": 3,
     "title": "Data ownership and the first split",
     "status": "planned",
-    "url": ""
+    "url": "",
+    "date": null,
+    "introduced": "The price-snapshot service splits into a Prices Service and a Market History Service, each with its own database."
   },
   {
     "part": 4,
     "title": "The order saga",
     "status": "planned",
-    "url": ""
+    "url": "",
+    "date": null,
+    "introduced": "An Orders Service, a workflow engine orchestrating the saga, and a Ledger Service owning balances."
   },
   {
     "part": 5,
     "title": "The market open and the bill",
     "status": "planned",
-    "url": ""
+    "url": "",
+    "date": null,
+    "introduced": "A queue absorbs the market-open order burst; per-node cost starts appearing on the architecture itself."
   },
   {
     "part": 6,
     "title": "What held, what broke",
     "status": "planned",
-    "url": ""
+    "url": "",
+    "date": null,
+    "introduced": "A Leaderboard Service, real Alpaca/Massive stock data, Stripe's role defined -- the retrospective part."
   }
 ]
