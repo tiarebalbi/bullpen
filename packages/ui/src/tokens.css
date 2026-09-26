@@ -169,7 +169,12 @@
 .dark {
   --background: oklch(13.5% 0.042 238);
   --foreground: oklch(93.5% 0.008 238);
-  --foreground-muted: oklch(57% 0.018 238);
+  /* 57% measured 4.48:1 against --background (just under WCAG AA's 4.5:1)
+     and 3.88:1 against --bp-panel-2 (used for e.g. rule-card backgrounds) --
+     both real Lighthouse accessibility failures, confirmed by computing
+     contrast from these exact OKLCH values, not eyeballed. 66% clears
+     panel2 at 5.56:1 while staying close to the original color. */
+  --foreground-muted: oklch(66% 0.018 238);
 
   --surface-elevated: oklch(24% 0.044 238);
   --surface-sunken: oklch(10.5% 0.038 238);
