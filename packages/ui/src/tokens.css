@@ -1,0 +1,220 @@
+/* ─────────────────────────────────────────────────────────────
+   @bullpen/ui — design tokens
+   Ported from design/export-2026-09-25/colors_and_type.css and the
+   `.bp` scope defined inline in "Bullpen Design System.dc.html".
+   The source scopes brand + --bp-* tokens under a `.bp` class and
+   toggles dark mode / colorblind mode with `.bp.dark` and
+   `.bp[data-cb="on"]`. This file instead puts the light-mode values
+   directly on :root (per Part 1 instructions) and layers the same
+   overrides on `.dark` / `[data-cb="on"]`, matching the pattern
+   colors_and_type.css itself already uses for --card, --input, etc.
+   Consumers apply `.dark` (or toggle `color-scheme`) and
+   `data-cb="on"` on a root element to opt into those variants.
+───────────────────────────────────────────────────────────── */
+
+/* Saira (display) + JetBrains Mono (numerals) — kept from the source
+   file since --font-display and --font-mono reference them everywhere
+   (prices, tickers, ranks). Nunito Sans (body) ships locally instead,
+   see the @font-face below. */
+@import url("https://fonts.googleapis.com/css2?family=Saira:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+/* Nunito Sans variable font: copied into packages/ui/src/fonts/ (not
+   referenced from design/export-2026-09-25/) so this package has no
+   runtime dependency on the design export directory. */
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("./fonts/NunitoSans-VariableFont_YTLC_opsz_wdth_wght.ttf") format("truetype-variations"),
+       url("./fonts/NunitoSans-VariableFont_YTLC_opsz_wdth_wght.ttf") format("truetype");
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ── Brand palette (OKLCH) ───────────────────────────────── */
+  --navy: oklch(29.4% 0.066 238.5);
+  --ember: oklch(71.9% 0.179 54.4);
+  --ember-dark: oklch(63% 0.24 29);
+  --red: oklch(56.8% 0.208 27.1);
+  --amber: oklch(84% 0.147 80.5);
+  --lime-glow: oklch(93.2% 0.173 109.8);
+
+  --teal-deep: #05668d;
+  --teal: #028090;
+  --mint: #02c39a;
+  --bone: #f0f3bd;
+
+  /* ── Surface tokens — LIGHT ──────────────────────────────── */
+  --background: oklch(98.5% 0.006 238);
+  --foreground: oklch(14% 0.048 238);
+  --foreground-muted: oklch(47% 0.028 238);
+
+  --surface-elevated: oklch(100% 0 0);
+  --surface-sunken: oklch(94% 0.01 238);
+
+  --card: var(--surface-elevated);
+  --card-foreground: var(--foreground);
+  --popover: oklch(99% 0.004 238);
+
+  --primary: var(--navy);
+  --primary-foreground: oklch(98.5% 0.005 238);
+
+  --secondary: oklch(93% 0.009 238);
+  --secondary-foreground: var(--foreground);
+
+  --muted: oklch(93% 0.009 238);
+  --muted-foreground: oklch(50% 0.024 238);
+
+  --accent: oklch(94% 0.022 54);
+  --accent-foreground: oklch(25% 0.058 238);
+
+  --destructive: var(--red);
+  --destructive-foreground: oklch(98.5% 0.005 238);
+  --warning: var(--amber);
+  --warning-foreground: oklch(28% 0.05 80);
+
+  --border: oklch(87% 0.012 238);
+  --input: var(--border);
+  --ring: var(--ember);
+
+  --lime-glow-foreground: oklch(16% 0.052 238);
+
+  /* ── Radius scale ────────────────────────────────────────── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-pill: 9999px;
+
+  /* ── Spacing rhythm ──────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-14: 3.5rem;
+  --space-20: 5rem;
+  --space-28: 7rem;
+  --space-32: 8rem;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-ambient: 0 8px 64px 0 oklch(14% 0.048 238 / 0.06);
+  --shadow-ambient-hover: 0 4px 32px 0 oklch(14% 0.048 238 / 0.04);
+  --shadow-ember-glow: 0 0 24px 0 oklch(71.9% 0.179 54.4 / 0.3);
+  --shadow-nav-cta: 0 10px 30px -8px oklch(0% 0.179 54.4 / 0.7);
+
+  /* ── Easing ──────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-display: "Saira", "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Nunito Sans", "Literata", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fs-display: clamp(2.5rem, 3.8vw, 3.5rem);
+  --fs-h1: clamp(2.25rem, 3.2vw, 3rem);
+  --fs-h2: clamp(1.75rem, 2.4vw, 2rem);
+  --fs-h3: 1.25rem;
+  --fs-body-lg: 1.125rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-label: 0.75rem;
+
+  --track-display: -0.045em;
+  --track-h1: -0.04em;
+  --track-h2: -0.03em;
+  --track-h3: -0.02em;
+  --track-label: 0.24em;
+  --track-label-sm: 0.18em;
+
+  /* ── Bullpen component tokens (`--bp-*`, from the `.bp` scope) ──
+     Gain/loss/stale colors, panel surfaces, hairline borders, the
+     no-overshoot layout spring, and the animation-duration scale used
+     by TickerBadge, PriceCell, ConnectionIndicator and friends. */
+  --bp-gain: oklch(50% 0.12 166);
+  --bp-loss: oklch(52% 0.2 27);
+  --bp-stale: oklch(58% 0.012 238);
+  --bp-accent-text: oklch(54% 0.16 50);
+  --bp-hair: color-mix(in oklch, var(--foreground) 11%, transparent);
+  --bp-panel: oklch(100% 0 0);
+  --bp-panel-2: oklch(96.5% 0.008 238);
+  --bp-spring: linear(0, 0.062 5%, 0.191 10%, 0.337 15%, 0.475 20%, 0.594 25%, 0.692 30%, 0.769 35%, 0.829 40%, 0.908 50%, 0.952 60%, 0.976 70%, 0.988 80%, 1);
+
+  /* Durations: press/hover < ui < ticks < sequences. --bp-dur-tick is
+     the price-pulse decay and the flash cadence cap (2/s => 500ms
+     minimum spacing, enforced in PriceCell, not here). */
+  --bp-dur-micro: 120ms;
+  --bp-dur-hover: 160ms;
+  --bp-dur-ui: 240ms;
+  --bp-dur-ui-slow: 320ms;
+  --bp-dur-tick: 400ms;
+  --bp-dur-seq: 560ms;
+  --bp-dur-seq-long: 700ms;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+.dark {
+  --background: oklch(13.5% 0.042 238);
+  --foreground: oklch(93.5% 0.008 238);
+  --foreground-muted: oklch(57% 0.018 238);
+
+  --surface-elevated: oklch(24% 0.044 238);
+  --surface-sunken: oklch(10.5% 0.038 238);
+
+  --card: var(--surface-elevated);
+  --card-foreground: var(--foreground);
+  --popover: oklch(16.5% 0.042 238);
+
+  --primary: var(--teal-deep);
+  --primary-foreground: oklch(98% 0.005 238);
+
+  --secondary: oklch(20% 0.042 238);
+  --secondary-foreground: var(--foreground);
+
+  --muted: oklch(20% 0.042 238);
+  --muted-foreground: oklch(60% 0.018 238);
+
+  --accent: oklch(21% 0.042 60);
+  --accent-foreground: var(--foreground);
+
+  --destructive: oklch(61% 0.195 27.1);
+  --destructive-foreground: oklch(93.5% 0.005 238);
+  --warning: oklch(78% 0.14 80.5);
+  --warning-foreground: oklch(20% 0.045 80);
+
+  --border: oklch(22% 0.038 238);
+  --input: var(--border);
+  --ring: var(--teal);
+
+  --lime-glow: var(--bone);
+  --lime-glow-foreground: oklch(12% 0.04 238);
+
+  /* --bp-hair reads var(--foreground) at define-time, so it must be
+     redeclared here too — otherwise the hairline stays light-mode
+     colored inside .dark, the same trap --card/--input avoid above. */
+  --bp-gain: #02c39a;
+  --bp-loss: oklch(68% 0.19 25);
+  --bp-stale: oklch(55% 0.015 238);
+  --bp-accent-text: var(--ember);
+  --bp-hair: color-mix(in oklch, var(--foreground) 11%, transparent);
+  --bp-panel: oklch(18% 0.042 238);
+  --bp-panel-2: oklch(22% 0.042 238);
+}
+
+/* ── Colorblind-safe gain/loss (deuteranopia/protanopia friendly) ──
+   Toggled with `data-cb="on"` on the same root as `.dark`. */
+[data-cb="on"] {
+  --bp-gain: oklch(50% 0.16 255);
+  --bp-loss: oklch(55% 0.16 48);
+}
+.dark[data-cb="on"] {
+  --bp-gain: oklch(72% 0.14 250);
+  --bp-loss: oklch(76% 0.15 62);
+}

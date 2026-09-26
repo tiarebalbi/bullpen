@@ -1,0 +1,93 @@
+/* ─────────────────────────────────────────────────────────────
+   @bullpen/ui — interactive states
+   Component visual tokens (color, radius, spacing) live inline as
+   style props, matching the design export's own inline-style markup.
+   This file only holds what inline styles cannot express: pseudo
+   classes (:hover, :focus-visible, :active, :disabled) and the two
+   CSS keyframe loops (ConnectionIndicator's live pulse + spinner),
+   which the export drives with the Web Animations API but which are
+   simpler and equally faithful as CSS `animation`s here. Both loops
+   stop under `prefers-reduced-motion: reduce`, mirroring
+   `startLoops()` in Bullpen Landing.dc.html, which no-ops entirely
+   when `state.reduced` is true.
+───────────────────────────────────────────────────────────── */
+@import "./tokens.css";
+
+.bp-btn {
+  transition: box-shadow var(--bp-dur-hover) ease, background var(--bp-dur-hover) ease, transform var(--bp-dur-micro) ease;
+}
+.bp-btn:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 3px;
+}
+.bp-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.bp-btn:disabled {
+  cursor: not-allowed;
+}
+.bp-btn--primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-ember-glow);
+}
+.bp-btn--secondary:hover:not(:disabled) {
+  background: var(--accent) !important;
+}
+.bp-btn--ghost:hover:not(:disabled) {
+  background: var(--bp-panel-2) !important;
+}
+
+.bp-chip {
+  transition: background var(--bp-dur-micro) ease, color var(--bp-dur-micro) ease;
+}
+.bp-chip:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+
+@keyframes bp-live-pulse {
+  from { transform: scale(1); opacity: 0.6; }
+  to { transform: scale(2.8); opacity: 0; }
+}
+.bp-live-pulse {
+  animation: bp-live-pulse 2000ms cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+
+@keyframes bp-spin {
+  to { transform: rotate(360deg); }
+}
+.bp-spin {
+  animation: bp-spin 900ms linear infinite;
+}
+
+.bp-skeleton {
+  background: var(--bp-panel-2);
+  animation: bp-skeleton-pulse 900ms ease-in-out infinite alternate;
+}
+@keyframes bp-skeleton-pulse {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}
+
+/* PriceCell's "1a Pulse fill" tick: full tint at t=0, linear decay to
+   0 over --bp-dur-tick (400ms). PriceCell only ever sets this
+   animation when motion isn't reduced (it suppresses the flash
+   itself), so this class needs no reduced-motion override of its own. */
+@keyframes bp-tick-decay {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* CSS-level fallback: anything still using these classes stops
+   looping under reduced motion, even if a consumer renders them
+   without reading useReducedMotion() itself. */
+@media (prefers-reduced-motion: reduce) {
+  .bp-live-pulse,
+  .bp-spin,
+  .bp-skeleton {
+    animation: none;
+  }
+  .bp-btn,
+  .bp-chip {
+    transition: none;
+  }
+}

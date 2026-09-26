@@ -1,0 +1,240 @@
+/* ─────────────────────────────────────────────────────────────
+   Tiarê Balbi Bonamini — Design System
+   Colors + Typography foundations.
+   Source of truth: aethera-eternal-build/src/styles/{globals,theme}.css
+   + BRAND.md + DESIGN.md ("The Architectural Editorial").
+───────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Saira:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@font-face {
+  font-family: 'Nunito Sans';
+  src: url('fonts/NunitoSans-VariableFont_YTLC_opsz_wdth_wght.ttf') format('truetype-variations'),
+       url('fonts/NunitoSans-VariableFont_YTLC_opsz_wdth_wght.ttf') format('truetype');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ── Brand palette (OKLCH) ───────────────────────────────── */
+  --navy:       oklch(29.4% 0.066 238.5);   /* #003049 — Deep Midnight, primary */
+  --ember:      oklch(71.9% 0.179 54.4);    /* #F77F00 — Vibrant Ember, hover glow, ring */
+  --ember-dark: oklch(63%   0.240 29);      /* #FE4C1C — Ember Dark (dark-mode CTAs) */
+  --red:        oklch(56.8% 0.208 27.1);    /* #D62828 — destructive */
+  --amber:      oklch(84.0% 0.147 80.5);    /* #FCBF49 — warning / highlight marker */
+  --lime-glow:  oklch(93.2% 0.173 109.8);   /* #E9FA65 — Vision Chip accent */
+
+  /* Dark-mode branch colors */
+  --teal-deep:  #05668D;                    /* dark-mode primary */
+  --teal:       #028090;                    /* dark-mode ring / ember */
+  --mint:       #02C39A;                    /* dark-mode highlight */
+  --bone:       #F0F3BD;                    /* dark-mode vision chip */
+
+  /* ── Surface tokens — LIGHT ──────────────────────────────── */
+  --background:       oklch(98.5% 0.006 238);
+  --foreground:       oklch(14%   0.048 238);
+  --foreground-muted: oklch(47%   0.028 238);
+
+  --surface-elevated: oklch(100%  0     0);     /* cards — pure white lifts off canvas */
+  --surface-sunken:   oklch(94%   0.010 238);   /* footer, sidebar, recessed areas */
+
+  --card:             var(--surface-elevated);
+  --card-foreground:  var(--foreground);
+  --popover:          oklch(99%   0.004 238);
+
+  --primary:             var(--navy);
+  --primary-foreground:  oklch(98.5% 0.005 238);
+
+  --secondary:           oklch(93%  0.009 238);
+  --secondary-foreground:var(--foreground);
+
+  --muted:               oklch(93%  0.009 238);
+  --muted-foreground:    oklch(50%  0.024 238);
+
+  --accent:              oklch(94%  0.022 54);   /* warm orange tint bg */
+  --accent-foreground:   oklch(25%  0.058 238);
+
+  --destructive:         var(--red);
+  --destructive-foreground: oklch(98.5% 0.005 238);
+  --warning:             var(--amber);
+  --warning-foreground:  oklch(28%   0.05  80);
+
+  --border:              oklch(87%  0.012 238);
+  --input:               var(--border);
+  --ring:                var(--ember);
+
+  /* Vision Chip */
+  --lime-glow-foreground: oklch(16% 0.052 238);
+
+  /* ── Radius scale ────────────────────────────────────────── */
+  --radius-sm: 0.25rem;   /* 4px  — chips on compact UI */
+  --radius-md: 0.375rem;  /* 6px  — inputs, tooltips */
+  --radius:    0.5rem;    /* 8px  — default (buttons, images) */
+  --radius-lg: 0.75rem;   /* 12px — cards */
+  --radius-xl: 1rem;      /* 16px — hero cards, modals */
+  --radius-2xl:1.25rem;   /* 20px — feature blocks */
+  --radius-pill: 9999px;  /* buttons (hero), badges, chips */
+
+  /* ── Spacing rhythm (Tailwind-aligned) ───────────────────── */
+  --space-1:  0.25rem;  /*  4px */
+  --space-2:  0.5rem;   /*  8px */
+  --space-3:  0.75rem;  /* 12px */
+  --space-4:  1rem;     /* 16px */
+  --space-6:  1.5rem;   /* 24px */
+  --space-8:  2rem;     /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-14: 3.5rem;   /* 56px */
+  --space-20: 5rem;     /* 80px — "double padding before adding a divider" */
+  --space-28: 7rem;     /* 112px — section rhythm */
+  --space-32: 8rem;     /* 128px */
+
+  /* ── Shadows — Architectural Editorial ───────────────────── */
+  /* Static cards get NO shadow. Floating only. */
+  --shadow-ambient:       0 8px 64px 0 oklch(14% 0.048 238 / 0.06);
+  --shadow-ambient-hover: 0 4px 32px 0 oklch(14% 0.048 238 / 0.04);
+  --shadow-ember-glow:    0 0 24px 0  oklch(71.9% 0.179 54.4 / 0.30);
+  --shadow-nav-cta:       0 10px 30px -8px oklch(0% 0.179 54.4 / 0.7);
+
+  /* ── Easing ──────────────────────────────────────────────── */
+  --ease-out:       cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out:    cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Typography: families ────────────────────────────────── */
+  --font-display: 'Saira', 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body:    'Nunito Sans', 'Literata', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── Typography: fluid scale ─────────────────────────────── */
+  --fs-display: clamp(2.5rem, 3.8vw, 3.5rem);  /* Editorial hook */
+  --fs-h1:      clamp(2.25rem, 3.2vw, 3rem);
+  --fs-h2:      clamp(1.75rem, 2.4vw, 2rem);
+  --fs-h3:      1.25rem;
+  --fs-body-lg: 1.125rem;
+  --fs-body:    1rem;
+  --fs-small:   0.875rem;
+  --fs-label:   0.75rem;
+
+  /* ── Typography: tracking (editorial rhythm) ─────────────── */
+  --track-display: -0.045em;
+  --track-h1:      -0.04em;
+  --track-h2:      -0.03em;
+  --track-h3:      -0.02em;
+  --track-label:    0.24em;   /* ALL-CAPS eyebrows */
+  --track-label-sm: 0.18em;   /* metadata */
+}
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+.dark {
+  --background:       oklch(13.5% 0.042 238);
+  --foreground:       oklch(93.5% 0.008 238);
+  --foreground-muted: oklch(57%   0.018 238);
+
+  --surface-elevated: oklch(24%   0.044 238);
+  --surface-sunken:   oklch(10.5% 0.038 238);
+
+  --card:             var(--surface-elevated);
+  --card-foreground:  var(--foreground);
+  --popover:          oklch(16.5% 0.042 238);
+
+  --primary:             var(--teal-deep);
+  --primary-foreground:  oklch(98% 0.005 238);
+
+  --secondary:           oklch(20%  0.042 238);
+  --secondary-foreground:var(--foreground);
+
+  --muted:               oklch(20%  0.042 238);
+  --muted-foreground:    oklch(60%  0.018 238);
+
+  --accent:              oklch(21%  0.042 60);
+  --accent-foreground:   var(--foreground);
+
+  --destructive:         oklch(61%  0.195 27.1);
+  --destructive-foreground: oklch(93.5% 0.005 238);
+  --warning:             oklch(78%  0.14 80.5);
+  --warning-foreground:  oklch(20%  0.045 80);
+
+  --border:              oklch(22%  0.038 238);
+  --input:               var(--border);
+  --ring:                var(--teal);
+
+  --lime-glow:           var(--bone);
+  --lime-glow-foreground: oklch(12% 0.04 238);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Semantic element styles
+───────────────────────────────────────────────────────────── */
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  font-kerning: normal;
+}
+
+/* Headings — Saira, tight tracking, editorial density */
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); color: var(--foreground); margin: 0; font-weight: 500; }
+h1 { font-size: var(--fs-h1); letter-spacing: var(--track-h1); line-height: 1.05; font-weight: 400; }
+h2 { font-size: var(--fs-h2); letter-spacing: var(--track-h2); line-height: 0.94; font-weight: 400; }
+h3 { font-size: var(--fs-h3); letter-spacing: var(--track-h3); line-height: 1.2; font-weight: 500; }
+
+/* "Editorial hook" — for hero/display text */
+.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  line-height: 1.05;
+  letter-spacing: var(--track-display);
+  font-weight: 600;
+}
+
+/* Body */
+p { font-family: var(--font-body); font-size: var(--fs-body-lg); line-height: 1.85; color: var(--foreground); margin: 0; }
+.small { font-size: var(--fs-small); color: var(--foreground-muted); }
+
+/* Eyebrow / label / meta — ALL CAPS blueprint annotation */
+.eyebrow, .label-caps {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+  color: color-mix(in oklch, var(--foreground-muted) 85%, transparent);
+  font-weight: 500;
+}
+
+/* Mono meta (post metadata under hero card) */
+.meta-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+
+/* Inline code / pre */
+code, kbd, pre, samp { font-family: var(--font-mono); font-size: 0.9em; }
+code { background: var(--muted); padding: 0.1em 0.35em; border-radius: var(--radius-sm); }
+
+/* Highlight marker — amber sweep */
+mark, .text-highlight {
+  background-color: transparent;
+  color: inherit;
+  background-image: linear-gradient(
+    transparent calc(100% - 0.42em),
+    oklch(0.762 0.136 236.07 / 0.55) 0.42em
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  padding: 0 0.05em;
+}
+
+/* Links */
+a { color: inherit; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-color: var(--ember); }
