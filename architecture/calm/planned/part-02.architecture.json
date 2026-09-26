@@ -1,0 +1,101 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "bullpen-part-02",
+  "name": "Bullpen — Part 2 (planned)",
+  "description": "Prediction, not yet built: the architecture itself becomes visible and interactive. No new runtime nodes over Part 1 — the landing app gains an architecture-explorer capability that reads the CALM timeline and renders the current and planned moments for readers.",
+  "metadata": {
+    "status": "planned",
+    "part": 2
+  },
+  "nodes": [
+    {
+      "unique-id": "reader",
+      "node-type": "actor",
+      "name": "Reader",
+      "description": "A blog reader who now also explores Bullpen's own architecture timeline on the landing site."
+    },
+    {
+      "unique-id": "player",
+      "node-type": "actor",
+      "name": "Player",
+      "description": "A registered player who opens the trading app to view prices and place paper trades."
+    },
+    {
+      "unique-id": "landing-app",
+      "node-type": "webclient",
+      "name": "Bullpen Landing",
+      "description": "The public landing site, now rendering an in-browser architecture explorer that reads the docify-generated CALM diagrams and timeline for each part of the series.",
+      "metadata": {
+        "capabilities": ["architecture-timeline-explorer"]
+      }
+    },
+    {
+      "unique-id": "trading-app",
+      "node-type": "webclient",
+      "name": "Bullpen Trading App",
+      "description": "The trading app where players view live prices and place paper trades."
+    },
+    {
+      "unique-id": "price-snapshot-service",
+      "node-type": "service",
+      "name": "Price Snapshot Service",
+      "description": "Serverless function backing GET /api/price/[symbol]; fetches a point-in-time price for a symbol from the external market-data provider."
+    },
+    {
+      "unique-id": "market-data-provider",
+      "node-type": "external-system",
+      "name": "Market Data Provider",
+      "description": "External market-data API Bullpen calls for live price snapshots. Provider still TBD pending a terms-of-use-compliant choice."
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "reader-to-landing",
+      "description": "Reader browses the public landing site and its architecture explorer.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "reader",
+          "nodes": ["landing-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "player-to-trading-app",
+      "description": "Player opens the trading app.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "player",
+          "nodes": ["trading-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "trading-app-to-price-snapshot",
+      "description": "Trading app requests a live price snapshot for a symbol.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "price-snapshot-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
+      }
+    },
+    {
+      "unique-id": "price-snapshot-to-market-data",
+      "description": "Price snapshot service calls out to the external market-data provider for the current price.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "price-snapshot-service" },
+          "destination": { "node": "market-data-provider" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
+      }
+    }
+  ]
+}

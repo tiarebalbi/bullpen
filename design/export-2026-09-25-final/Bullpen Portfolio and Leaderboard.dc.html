@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0;background:oklch(10.5% 0.038 238)}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" class="bp {{ themeCls }}" style="min-height:100vh;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);padding:40px 48px 80px">
+
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+  <span style="font:600 11px/1 var(--font-mono);padding:4px 8px;border-radius:5px;background:var(--foreground);color:var(--background)">6</span>
+  <span style="font:600 14px/1 var(--font-body)">Portfolio and leaderboard · 1440 and 390</span>
+  <a href="Bullpen League Admin and System.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Admin and system →</a>
+  <a href="Bullpen Design System.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Design system →</a>
+  <div style="flex:1"></div>
+  <div role="group" aria-label="Stocks market" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ mkOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Motion" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ motionOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Theme" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+</div>
+<div style="margin:16px 0 36px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+  <span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted);margin-right:6px">State</span>
+  <sc-for list="{{ scOpts }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:8px 13px;border-radius:9999px;font:600 12.5px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for>
+  <span style="margin-left:10px;font:400 13.5px/1.5 var(--font-body);color:var(--foreground-muted)">{{ scNote }}</span>
+</div>
+
+<div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+<div id="6a" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">6a · Portfolio · desktop 1440</div>
+<div data-screen-label="Portfolio desktop" style="width:1440px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="height:64px;display:flex;align-items:center;gap:24px;padding:0 40px;border-bottom:1px solid var(--bp-hair)">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:600 13px/1 var(--font-body);color:var(--foreground-muted)">Fall Open<span style="font:500 11px/1 var(--font-mono)"> · ends Oct 31</span></span></div>
+    <nav aria-label="Primary" style="align-self:stretch;display:flex;gap:4px;margin-left:12px"><sc-for list="{{ navP }}" as="n" hint-placeholder-count="4"><a href="{{ n.href }}" aria-current="{{ n.cur }}" style="position:relative;display:flex;align-items:center;padding:0 12px;font:600 14px/1 var(--font-body);text-decoration:none;color:{{ n.fg }}" style-hover="color:var(--foreground)">{{ n.label }}<span style="position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:var(--ember);opacity:{{ n.rule }}"></span></a></sc-for></nav>
+    <div style="flex:1"></div>
+    <div role="status" style="display:flex;align-items:center;border-radius:9999px;background:var(--surface-sunken)">
+      <sc-if value="{{ ci.open }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><span style="position:relative;width:8px;height:8px"><span data-pulse="1" style="position:absolute;inset:0;border-radius:9999px;background:var(--ember)"></span><span style="position:absolute;inset:0;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span></span><span style="font:600 12.5px/1 var(--font-body)">Stocks live</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ ci.stAge }}</span></div></sc-if>
+      <sc-if value="{{ ci.closed }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--foreground-muted)" stroke-width="2.2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg><span style="font:600 12.5px/1 var(--font-body)">Stocks closed</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ ci.opens }}</span></div></sc-if>
+      <div style="width:1px;align-self:stretch;background:var(--bp-hair)"></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><span style="position:relative;width:8px;height:8px"><span data-pulse="1" style="position:absolute;inset:0;border-radius:9999px;background:var(--ember)"></span><span style="position:absolute;inset:0;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span></span><span style="font:600 12.5px/1 var(--font-body)">Crypto live</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ ci.crAge }}</span></div>
+    </div>
+    <span style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">TB</span>
+  </div>
+
+  <div style="padding:48px 56px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end">
+    <div>
+      <div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Portfolio · Fall Open · started with $100,000.00 on Sep 1</div>
+      <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}">
+        <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Equity {{ p.eqText }}</span>
+        <div data-odo="1" aria-hidden="true" style="margin-top:20px;display:flex;font:500 76px/1 var(--font-mono);letter-spacing:-0.03em;font-variant-numeric:tabular-nums"><sc-for list="{{ p.odo }}" as="c" hint-placeholder-count="11"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;height:1.15em;line-height:1.15em">{{ c.ch }}</span></sc-if></sc-for></div>
+        <div style="margin-top:18px;display:flex;align-items:baseline;gap:22px;flex-wrap:wrap"><span style="font:600 20px/1 var(--font-mono);color:{{ p.plTone }}">{{ p.plText }}</span><span style="font:400 14px/1 var(--font-body);color:var(--foreground-muted)">since start</span><span style="width:1px;height:14px;background:var(--bp-hair)"></span><span style="font:500 14px/1 var(--font-mono);color:{{ p.todayTone }}">Today {{ p.todayText }}</span></div>
+        <div role="status" style="margin-top:14px;font:500 12px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ p.stamp }}</div>
+      </sc-if>
+      <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:22px;width:470px;height:72px;border-radius:10px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:20px;width:340px;height:18px;border-radius:4px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:16px;width:280px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></div></sc-if>
+    </div>
+    <div style="display:flex;gap:14px">
+      <a href="#6c" style="display:block;min-width:200px;padding:18px 22px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair);text-decoration:none;color:var(--foreground);transition:transform 160ms,box-shadow 160ms" style-hover="transform:translateY(-2px);box-shadow:var(--shadow-ambient-hover);color:var(--foreground)">
+        <div style="display:flex;justify-content:space-between;font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)"><span>Rank</span><span style="letter-spacing:0">→</span></div>
+        <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}"><div style="margin-top:12px;font:500 30px/1 var(--font-mono)">{{ p.rank }}<span style="font-size:13px;color:var(--foreground-muted)">{{ p.rankOf }}</span></div><div style="margin-top:10px;font:500 11.5px/1.3 var(--font-mono);color:{{ p.rankSubTone }}">{{ p.rankSub }}</div></sc-if>
+        <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:12px;width:90px;height:30px;border-radius:6px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:10px;width:150px;height:11px;border-radius:4px;background:var(--bp-panel-2)"></div></sc-if>
+      </a>
+      <div style="min-width:200px;padding:18px 22px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair)">
+        <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Cash</div>
+        <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}"><div style="margin-top:12px;font:500 30px/1 var(--font-mono)">{{ p.cash }}</div><div style="margin-top:10px;font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ p.cashSub }}</div></sc-if>
+        <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:12px;width:150px;height:30px;border-radius:6px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:10px;width:170px;height:11px;border-radius:4px;background:var(--bp-panel-2)"></div></sc-if>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:36px 56px 0;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:20px;align-items:start">
+    <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:24px 26px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Equity</div>
+        <div role="group" aria-label="Timeframe" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ tfs }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:28px;padding:0 12px;border-radius:9999px;font:600 11.5px/1 var(--font-mono);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div></div>
+      <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;margin-top:14px;touch-action:none" onPointerMove="{{ cd.onMove }}" onPointerLeave="{{ cd.onLeave }}">
+          <svg viewBox="0 0 860 280" style="width:100%;display:block;overflow:visible" role="img" aria-label="{{ cd.aria }}">
+            <path d="{{ cd.area }}" style="fill:{{ cd.fill }}"></path>
+            <path d="{{ cd.refD }}" style="stroke:var(--foreground-muted)" stroke-width="1" stroke-dasharray="3 4"></path>
+            <text x="0" y="{{ cd.refLY }}" style="fill:var(--foreground-muted);font:500 11px var(--font-mono)">{{ cd.refLabel }}</text>
+            <path d="{{ cd.line }}" style="fill:none;stroke:{{ cd.tone }}" stroke-width="1.75" stroke-linejoin="round" stroke-dasharray="{{ cd.dash }}"></path>
+            <circle cx="{{ cd.dotX }}" cy="{{ cd.dotY }}" r="4" style="fill:{{ cd.tone }};opacity:{{ cd.dotOp }}"></circle>
+            <text x="{{ cd.tagX }}" y="{{ cd.tagY }}" text-anchor="end" style="fill:{{ cd.tone }};font:600 12px var(--font-mono)">{{ cd.tag }}</text>
+            <text x="0" y="276" style="fill:var(--foreground-muted);font:500 11px var(--font-mono)">{{ cd.x0 }}</text>
+            <text x="426" y="276" text-anchor="middle" style="fill:var(--foreground-muted);font:500 11px var(--font-mono)">{{ cd.x1 }}</text>
+            <text x="852" y="276" text-anchor="end" style="fill:var(--foreground-muted);font:500 11px var(--font-mono)">{{ cd.x2 }}</text>
+            <g style="opacity:{{ cd.hOp }}"><path d="{{ cd.hD }}" style="stroke:var(--foreground-muted)" stroke-width="1"></path><circle cx="{{ cd.hx }}" cy="{{ cd.hy }}" r="4.5" style="fill:var(--bp-panel);stroke:var(--foreground)" stroke-width="1.5"></circle></g>
+          </svg>
+          <div aria-hidden="true" style="position:absolute;top:-10px;left:{{ cd.hLeft }};transform:translateX(-50%);opacity:{{ cd.hOp }};pointer-events:none;padding:7px 10px;border-radius:8px;background:var(--popover);box-shadow:var(--shadow-ambient);white-space:nowrap"><div style="font:500 11px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ cd.hText }}</div><div style="font:600 13px/1.3 var(--font-mono)">{{ cd.hVal }}</div></div>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:space-between;gap:16px;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)"><span>{{ cd.note }}</span><span>{{ p.markShort }}</span></div>
+      </sc-if>
+      <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:14px;height:280px;border-radius:10px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:14px;width:220px;height:11px;border-radius:4px;background:var(--bp-panel-2)"></div></sc-if>
+    </div>
+
+    <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:24px 26px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Allocation</div><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ al.count }}</span></div>
+      <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}">
+        <div role="img" aria-label="{{ al.aria }}" style="margin-top:18px;display:flex;gap:2px;height:14px"><sc-for list="{{ al.segs }}" as="g" hint-placeholder-count="7"><span style="flex:{{ g.grow }} 1 0;min-width:3px;border-radius:4px;background:{{ g.bg }}"></span></sc-for></div>
+        <div style="margin-top:14px;display:grid">
+          <sc-for list="{{ al.rows }}" as="a" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--bp-hair)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:32px;padding:0 6px;border-radius:{{ a.badgeRadius }};background:{{ a.badgeBg }};font:600 10.5px/1 var(--font-mono)">{{ a.mono }}</span>
+            <span style="min-width:0"><span style="display:block;font:600 13.5px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span><span style="display:block;font:500 11.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ a.qty }} · avg {{ a.avg }}</span></span>
+            <div style="position:relative;padding:4px 8px;border-radius:8px;text-align:right"><span data-fa="{{ a.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><div style="position:relative;font:500 14px/1.3 var(--font-mono)">{{ a.value }}<span style="font-size:11.5px;color:var(--foreground-muted)"> · {{ a.weight }}</span></div><div style="position:relative;font:500 11.5px/1.35 var(--font-mono);color:{{ a.plTone }}">{{ a.pl }}</div><div style="position:relative;font:500 10.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ a.stamp }}</div></div>
+          </div></sc-for>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--bp-hair)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:32px;border-radius:8px;background:repeating-linear-gradient(135deg,color-mix(in oklch,var(--foreground) 22%,transparent) 0 3px,transparent 3px 7px);font:600 10.5px/1 var(--font-mono)">USD</span>
+            <span style="min-width:0"><span style="display:block;font:600 13.5px/1.3 var(--font-body)">Cash</span><span style="display:block;font:500 11.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ al.reserved }}</span></span>
+            <div style="padding:4px 8px;text-align:right"><div style="font:500 14px/1.3 var(--font-mono)">{{ al.cash }}<span style="font-size:11.5px;color:var(--foreground-muted)"> · {{ al.cashW }}</span></div><div style="font:500 10.5px/1.35 var(--font-mono);color:var(--foreground-muted)">ledger · exact</div></div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:18px;height:14px;border-radius:4px;background:var(--bp-panel-2)"></div><div style="margin-top:20px;display:grid;gap:18px"><sc-for list="{{ skel5 }}" as="k" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px"><span data-skel="1" style="width:42px;height:32px;border-radius:8px;background:var(--bp-panel-2)"></span><span data-skel="1" style="flex:1;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:84px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span></div></sc-for></div></sc-if>
+    </div>
+  </div>
+
+  <div style="padding:20px 56px 0">
+    <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:26px 28px 14px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px"><div><div style="font:500 26px/1 var(--font-display);letter-spacing:-0.03em">Trade history</div><div style="margin-top:10px;font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">Times in ET · fill prices are final and never re-marked</div></div><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ th.count }}</span></div>
+      <sc-if value="{{ th.has }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-top:22px;display:grid;grid-template-columns:170px 64px minmax(0,1.3fr) 110px 150px 150px minmax(0,1.4fr);gap:16px;padding:0 4px 12px;font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)"><span>Time</span><span>Side</span><span>Symbol</span><span style="text-align:right">Quantity</span><span style="text-align:right">Fill price</span><span style="text-align:right">Value</span><span>Status</span></div>
+        <sc-for list="{{ th.rows }}" as="t" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:170px 64px minmax(0,1.3fr) 110px 150px 150px minmax(0,1.4fr);gap:16px;align-items:center;min-height:54px;padding:0 4px;border-top:1px solid var(--bp-hair)">
+          <span style="font:500 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ t.time }}</span>
+          <span style="font:700 13.5px/1 var(--font-body)">{{ t.side }}</span>
+          <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:28px;padding:0 6px;border-radius:{{ t.badgeRadius }};background:{{ t.badgeBg }};font:600 10px/1 var(--font-mono)">{{ t.mono }}</span><span style="font:500 13.5px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.name }}</span></span>
+          <span style="text-align:right;font:500 13.5px/1 var(--font-mono)">{{ t.qty }}</span>
+          <span style="text-align:right"><span style="display:block;font:500 13.5px/1.2 var(--font-mono)">{{ t.px }}</span><span style="display:block;font:500 11px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ t.note }}</span></span>
+          <span style="text-align:right;font:500 13.5px/1 var(--font-mono)">{{ t.value }}</span>
+          <span><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ t.st.bg }};border:{{ t.st.bd }};color:{{ t.st.fg }};font:600 11.5px/1 var(--font-body);white-space:nowrap"><span style="font-family:var(--font-mono);color:{{ t.st.gc }}">{{ t.st.glyph }}</span>{{ t.st.label }}</span></span>
+        </div></sc-for>
+      </sc-if>
+      <sc-if value="{{ th.empty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px 4px 28px;max-width:520px"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Empty</div><div style="margin-top:18px;font:500 20px/1.2 var(--font-display);letter-spacing:-0.02em">No trades yet</div><div style="margin-top:8px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Your first trade shows up here with its fill price and status. You have $100,000.00 to start.</div><a href="Bullpen Terminal.dc.html" style="margin-top:18px;display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 13px/1 var(--font-body);text-decoration:none" style-hover="box-shadow:var(--shadow-ember-glow);color:oklch(14% 0.048 238)">Open the order ticket</a></div>
+      </sc-if>
+      <sc-if value="{{ th.loading }}" hint-placeholder-val="{{ false }}"><div style="margin-top:24px;display:grid;gap:20px;padding-bottom:16px"><sc-for list="{{ skel5 }}" as="k" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:16px"><span data-skel="1" style="width:150px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:40px;height:28px;border-radius:8px;background:var(--bp-panel-2)"></span><span data-skel="1" style="flex:1;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:110px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:90px;height:22px;border-radius:9999px;background:var(--bp-panel-2)"></span></div></sc-for></div></sc-if>
+    </div>
+  </div>
+  <div style="margin-top:80px;background:var(--surface-sunken);padding:24px 56px;display:flex;justify-content:space-between;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+</div>
+</div>
+
+<div id="6b" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">6b · Portfolio · mobile 390</div>
+<div data-screen-label="Portfolio mobile" style="width:390px;height:844px;display:flex;flex-direction:column;background:var(--background);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="flex:none;height:46px;display:flex;align-items:center;padding:0 30px;font:600 14px/1 var(--font-body)">{{ time }}</div>
+  <div style="flex:1;min-height:0;overflow:auto">
+    <div style="padding:6px 20px 0;display:flex;align-items:center;justify-content:space-between"><div><div style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</div><div style="margin-top:6px;font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">Fall Open · ends Oct 31</div></div><span style="width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 12px/1 var(--font-mono)">TB</span></div>
+    <div role="status" style="margin:14px 20px 0;display:flex;gap:6px;flex-wrap:wrap;font:500 11px/1 var(--font-mono)">
+      <sc-if value="{{ ci.open }}" hint-placeholder-val="{{ true }}"><span style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9999px;background:var(--surface-sunken)"><span style="width:7px;height:7px;border-radius:9999px;background:var(--ember)"></span><span style="font:600 11.5px/1 var(--font-body)">Stocks live</span><span style="color:var(--foreground-muted)">{{ ci.stAge }}</span></span></sc-if>
+      <sc-if value="{{ ci.closed }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9999px;background:var(--surface-sunken)"><span style="color:var(--foreground-muted)">☾</span><span style="font:600 11.5px/1 var(--font-body)">Stocks closed</span><span style="color:var(--foreground-muted)">{{ ci.opens }}</span></span></sc-if>
+      <span style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:9999px;background:var(--surface-sunken)"><span style="width:7px;height:7px;border-radius:9999px;background:var(--ember)"></span><span style="font:600 11.5px/1 var(--font-body)">Crypto live</span><span style="color:var(--foreground-muted)">{{ ci.crAge }}</span></span>
+    </div>
+    <div style="padding:24px 20px 0">
+      <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Portfolio · since Sep 1</div>
+      <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}">
+        <div data-odo="1" aria-hidden="true" style="margin-top:12px;display:flex;font:500 42px/1 var(--font-mono);letter-spacing:-0.03em;font-variant-numeric:tabular-nums"><sc-for list="{{ p.odo }}" as="c" hint-placeholder-count="11"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;height:1.15em;line-height:1.15em">{{ c.ch }}</span></sc-if></sc-for></div>
+        <div style="margin-top:12px;font:600 15px/1.3 var(--font-mono);color:{{ p.plTone }}">{{ p.plText }}</div>
+        <div style="margin-top:6px;font:500 12.5px/1.3 var(--font-mono);color:{{ p.todayTone }}">Today {{ p.todayText }}</div>
+        <div role="status" style="margin-top:10px;font:500 11px/1.45 var(--font-mono);color:var(--foreground-muted)">{{ p.stamp }}</div>
+      </sc-if>
+      <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:14px;width:280px;height:44px;border-radius:8px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:14px;width:220px;height:14px;border-radius:4px;background:var(--bp-panel-2)"></div><div data-skel="1" style="margin-top:10px;width:250px;height:10px;border-radius:4px;background:var(--bp-panel-2)"></div></sc-if>
+    </div>
+    <div style="margin:18px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <a href="#6d" style="display:block;min-height:44px;padding:14px 16px;border-radius:14px;background:var(--bp-panel);border:1px solid var(--bp-hair);text-decoration:none;color:var(--foreground)" style-active="transform:scale(0.98)"><div style="display:flex;justify-content:space-between;font:600 10px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)"><span>Rank</span><span style="letter-spacing:0">→</span></div><sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}"><div style="margin-top:10px;font:500 22px/1 var(--font-mono)">{{ p.rank }}<span style="font-size:11.5px;color:var(--foreground-muted)">{{ p.rankOf }}</span></div><div style="margin-top:8px;font:500 10.5px/1.35 var(--font-mono);color:{{ p.rankSubTone }}">{{ p.rankSubM }}</div></sc-if><sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:10px;width:60px;height:22px;border-radius:5px;background:var(--bp-panel-2)"></div></sc-if></a>
+      <div style="padding:14px 16px;border-radius:14px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="font:600 10px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Cash</div><sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}"><div style="margin-top:10px;font:500 17px/1.3 var(--font-mono)">{{ p.cash }}</div><div style="margin-top:6px;font:500 10.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ p.cashSubM }}</div></sc-if><sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:10px;width:110px;height:18px;border-radius:5px;background:var(--bp-panel-2)"></div></sc-if></div>
+    </div>
+    <div style="margin:10px 20px 0;padding:18px;border-radius:18px;background:var(--bp-panel);border:1px solid var(--bp-hair)">
+      <div role="group" aria-label="Timeframe" style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ tfs }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:44px;border-radius:9999px;font:600 12.5px/1 var(--font-mono);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+      <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;margin-top:22px;touch-action:none" onPointerMove="{{ cm.onMove }}" onPointerLeave="{{ cm.onLeave }}">
+          <svg viewBox="0 0 314 180" style="width:100%;display:block;overflow:visible" role="img" aria-label="{{ cm.aria }}">
+            <path d="{{ cm.area }}" style="fill:{{ cm.fill }}"></path>
+            <path d="{{ cm.refD }}" style="stroke:var(--foreground-muted)" stroke-width="1" stroke-dasharray="3 4"></path>
+            <text x="0" y="{{ cm.refLY }}" style="fill:var(--foreground-muted);font:500 10px var(--font-mono)">{{ cm.refLabel }}</text>
+            <path d="{{ cm.line }}" style="fill:none;stroke:{{ cm.tone }}" stroke-width="1.75" stroke-linejoin="round" stroke-dasharray="{{ cm.dash }}"></path>
+            <circle cx="{{ cm.dotX }}" cy="{{ cm.dotY }}" r="3.5" style="fill:{{ cm.tone }};opacity:{{ cm.dotOp }}"></circle>
+            <text x="{{ cm.tagX }}" y="{{ cm.tagY }}" text-anchor="end" style="fill:{{ cm.tone }};font:600 11px var(--font-mono)">{{ cm.tag }}</text>
+            <text x="0" y="177" style="fill:var(--foreground-muted);font:500 10px var(--font-mono)">{{ cm.x0 }}</text>
+            <text x="153" y="177" text-anchor="middle" style="fill:var(--foreground-muted);font:500 10px var(--font-mono)">{{ cm.x1 }}</text>
+            <text x="306" y="177" text-anchor="end" style="fill:var(--foreground-muted);font:500 10px var(--font-mono)">{{ cm.x2 }}</text>
+            <g style="opacity:{{ cm.hOp }}"><path d="{{ cm.hD }}" style="stroke:var(--foreground-muted)" stroke-width="1"></path><circle cx="{{ cm.hx }}" cy="{{ cm.hy }}" r="4" style="fill:var(--bp-panel);stroke:var(--foreground)" stroke-width="1.5"></circle></g>
+          </svg>
+          <div aria-hidden="true" style="position:absolute;top:-16px;left:{{ cm.hLeft }};transform:translateX(-50%);opacity:{{ cm.hOp }};pointer-events:none;padding:6px 9px;border-radius:8px;background:var(--popover);box-shadow:var(--shadow-ambient);white-space:nowrap"><div style="font:500 10.5px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ cm.hText }}</div><div style="font:600 12px/1.3 var(--font-mono)">{{ cm.hVal }}</div></div>
+        </div>
+        <div style="margin-top:12px;font:500 10.5px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ cm.note }}</div>
+      </sc-if>
+      <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:22px;height:180px;border-radius:8px;background:var(--bp-panel-2)"></div></sc-if>
+    </div>
+    <div style="margin:10px 20px 0;padding:18px;border-radius:18px;background:var(--bp-panel);border:1px solid var(--bp-hair)">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Allocation</div><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ al.count }}</span></div>
+      <sc-if value="{{ p.ready }}" hint-placeholder-val="{{ true }}">
+        <div role="img" aria-label="{{ al.aria }}" style="margin-top:16px;display:flex;gap:2px;height:12px"><sc-for list="{{ al.segs }}" as="g" hint-placeholder-count="7"><span style="flex:{{ g.grow }} 1 0;min-width:3px;border-radius:3px;background:{{ g.bg }}"></span></sc-for></div>
+        <div style="margin-top:10px;display:grid">
+          <sc-for list="{{ al.rows }}" as="a" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;min-height:56px;border-top:1px solid var(--bp-hair)">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:30px;padding:0 5px;border-radius:{{ a.badgeRadius }};background:{{ a.badgeBg }};font:600 10px/1 var(--font-mono)">{{ a.mono }}</span>
+            <span style="min-width:0"><span style="display:block;font:500 12.5px/1.3 var(--font-mono)">{{ a.value }}</span><span style="display:block;font:500 10.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ a.weight }} · {{ a.stampM }}</span></span>
+            <span style="position:relative;padding:4px 6px;border-radius:6px;font:500 12px/1 var(--font-mono);color:{{ a.plTone }}"><span data-fa="{{ a.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:6px;opacity:0;pointer-events:none"></span><span style="position:relative">{{ a.pl }}</span></span>
+          </div></sc-for>
+          <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;min-height:56px;border-top:1px solid var(--bp-hair)"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:30px;border-radius:8px;background:repeating-linear-gradient(135deg,color-mix(in oklch,var(--foreground) 22%,transparent) 0 3px,transparent 3px 7px);font:600 10px/1 var(--font-mono)">USD</span><span><span style="display:block;font:500 12.5px/1.3 var(--font-mono)">{{ al.cash }} cash</span><span style="display:block;font:500 10.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ al.cashW }} · {{ al.reservedM }}</span></span></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ p.loading }}" hint-placeholder-val="{{ false }}"><div data-skel="1" style="margin-top:16px;height:12px;border-radius:3px;background:var(--bp-panel-2)"></div><div style="margin-top:18px;display:grid;gap:16px"><sc-for list="{{ skel5 }}" as="k" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:10px"><span data-skel="1" style="width:40px;height:30px;border-radius:8px;background:var(--bp-panel-2)"></span><span data-skel="1" style="flex:1;height:11px;border-radius:4px;background:var(--bp-panel-2)"></span></div></sc-for></div></sc-if>
+    </div>
+    <div style="margin:28px 20px 0;display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 22px/1 var(--font-display);letter-spacing:-0.03em">Trade history</span><span style="font:500 10.5px/1 var(--font-mono);color:var(--foreground-muted)">Times in ET</span></div>
+    <sc-if value="{{ th.has }}" hint-placeholder-val="{{ true }}"><div style="margin:10px 20px 0;display:grid">
+      <sc-for list="{{ th.rows }}" as="t" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;min-height:64px;padding:8px 0;border-top:1px solid var(--bp-hair)">
+        <span style="min-width:0"><span style="display:block;font:700 14px/1.3 var(--font-body)">{{ t.line1 }}</span><span style="display:block;margin-top:3px;font:500 11px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ t.line2 }}</span></span>
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:9999px;background:{{ t.st.bg }};border:{{ t.st.bd }};color:{{ t.st.fg }};font:600 11px/1 var(--font-body);white-space:nowrap"><span style="font-family:var(--font-mono);color:{{ t.st.gc }}">{{ t.st.glyph }}</span>{{ t.st.short }}</span>
+      </div></sc-for>
+    </div></sc-if>
+    <sc-if value="{{ th.empty }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;padding:20px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="font:500 20px/1.2 var(--font-display);letter-spacing:-0.02em">No trades yet</div><div style="margin-top:8px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Your first trade shows up here with its fill price and status. You have $100,000.00 to start.</div><a href="Bullpen Mobile Trading.dc.html" style="margin-top:16px;display:grid;place-items:center;height:48px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body);text-decoration:none">Open the order ticket</a></div></sc-if>
+    <sc-if value="{{ th.loading }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;display:grid;gap:22px"><sc-for list="{{ skel5 }}" as="k" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px"><span style="flex:1;display:grid;gap:8px"><span data-skel="1" style="width:60%;height:13px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:80%;height:10px;border-radius:4px;background:var(--bp-panel-2)"></span></span><span data-skel="1" style="width:70px;height:22px;border-radius:9999px;background:var(--bp-panel-2)"></span></div></sc-for></div></sc-if>
+    <div style="margin-top:32px;padding:22px 20px 24px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+  </div>
+  <nav aria-label="Primary" style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);padding:0 8px 22px;background:var(--background);box-shadow:0 -1px 0 var(--bp-hair)"><sc-for list="{{ tabsP }}" as="n" hint-placeholder-count="4"><a href="{{ n.href }}" aria-current="{{ n.cur }}" style="position:relative;height:56px;display:grid;place-items:center;font:600 12.5px/1 var(--font-body);text-decoration:none;color:{{ n.fg }}" style-active="transform:scale(0.97)">{{ n.label }}<span style="position:absolute;top:0;left:22%;right:22%;height:2px;border-radius:2px;background:var(--ember);opacity:{{ n.rule }}"></span></a></sc-for></nav>
+</div>
+</div>
+</div>
+
+<div style="margin-top:64px;display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+<div id="6c" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">6c · Leaderboard · desktop 1440</div>
+<div data-screen-label="Leaderboard desktop" style="width:1440px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="height:64px;display:flex;align-items:center;gap:24px;padding:0 40px;border-bottom:1px solid var(--bp-hair)">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:600 13px/1 var(--font-body);color:var(--foreground-muted)">Fall Open<span style="font:500 11px/1 var(--font-mono)"> · ends Oct 31</span></span></div>
+    <nav aria-label="Primary" style="align-self:stretch;display:flex;gap:4px;margin-left:12px"><sc-for list="{{ navL }}" as="n" hint-placeholder-count="4"><a href="{{ n.href }}" aria-current="{{ n.cur }}" style="position:relative;display:flex;align-items:center;padding:0 12px;font:600 14px/1 var(--font-body);text-decoration:none;color:{{ n.fg }}" style-hover="color:var(--foreground)">{{ n.label }}<span style="position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:var(--ember);opacity:{{ n.rule }}"></span></a></sc-for></nav>
+    <div style="flex:1"></div>
+    <div role="status" style="display:flex;align-items:center;border-radius:9999px;background:var(--surface-sunken)">
+      <sc-if value="{{ ci.open }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><span style="position:relative;width:8px;height:8px"><span data-pulse="1" style="position:absolute;inset:0;border-radius:9999px;background:var(--ember)"></span><span style="position:absolute;inset:0;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span></span><span style="font:600 12.5px/1 var(--font-body)">Stocks live</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ ci.stAge }}</span></div></sc-if>
+      <sc-if value="{{ ci.closed }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--foreground-muted)" stroke-width="2.2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg><span style="font:600 12.5px/1 var(--font-body)">Stocks closed</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ ci.opens }}</span></div></sc-if>
+      <div style="width:1px;align-self:stretch;background:var(--bp-hair)"></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><span style="position:relative;width:8px;height:8px"><span data-pulse="1" style="position:absolute;inset:0;border-radius:9999px;background:var(--ember)"></span><span style="position:absolute;inset:0;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span></span><span style="font:600 12.5px/1 var(--font-body)">Crypto live</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ ci.crAge }}</span></div>
+    </div>
+    <span style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">TB</span>
+  </div>
+
+  <div style="padding:48px 56px 0;display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap">
+    <div><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Leaderboard · {{ l.sub }}</div><h1 style="margin:18px 0 0;font:500 64px/0.98 var(--font-display);letter-spacing:-0.045em">{{ l.title }}</h1></div>
+    <div style="flex:1"></div>
+    <div style="display:grid;gap:10px;justify-items:end">
+      <div role="group" aria-label="League" style="display:flex;gap:8px"><sc-for list="{{ l.lgs }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="border:0;cursor:pointer;height:36px;padding:0 15px;border-radius:9999px;font:600 13px/1 var(--font-body);background:{{ c.bg }};color:{{ c.fg }};transition:background 120ms">{{ c.label }}</button></sc-for></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:400 12.5px/1 var(--font-body);color:var(--foreground-muted)">{{ l.perNote }}</span><div role="group" aria-label="Period" style="display:flex;gap:8px"><sc-for list="{{ l.pers }}" as="c" hint-placeholder-count="2"><button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" disabled="{{ c.dis }}" style="border:0;cursor:pointer;height:36px;padding:0 15px;border-radius:9999px;font:600 13px/1 var(--font-body);background:{{ c.bg }};color:{{ c.fg }};opacity:{{ c.op }};transition:background 120ms">{{ c.label }}</button></sc-for></div></div>
+    </div>
+  </div>
+  <div role="status" style="padding:14px 56px 0;font:500 12px/1.4 var(--font-mono);color:{{ l.stampTone }}">{{ l.stamp }}</div>
+
+  <div style="padding:28px 56px 0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start">
+    <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:14px 14px 16px">
+      <div style="display:grid;grid-template-columns:48px minmax(0,1fr) 140px 150px 120px;gap:16px;padding:10px 16px 12px;font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)"><span>Rank</span><span>Player</span><span>Trend</span><span style="text-align:right">Equity</span><span style="text-align:right">{{ l.retLabel }}</span></div>
+      <sc-if value="{{ l.ok }}" hint-placeholder-val="{{ true }}">
+        <div style="height:{{ l.boxH }};overflow:auto"><div style="position:relative;height:{{ l.listH }}">
+          <sc-for list="{{ l.rowsD }}" as="r" hint-placeholder-count="10"><div style="position:absolute;left:0;right:0;top:0;height:56px;display:grid;grid-template-columns:48px minmax(0,1fr) 140px 150px 120px;align-items:center;gap:16px;padding:0 16px;border-radius:10px;background:{{ r.bg }};box-shadow:{{ r.ring }};transform:{{ r.y }};transition:{{ r.tr }}">
+            <span style="font:600 14px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.rank }}</span>
+            <div style="display:flex;align-items:center;gap:12px;min-width:0"><span style="flex:none;min-width:34px;height:32px;padding:0 5px;box-sizing:border-box;border-radius:8px;display:grid;place-items:center;background:{{ r.av }};color:{{ r.avFg }};font:600 10.5px/1 var(--font-mono)">{{ r.mono }}</span><span style="font:600 14.5px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="flex:none;font:600 10.5px/1 var(--font-mono);padding:3px 6px;border-radius:9999px;color:{{ r.chipTone }};background:{{ r.chipBg }};opacity:{{ r.chipOp }};transition:{{ r.chipTr }}">{{ r.chipText }}</span></div>
+            <svg viewBox="0 0 120 24" preserveAspectRatio="none" style="width:120px;height:22px;display:block" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.tone }}" stroke-width="1.25" vector-effect="non-scaling-stroke"></path></svg>
+            <span style="text-align:right;font:500 14px/1 var(--font-mono)">{{ r.eq }}</span>
+            <span style="text-align:right;font:600 13.5px/1 var(--font-mono);color:{{ r.tone }};white-space:nowrap">{{ r.arrow }} {{ r.ret }}</span>
+          </div></sc-for>
+        </div></div>
+      </sc-if>
+      <sc-if value="{{ l.loading }}" hint-placeholder-val="{{ false }}"><div style="display:grid"><sc-for list="{{ skel8 }}" as="k" hint-placeholder-count="8"><div style="height:56px;display:grid;grid-template-columns:48px minmax(0,1fr) 140px 150px 120px;align-items:center;gap:16px;padding:0 16px"><span data-skel="1" style="width:20px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span style="display:flex;align-items:center;gap:12px"><span data-skel="1" style="width:34px;height:32px;border-radius:8px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:40%;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span></span><span data-skel="1" style="height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="justify-self:end;width:100px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="justify-self:end;width:70px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span></div></sc-for></div></sc-if>
+      <sc-if value="{{ l.err }}" hint-placeholder-val="{{ false }}"><div style="padding:36px 16px 40px;max-width:520px"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Error</div><div style="margin-top:18px;font:500 20px/1.2 var(--font-display);letter-spacing:-0.02em">Rankings didn’t load</div><div style="margin-top:8px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">The leaderboard didn’t answer in 5 s. Your trades are safe; only rankings are affected.</div><div style="margin-top:18px;display:flex;align-items:center;gap:14px"><button onClick="{{ l.retry }}" style="border:0;cursor:pointer;padding:11px 18px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 13px/1 var(--font-body)" style-hover="background:var(--accent)">Try again</button><span style="font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">last good · {{ l.lastGood }}</span></div></div></sc-if>
+      <sc-if value="{{ l.empty }}" hint-placeholder-val="{{ false }}"><div style="padding:36px 16px 40px;max-width:520px"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Empty</div><div style="margin-top:18px;font:500 20px/1.2 var(--font-display);letter-spacing:-0.02em">No trades yet</div><div style="margin-top:8px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Ranks start at the league’s first fill. Everyone begins at $100,000.00, so there is nothing to order yet.</div><a href="Bullpen Terminal.dc.html" style="margin-top:18px;display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 13px/1 var(--font-body);text-decoration:none" style-hover="box-shadow:var(--shadow-ember-glow);color:oklch(14% 0.048 238)">Open the order ticket</a></div></sc-if>
+      <div style="margin-top:10px;padding-top:12px;border-top:1px solid var(--bp-hair)">
+        <div style="font:600 10px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted);margin:0 0 8px 16px">Your position · pinned</div>
+        <div style="height:56px;display:grid;grid-template-columns:48px minmax(0,1fr) 140px 150px 120px;align-items:center;gap:16px;padding:0 16px;border-radius:10px;background:color-mix(in oklch,var(--ember) 12%,var(--bp-panel));box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--ember) 40%,transparent)">
+          <span style="font:700 14px/1 var(--font-mono)">{{ l.me.rank }}</span>
+          <div style="display:flex;align-items:center;gap:12px;min-width:0"><span style="flex:none;min-width:34px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 10.5px/1 var(--font-mono)">TB</span><span style="font:700 14.5px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.me.name }}</span><span style="flex:none;font:600 10.5px/1 var(--font-mono);padding:3px 6px;border-radius:9999px;color:{{ l.me.chipTone }};background:{{ l.me.chipBg }};opacity:{{ l.me.chipOp }};transition:{{ l.me.chipTr }}">{{ l.me.chipText }}</span><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ l.me.note }}</span></div>
+          <svg viewBox="0 0 120 24" preserveAspectRatio="none" style="width:120px;height:22px;display:block" aria-hidden="true"><path d="{{ l.me.spark }}" style="fill:none;stroke:{{ l.me.tone }}" stroke-width="1.25" vector-effect="non-scaling-stroke"></path></svg>
+          <span style="text-align:right;font:500 14px/1 var(--font-mono)">{{ l.me.eq }}</span>
+          <span style="text-align:right;font:600 13.5px/1 var(--font-mono);color:{{ l.me.tone }};white-space:nowrap">{{ l.me.arrow }} {{ l.me.ret }}</span>
+        </div>
+      </div>
+      <div style="padding:14px 16px 0;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ l.count }}</div>
+    </div>
+
+    <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:24px 26px">
+      <div style="font:600 11px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">{{ l.stLabel }}</div>
+      <sc-if value="{{ l.ok }}" hint-placeholder-val="{{ true }}">
+        <div aria-hidden="true" style="margin-top:14px;display:flex;align-items:baseline;font:500 64px/1 var(--font-mono);letter-spacing:-0.03em"><span>#</span><sc-for list="{{ l.rankChars }}" as="c" hint-placeholder-count="1"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if></sc-for><span style="margin-left:10px;font:500 15px/1 var(--font-mono);color:var(--foreground-muted);letter-spacing:0">of {{ l.players }}</span></div>
+        <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Rank {{ l.me.rank }} of {{ l.players }}</span>
+        <div style="margin-top:16px;display:flex;gap:18px;font:500 14px/1 var(--font-mono)"><span>{{ l.me.eq }}</span><span style="color:{{ l.me.tone }}">{{ l.me.arrow }} {{ l.me.ret }}</span></div>
+        <div style="margin-top:22px;display:grid;gap:10px;padding-top:18px;border-top:1px solid var(--bp-hair)">
+          <div style="display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px;font:400 13.5px/1.45 var(--font-body)"><span style="font:600 12px/1.45 var(--font-mono);color:var(--foreground-muted)">▲</span><span>{{ l.gapUp }}</span></div>
+          <div style="display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px;font:400 13.5px/1.45 var(--font-body)"><span style="font:600 12px/1.45 var(--font-mono);color:var(--foreground-muted)">▼</span><span>{{ l.gapDown }}</span></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ l.notOk }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;font:500 40px/1 var(--font-mono);color:var(--foreground-muted)">—</div><div style="margin-top:14px;font:400 13.5px/1.55 var(--font-body);color:var(--foreground-muted)">{{ l.stNote }}</div></sc-if>
+      <div style="margin-top:22px;font:400 12.5px/1.55 var(--font-body);color:var(--foreground-muted)">Ranked by equity: cash plus every position at its last mark. Rows move when a fill changes the order.</div>
+    </div>
+  </div>
+  <div style="margin-top:80px;background:var(--surface-sunken);padding:24px 56px;display:flex;justify-content:space-between;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+</div>
+</div>
+
+<div id="6d" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">6d · Leaderboard · mobile 390</div>
+<div data-screen-label="Leaderboard mobile" style="width:390px;height:844px;display:flex;flex-direction:column;background:var(--background);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="flex:none;height:46px;display:flex;align-items:center;padding:0 30px;font:600 14px/1 var(--font-body)">{{ time }}</div>
+  <div style="flex:1;min-height:0;overflow:auto">
+    <div style="padding:6px 20px 0;display:flex;align-items:center;justify-content:space-between"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 12px/1 var(--font-mono)">TB</span></div>
+    <h1 style="margin:20px 20px 0;font:500 36px/1 var(--font-display);letter-spacing:-0.04em">Leaderboard</h1>
+    <div style="margin:8px 20px 0;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ l.title }} · {{ l.sub }}</div>
+    <div role="group" aria-label="League" style="margin-top:16px;display:flex;gap:8px;overflow-x:auto;padding:0 20px 2px"><sc-for list="{{ l.lgs }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" style="flex:none;border:0;cursor:pointer;height:44px;padding:0 16px;border-radius:9999px;font:600 13.5px/1 var(--font-body);background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button></sc-for></div>
+    <div role="group" aria-label="Period" style="margin:10px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ l.persM }}" as="c" hint-placeholder-count="2"><button onClick="{{ c.onClick }}" aria-pressed="{{ c.pressed }}" disabled="{{ c.dis }}" style="border:0;cursor:pointer;height:44px;border-radius:9999px;font:600 14px/1 var(--font-body);background:{{ c.bg }};color:{{ c.fg }};opacity:{{ c.op }}">{{ c.label }}</button></sc-for></div>
+    <div role="status" style="margin:12px 20px 0;font:500 11px/1.45 var(--font-mono);color:{{ l.stampTone }}">{{ l.stampM }}</div>
+    <sc-if value="{{ l.ok }}" hint-placeholder-val="{{ true }}"><div style="position:relative;margin:10px 12px 0;height:{{ l.listHM }}">
+      <sc-for list="{{ l.rowsM }}" as="r" hint-placeholder-count="10"><div style="position:absolute;left:0;right:0;top:0;height:60px;display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:10px;padding:0 10px;border-radius:12px;background:{{ r.bg }};box-shadow:{{ r.ring }};transform:{{ r.y }};transition:{{ r.tr }}">
+        <span style="font:600 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.rank }}</span>
+        <span style="min-width:0"><span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="font:600 14.5px/1.25 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="flex:none;font:600 10px/1 var(--font-mono);padding:3px 5px;border-radius:9999px;color:{{ r.chipTone }};background:{{ r.chipBg }};opacity:{{ r.chipOp }};transition:{{ r.chipTr }}">{{ r.chipText }}</span></span><span style="display:block;margin-top:3px;font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ r.eq }}</span></span>
+        <span style="font:600 13px/1 var(--font-mono);color:{{ r.tone }};white-space:nowrap">{{ r.arrow }} {{ r.ret }}</span>
+      </div></sc-for>
+    </div></sc-if>
+    <sc-if value="{{ l.loading }}" hint-placeholder-val="{{ false }}"><div style="margin:10px 22px 0;display:grid"><sc-for list="{{ skel8 }}" as="k" hint-placeholder-count="8"><div style="height:60px;display:flex;align-items:center;gap:12px"><span data-skel="1" style="width:18px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span style="flex:1;display:grid;gap:7px"><span data-skel="1" style="width:55%;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span><span data-skel="1" style="width:35%;height:10px;border-radius:4px;background:var(--bp-panel-2)"></span></span><span data-skel="1" style="width:60px;height:12px;border-radius:4px;background:var(--bp-panel-2)"></span></div></sc-for></div></sc-if>
+    <sc-if value="{{ l.err }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;padding:20px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="font:500 20px/1.2 var(--font-display);letter-spacing:-0.02em">Rankings didn’t load</div><div style="margin-top:8px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">The leaderboard didn’t answer in 5 s. Your trades are safe; only rankings are affected.</div><div style="margin-top:16px;display:flex;align-items:center;gap:14px"><button onClick="{{ l.retry }}" style="border:0;cursor:pointer;height:44px;padding:0 20px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 14px/1 var(--font-body)">Try again</button><span style="font:500 11px/1.3 var(--font-mono);color:var(--foreground-muted)">last good · {{ l.lastGood }}</span></div></div></sc-if>
+    <sc-if value="{{ l.empty }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;padding:20px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="font:500 20px/1.2 var(--font-display);letter-spacing:-0.02em">No trades yet</div><div style="margin-top:8px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Ranks start at the league’s first fill. Everyone begins at $100,000.00.</div><a href="Bullpen Mobile Trading.dc.html" style="margin-top:16px;display:grid;place-items:center;height:48px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body);text-decoration:none">Open the order ticket</a></div></sc-if>
+    <div style="margin:10px 20px 0;font:500 10.5px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ l.countM }}</div>
+    <div style="margin-top:28px;padding:22px 20px 24px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+  </div>
+  <div style="flex:none;padding:8px 12px;background:var(--background);box-shadow:0 -1px 0 var(--bp-hair)">
+    <div style="height:60px;display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:10px;padding:0 10px;border-radius:12px;background:color-mix(in oklch,var(--ember) 12%,var(--bp-panel));box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--ember) 40%,transparent)">
+      <span style="font:700 13px/1 var(--font-mono)">{{ l.me.rank }}</span>
+      <span style="min-width:0"><span style="display:flex;align-items:center;gap:6px"><span style="font:700 14.5px/1.25 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.me.name }}</span><span style="flex:none;font:600 10px/1 var(--font-mono);padding:3px 5px;border-radius:9999px;color:{{ l.me.chipTone }};background:{{ l.me.chipBg }};opacity:{{ l.me.chipOp }};transition:{{ l.me.chipTr }}">{{ l.me.chipText }}</span></span><span style="display:block;margin-top:3px;font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ l.me.sub }}</span></span>
+      <span style="font:600 13px/1 var(--font-mono);color:{{ l.me.tone }};white-space:nowrap">{{ l.me.arrow }} {{ l.me.ret }}</span>
+    </div>
+  </div>
+  <nav aria-label="Primary" style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);padding:0 8px 22px;background:var(--background)"><sc-for list="{{ tabsL }}" as="n" hint-placeholder-count="4"><a href="{{ n.href }}" aria-current="{{ n.cur }}" style="position:relative;height:56px;display:grid;place-items:center;font:600 12.5px/1 var(--font-body);text-decoration:none;color:{{ n.fg }}" style-active="transform:scale(0.97)">{{ n.label }}<span style="position:absolute;top:0;left:22%;right:22%;height:2px;border-radius:2px;background:var(--ember);opacity:{{ n.rule }}"></span></a></sc-for></nav>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const START = 100000, CASH = 22318.68, D1 = 106904.55, W1 = 104380.12;
+const EXPO = 'cubic-bezier(0.16,1,0.3,1)';
+const GAIN = 'var(--bp-gain)', LOSS = 'var(--bp-loss)', MUTED = 'var(--foreground-muted)';
+const CRYPTO = ['BTC-USD', 'ETH-USD', 'SOL-USD'];
+const POS = [['NVDA', 120, 169.29], ['BTC-USD', 0.18, 104210], ['AAPL', 60, 239.47], ['SPY', 20, 664.12], ['ETH-USD', 2.5, 3946.62], ['TSLA', 15, 361.40]];
+const TRADES = [
+  ['Sep 25', '14:02:11', 'buy', 'NVDA', 10, 182.43, 'filled', 'market'],
+  ['Sep 25', '13:40:52', 'buy', 'SOL-USD', 20, null, 'working', 'limit 205.00'],
+  ['Sep 25', '11:48:03', 'sell', 'TSLA', 10, 351.90, 'filled', 'market'],
+  ['Sep 25', '10:15:40', 'buy', 'AAPL', 100, 239.47, 'cancelled', 'avg of 60 · limit 239.50', 60],
+  ['Sep 24', '19:22:57', 'buy', 'ETH-USD', 1.5, 4236.10, 'filled', 'market'],
+  ['Sep 24', '15:59:58', 'buy', 'SPY', 20, 664.12, 'filled', 'market'],
+  ['Sep 24', '09:31:12', 'buy', 'TSLA', 400, null, 'rejected', 'needed $144,688.00'],
+  ['Sep 23', '22:04:31', 'buy', 'BTC-USD', 0.18, 104210.00, 'filled', 'market'],
+  ['Sep 22', '10:02:44', 'buy', 'TSLA', 25, 361.40, 'filled', 'market'],
+  ['Sep 18', '12:30:05', 'sell', 'NVDA', 30, 176.02, 'filled', 'market'],
+  ['Sep 15', '09:45:19', 'buy', 'NVDA', 140, 168.35, 'filled', 'market'],
+  ['Sep 8', '20:11:36', 'buy', 'ETH-USD', 1, 3512.40, 'filled', 'market'],
+];
+const RUST = [['r1', 'Ana G.', 'AG', 118840.20], ['r2', 'Wes H.', 'WH', 114102.66], ['me', 'Tiarê B. · you', 'TB', 112418.05], ['r3', 'Mateus R.', 'MR', 109877.31], ['r4', 'Chloe D.', 'CD', 107520.90], ['r5', 'Ivan P.', 'IP', 105300.12], ['r6', 'Grace Y.', 'GY', 103914.48], ['r7', 'Omar F.', 'OF', 101260.03], ['r8', 'Beatriz L.', 'BL', 99812.55], ['r9', 'Sam W.', 'SW', 97420.17], ['r10', 'Yuki A.', 'YA', 95118.90], ['r11', 'Leo M.', 'LM', 93866.42]];
+const SUMMER = [['s1', 'Hana L.', 'HL', 131204.88], ['s2', 'Priya N.', 'PN', 128770.10], ['s3', 'Kofi A.', 'KA', 126415.37], ['s4', 'Marcus O.', 'MO', 122980.00], ['s5', 'Elena R.', 'ER', 119450.62], ['s6', 'Dev K.', 'DK', 117302.45], ['s7', 'Julien T.', 'JT', 115840.19], ['s8', 'Sofia M.', 'SM', 114122.73], ['s9', 'Noah B.', 'NB', 112688.04], ['s10', 'Mei W.', 'MW', 111905.36], ['s11', 'Carlos V.', 'CV', 110870.50], ['s12', 'Zara Q.', 'ZQ', 110214.91], ['s13', 'Oskar J.', 'OJ', 109611.28], ['me', 'Tiarê B. · you', 'TB', 109240.77]];
+const LG = { fall: { name: 'Fall Open', players: 214, dates: 'Sep 1 – Oct 31', live: true }, rust: { name: 'Vancouver Rust meetup', players: 22, dates: 'Sep 15 – Oct 15', live: true }, summer: { name: 'Summer Sprint', players: 180, dates: 'Jul 1 – Aug 31', live: false } };
+const SC = [['live', 'Live'], ['loading', 'Loading'], ['empty', 'Empty · no trades yet'], ['error', 'Error · rankings']];
+const NOTE = {
+  live: 'The portfolio re-marks every 3 s; ranks follow fills by up to 2 s. Hover or drag the equity curve to read any mark.',
+  loading: 'First load. Skeletons match the final layout; nothing shows a number until it has one.',
+  empty: 'Joined, no trades yet. Equity sits at $100,000.00, allocation is all cash, and each table says what to do next.',
+  error: 'The leaderboard didn’t answer. Portfolio values still come from the ledger; only ranks are missing, and both pages say so.',
+};
+const ST = {
+  filled: () => ({ glyph: '✓', label: 'Filled', short: 'Filled', bg: 'var(--bp-panel-2)', bd: '0', fg: 'var(--foreground)', gc: 'var(--foreground)' }),
+  working: (q) => ({ glyph: '●', label: `Working · 0 of ${q}`, short: 'Working', bg: 'color-mix(in oklch, var(--ember) 16%, transparent)', bd: '0', fg: 'var(--bp-accent-text)', gc: 'var(--bp-accent-text)' }),
+  cancelled: (q, f) => ({ glyph: '–', label: `Cancelled · ${f} of ${q} filled`, short: `${f} of ${q}`, bg: 'transparent', bd: '1px dashed var(--foreground-muted)', fg: 'var(--foreground)', gc: 'var(--foreground)' }),
+  rejected: () => ({ glyph: '✕', label: 'Rejected · buying power', short: 'Rejected', bg: 'color-mix(in oklch, var(--destructive) 14%, transparent)', bd: '0', fg: 'var(--foreground)', gc: 'var(--destructive)' }),
+};
+
+class Component extends DCLogic {
+  state = { theme: 'dark', sc: 'live', reduced: false, stocks: 'open', tf: 'all', lg: 'fall', per: 'all', hov: null };
+  rootRef = React.createRef(); wm = new WeakMap(); loops = [];
+
+  componentDidMount() {
+    const rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.setState({ reduced: rm, stocks: this.et().open ? 'open' : 'closed' });
+    import(new URL('bullpen.js', document.baseURI).href).then((M) => {
+      this.M = M; this.market = M.createMarket(7);
+      const r = M.rng(5); this.nz = {};
+      [['all', 25, 1400], ['1w', 43, 520], ['1d', 49, 190]].forEach(([k, n, a]) => { const w = [0]; for (let i = 1; i < n; i++) w.push(w[i - 1] + (r() - 0.5) * a); this.nz[k] = w.map((v, i) => v - w[n - 1] * i / (n - 1)); });
+      this.snap();
+      const fall = M.PLAYERS.map(([id, n, mo, eq]) => id === 'p7' ? [id, 'Amara Eze-Montgomery', 'AE', eq] : id === 'me' ? [id, 'Tiarê B. · you', 'TB', Math.round(this.equity() * 100) / 100] : [id, n, mo, eq]);
+      this.lgs = { fall: this.mkL(fall, 11), rust: this.mkL(RUST, 23), summer: this.mkL(SUMMER, 31) };
+      this.lgs.fall.ps.find((p) => p.me).open = D1; this.rank(this.lgs.fall, 0);
+      this.lastRank = Date.now();
+      this.setState({ ready: true }, () => this.startLoops());
+      this.iv = [
+        setInterval(() => this.market.tick(3, this.state.stocks === 'open' ? undefined : CRYPTO), 700),
+        setInterval(() => this.onMark(), 3000),
+        setInterval(() => this.onLeague(), 2600),
+        setInterval(() => this.forceUpdate(), 1000),
+      ];
+    });
+  }
+  componentWillUnmount() { (this.iv || []).forEach(clearInterval); this.stopLoops(); }
+  componentDidUpdate(pp, ps) {
+    const s = this.state; if (!ps) return;
+    if (ps.theme !== s.theme) document.body.style.background = s.theme === 'dark' ? 'oklch(10.5% 0.038 238)' : 'oklch(94% 0.010 238)';
+    if (ps.sc !== s.sc || ps.reduced !== s.reduced || ps.stocks !== s.stocks || ps.lg !== s.lg) { this.stopLoops(); this.startLoops(); }
+  }
+  startLoops() {
+    const root = this.rootRef.current; if (!root || this.state.reduced) return;
+    root.querySelectorAll('[data-pulse]').forEach((el) => this.loops.push(el.animate([{ transform: 'scale(1)', opacity: 0.6 }, { transform: 'scale(2.8)', opacity: 0 }], { duration: 2000, iterations: Infinity, easing: 'cubic-bezier(0.23,1,0.32,1)' })));
+    root.querySelectorAll('[data-skel]').forEach((el) => this.loops.push(el.animate([{ opacity: 1 }, { opacity: 0.45 }], { duration: 900, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' })));
+  }
+  stopLoops() { this.loops.forEach((a) => a.cancel()); this.loops = []; }
+
+  et() {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(new Date());
+    const g = (t) => (parts.find((p) => p.type === t) || {}).value;
+    const wd = g('weekday'), mins = (+g('hour') % 24) * 60 + +g('minute'), wk = wd !== 'Sat' && wd !== 'Sun';
+    const open = wk && mins >= 570 && mins < 960;
+    const opens = !wk || wd === 'Fri' && mins >= 960 || open ? 'opens Mon 9:30 ET' : mins < 570 ? 'opens 9:30 ET' : 'opens tomorrow 9:30 ET';
+    const closeDay = !wk || (wd === 'Mon' && mins < 570) ? 'Friday’s' : mins < 570 ? 'yesterday’s' : 'today’s';
+    return { open, opens, closeDay };
+  }
+  snap() { const px = {}; POS.forEach(([s]) => (px[s] = this.market.q[s].price)); this.prevPx = this.mk ? this.mk.px : px; this.mk = { at: Date.now(), px }; }
+  equity() { return POS.reduce((a, [s, q]) => a + q * this.mk.px[s], CASH); }
+  onMark() {
+    this.snap();
+    this.setState({ mt: Date.now() }, () => {
+      const root = this.rootRef.current; if (!root) return; const now = performance.now();
+      if (this.state.reduced) root.querySelectorAll('[data-odo]').forEach((o) => o.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 300 }));
+      POS.forEach(([sym]) => {
+        const d = Math.sign(this.mk.px[sym] - this.prevPx[sym]); if (!d) return;
+        const tone = d > 0 ? GAIN : LOSS;
+        root.querySelectorAll(`[data-fa="${sym}"]`).forEach((el) => { if (now - (this.wm.get(el) || 0) < 500) return; this.wm.set(el, now); el.style.background = `color-mix(in oklch, ${tone} 22%, transparent)`; el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'linear' }); });
+      });
+    });
+  }
+  mkL(roster, seed) {
+    const r = this.M.rng(seed);
+    const ps = roster.map(([id, name, mono, eq], i) => {
+      const hist = []; for (let k = 0; k < 16; k++) hist.push(START + (eq - START) * (k / 15) + (r() - 0.5) * 1800 * Math.sin((k / 15) * Math.PI)); hist[15] = eq;
+      return { id, name, mono, eq, open: Math.round(eq * (1 - (r() - 0.45) * 0.03) * 100) / 100, hist, hue: (i * 47) % 360, me: id === 'me', rk: {}, dl: { all: 0, today: 0 }, at: { all: 0, today: 0 } };
+    });
+    const L = { ps, r }; this.rank(L, 0); return L;
+  }
+  val(p, m) { return m === 'all' ? p.eq : p.eq / p.open; }
+  rank(L, now) { ['all', 'today'].forEach((m) => { [...L.ps].sort((a, b) => this.val(b, m) - this.val(a, m)).forEach((p, i) => { const n = i + 1, o = p.rk[m]; p.rk[m] = n; if (o && o !== n) { p.dl[m] = o - n; p.at[m] = now; } }); }); }
+  onLeague() {
+    if (this.state.sc !== 'live') return;
+    const now = Date.now();
+    ['fall', 'rust'].forEach((k) => {
+      const L = this.lgs[k];
+      for (let j = 0; j < 3; j++) { const p = L.ps[Math.floor(L.r() * L.ps.length)]; if (p.me) continue; p.eq = Math.round(p.eq * (1 + (L.r() - 0.5) * 0.022) * 100) / 100; p.hist = [...p.hist.slice(1), p.eq]; }
+      const me = L.ps.find((p) => p.me); me.eq = k === 'fall' ? Math.round(this.equity() * 100) / 100 : Math.round(me.eq * (1 + (L.r() - 0.47) * 0.012) * 100) / 100; me.hist = [...me.hist.slice(1), me.eq];
+      this.rank(L, now);
+    });
+    this.lastRank = now;
+    this.forceUpdate(); setTimeout(() => this.forceUpdate(), 640); setTimeout(() => this.forceUpdate(), 1650);
+  }
+  chars(s, anim) { const n = s.length; return s.split('').map((ch, i) => { const d = /\d/.test(ch); return { ch, digit: d, sep: !d, y: `translateY(-${d ? +ch * 10 : 0}%)`, tr: anim ? `transform 560ms ${EXPO} ${(n - 1 - i) * 30}ms` : 'none' }; }); }
+  seg(opts, cur, set) { return opts.map(([v, l]) => ({ label: l, pressed: cur === v ? 'true' : 'false', bg: cur === v ? 'var(--bp-panel-2)' : 'transparent', fg: cur === v ? 'var(--foreground)' : MUTED, onClick: () => set(v) })); }
+  chips(opts, cur, set) { return opts.map(([v, l, dis]) => ({ label: l, pressed: cur === v ? 'true' : 'false', bg: cur === v ? 'var(--foreground)' : 'var(--bp-panel-2)', fg: cur === v ? 'var(--background)' : 'var(--foreground)', onClick: () => set(v), dis: !!dis, op: dis ? 0.45 : 1 })); }
+  hms(t) { return new Date(t).toLocaleTimeString('en-GB', { hour12: false }); }
+
+  chart(tf, eq, W, H, key, empty) {
+    const M = this.M, n = this.nz[tf].length, from = tf === 'all' ? START : tf === '1w' ? W1 : D1;
+    const s = empty ? this.nz[tf].map(() => START) : this.nz[tf].map((z, i) => from + (eq - from) * (i / (n - 1)) + z);
+    if (!empty) s[n - 1] = eq;
+    const ref = empty ? START : from, pt = 26, pb = 26, pr = 8;
+    let lo = Math.min(...s, ref), hi = Math.max(...s, ref); const rg = hi - lo || 2000; lo -= rg * 0.12; hi += rg * 0.12;
+    const X = (i) => (W - pr) * i / (n - 1), Y = (v) => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo));
+    const line = s.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
+    const up = eq >= ref, tone = empty ? MUTED : up ? GAIN : LOSS, ly = Y(empty ? START : eq), ry = Y(ref);
+    const h = this.state.hov && this.state.hov.k === key && !empty ? this.state.hov.i : null;
+    const xl = { all: ['Sep 1', 'Sep 13', 'Now'], '1w': ['Sep 18', 'Sep 22', 'Now'], '1d': ['00:00 ET', '12:00', 'Now'] }[tf];
+    const at = (i) => { if (i === n - 1) return 'Now · live'; if (tf === 'all') return `Sep ${i + 1} · 16:00 ET`; const hrs = tf === '1w' ? 16 + i * 4 : i * 0.5, d = (tf === '1w' ? 18 : 25) + Math.floor(hrs / 24), hh = Math.floor(hrs % 24), mm = Math.round((hrs % 1) * 60); return `Sep ${d} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} ET`; };
+    return {
+      line, area: empty ? '' : `${line}L${X(n - 1).toFixed(1)} ${H - pb}L0 ${H - pb}Z`, fill: empty ? 'transparent' : `color-mix(in oklch, ${tone} 10%, transparent)`, tone, dash: empty ? '3 4' : 'none',
+      refD: `M0 ${ry.toFixed(1)}H${W - pr}`, refLY: (ry + 16 > H - pb - 4 ? ry - 8 : ry + 16).toFixed(1),
+      refLabel: empty ? 'No trades yet · flat at $100,000.00' : tf === 'all' ? 'Start · $100,000.00' : tf === '1w' ? `Sep 18 close · $${M.fmt(W1)}` : `Today’s open · $${M.fmt(D1)}`,
+      dotX: X(n - 1).toFixed(1), dotY: ly.toFixed(1), dotOp: empty ? 0 : 1,
+      tagX: (X(n - 1) - 10).toFixed(1), tagY: (ly < pt + 16 ? ly + 20 : ly - 12).toFixed(1), tag: empty ? '' : M.fmt(eq),
+      x0: xl[0], x1: xl[1], x2: xl[2],
+      hOp: h == null ? 0 : 1, hD: h == null ? 'M0 0' : `M${X(h).toFixed(1)} ${pt - 8}V${H - pb}`, hx: h == null ? 0 : X(h).toFixed(1), hy: h == null ? 0 : Y(s[h]).toFixed(1),
+      hLeft: h == null ? '50%' : Math.max(12, Math.min(88, X(h) / W * 100)).toFixed(1) + '%', hText: h == null ? '' : at(h), hVal: h == null ? '' : '$' + M.fmt(s[h]),
+      aria: empty ? 'Equity chart: no trades yet, flat at $100,000.00' : `Equity from ${xl[0]} to now: $${M.fmt(s[0])} to $${M.fmt(eq)}`,
+      onMove: (e) => { if (empty) return; const b = e.currentTarget.getBoundingClientRect(); const i = Math.max(0, Math.min(n - 1, Math.round(((e.clientX - b.left) / b.width) * (W / (W - pr)) * (n - 1)))); const hv = this.state.hov; if (!hv || hv.i !== i || hv.k !== key) this.setState({ hov: { k: key, i } }); },
+      onLeave: () => { if (this.state.hov) this.setState({ hov: null }); },
+      note: empty ? 'Your curve starts at your first fill' : tf === 'all' ? 'Daily marks at 16:00 ET · the last point is live' : tf === '1w' ? '4-hour marks · the last point is live' : '30-minute marks · the last point is live',
+    };
+  }
+
+  renderVals() {
+    const s = this.state, M = this.M, red = s.reduced, now = Date.now();
+    const skel5 = [1, 2, 3, 4, 5], skel8 = [1, 2, 3, 4, 5, 6, 7, 8];
+    const nav = (cur, items) => items.map(([label, href], i) => ({ label, href, cur: i === cur ? 'page' : 'false', fg: i === cur ? 'var(--foreground)' : MUTED, rule: i === cur ? 1 : 0 }));
+    const NAV = [['Trade', 'Bullpen Terminal.dc.html'], ['Portfolio', '#6a'], ['Leaderboard', '#6c'], ['Leagues', 'Bullpen Join and Lobby.dc.html#5c']];
+    const TABS = [['Trade', 'Bullpen Mobile Trading.dc.html'], ['Portfolio', '#6b'], ['Ranks', '#6d'], ['Leagues', 'Bullpen Join and Lobby.dc.html#5d']];
+    const base = {
+      rootRef: this.rootRef, themeCls: s.theme === 'dark' ? 'dark' : '', skel5, skel8,
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      themeOpts: this.seg([['dark', 'Dark'], ['light', 'Light']], s.theme, (v) => this.setState({ theme: v })),
+      motionOpts: this.seg([[false, 'Full motion'], [true, 'Reduced']], s.reduced, (v) => this.setState({ reduced: v })),
+      mkOpts: this.seg([['open', 'Stocks open'], ['closed', 'Stocks closed']], s.stocks, (v) => this.setState({ stocks: v })),
+      scOpts: SC.map(([v, l]) => ({ label: l, pressed: s.sc === v ? 'true' : 'false', bg: s.sc === v ? 'var(--foreground)' : 'var(--background)', fg: s.sc === v ? 'var(--background)' : 'var(--foreground)', onClick: () => this.setState({ sc: v }) })),
+      scNote: NOTE[s.sc],
+      navP: nav(1, NAV), navL: nav(2, NAV), tabsP: nav(1, TABS), tabsL: nav(2, TABS),
+      tfs: this.seg([['1d', '1D'], ['1w', '1W'], ['all', 'Since start']], s.tf, (v) => this.setState({ tf: v, hov: null })),
+    };
+    if (!M || !this.lgs) return { ...base, p: { loading: true }, th: { loading: true }, l: { loading: true, me: {} }, ci: {}, al: {}, cd: {}, cm: {} };
+
+    const et = this.et(), closed = s.stocks === 'closed', loading = s.sc === 'loading', empty = s.sc === 'empty', err = s.sc === 'error';
+    const age = Math.max(0, (now - this.mk.at) / 1000).toFixed(1) + ' s ago';
+    const ci = { open: !closed, closed, opens: et.opens, stAge: (0.2 + ((now / 1000) % 0.7)).toFixed(1) + ' s ago', crAge: (0.1 + ((now / 1300) % 0.6)).toFixed(1) + ' s ago' };
+    const eq = empty ? START : this.equity(), pl = eq - START, td = eq - D1;
+    const fall = this.lgs.fall, meF = fall.ps.find((p) => p.me);
+    const p = {
+      ready: !loading, loading, eqText: '$' + M.fmt(eq), odo: this.chars('$' + M.fmt(eq), !red),
+      plText: empty ? '0.00 · no trades yet' : `${pl >= 0 ? '▲' : '▼'} ${M.signed(pl, 2, '$')} · ${M.signed(pl / START * 100, 2, '', '%')}`,
+      plTone: empty ? MUTED : pl >= 0 ? GAIN : LOSS,
+      todayText: empty ? '—' : `${td >= 0 ? '▲' : '▼'} ${M.signed(td, 2, '$')} · ${M.signed(td / D1 * 100, 2, '', '%')}`, todayTone: empty ? MUTED : td >= 0 ? GAIN : LOSS,
+      stamp: empty ? 'Nothing to mark yet · cash is exact' : closed ? `Marked ${age} · stocks at ${et.closeDay} 16:00 ET close · crypto live from Coinbase` : `Marked ${age} · stocks live from IEX via Alpaca · crypto from Coinbase`,
+      markShort: empty ? '' : `Marked ${age}`,
+      rank: err || empty ? '—' : '#' + meF.rk.all, rankOf: ' of 214',
+      rankSub: err ? '✕ Rankings didn’t load' : empty ? 'Ranked from your first fill' : `Ranks as of ${this.hms(this.lastRank)} · lag ≤ 2 s`,
+      rankSubM: err ? '✕ Didn’t load' : empty ? 'After your first fill' : `as of ${this.hms(this.lastRank)}`,
+      rankSubTone: err ? 'var(--destructive)' : MUTED,
+      cash: '$' + M.fmt(empty ? START : CASH), cashSub: empty ? 'Nothing reserved' : '$4,100.00 held for 1 working order', cashSubM: empty ? 'Nothing reserved' : '$4,100.00 held',
+    };
+
+    const rows = empty ? [] : POS.map(([sym, qty, avg]) => {
+      const q = this.market.q[sym], px = this.mk.px[sym], v = qty * px, pv = (px - avg) * qty, cr = q.kind === 'crypto';
+      const stamp = !cr && closed ? '☾ Close · 16:00 ET' : 'marked ' + age;
+      return { sym, mono: M.mono(sym), name: q.name, badgeBg: M.badgeBg(q.hue), badgeRadius: cr ? '9999px' : '8px', qty: cr ? `${M.fmt(qty)} ${M.mono(sym)}` : `${qty} sh`, avg: M.fmt(avg),
+        v, value: '$' + M.fmt(v), weight: (v / eq * 100).toFixed(1) + '%', pl: `${pv >= 0 ? '▲' : '▼'} ${M.signed(pv, 2, '$')}`, plTone: pv >= 0 ? GAIN : LOSS, stamp, stampM: !cr && closed ? '☾ close' : 'marked ' + age };
+    }).sort((a, b) => b.v - a.v);
+    const cashV = empty ? START : CASH, HATCH = 'repeating-linear-gradient(135deg, color-mix(in oklch, var(--foreground) 22%, transparent) 0 3px, transparent 3px 7px)';
+    const al = {
+      rows, count: empty ? 'All cash' : `${rows.length} positions + cash`,
+      segs: [...rows.map((r) => ({ grow: r.v.toFixed(0), bg: r.badgeBg })), { grow: cashV.toFixed(0), bg: HATCH }],
+      aria: 'Allocation: ' + [...rows.map((r) => `${r.mono} ${r.weight}`), `cash ${(cashV / eq * 100).toFixed(1)}%`].join(', '),
+      cash: '$' + M.fmt(cashV), cashW: (cashV / eq * 100).toFixed(1) + '%', reserved: empty ? 'Nothing reserved' : '$4,100.00 held for the SOL limit order', reservedM: empty ? 'nothing held' : '$4,100.00 held',
+    };
+    const trows = TRADES.map(([d, t, side, sym, qty, px, st, note, filled]) => {
+      const q = this.market.q[sym], cr = q.kind === 'crypto', fq = st === 'cancelled' ? filled : qty, qs = cr ? M.fmt(qty) : String(qty), sd = side === 'buy' ? 'Buy' : 'Sell';
+      return { time: `${d} · ${t}`, side: sd, mono: M.mono(sym), name: q.name, badgeBg: M.badgeBg(q.hue), badgeRadius: cr ? '9999px' : '8px', qty: qs, px: px ? M.fmt(px) : '—', note,
+        value: px ? '$' + M.fmt(px * fq) : '—', st: ST[st](qty, filled), line1: `${sd} ${qs} ${M.mono(sym)}`, line2: px ? `${d} · ${t} · at ${M.fmt(px)}` : `${d} · ${t} · ${note}` };
+    });
+    const th = { has: !loading && !empty, empty: !loading && empty, loading, rows: trows, count: empty || loading ? '' : `${TRADES.length} orders since Sep 1` };
+
+    const cd = this.chart(s.tf, eq, 860, 280, 'd', empty), cm = this.chart(s.tf, eq, 314, 180, 'm', empty);
+
+    // leaderboard
+    const cfg = LG[s.lg], L = this.lgs[s.lg], m = cfg.live ? s.per : 'all';
+    const lok = !loading && !err && !empty;
+    const retOf = (x) => m === 'all' ? (x.eq - START) / START * 100 : (x.eq - x.open) / x.open * 100;
+    const row = (x, H) => {
+      const ret = retOf(x), up = ret >= 0, rk = x.rk[m], fresh = cfg.live && now - x.at[m] < 1600 && x.dl[m] !== 0, ct = x.dl[m] > 0 ? GAIN : LOSS;
+      return { rank: String(rk), y: `translateY(${(rk - 1) * H}px)`, tr: red ? 'background 1200ms' : 'transform 560ms var(--bp-spring), background 400ms',
+        bg: x.me ? 'color-mix(in oklch, var(--ember) 12%, var(--bp-panel))' : red && fresh ? `color-mix(in oklch, ${ct} 14%, transparent)` : 'transparent',
+        ring: x.me ? 'inset 0 0 0 1px color-mix(in oklch, var(--ember) 40%, transparent)' : 'none',
+        name: x.name, mono: x.mono, av: x.me ? 'var(--ember)' : `color-mix(in oklch, var(--surface-elevated) 78%, oklch(66% 0.1 ${x.hue}))`, avFg: x.me ? 'oklch(14% 0.048 238)' : 'var(--foreground)',
+        chipText: x.dl[m] ? (x.dl[m] > 0 ? '▲ +' : '▼ −') + Math.abs(x.dl[m]) : '', chipTone: ct, chipBg: `color-mix(in oklch, ${ct} 16%, transparent)`, chipOp: fresh ? 1 : 0, chipTr: fresh ? 'opacity 160ms' : 'opacity 400ms',
+        spark: M.sparkD(m === 'all' ? x.hist : x.hist.slice(-8), 120, 24), eq: '$' + M.fmt(x.eq), sub: '$' + M.fmt(x.eq), ret: M.signed(ret, 2, '', '%'), arrow: up ? '▲' : '▼', tone: up ? GAIN : LOSS, note: '' };
+    };
+    const mp = L.ps.find((x) => x.me), me = row(mp, 56);
+    me.rank = '#' + mp.rk[m];
+    if (err) { me.rank = '—'; me.note = 'rank unavailable'; me.sub = `${me.eq} · rank unavailable`; me.chipOp = 0; }
+    if (empty) { Object.assign(me, { rank: '—', eq: '$100,000.00', sub: '$100,000.00 · unranked', ret: '0.00%', arrow: '', tone: MUTED, chipOp: 0, note: 'unranked', spark: 'M0 12H120' }); }
+    const above = L.ps.find((x) => x.rk[m] === mp.rk[m] - 1), below = L.ps.find((x) => x.rk[m] === mp.rk[m] + 1);
+    const gap = (o, dir) => { if (!o) return dir > 0 ? 'Leading the league.' : 'Last among the players shown.'; const d = m === 'all' ? '$' + M.fmt(Math.abs(o.eq - mp.eq)) : Math.abs(retOf(o) - retOf(mp)).toFixed(2) + ' pts'; return dir > 0 ? `${d} behind #${o.rk[m]} ${o.name}` : `${d} ahead of #${o.rk[m]} ${o.name}`; };
+    const stamp = !cfg.live ? '✓ Final · Aug 31, 16:00 ET · ranked by equity at the close' : err ? `✕ Rankings didn’t load · last good ${this.hms(this.lastRank - 38000).slice(0, 5)}` : loading ? 'Loading ranks…' : empty ? 'No fills yet · ranks start at the first fill' : `Ranks as of ${this.hms(this.lastRank)} · they follow fills by up to 2 s`;
+    const l = {
+      ok: lok, notOk: !lok, loading, err, empty, title: cfg.name, sub: `${cfg.players} players · ${cfg.dates}`, players: cfg.players,
+      stamp, stampM: stamp, stampTone: err ? 'var(--destructive)' : MUTED, lastGood: this.hms(this.lastRank - 38000).slice(0, 5),
+      retLabel: m === 'all' ? 'All time' : 'Today', retry: () => this.setState({ sc: 'loading' }, () => setTimeout(() => this.setState({ sc: 'live' }), 1200)),
+      lgs: this.chips([['fall', 'Fall Open'], ['rust', 'Vancouver Rust meetup'], ['summer', 'Summer Sprint · ended']], s.lg, (v) => this.setState({ lg: v })),
+      pers: this.chips([['today', 'Today', !cfg.live], ['all', 'All time']], m, (v) => this.setState({ per: v })),
+      persM: this.seg([['today', 'Today'], ['all', 'All time']], m, (v) => cfg.live && this.setState({ per: v })).map((c, i) => ({ ...c, dis: i === 0 && !cfg.live, op: i === 0 && !cfg.live ? 0.45 : 1 })),
+      perNote: cfg.live ? '' : 'Ended leagues rank all time only',
+      rowsD: L.ps.map((x) => row(x, 56)), rowsM: L.ps.map((x) => row(x, 60)),
+      boxH: Math.min(L.ps.length, 10) * 56 + 'px', listH: L.ps.length * 56 + 'px', listHM: L.ps.length * 60 + 'px',
+      me, rankChars: this.chars(String(mp.rk[m]), !red), gapUp: gap(above, 1), gapDown: gap(below, -1),
+      stLabel: cfg.live ? 'Your standing' : 'Your final standing',
+      stNote: err ? 'Rankings didn’t load. Your equity above comes from the ledger and is current.' : empty ? 'You’re ranked from your first fill.' : 'Loading your rank…',
+      count: `Top ${L.ps.length} of ${cfg.players} shown · your row stays pinned below`, countM: `Top ${L.ps.length} of ${cfg.players} · you’re pinned at the bottom`,
+    };
+    return { ...base, ci, p, al, th, cd, cm, l };
+  }
+}
+</script>
+</body>
+</html>

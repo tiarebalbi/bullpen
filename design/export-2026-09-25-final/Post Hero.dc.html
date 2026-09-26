@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{color:var(--ember)}
+.bp{--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238)}
+.bp.dark{--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+</style>
+</helmet>
+<div class="bp dark" style="position:relative;width:1600px;height:900px;overflow:hidden;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body)">
+  <div style="position:absolute;inset:0;opacity:{{ artOpacity }}">
+    <div aria-hidden="true" style="position:absolute;right:-60px;top:130px;width:720px;height:640px;border-radius:9999px;background:radial-gradient(closest-side,color-mix(in oklch,var(--ember) 9%,transparent),transparent);filter:blur(24px)"></div>
+    <div style="position:absolute;left:1052px;top:150px;display:flex;align-items:baseline;gap:14px;font:500 13px/1 var(--font-mono);letter-spacing:0.14em;color:var(--foreground-muted)"><span>PART {{ partPad }} / 06</span><span style="width:40px;height:1px;background:var(--bp-hair);align-self:center"></span><span>{{ kicker }}</span></div>
+    <div style="position:absolute;left:1052px;top:180px;width:500px;height:560px;overflow:hidden;-webkit-mask-image:radial-gradient(farthest-side at 55% 50%,#000 58%,transparent 100%);mask-image:radial-gradient(farthest-side at 55% 50%,#000 58%,transparent 100%)">{{ diag }}</div>
+    <div style="position:absolute;left:1052px;top:752px;display:flex;align-items:center;gap:10px;font:500 13px/1 var(--font-mono);letter-spacing:0.08em;text-transform:uppercase;color:var(--bp-accent-text)"><span style="width:10px;height:10px;box-sizing:border-box;border:1.5px solid var(--ember);border-radius:2px"></span>{{ note }}</div>
+  </div>
+  <sc-if value="{{ overlay }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:120px;top:0;bottom:0;width:900px;display:flex;flex-direction:column;justify-content:center">
+      <div style="font:600 14px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Architecting software in 2026 · Part {{ part }}</div>
+      <div style="margin-top:28px;font:500 96px/0.95 var(--font-display);letter-spacing:-0.045em;text-wrap:balance">{{ title }}</div>
+      <div style="margin-top:32px;font:500 16px/1 var(--font-mono);color:var(--foreground-muted)">{{ date }}</div>
+    </div>
+    <div style="position:absolute;right:24px;bottom:20px;padding:6px 10px;border-radius:9999px;border:1px dashed var(--foreground-muted);font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">Preview · the blog’s title overlay, not part of the image</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1600,&quot;height&quot;:900},&quot;part&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:1,&quot;max&quot;:6,&quot;default&quot;:3,&quot;tsType&quot;:&quot;number&quot;},&quot;overlay&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+const KICK = { 1: 'MODULAR MONOLITH', 2: 'MARKET DATA', 3: 'DATA OWNERSHIP', 4: 'ORDER PATH', 5: 'PRICE FAN-OUT', 6: 'TENANCY' };
+class Component extends DCLogic {
+  uid = 'ph' + Math.random().toString(36).slice(2, 7);
+  componentDidMount() {
+    const base = document.baseURI;
+    Promise.all([import(new URL('bullpen.js', base).href), import(new URL('blog.js', base).href)]).then(([M, B]) => { this.M = M; this.B = B; this.forceUpdate(); });
+  }
+  renderVals() {
+    const part = +(this.props.part ?? Q.get('part') ?? 3), overlay = this.props.overlay === true || Q.get('overlay') === '1';
+    const M = this.M, B = this.B;
+    return {
+      part, partPad: String(part).padStart(2, '0'), kicker: KICK[part], overlay, artOpacity: overlay ? 0.45 : 1,
+      note: B ? B.HL[part].note : '', title: M ? M.MOMENTS[part - 1].title : '', date: B ? B.DATES[part] : '',
+      diag: M && B ? React.cloneElement(M.renderDiagram(React.createElement, { moment: part, prev: part, reduced: true, flow: false, uid: this.uid, highlight: B.HL[part], data: !!B.HL[part].data, quanta: true, viewBox: B.cropBox(part, 500, 560), ariaLabel: `Part ${part} architecture, ${B.HL[part].note} highlighted` }), { height: '100%', preserveAspectRatio: 'xMidYMid meet' }) : null,
+    };
+  }
+}
+</script>
+</body>
+</html>

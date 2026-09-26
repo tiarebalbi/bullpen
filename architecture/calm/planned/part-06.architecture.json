@@ -1,0 +1,299 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "bullpen-part-06",
+  "name": "Bullpen — Part 6 (planned)",
+  "description": "Prediction, not yet built, and the retrospective part of the series: a Leaderboard Service ranks players within leagues, Part 1's placeholder Market Data Provider is finally resolved to Alpaca and Massive for US stocks data, and Stripe appears as an external system whose exact role Part 6 will define (any real-money use would need its own ADR superseding ADR-0001's non-commercial decision). Part 6 of the actual series will compare this prediction against what really shipped.",
+  "metadata": {
+    "status": "planned",
+    "part": 6
+  },
+  "nodes": [
+    {
+      "unique-id": "reader",
+      "node-type": "actor",
+      "name": "Reader",
+      "description": "A blog reader exploring Bullpen's architecture timeline on the landing site."
+    },
+    {
+      "unique-id": "player",
+      "node-type": "actor",
+      "name": "Player",
+      "description": "A registered player competing in a league and checking the leaderboard."
+    },
+    {
+      "unique-id": "landing-app",
+      "node-type": "webclient",
+      "name": "Bullpen Landing",
+      "description": "The public landing site with the architecture timeline explorer, now covering all six parts.",
+      "metadata": {
+        "capabilities": ["architecture-timeline-explorer"]
+      }
+    },
+    {
+      "unique-id": "trading-app",
+      "node-type": "webclient",
+      "name": "Bullpen Trading App",
+      "description": "The trading app where players trade, view leagues, and check the leaderboard."
+    },
+    {
+      "unique-id": "prices-service",
+      "node-type": "service",
+      "name": "Prices Service",
+      "description": "Owns live price snapshots, now sourced from Alpaca and Massive instead of Part 1's placeholder provider."
+    },
+    {
+      "unique-id": "prices-db",
+      "node-type": "database",
+      "name": "Prices Database",
+      "description": "Neon Postgres database owned solely by the Prices Service."
+    },
+    {
+      "unique-id": "market-history-service",
+      "node-type": "service",
+      "name": "Market History Service",
+      "description": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database."
+    },
+    {
+      "unique-id": "market-history-db",
+      "node-type": "database",
+      "name": "Market History Database",
+      "description": "Neon Postgres database owned solely by the Market History Service."
+    },
+    {
+      "unique-id": "orders-service",
+      "node-type": "service",
+      "name": "Orders Service",
+      "description": "Accepts paper trade order requests and publishes them onto the market-open queue."
+    },
+    {
+      "unique-id": "market-open-queue",
+      "node-type": "queue",
+      "name": "Market Open Queue",
+      "description": "Buffers the burst of order requests at market open so the Order Saga consumes them at a sustainable rate."
+    },
+    {
+      "unique-id": "order-saga-workflow",
+      "node-type": "workflow-engine",
+      "name": "Order Saga",
+      "description": "Durable workflow orchestrating each queued order: price lookup, balance check, fill, and ledger update."
+    },
+    {
+      "unique-id": "ledger-service",
+      "node-type": "service",
+      "name": "Ledger Service",
+      "description": "Owns player balances and positions; the source of truth the Leaderboard Service ranks against."
+    },
+    {
+      "unique-id": "leaderboard-service",
+      "node-type": "service",
+      "name": "Leaderboard Service",
+      "description": "Ranks players within leagues from ledger balances and positions; leagues are groups of players competing over the same period."
+    },
+    {
+      "unique-id": "alpaca-provider",
+      "node-type": "external-system",
+      "name": "Alpaca",
+      "description": "US stocks broker/market-data provider; resolves Part 1's open 'Market Data Provider' placeholder for equities."
+    },
+    {
+      "unique-id": "massive-provider",
+      "node-type": "external-system",
+      "name": "Massive",
+      "description": "US market-data provider (formerly Polygon.io) offering real-time and historical equities data via REST and WebSocket; used alongside Alpaca."
+    },
+    {
+      "unique-id": "stripe-provider",
+      "node-type": "external-system",
+      "name": "Stripe",
+      "description": "Payments provider whose role in Bullpen is undecided as of this prediction. Bullpen is a non-commercial prototype with no billing (ADR-0001); any real-money integration here would require a new ADR superseding that decision, not an assumption baked into this diagram."
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "reader-to-landing",
+      "description": "Reader browses the public landing site.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "reader",
+          "nodes": ["landing-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "player-to-trading-app",
+      "description": "Player opens the trading app.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "player",
+          "nodes": ["trading-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "trading-app-to-prices",
+      "description": "Trading app requests a live price snapshot for a symbol.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "prices-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "trading-app-to-history",
+      "description": "Trading app requests historical price/candle data for a symbol.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "market-history-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "trading-app-to-orders",
+      "description": "Trading app submits a paper trade order request.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "orders-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "trading-app-to-leaderboard",
+      "description": "Trading app requests the current league leaderboard.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "leaderboard-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "orders-to-queue",
+      "description": "Orders Service publishes each accepted order onto the market-open queue.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "orders-service" },
+          "destination": { "node": "market-open-queue" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "asynchronous" }
+    },
+    {
+      "unique-id": "queue-to-saga",
+      "description": "Order saga consumes queued orders at a sustainable rate.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "market-open-queue" },
+          "destination": { "node": "order-saga-workflow" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "asynchronous" }
+    },
+    {
+      "unique-id": "saga-to-prices",
+      "description": "Order saga consults the Prices Service for the fill price.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-saga-workflow" },
+          "destination": { "node": "prices-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "saga-to-ledger",
+      "description": "Order saga updates the player's balance and positions once a trade fills.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "order-saga-workflow" },
+          "destination": { "node": "ledger-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "leaderboard-to-ledger",
+      "description": "Leaderboard Service reads player balances and positions to compute rankings.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "leaderboard-service" },
+          "destination": { "node": "ledger-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "prices-to-prices-db",
+      "description": "Prices Service persists and reads live price snapshots.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "prices-service" },
+          "destination": { "node": "prices-db" }
+        }
+      },
+      "protocol": "JDBC"
+    },
+    {
+      "unique-id": "history-to-history-db",
+      "description": "Market History Service persists and reads historical price/candle data.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "market-history-service" },
+          "destination": { "node": "market-history-db" }
+        }
+      },
+      "protocol": "JDBC"
+    },
+    {
+      "unique-id": "prices-to-alpaca",
+      "description": "Prices Service calls Alpaca for live US stocks data.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "prices-service" },
+          "destination": { "node": "alpaca-provider" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "prices-to-massive",
+      "description": "Prices Service calls Massive as an additional US market-data source.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "prices-service" },
+          "destination": { "node": "massive-provider" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous" }
+    },
+    {
+      "unique-id": "ledger-to-stripe",
+      "description": "Placeholder relationship for Stripe's undecided role; not wired to any real payment flow as of this prediction.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "ledger-service" },
+          "destination": { "node": "stripe-provider" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": { "interaction": "synchronous", "status": "hypothetical" }
+    }
+  ]
+}

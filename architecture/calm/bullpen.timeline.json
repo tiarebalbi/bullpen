@@ -1,0 +1,76 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm-timeline.json",
+  "current-moment": "part-01",
+  "moments": [
+    {
+      "unique-id": "part-01",
+      "node-type": "moment",
+      "name": "Part 1 — Stack, split-refusal, and one price call",
+      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider. The current, built state of Bullpen.",
+      "valid-from": "2026-09-25",
+      "details": {
+        "detailed-architecture": "moments/part-01.architecture.json",
+        "required-pattern": "bullpen.pattern.json"
+      },
+      "adrs": [
+        "architecture/adr/0001-stack.md",
+        "architecture/adr/0002-why-distribute-at-all.md",
+        "architecture/adr/0003-monorepo.md"
+      ]
+    },
+    {
+      "unique-id": "part-02",
+      "node-type": "moment",
+      "name": "Part 2 (planned) — Architecture becomes visible",
+      "description": "Prediction: the landing app gains an in-browser architecture explorer over this same timeline, with no new runtime nodes.",
+      "details": {
+        "detailed-architecture": "planned/part-02.architecture.json",
+        "required-pattern": "bullpen.pattern.json"
+      }
+    },
+    {
+      "unique-id": "part-03",
+      "node-type": "moment",
+      "name": "Part 3 (planned) — Data ownership and the first split",
+      "description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database.",
+      "details": {
+        "detailed-architecture": "planned/part-03.architecture.json",
+        "required-pattern": "bullpen.pattern.json"
+      }
+    },
+    {
+      "unique-id": "part-04",
+      "node-type": "moment",
+      "name": "Part 4 (planned) — The order saga",
+      "description": "Prediction: an Orders Service, a workflow engine, and a Ledger Service turn placing a trade into a multi-step saga.",
+      "details": {
+        "detailed-architecture": "planned/part-04.architecture.json",
+        "required-pattern": "bullpen.pattern.json"
+      }
+    },
+    {
+      "unique-id": "part-05",
+      "node-type": "moment",
+      "name": "Part 5 (planned) — Market open and the bill",
+      "description": "Prediction: a queue absorbs the market-open order burst, and cost/usage metadata makes the bill visible on the architecture itself.",
+      "details": {
+        "detailed-architecture": "planned/part-05.architecture.json",
+        "required-pattern": "bullpen.pattern.json"
+      }
+    },
+    {
+      "unique-id": "part-06",
+      "node-type": "moment",
+      "name": "Part 6 (planned) — Leaderboards, leagues, and retrospective",
+      "description": "Prediction: a Leaderboard Service and leagues, Part 1's market-data placeholder resolved to Alpaca, Massive and Stripe joining as external systems, and a retrospective comparing this prediction to what actually shipped.",
+      "details": {
+        "detailed-architecture": "planned/part-06.architecture.json",
+        "required-pattern": "bullpen.pattern.json"
+      }
+    }
+  ],
+  "metadata": {
+    "title": "Bullpen Architecture Timeline",
+    "description": "The system's shape over time across the 'Architecting Software in 2026' blog series — one moment per part."
+  }
+}

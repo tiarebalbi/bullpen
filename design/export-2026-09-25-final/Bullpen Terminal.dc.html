@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0;background:oklch(10.5% 0.038 238)}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+.bp[data-cb="on"]{--bp-gain:oklch(50% 0.16 255);--bp-loss:oklch(55% 0.16 48)}
+.bp.dark[data-cb="on"]{--bp-gain:oklch(72% 0.14 250);--bp-loss:oklch(76% 0.15 62)}
+@keyframes bp-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes bp-fade-out{from{opacity:1}to{opacity:0}}
+@keyframes bp-grow{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:none}}
+@keyframes bp-gone{0%,40%{opacity:1}100%{opacity:0}}
+@keyframes bp-gone-hold{0%,40%{opacity:1}100%{opacity:.4}}
+@keyframes bp-strike{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes bp-ring{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.14)}}
+@keyframes bp-flow{to{stroke-dashoffset:-24}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" class="bp {{ themeCls }}" data-cb="{{ cb }}" style="min-height:100vh;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);padding:{{ pad }}">
+
+<sc-if value="{{ board }}" hint-placeholder-val="{{ true }}">
+<div style="max-width:1440px;margin-bottom:24px;display:grid;gap:16px">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <span style="font:600 11px/1 var(--font-mono);padding:4px 8px;border-radius:5px;background:var(--foreground);color:var(--background)">3</span>
+    <span style="font:600 14px/1 var(--font-body)">Trading terminal · desktop 1440</span>
+    <a href="Bullpen Mobile Trading.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Mobile →</a>
+    <a href="Bullpen Join and Lobby.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Join and lobby →</a>
+    <a href="Bullpen Prototype.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Prototype →</a>
+    <div style="flex:1"></div>
+    <div role="group" aria-label="Theme" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+    <div role="group" aria-label="Gain and loss palette" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ cbOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+    <div role="group" aria-label="Motion" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ motionOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted);margin-right:6px">State</span>
+    <sc-for list="{{ scOpts }}" as="o" hint-placeholder-count="9"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:8px 13px;border-radius:9999px;font:600 12.5px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for>
+    <button onClick="{{ replay }}" style="border:0;cursor:pointer;padding:8px 13px;border-radius:9999px;font:600 12.5px/1 var(--font-body);background:transparent;color:var(--bp-accent-text)" style-hover="background:var(--background)">Replay ↺</button>
+  </div>
+  <div style="font:400 14px/1.6 var(--font-body);color:var(--foreground-muted);max-width:900px">{{ scNote }}</div>
+</div>
+</sc-if>
+
+<div ref="{{ frameRef }}" data-screen-label="Terminal desktop" style="position:relative;width:1440px;height:900px;display:flex;flex-direction:column;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+
+  <div style="flex:none;height:56px;display:flex;align-items:center;gap:20px;padding:0 20px;border-bottom:1px solid var(--bp-hair)">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><a href="Bullpen Join and Lobby.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:6px;white-space:nowrap;font:600 13px/1 var(--font-body);color:var(--foreground-muted)" style-hover="color:var(--foreground)">Fall Open<span style="font:500 11px/1 var(--font-mono)">· ends Oct 31</span></a></div>
+    <div style="width:1px;height:28px;background:var(--bp-hair)"></div>
+    <div style="display:flex;align-items:center;gap:18px">
+      <div><div style="font:600 9.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Equity</div><div style="margin-top:4px;display:flex;font:500 16px/1 var(--font-mono);font-variant-numeric:tabular-nums"><sc-for list="{{ eqChars }}" as="c" hint-placeholder-count="11"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;height:1.15em;line-height:1.15em">{{ c.ch }}</span></sc-if></sc-for></div></div>
+      <div><div style="font:600 9.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Today</div><div style="margin-top:5px;font:500 12.5px/1 var(--font-mono);color:{{ dayTone }};white-space:nowrap">{{ dayText }}</div></div>
+      <div><div style="font:600 9.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Rank</div><div style="margin-top:5px;font:500 12.5px/1 var(--font-mono);white-space:nowrap">{{ rankText }}</div></div>
+    </div>
+    <div style="flex:1"></div>
+    <div role="status" aria-label="Market data connection" style="display:flex;align-items:center;border-radius:9999px;background:var(--surface-sunken)">
+      <sc-for list="{{ conns }}" as="k" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:8px;padding:8px 13px;border-left:{{ k.divider }}">
+        <sc-if value="{{ k.live }}" hint-placeholder-val="{{ true }}"><span style="position:relative;width:8px;height:8px"><span data-pulse="1" style="position:absolute;inset:0;border-radius:9999px;background:var(--ember)"></span><span style="position:absolute;inset:0;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span></span></sc-if>
+        <sc-if value="{{ k.closed }}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--foreground-muted)" stroke-width="2.2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if>
+        <sc-if value="{{ k.recon }}" hint-placeholder-val="{{ false }}"><svg data-spin="1" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2.4" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.56"></path></svg></sc-if>
+        <sc-if value="{{ k.offline }}" hint-placeholder-val="{{ false }}"><span style="font:700 12px/1 var(--font-mono);color:var(--destructive)">✕</span></sc-if>
+        <span style="font:600 12.5px/1 var(--font-body);white-space:nowrap">{{ k.label }}</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted);white-space:nowrap">{{ k.meta }}</span>
+      </div></sc-for>
+    </div>
+    <button onClick="{{ toggleDrawer }}" aria-expanded="{{ drawerOpen }}" style="position:relative;border:0;cursor:pointer;height:36px;padding:0 14px;display:flex;align-items:center;gap:8px;border-radius:9999px;background:{{ drawerBtnBg }};color:var(--foreground);font:600 13px/1 var(--font-body);white-space:nowrap" style-hover="background:var(--bp-panel-2)" style-focus="outline:2px solid var(--ember);outline-offset:2px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><path d="M10 6.5h4a3 3 0 0 1 3 3V14"></path></svg>Under the hood<sc-if value="{{ traceBusy }}" hint-placeholder-val="{{ false }}"><span style="width:7px;height:7px;border-radius:9999px;background:var(--ember)"></span></sc-if></button>
+    <button onClick="{{ toggleHelp }}" aria-label="Keyboard shortcuts" style="border:0;cursor:pointer;width:36px;height:36px;border-radius:9999px;background:var(--surface-sunken);color:var(--foreground);font:600 14px/1 var(--font-mono)" style-hover="background:var(--bp-panel-2)" style-focus="outline:2px solid var(--ember);outline-offset:2px">?</button>
+    <span aria-label="tbalbi" style="width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">TB</span>
+  </div>
+
+  <sc-if value="{{ banner.show }}" hint-placeholder-val="{{ false }}">
+  <div role="alert" style="flex:none;display:flex;align-items:center;gap:12px;padding:10px 20px;background:{{ banner.bg }};font:500 13px/1.4 var(--font-body)">
+    <span style="font:700 13px/1 var(--font-mono);color:{{ banner.tone }}">{{ banner.glyph }}</span>
+    <span style="font-weight:700">{{ banner.title }}</span><span style="color:var(--foreground-muted)">{{ banner.text }}</span>
+    <div style="flex:1"></div>
+    <sc-if value="{{ banner.canRetry }}" hint-placeholder-val="{{ false }}"><button onClick="{{ retryNow }}" style="border:0;cursor:pointer;height:30px;padding:0 14px;border-radius:9999px;background:var(--foreground);color:var(--background);font:700 12.5px/1 var(--font-body)" style-focus="outline:2px solid var(--ember);outline-offset:2px">Retry now</button></sc-if>
+  </div>
+  </sc-if>
+
+  <div style="flex:1;min-height:0;display:flex;position:relative;overflow:hidden">
+
+    <div style="flex:none;width:{{ watchW }}px;display:flex;flex-direction:column;min-height:0">
+      <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px"><span style="font:500 17px/1 var(--font-display);letter-spacing:-0.02em">Watchlist</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">8 symbols</span></div>
+      <div style="flex:1;overflow:auto;padding:0 6px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px 6px;font:600 10px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)"><span>Stocks</span><span style="font:500 10.5px/1 var(--font-mono);letter-spacing:0;text-transform:none">{{ stocksMeta }}</span></div>
+        <sc-for list="{{ stockRows }}" as="r" hint-placeholder-count="5"><button onClick="{{ r.onClick }}" aria-pressed="{{ r.pressed }}" style="border:0;cursor:pointer;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) 46px 96px;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;background:{{ r.bg }};color:var(--foreground);text-align:left;transition:background 160ms" style-hover="background:var(--bp-panel-2)" style-focus="outline:2px solid var(--ember);outline-offset:-2px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:32px;padding:0 6px;box-sizing:border-box;border-radius:{{ r.badgeRadius }};background:{{ r.badgeBgS }};border:{{ r.badgeBd }};font:600 10.5px/1 var(--font-mono);color:{{ r.priceTone }}">{{ r.mono }}</span>
+          <span style="min-width:0"><span style="display:block;font:600 13px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="display:block;font:500 10.5px/1.4 var(--font-mono);color:{{ r.subTone }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+          <svg viewBox="0 0 64 22" preserveAspectRatio="none" style="width:46px;height:20px;display:block" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.sparkTone }}" stroke-width="1.25" stroke-dasharray="{{ r.sparkDash }}" vector-effect="non-scaling-stroke"></path></svg>
+          <span style="position:relative;display:block;padding:5px 8px;border-radius:8px;text-align:right"><span data-fa="{{ r.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><span style="position:relative;display:block;font:500 13.5px/1.3 var(--font-mono);font-variant-numeric:tabular-nums;color:{{ r.priceTone }}">{{ r.price }}</span><span style="position:relative;display:block;font:500 11px/1.3 var(--font-mono);color:{{ r.pctTone }}">{{ r.arrow }} {{ r.pct }}</span></span>
+        </button></sc-for>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:18px 12px 6px;font:600 10px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)"><span>Crypto</span><span style="font:500 10.5px/1 var(--font-mono);letter-spacing:0;text-transform:none">{{ cryptoMeta }}</span></div>
+        <sc-for list="{{ cryptoRows }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.onClick }}" aria-pressed="{{ r.pressed }}" style="border:0;cursor:pointer;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) 46px 96px;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;background:{{ r.bg }};color:var(--foreground);text-align:left;transition:background 160ms" style-hover="background:var(--bp-panel-2)" style-focus="outline:2px solid var(--ember);outline-offset:-2px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:32px;padding:0 6px;box-sizing:border-box;border-radius:{{ r.badgeRadius }};background:{{ r.badgeBgS }};border:{{ r.badgeBd }};font:600 10.5px/1 var(--font-mono);color:{{ r.priceTone }}">{{ r.mono }}</span>
+          <span style="min-width:0"><span style="display:block;font:600 13px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="display:block;font:500 10.5px/1.4 var(--font-mono);color:{{ r.subTone }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+          <svg viewBox="0 0 64 22" preserveAspectRatio="none" style="width:46px;height:20px;display:block" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.sparkTone }}" stroke-width="1.25" stroke-dasharray="{{ r.sparkDash }}" vector-effect="non-scaling-stroke"></path></svg>
+          <span style="position:relative;display:block;padding:5px 8px;border-radius:8px;text-align:right"><span data-fa="{{ r.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><span style="position:relative;display:block;font:500 13.5px/1.3 var(--font-mono);font-variant-numeric:tabular-nums;color:{{ r.priceTone }}">{{ r.price }}</span><span style="position:relative;display:block;font:500 11px/1.3 var(--font-mono);color:{{ r.pctTone }}">{{ r.arrow }} {{ r.pct }}</span></span>
+        </button></sc-for>
+      </div>
+    </div>
+
+    <div role="separator" aria-orientation="vertical" aria-label="Resize watchlist" aria-valuenow="{{ watchW }}" tabindex="0" onPointerDown="{{ spW.down }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerEnter="{{ spW.enter }}" onPointerLeave="{{ spW.leave }}" onKeyDown="{{ spW.key }}" style="position:relative;flex:none;width:1px;background:{{ spW.line }};cursor:col-resize;z-index:6;outline:none;transition:background 160ms" style-focus="background:var(--ember)"><span style="position:absolute;top:0;bottom:0;left:-12px;width:24px"></span></div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+      <div style="flex:none;height:{{ chartH }}px;display:flex;flex-direction:column;padding:18px 22px 12px;box-sizing:border-box;min-height:0">
+        <div style="flex:none;display:flex;align-items:flex-start;gap:14px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:48px;padding:0 10px;box-sizing:border-box;border-radius:{{ ch.badgeRadiusLg }};background:{{ ch.badgeBgS }};border:{{ ch.badgeBd }};font:600 13px/1 var(--font-mono);color:{{ ch.priceTone }}">{{ ch.mono }}</span>
+          <div style="min-width:0">
+            <div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 20px/1.1 var(--font-display);letter-spacing:-0.02em">{{ ch.name }}</span><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ ch.kindLabel }}</span></div>
+            <div style="margin-top:6px;display:flex;align-items:baseline;gap:12px">
+              <span style="position:relative;padding:2px 8px;margin-left:-8px;border-radius:8px"><span data-fa="{{ ch.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><span style="position:relative;font:500 30px/1.1 var(--font-mono);letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:{{ ch.priceTone }}">{{ ch.price }}</span></span>
+              <span style="font:500 13px/1 var(--font-mono);color:{{ ch.pctTone }}">{{ ch.arrow }} {{ ch.change }} · {{ ch.pct }} today</span>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="display:grid;justify-items:end;gap:10px">
+            <div role="group" aria-label="Timeframe" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ tfOpts }}" as="o" hint-placeholder-count="5"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;min-width:40px;height:28px;padding:0 10px;border-radius:9999px;font:600 12px/1 var(--font-mono);background:{{ o.bg }};color:{{ o.fg }};transition:background 160ms">{{ o.label }}</button></sc-for></div>
+            <div style="display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:9999px;background:{{ ch.freshBg }}">
+              <sc-if value="{{ ch.live }}" hint-placeholder-val="{{ true }}"><span style="width:7px;height:7px;border-radius:9999px;background:var(--ember)"></span></sc-if>
+              <sc-if value="{{ ch.stale }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></sc-if>
+              <sc-if value="{{ ch.closed }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if>
+              <span style="font:500 11.5px/1 var(--font-mono)">{{ ch.freshText }}</span>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;min-height:0;position:relative;margin-top:14px;margin-right:62px">
+          <svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible" aria-label="{{ ch.aria }}" role="img">
+            <sc-for list="{{ ch.grid }}" as="g" hint-placeholder-count="4"><line x1="0" x2="1000" y1="{{ g.y }}" y2="{{ g.y }}" style="stroke:var(--bp-hair)" vector-effect="non-scaling-stroke"></line></sc-for>
+            <line x1="0" x2="1000" y1="{{ ch.prevY }}" y2="{{ ch.prevY }}" style="stroke:var(--foreground-muted)" stroke-dasharray="3 5" vector-effect="non-scaling-stroke" opacity="0.6"></line>
+            <path d="{{ ch.area }}" style="fill:{{ ch.areaFill }}"></path>
+            <path d="{{ ch.line }}" style="fill:none;stroke:{{ ch.lineTone }}" stroke-width="1.75" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+            <path d="{{ ch.tail }}" style="fill:none;stroke:var(--bp-stale)" stroke-width="1.5" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"></path>
+          </svg>
+          <sc-for list="{{ ch.grid }}" as="g" hint-placeholder-count="4"><span style="position:absolute;right:-62px;top:{{ g.pct }}%;transform:translateY(-50%);font:500 10.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ g.label }}</span></sc-for>
+          <span style="position:absolute;left:{{ ch.dotX }}%;top:{{ ch.lastPct }}%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:9999px;background:{{ ch.lineTone }}"></span>
+          <span style="position:absolute;right:-62px;top:{{ ch.lastPct }}%;transform:translateY(-50%);padding:3px 6px;border-radius:5px;background:{{ ch.tagBg }};color:{{ ch.tagFg }};font:600 10.5px/1 var(--font-mono)">{{ ch.lastLabel }}</span>
+          <sc-if value="{{ ch.showPrev }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:0;top:{{ ch.prevPct }}%;transform:translateY(-130%);font:500 10.5px/1 var(--font-mono);color:var(--foreground-muted)">prev close {{ ch.prevLabel }}</span></sc-if>
+        </div>
+        <div style="flex:none;margin-right:62px;margin-top:8px;display:flex;justify-content:space-between;font:500 10.5px/1 var(--font-mono);color:var(--foreground-muted)"><sc-for list="{{ ch.xl }}" as="x" hint-placeholder-count="5"><span>{{ x.t }}</span></sc-for></div>
+      </div>
+
+      <div role="separator" aria-orientation="horizontal" aria-label="Resize chart" aria-valuenow="{{ chartH }}" tabindex="0" onPointerDown="{{ spC.down }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerEnter="{{ spC.enter }}" onPointerLeave="{{ spC.leave }}" onKeyDown="{{ spC.key }}" style="position:relative;flex:none;height:1px;background:{{ spC.line }};cursor:row-resize;z-index:6;outline:none;transition:background 160ms" style-focus="background:var(--ember)"><span style="position:absolute;left:0;right:0;top:-12px;height:24px"></span></div>
+
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 22px 10px">
+        <div style="flex:none;display:flex;align-items:baseline;gap:12px"><span style="font:500 17px/1 var(--font-display);letter-spacing:-0.02em">Positions</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ posCount }}</span><div style="flex:1"></div><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">Cash {{ cashText }} · P/L {{ posFresh }}</span></div>
+        <sc-if value="{{ posEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;align-items:center;gap:40px;padding:8px 4px">
+            <div style="max-width:420px"><div style="font:500 22px/1.2 var(--font-display);letter-spacing:-0.02em">No positions yet</div><div style="margin-top:8px;font:400 14px/1.6 var(--font-body);color:var(--foreground-muted)">Your first trade shows up here with live P/L. You have $100,000.00 to start, and ranking begins with your first fill.</div>
+            <div style="margin-top:18px;display:flex;align-items:center;gap:14px"><button onClick="{{ openTicket }}" style="border:0;cursor:pointer;padding:12px 20px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 13.5px/1 var(--font-body);transition:box-shadow 160ms" style-hover="box-shadow:var(--shadow-ember-glow)" style-focus="outline:2px solid var(--ember);outline-offset:3px">Open the order ticket</button><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--surface-sunken);font:600 11.5px/1 var(--font-mono)"><kbd style="font:inherit">B</kbd><span style="color:var(--foreground-muted);font-family:var(--font-body);font-weight:500">or press</span></span></div></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ posHas }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:12px;display:grid;grid-template-columns:minmax(0,1.5fr) 0.7fr 0.9fr 1fr 1.1fr 1.5fr;gap:12px;padding:0 10px 8px;border-bottom:1px solid var(--bp-hair);font:600 10px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)"><span>Symbol</span><span style="text-align:right">Qty</span><span style="text-align:right">Avg cost</span><span style="text-align:right">Last</span><span style="text-align:right">Value</span><span style="text-align:right">P/L</span></div>
+          <div style="flex:1;overflow:auto">
+          <sc-for list="{{ posRows }}" as="r" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:minmax(0,1.5fr) 0.7fr 0.9fr 1fr 1.1fr 1.5fr;gap:12px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bp-hair);animation:{{ r.enter }}">
+            <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;padding:0 6px;border-radius:{{ r.badgeRadiusSm }};background:{{ r.badgeBg }};font:600 9.5px/1 var(--font-mono)">{{ r.mono }}</span><span style="font:600 13px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span></span>
+            <span style="text-align:right;font:500 13px/1 var(--font-mono)">{{ r.qty }}</span>
+            <span style="text-align:right;font:500 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.avg }}</span>
+            <span style="position:relative;text-align:right;padding:4px 6px;border-radius:6px"><span data-fa="{{ r.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:6px;opacity:0;pointer-events:none"></span><span style="position:relative;display:block;font:500 13px/1.2 var(--font-mono);color:{{ r.lastTone }}">{{ r.last }}</span><sc-if value="{{ r.stale }}" hint-placeholder-val="{{ false }}"><span style="position:relative;display:block;font:500 10px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ r.fresh }}</span></sc-if></span>
+            <span style="text-align:right;font:500 13px/1 var(--font-mono)">{{ r.value }}</span>
+            <span style="display:flex;justify-content:flex-end;align-items:center;gap:8px;color:{{ r.tone }};white-space:nowrap"><span style="display:flex;align-items:center;font:600 13px/1.15 var(--font-mono);font-variant-numeric:tabular-nums"><span style="margin-right:4px">{{ r.lead }}</span><sc-for list="{{ r.pl }}" as="c" hint-placeholder-count="7"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;height:1.15em;line-height:1.15em">{{ c.ch }}</span></sc-if></sc-for></span><span style="font:500 11px/1 var(--font-mono);min-width:58px;text-align:right">{{ r.pct }}</span></span>
+          </div></sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div role="separator" aria-orientation="vertical" aria-label="Resize order panel" aria-valuenow="{{ rightW }}" tabindex="0" onPointerDown="{{ spR.down }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerEnter="{{ spR.enter }}" onPointerLeave="{{ spR.leave }}" onKeyDown="{{ spR.key }}" style="position:relative;flex:none;width:1px;background:{{ spR.line }};cursor:col-resize;z-index:6;outline:none;transition:background 160ms" style-focus="background:var(--ember)"><span style="position:absolute;top:0;bottom:0;left:-12px;width:24px"></span></div>
+
+    <div style="flex:none;width:{{ rightW }}px;overflow:auto;display:flex;flex-direction:column">
+      <div style="padding:16px 18px 18px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:32px;padding:0 6px;box-sizing:border-box;border-radius:{{ tk.badgeRadius }};background:{{ tk.badgeBgS }};border:{{ tk.badgeBd }};font:600 10.5px/1 var(--font-mono)">{{ tk.mono }}</span>
+          <div style="flex:1;min-width:0"><div style="font:600 14px/1.2 var(--font-body)">{{ tk.name }}</div><div style="font:500 11px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ tk.fresh }}</div></div>
+          <div style="text-align:right;position:relative;padding:4px 8px;border-radius:8px"><span data-fa="{{ tk.sym }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0"></span><div style="position:relative;font:500 15px/1.2 var(--font-mono);color:{{ tk.pxTone }}">{{ tk.px }}</div><div style="position:relative;font:500 11px/1.3 var(--font-mono);color:{{ tk.chgTone }}">{{ tk.chg }}</div></div>
+        </div>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--surface-sunken)">
+          <sc-for list="{{ tk.sides }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:36px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9px;font:700 14px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }};transition:background 120ms" style-focus="outline:2px solid var(--ember);outline-offset:1px">{{ o.label }}<kbd style="font:600 10px/1 var(--font-mono);padding:3px 5px;border-radius:4px;background:var(--surface-sunken);color:var(--foreground-muted)">{{ o.kbd }}</kbd></button></sc-for>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:6px">
+          <sc-for list="{{ tk.types }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:28px;padding:0 12px;border-radius:9999px;font:600 12.5px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}" style-focus="outline:2px solid var(--ember);outline-offset:2px">{{ o.label }}</button></sc-for>
+        </div>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <label style="display:grid;gap:6px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Quantity</span><div style="display:flex;align-items:center;border-bottom:2px solid var(--bp-hair)"><button onClick="{{ tk.dec }}" aria-label="Decrease quantity" style="border:0;background:transparent;color:var(--foreground);cursor:pointer;width:28px;height:36px;font:500 18px/1 var(--font-mono)">−</button><input ref="{{ qtyRef }}" value="{{ tk.qty }}" onChange="{{ tk.onQty }}" inputmode="decimal" aria-label="Quantity" style="flex:1;min-width:0;border:0;background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);text-align:center;outline:none;height:36px"><button onClick="{{ tk.inc }}" aria-label="Increase quantity" style="border:0;background:transparent;color:var(--foreground);cursor:pointer;width:28px;height:36px;font:500 18px/1 var(--font-mono)">+</button></div></label>
+          <label style="display:grid;gap:6px;opacity:{{ tk.limitOp }}"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Limit price</span><input value="{{ tk.limit }}" onChange="{{ tk.onLimit }}" disabled="{{ tk.limitOff }}" inputmode="decimal" aria-label="Limit price" style="border:0;border-bottom:2px solid var(--bp-hair);background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);height:38px;outline:none" style-focus="border-bottom-color:var(--ember)"></label>
+        </div>
+        <div style="margin-top:16px;display:grid;gap:9px;font:500 13px/1.3 var(--font-body)">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--foreground-muted)">Estimated cost</span><span style="font-family:var(--font-mono)">{{ tk.est }}</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--foreground-muted)">Buying power</span><span style="font-family:var(--font-mono)">{{ tk.bp }} → <span style="color:{{ tk.afterTone }}">{{ tk.after }}</span></span></div>
+          <div style="height:6px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div style="height:100%;width:100%;border-radius:9999px;background:{{ tk.barTone }};transform:{{ tk.bar }};transform-origin:left center;transition:transform 240ms cubic-bezier(0.23,1,0.32,1)"></div></div>
+        </div>
+        <sc-if value="{{ tk.warn.show }}" hint-placeholder-val="{{ false }}"><div role="alert" style="margin-top:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px 14px;border-radius:10px;background:{{ tk.warn.bg }};font:500 13px/1.5 var(--font-body)"><span style="font:700 13px/1.5 var(--font-mono);color:{{ tk.warn.tone }}">{{ tk.warn.glyph }}</span><div><div style="font-weight:700">{{ tk.warn.title }}</div><div style="color:var(--foreground-muted)">{{ tk.warn.text }}</div><sc-if value="{{ tk.warn.hasAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ tk.warn.action }}" style="margin-top:8px;border:0;cursor:pointer;height:28px;padding:0 12px;border-radius:9999px;background:var(--foreground);color:var(--background);font:700 12px/1 var(--font-body)" style-focus="outline:2px solid var(--ember);outline-offset:2px">{{ tk.warn.actionLabel }}</button></sc-if></div></div></sc-if>
+        <button onClick="{{ tk.onConfirm }}" disabled="{{ tk.disabled }}" style="margin-top:16px;width:100%;border:0;cursor:pointer;height:46px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14.5px/1 var(--font-body);opacity:{{ tk.btnOp }};transition:transform 120ms,box-shadow 160ms" style-hover="box-shadow:var(--shadow-ember-glow)" style-active="transform:scale(0.98)" style-focus="outline:2px solid var(--ember);outline-offset:3px">{{ tk.confirm }}</button>
+      </div>
+
+      <div style="margin:0 12px;padding:16px 16px 18px;border-radius:14px;background:var(--bp-panel)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:600 10px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Active order</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ tl.id }}</span></div>
+        <sc-if value="{{ tl.none }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;font:400 13px/1.55 var(--font-body);color:var(--foreground-muted)">No active order. Your next order runs here step by step, from reserving funds to settling.</div></sc-if>
+        <sc-if value="{{ tl.has }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:10px;font:500 17px/1.2 var(--font-display);letter-spacing:-0.02em">{{ tl.title }}</div>
+          <div style="position:relative;margin-top:18px">
+            <div style="position:absolute;left:10%;right:10%;top:11px;height:2px;background:var(--bp-hair)"></div>
+            <div style="position:absolute;left:10%;right:10%;top:11px;height:2px;background:{{ tl.lineTone }};transform:{{ tl.line }};transform-origin:left center;transition:{{ tl.lineTr }}"></div>
+            <div style="position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))">
+              <sc-for list="{{ tl.steps }}" as="s" hint-placeholder-count="5"><div style="display:grid;justify-items:center;gap:7px;text-align:center;opacity:{{ s.op }};transition:opacity 240ms"><span style="width:24px;height:24px;box-sizing:border-box;border-radius:9999px;display:grid;place-items:center;font:700 11px/1 var(--font-mono);background:{{ s.bg }};color:{{ s.fg }};border:{{ s.bd }};box-shadow:{{ s.glow }};transition:background 240ms,border-color 240ms,box-shadow 240ms">{{ s.glyph }}</span><span style="font:600 11.5px/1.2 var(--font-body);color:{{ s.lc }}">{{ s.label }}</span><span style="font:500 10.5px/1.2 var(--font-mono);color:var(--foreground-muted);min-height:13px">{{ s.sub }}</span></div></sc-for>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <div style="display:flex;justify-content:space-between;font:500 11px/1 var(--font-mono);color:var(--foreground-muted)"><span>Filled</span><span>{{ tl.filledText }}</span></div>
+            <div style="position:relative;margin-top:7px;height:8px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden">
+              <sc-for list="{{ tl.segs }}" as="g" hint-placeholder-count="4"><span style="position:absolute;top:0;bottom:0;left:{{ g.left }};width:{{ g.width }};background:{{ g.bg }};transform:{{ g.scale }};transform-origin:left center;transition:transform 320ms cubic-bezier(0.16,1,0.3,1);border-right:2px solid var(--bp-panel)"></span></sc-for>
+            </div>
+          </div>
+          <div role="status" aria-live="assertive" style="margin-top:14px;display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:{{ tl.msgBg }}">
+            <span style="font:700 13px/1.4 var(--font-mono);color:{{ tl.msgTone }}">{{ tl.msgGlyph }}</span>
+            <div style="min-width:0"><div style="font:600 13.5px/1.4 var(--font-body)">{{ tl.status }}</div><div style="font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted)">{{ tl.detail }}</div>
+              <sc-if value="{{ tl.hasFix }}" hint-placeholder-val="{{ false }}"><button onClick="{{ tl.fix }}" style="margin-top:8px;border:0;cursor:pointer;height:28px;padding:0 12px;border-radius:9999px;background:var(--foreground);color:var(--background);font:700 12px/1 var(--font-body)" style-focus="outline:2px solid var(--ember);outline-offset:2px">{{ tl.fixLabel }}</button></sc-if>
+            </div>
+          </div>
+          <sc-if value="{{ tl.canCancel }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;display:flex;align-items:center;gap:10px"><button onClick="{{ tl.cancel }}" style="border:0;cursor:pointer;height:32px;padding:0 14px;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 16%,transparent);color:var(--destructive);font:700 12.5px/1 var(--font-body)" style-focus="outline:2px solid var(--ember);outline-offset:2px">Cancel order</button><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 7px;border-radius:6px;background:var(--surface-sunken);font:600 11px/1 var(--font-mono)"><kbd style="font:inherit">Esc</kbd></span></div></sc-if>
+        </sc-if>
+      </div>
+
+      <div style="padding:18px 18px 16px">
+        <div style="font:600 10px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Recent fills</div>
+        <sc-if value="{{ noFills }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">Nothing filled yet.</div></sc-if>
+        <div style="margin-top:6px;display:grid">
+          <sc-for list="{{ fills }}" as="f" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--bp-hair);font:500 12px/1.3 var(--font-mono)"><span style="color:var(--foreground-muted)">{{ f.t }}</span><span><span style="font-family:var(--font-body);font-weight:700">{{ f.side }}</span> {{ f.qty }} {{ f.sym }}</span><span>@ {{ f.px }}</span></div></sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div aria-hidden="{{ dr.hidden }}" style="position:absolute;left:{{ dr.left }}px;right:0;bottom:0;height:318px;z-index:20;background:var(--popover);box-shadow:var(--shadow-ambient), 0 -1px 0 var(--bp-hair);border-radius:16px 16px 0 0;transform:{{ dr.transform }};opacity:{{ dr.opacity }};pointer-events:{{ dr.pe }};transition:{{ dr.tr }};display:flex;flex-direction:column">
+      <div style="flex:none;display:flex;align-items:center;gap:16px;padding:16px 22px 0">
+        <div><div style="font:600 10px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Under the hood · Part 4 architecture</div><div style="margin-top:7px;font:500 18px/1.1 var(--font-display);letter-spacing:-0.02em">{{ dr.title }}</div></div>
+        <div style="flex:1"></div>
+        <button onClick="{{ dr.replay }}" disabled="{{ dr.noOrder }}" style="border:0;cursor:pointer;height:30px;padding:0 13px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:600 12px/1 var(--font-body)" style-hover="background:var(--accent)" style-focus="outline:2px solid var(--ember);outline-offset:2px">Replay ↺</button>
+        <a href="Bullpen Architecture.dc.html" style="font:700 13px/1 var(--font-body);text-decoration:none">Open the architecture page →</a>
+        <button onClick="{{ toggleDrawer }}" aria-label="Close under the hood" style="border:0;cursor:pointer;width:30px;height:30px;border-radius:9999px;background:transparent;color:var(--foreground-muted);font:600 14px/1 var(--font-mono)" style-hover="background:var(--bp-panel-2)">✕</button>
+      </div>
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:24px;padding:10px 22px 16px">
+        <div style="display:flex;align-items:center;min-height:0">{{ dr.diagram }}</div>
+        <div style="display:grid;align-content:center;gap:2px">
+          <sc-if value="{{ dr.noOrder }}" hint-placeholder-val="{{ false }}"><div style="font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Place an order and this drawer traces it through the services it touches: Orders, Redis, the Ledger, the queue and the Leaderboard.</div></sc-if>
+          <sc-for list="{{ dr.steps }}" as="s" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;align-items:start;padding:6px 0;opacity:{{ s.op }};transition:opacity 240ms"><span style="width:22px;height:22px;box-sizing:border-box;border-radius:9999px;display:grid;place-items:center;font:700 10.5px/1 var(--font-mono);background:{{ s.bg }};color:{{ s.fg }};border:{{ s.bd }}">{{ s.glyph }}</span><div><div style="font:600 13px/1.3 var(--font-body)">{{ s.caption }}</div><div style="font:400 12px/1.45 var(--font-body);color:var(--foreground-muted)">{{ s.detail }}</div></div></div></sc-for>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ toggleHelp }}" style="position:absolute;inset:0;z-index:30;display:grid;place-items:center;background:color-mix(in oklch,var(--background) 55%,transparent)">
+      <div role="dialog" aria-label="Keyboard shortcuts" onClick="{{ stop }}" style="width:420px;padding:24px 26px;border-radius:16px;background:var(--popover);box-shadow:var(--shadow-ambient);animation:{{ helpAnim }}">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 20px/1 var(--font-display);letter-spacing:-0.02em">Keyboard shortcuts</span><button onClick="{{ toggleHelp }}" aria-label="Close" style="border:0;cursor:pointer;width:30px;height:30px;border-radius:9999px;background:transparent;color:var(--foreground-muted);font:600 14px/1 var(--font-mono)" style-hover="background:var(--bp-panel-2)">✕</button></div>
+        <div style="margin-top:16px;display:grid">
+          <sc-for list="{{ shortcuts }}" as="k" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--bp-hair)"><span><kbd style="display:inline-block;min-width:22px;text-align:center;padding:5px 7px;border-radius:6px;background:var(--surface-sunken);font:600 12px/1 var(--font-mono)">{{ k.key }}</kbd></span><div><div style="font:600 13.5px/1.3 var(--font-body)">{{ k.label }}</div><div style="font:400 12.5px/1.45 var(--font-body);color:var(--foreground-muted)">{{ k.detail }}</div></div></div></sc-for>
+        </div>
+        <div style="margin-top:14px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)">Shortcuts pause while you type in a field, except Esc.</div>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+
+  <div style="flex:none;height:32px;display:flex;align-items:center;gap:18px;padding:0 20px;border-top:1px solid var(--bp-hair);background:var(--surface-sunken);font:400 11.5px/1 var(--font-body);color:var(--foreground-muted)">
+    <span>Paper trading. Play money. Not investment advice.</span>
+    <span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span>
+    <div style="flex:1"></div>
+    <span style="display:flex;gap:12px;font:500 11px/1 var(--font-mono)"><span>B buy</span><span>S sell</span><span>Esc cancel</span><span>? shortcuts</span></span>
+  </div>
+  <div role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">{{ announce }}</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;first&quot;,&quot;closed&quot;,&quot;stale&quot;,&quot;reconnecting&quot;,&quot;offline&quot;,&quot;rejected&quot;,&quot;partial&quot;,&quot;race&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;embedded&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;guided&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;theme&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;},&quot;onStage&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(stage: string) =&gt; void&quot;}}">
+const MINS = { watchW: [248, 420], rightW: [340, 470], chartH: [260, 560] };
+const CQ = { 'BTC-USD': ['0.05', 0.01], 'ETH-USD': ['0.5', 0.1], 'SOL-USD': ['5', 1] };
+const SHORTCUTS = [
+  ['B', 'Buy', 'Switches the ticket to buy and focuses quantity.'],
+  ['S', 'Sell', 'Switches the ticket to sell and focuses quantity.'],
+  ['Esc', 'Cancel', 'Closes a panel; with none open, requests cancel on the working order.'],
+  ['U', 'Under the hood', 'Opens the trace of your last order.'],
+  ['?', 'This sheet', 'Shows or hides these shortcuts.'],
+];
+
+class Component extends DCLogic {
+  state = { ready: false, theme: 'dark', cb: false, reduced: false, sc: 'live', sel: 'NVDA', tf: '1D', side: 'buy', otype: 'market', qty: '10', limit: '182.00', drawer: false, help: false, watchW: 312, rightW: 384, chartH: 404, hover: null, retry: 8, v: 0 };
+  rootRef = React.createRef(); frameRef = React.createRef(); qtyRef = React.createRef();
+  wm = new WeakMap(); loops = []; run = null; trace = null; nOrder = 0; stale = new Set();
+
+  componentDidMount() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.setState({ reduced: true });
+    import(new URL('trading.js', document.baseURI).href).then((T) => {
+      this.T = T; this.B = T.B; this.market = T.B.createMarket(7);
+      this.setup(this.props.scenario ?? (this.props.guided ? 'first' : 'live'));
+      this.setState({ ready: true }, () => this.restartLoops());
+      this.iv1 = setInterval(() => this.onTick(), 700);
+      this.iv2 = setInterval(() => this.onSecond(), 1000);
+    });
+    this.onKey = (e) => this.key(e); window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { clearInterval(this.iv1); clearInterval(this.iv2); clearTimeout(this.runT); clearTimeout(this.scT); clearInterval(this.trT); this.stopLoops(); window.removeEventListener('keydown', this.onKey); }
+  componentDidUpdate(pp, ps) {
+    if (this.T && pp.scenario !== this.props.scenario && this.props.scenario) this.setup(this.props.scenario);
+    if (!this.props.embedded && ps.theme !== this.state.theme) document.body.style.background = this.state.theme === 'dark' ? 'oklch(10.5% 0.038 238)' : 'oklch(94% 0.010 238)';
+    if (ps.sc !== this.state.sc || ps.reduced !== this.state.reduced || ps.help !== this.state.help) this.restartLoops();
+  }
+  restartLoops() {
+    this.stopLoops(); const root = this.rootRef.current; if (!root || this.state.reduced) return;
+    root.querySelectorAll('[data-pulse]').forEach((el) => this.loops.push(el.animate([{ transform: 'scale(1)', opacity: 0.6 }, { transform: 'scale(2.8)', opacity: 0 }], { duration: 2000, iterations: Infinity, easing: 'cubic-bezier(0.23,1,0.32,1)' })));
+    root.querySelectorAll('[data-spin]').forEach((el) => this.loops.push(el.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 900, iterations: Infinity })));
+  }
+  stopLoops() { this.loops.forEach((a) => a.cancel()); this.loops = []; }
+  stage(s) { if (this.props.onStage) this.props.onStage(s); }
+
+  setup(sc) {
+    const T = this.T, q = this.market.q, now = Date.now();
+    clearTimeout(this.runT); clearTimeout(this.scT); clearInterval(this.trT);
+    this.ses = T.createSession(sc); this.run = null; this.trace = null; this.stale = new Set();
+    this.dayOpen = sc === 'first' ? 100000 : T.equity(this.ses, this.market) - 1240.55;
+    T.WATCH.forEach((s) => (q[s].at = now - 400));
+    const st = { sc, sel: 'NVDA', side: 'buy', otype: 'market', qty: '10', limit: q.NVDA.price.toFixed(2), retry: 8, help: false };
+    if (sc === 'stale') { this.stale.add('NVDA'); q.NVDA.at = now - 22000; }
+    if (sc === 'reconnecting' || sc === 'offline') T.WATCH.forEach((s) => (q[s].at = now - 3000 - Math.random() * 900));
+    if (this.props.guided) Object.assign(st, { sel: 'AAPL', qty: '100' });
+    if (sc === 'rejected') Object.assign(st, { qty: '400' });
+    if (sc === 'partial') Object.assign(st, { sel: 'AAPL', otype: 'limit', qty: '100', limit: '240.00' });
+    if (sc === 'race') Object.assign(st, { sel: 'TSLA', otype: 'limit', qty: '100', limit: '348.00' });
+    if (st.otype === 'market') st.limit = q[st.sel].price.toFixed(2);
+    this.setState(st, () => {
+      if (sc === 'rejected') this.scT = setTimeout(() => this.submit(), 500);
+      if (sc === 'partial') this.scT = setTimeout(() => this.submit({ rest: true }), 500);
+      if (sc === 'race') this.scT = setTimeout(() => this.submit({ rest: true, noPartial: true, then: () => { this.scT = setTimeout(() => this.cancel(true), 1200); } }), 500);
+    });
+  }
+  bp() {
+    const r = this.run; let res = 0;
+    if (r && r.order.side === 'buy') { const fr = r.frames[r.i]; if (!fr.end || fr.end === 'open') { const ref = r.order.type === 'limit' ? r.order.limit : this.market.q[r.order.sym].price; res = (r.of - fr.fills.reduce((a, b) => a + b, 0)) * ref; } }
+    return this.ses.cash - res;
+  }
+  hold(sym) { const p = this.ses.positions.find((x) => x.sym === sym); return p ? p.qty : 0; }
+  submit(x = {}) {
+    const T = this.T, s = this.state, q = this.market.q[s.sel], qty = parseFloat(s.qty) || 0;
+    if (qty <= 0) return;
+    const o = { sym: s.sel, side: s.side, type: s.otype, qty, limit: parseFloat(s.limit) || q.price };
+    if (x.rest) o.rest = true;
+    const run = T.orderFrames(o, q.price, this.bp(), this.hold(s.sel));
+    if (x.noPartial) { run.frames = run.frames.slice(0, 2); run.frames[1] = { ...run.frames[1], end: 'open' }; }
+    this.startRun(run, x.then);
+  }
+  startRun(run, then) {
+    clearTimeout(this.runT);
+    run.i = 0; run.applied = 0; run.id = '#' + (4812 + this.nOrder++); this.run = run;
+    this.stage('submitted');
+    const rej = run.frames[run.frames.length - 1].end === 'rejected';
+    this.startTrace(run.title, run.order.sym, rej);
+    this.applyFrame(); this.forceUpdate();
+    this.advance(then);
+  }
+  advance(then) {
+    const run = this.run, d = this.props.guided ? 1500 : 1000;
+    if (run.i >= run.frames.length - 1) { if (then) then(); return; }
+    this.runT = setTimeout(() => { if (this.run !== run) return; run.i++; this.applyFrame(); this.forceUpdate(); this.advance(then); }, d);
+  }
+  applyFrame() {
+    const run = this.run, fr = run.frames[run.i], o = run.order;
+    while (run.applied < fr.fills.length) { const j = run.applied++; this.T.applyFill(this.ses, o.sym, o.side, fr.fills[j], (fr.px || [])[j] || o.limit); }
+    if (fr.fills.length === 1 && !fr.end) this.stage('partial');
+    if (fr.end === 'settled') this.stage('filled');
+    if (fr.end === 'rejected') this.stage('rejected');
+    this.setState({ announce: fr.status });
+  }
+  working() { const r = this.run; if (!r) return false; const fr = r.frames[r.i]; return (fr.end === 'open' || !fr.end) && !fr.cancelReq && r.frames[r.frames.length - 1].end !== 'rejected'; }
+  cancel(race) {
+    if (!this.working()) return;
+    clearTimeout(this.runT);
+    const run = this.run, fr = run.frames[run.i];
+    run.frames = [...run.frames.slice(0, run.i + 1), ...this.T.cancelFrames(run, fr, race ?? this.state.sc === 'race')];
+    run.i++; this.applyFrame(); this.forceUpdate(); this.advance();
+  }
+  startTrace(title, sym, rej) {
+    clearInterval(this.trT);
+    const steps = this.T.traceSteps(title, sym, rej);
+    this.trace = { steps, i: 0, k: (this.trace ? this.trace.k : 0) + 1, rej, title };
+    this.trT = setInterval(() => { const t = this.trace; if (!t) return; t.i++; if (t.i >= t.steps.length) clearInterval(this.trT); this.forceUpdate(); }, this.state.reduced ? 700 : 1250);
+  }
+  onTick() {
+    const T = this.T, f = T.flags(this.state.sc), pool = T.tickPool(f, this.stale), nowT = Date.now();
+    if (this.lastTick && nowT - this.lastTick > 3000) pool.forEach((s) => (this.market.q[s].at = nowT - 300)); this.lastTick = nowT;
+    if (!pool.length) { this.forceUpdate(); return; }
+    const ch = this.market.tick(pool.length > 3 ? 4 : 2, pool);
+    this.forceUpdate(() => {
+      const root = this.rootRef.current; if (!root) return;
+      const now = performance.now(), seen = new Set();
+      ch.forEach(({ sym, dir }) => {
+        if (!dir || seen.has(sym)) return; seen.add(sym);
+        const tone = dir > 0 ? 'var(--bp-gain)' : 'var(--bp-loss)';
+        root.querySelectorAll(`[data-fa="${sym}"]`).forEach((el) => {
+          if (now - (this.wm.get(el) || 0) < 500) return; this.wm.set(el, now);
+          el.style.background = `color-mix(in oklch, ${tone} 22%, transparent)`;
+          el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'linear' });
+        });
+      });
+    });
+  }
+  onSecond() {
+    if (this.state.sc !== 'offline') return;
+    const r = this.state.retry - 1;
+    if (r <= 0) this.retryNow(); else this.setState({ retry: r });
+  }
+  retryNow() {
+    this.setState({ sc: 'reconnecting', retry: 8 });
+    clearTimeout(this.scT);
+    this.scT = setTimeout(() => { const now = Date.now(); this.T.WATCH.forEach((s) => (this.market.q[s].at = now - 300)); this.setState({ sc: 'live' }); }, 2400);
+  }
+  key(e) {
+    if (!this.T || e.metaKey || e.ctrlKey || e.altKey) return;
+    const tag = (e.target && e.target.tagName) || '', typing = tag === 'INPUT' || tag === 'TEXTAREA';
+    if (e.key === 'Escape') {
+      if (this.state.help) return this.setState({ help: false });
+      if (this.state.drawer) return this.setState({ drawer: false });
+      if (this.working()) { e.preventDefault(); this.cancel(); }
+      return;
+    }
+    if (typing) return;
+    const k = e.key.toLowerCase();
+    if (k === 'b' || k === 's') { e.preventDefault(); this.setState({ side: k === 'b' ? 'buy' : 'sell' }, () => this.qtyRef.current && this.qtyRef.current.focus()); }
+    else if (e.key === '?') { e.preventDefault(); this.setState((s) => ({ help: !s.help })); }
+    else if (k === 'u') this.setState((s) => ({ drawer: !s.drawer }));
+  }
+  select(sym) {
+    const s = this.state, T = this.T, c = CQ[sym], was = T.isCrypto(s.sel);
+    const st = { sel: sym, limit: this.market.q[sym].price.toFixed(2) };
+    if (c) st.qty = c[0]; else if (was) st.qty = '10';
+    this.setState(st);
+  }
+  step(sym) { return CQ[sym] ? CQ[sym][1] : 1; }
+  split(which, dir) {
+    return {
+      line: this.state.hover === which || (this.drag && this.drag.which === which) ? 'color-mix(in oklch, var(--ember) 70%, transparent)' : 'var(--bp-hair)',
+      enter: () => this.setState({ hover: which }), leave: () => this.setState({ hover: null }),
+      down: (e) => { e.currentTarget.setPointerCapture(e.pointerId); const fr = this.frameRef.current; this.drag = { which, x: e.clientX, y: e.clientY, v: this.state[which], k: fr ? fr.getBoundingClientRect().width / 1440 : 1 }; this.forceUpdate(); },
+      key: (e) => { const m = { ArrowLeft: -16, ArrowRight: 16, ArrowUp: -16, ArrowDown: 16 }[e.key]; if (!m) return; e.preventDefault(); this.setV(which, this.state[which] + (which === 'rightW' ? -m : m)); },
+    };
+  }
+  setV(which, v) { const [a, b] = MINS[which]; this.setState({ [which]: Math.round(Math.max(a, Math.min(b, v))) }); }
+
+  renderVals() {
+    const s = this.state, T = this.T, red = s.reduced, board = !this.props.embedded;
+    const theme = this.props.theme ?? s.theme;
+    const base = {
+      rootRef: this.rootRef, frameRef: this.frameRef, qtyRef: this.qtyRef, themeCls: theme === 'dark' ? 'dark' : '', cb: s.cb ? 'on' : 'off',
+      board, pad: board ? '40px 48px 80px' : '0', announce: s.announce || '',
+      stop: (e) => e.stopPropagation(),
+      toggleHelp: () => this.setState((x) => ({ help: !x.help })), toggleDrawer: () => this.setState((x) => ({ drawer: !x.drawer })),
+      watchW: s.watchW, rightW: s.rightW, chartH: s.chartH,
+      onMove: (e) => { const d = this.drag; if (!d) return; const dx = (e.clientX - d.x) / d.k, dy = (e.clientY - d.y) / d.k; this.setV(d.which, d.which === 'watchW' ? d.v + dx : d.which === 'rightW' ? d.v - dx : d.v + dy); },
+      onUp: () => { this.drag = null; this.forceUpdate(); },
+      spW: this.split('watchW'), spR: this.split('rightW'), spC: this.split('chartH'),
+      helpOpen: s.help, helpAnim: red ? 'bp-fade-in 200ms both' : 'bp-grow 240ms cubic-bezier(0.16,1,0.3,1) both',
+      shortcuts: SHORTCUTS.map(([key, label, detail]) => ({ key, label, detail })),
+      retryNow: () => this.retryNow(),
+    };
+    if (!T || !this.ses) return base;
+    const B = this.B, q = this.market.q, now = Date.now(), f = T.flags(s.sc), ses = this.ses;
+    const seg = T.seg, held = (sym) => this.hold(sym);
+    Object.assign(base, {
+      themeOpts: seg([['dark', 'Dark'], ['light', 'Light']], s.theme, (v) => this.setState({ theme: v })),
+      cbOpts: seg([[false, 'Standard'], [true, 'Color-blind safe']], s.cb, (v) => this.setState({ cb: v })),
+      motionOpts: seg([[false, 'Full'], [true, 'Reduced']], s.reduced, (v) => this.setState({ reduced: v })),
+      scOpts: T.solidChips(T.SCENARIOS, s.sc, (v) => this.setup(v)), scNote: T.SCENARIO_NOTE[s.sc], replay: () => this.setup(s.sc),
+    });
+
+    // top bar
+    const eq = T.equity(ses, this.market), day = eq - this.dayOpen, dayPct = (day / this.dayOpen) * 100;
+    const ageOf = (list) => Math.min(...list.map((x) => now - q[x].at));
+    const stocks = T.WATCH.filter((x) => !T.isCrypto(x)), cryptos = T.WATCH.filter(T.isCrypto);
+    const cs = T.conn('stocks', f.stocks, { age: ageOf(stocks.filter((x) => !this.stale.has(x))), retry: s.retry }), cc = T.conn('crypto', f.crypto, { age: ageOf(cryptos), retry: s.retry });
+    const conns = [{ ...cs, divider: '0' }, { ...cc, divider: '1px solid var(--bp-hair)' }];
+    const banner = f.stocks === 'offline' ? { show: true, glyph: '✕', tone: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 12%, var(--background))', title: 'You’re offline.', text: `Prices are frozen and labeled with their time. Orders are paused. Retrying in ${s.retry} s.`, canRetry: true }
+      : f.frozen ? { show: true, glyph: '◌', tone: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 13%, var(--background))', title: 'Reconnecting to market data.', text: 'Prices shown are the last we received. Orders wait until quotes are live again.', canRetry: false }
+      : { show: false };
+
+    // watchlist
+    const row = (sym) => {
+      const v = T.quoteRow(q[sym], f, now), h = held(sym);
+      return { ...v, pressed: s.sel === sym ? 'true' : 'false', bg: s.sel === sym ? 'var(--bp-panel-2)' : 'transparent', onClick: () => this.select(sym),
+        sub: v.stale ? '◷ ' + T.clock(q[sym].at) : v.closed ? v.fresh : h ? `${T.qtyFmt(sym, h)} held` : v.isCrypto ? '24/7' : 'US stock',
+        subTone: v.stale ? 'var(--bp-stale)' : 'var(--foreground-muted)', pctTone: v.stale ? 'var(--bp-stale)' : v.tone };
+    };
+    const liveAge = (list, st) => (st === 'closed' ? 'closed · Mon 9:30 ET' : st === 'live' ? 'live · ' + T.ageText(ageOf(list)) : st === 'offline' ? 'offline' : 'reconnecting');
+
+    // chart
+    const sq = T.quoteRow(q[s.sel], f, now), pts = T.series(this.market, s.sel, s.tf), is1D = s.tf === '1D';
+    const cv = T.chartView(pts, 1000, 300, { prev: is1D ? q[s.sel].prev : null, right: 50 });
+    const xl = s.tf === '1D' ? T.XLABELS['1D'][sq.isCrypto ? 'crypto' : 'stock'] : T.XLABELS[s.tf];
+    const ch = {
+      ...sq, pctTone: sq.stale ? 'var(--bp-stale)' : sq.tone, badgeRadiusLg: sq.isCrypto ? '9999px' : '10px', kindLabel: sq.sym + (sq.isCrypto ? ' · crypto · 24/7' : ' · US stock'),
+      freshText: sq.live ? 'Live · ' + sq.fresh : sq.stale ? sq.fresh + ' · ' + sq.staleAge : sq.fresh,
+      freshBg: sq.stale ? 'color-mix(in oklch, var(--warning) 14%, transparent)' : 'var(--surface-sunken)',
+      grid: cv.grid.map((g) => ({ ...g, pct: (+g.y / 3).toFixed(2) })), line: cv.line, area: cv.area,
+      lineTone: sq.stale ? 'var(--bp-stale)' : sq.tone, areaFill: `color-mix(in oklch, ${sq.stale ? 'var(--bp-stale)' : sq.tone} 9%, transparent)`,
+      tail: sq.stale ? `M${cv.lastX} ${cv.lastY}H1000` : 'M0 0', dotX: (+cv.lastX / 10).toFixed(2), lastPct: (+cv.lastY / 3).toFixed(2),
+      lastLabel: cv.lastLabel, tagBg: sq.stale ? 'var(--bp-panel-2)' : 'var(--foreground)', tagFg: sq.stale ? 'var(--bp-stale)' : 'var(--background)',
+      showPrev: is1D, prevY: cv.prevY, prevPct: (+cv.prevY / 3).toFixed(2), prevLabel: B.fmt(q[s.sel].prev),
+      xl: xl.map((t) => ({ t })), aria: `${sq.name} ${s.tf} price chart, last ${sq.price}`,
+    };
+
+    // positions
+    const posRows = ses.positions.map((p) => {
+      const pq = T.quoteRow(q[p.sym], f, now), last = q[p.sym].price, pl = (last - p.avg) * p.qty, pct = ((last - p.avg) / p.avg) * 100, up = pl >= 0;
+      return { sym: p.sym, mono: pq.mono, name: pq.name, badgeBg: pq.badgeBg, badgeRadiusSm: pq.isCrypto ? '9999px' : '6px', qty: T.qtyFmt(p.sym, p.qty), avg: B.fmt(p.avg), last: pq.price,
+        lastTone: pq.priceTone, stale: pq.stale, fresh: '◷ ' + T.clock(q[p.sym].at), value: T.money(last * p.qty), tone: up ? 'var(--bp-gain)' : 'var(--bp-loss)',
+        lead: up ? '▲ +$' : '▼ −$', pl: T.chars(B.fmt(Math.abs(pl)), !red), pct: B.signed(pct, 2, '', '%'),
+        enter: p.isNew && now - p.isNew < 800 ? (red ? 'bp-fade-in 300ms both' : 'bp-grow 560ms cubic-bezier(0.16,1,0.3,1) both') : 'none' };
+    });
+
+    // ticket
+    const qty = parseFloat(s.qty) || 0, lim = s.otype === 'limit', px = lim ? parseFloat(s.limit) || 0 : q[s.sel].price, est = qty * px, bpNow = this.bp();
+    const after = s.side === 'buy' ? bpNow - est : bpNow + est, short = s.side === 'buy' && est > bpNow, hv = held(s.sel), overSell = s.side === 'sell' && qty > hv;
+    const closedStock = !sq.isCrypto && f.stocks === 'closed', max = T.maxQty(s.sel, bpNow, px || 1);
+    let warn = { show: false };
+    if (f.frozen) warn = { show: true, glyph: '◌', tone: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 13%, transparent)', title: 'Waiting for live prices', text: `${sq.mono} was last priced ${sq.fresh.replace('as of ', 'at ')}. Orders resume when quotes are live.` };
+    else if (short) warn = { show: true, glyph: '!', tone: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 12%, transparent)', title: `${T.money(est - bpNow)} more than your buying power`, text: `The ledger will reject this order. ${T.qtyFmt(s.sel, max)} ${sq.mono} fits in ${T.money(bpNow)}.`, hasAction: true, actionLabel: `Set quantity to ${T.qtyFmt(s.sel, max)}`, action: () => this.setState({ qty: T.qtyFmt(s.sel, max) }) };
+    else if (overSell) warn = { show: true, glyph: '!', tone: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 12%, transparent)', title: hv ? `You hold ${T.qtyFmt(s.sel, hv)} ${sq.mono}` : `You don’t hold ${sq.mono}`, text: hv ? 'Sell that many or fewer.' : 'Buy first, or pick a symbol you hold.', hasAction: !!hv, actionLabel: `Sell ${T.qtyFmt(s.sel, hv)}`, action: () => this.setState({ qty: T.qtyFmt(s.sel, hv) }) };
+    else if (sq.stale) warn = { show: true, glyph: '◷', tone: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 14%, transparent)', title: `${sq.mono}’s price is ${sq.staleAge}`, text: `Last tick ${sq.fresh.replace('as of ', 'at ')}. A market order fills at the next live price, which may differ from ${sq.price}.`, hasAction: true, actionLabel: 'Refresh quote', action: () => { this.stale.delete(s.sel); q[s.sel].at = Date.now(); this.forceUpdate(); } };
+    else if (closedStock) warn = { show: true, glyph: '☾', tone: 'var(--foreground-muted)', bg: 'var(--surface-sunken)', title: 'Stocks are closed', text: lim ? `Your limit order rests until the open, Mon 9:30 ET.` : `A market order queues for the open, Mon 9:30 ET, and fills at the opening price. Crypto trades now.` };
+    const disabled = qty <= 0 || f.frozen || overSell;
+    const verb = s.side === 'buy' ? 'Buy' : 'Sell';
+    const tk = {
+      ...sq, fresh: sq.live ? 'Last ' + sq.fresh : sq.stale ? sq.fresh + ' · ' + sq.staleAge : sq.fresh, px: sq.price, pxTone: sq.priceTone, chg: `${sq.arrow} ${sq.pct}`, chgTone: sq.stale ? 'var(--bp-stale)' : sq.tone,
+      sides: [['buy', 'Buy', 'B'], ['sell', 'Sell', 'S']].map(([v, l, k]) => ({ label: l, kbd: k, pressed: s.side === v ? 'true' : 'false', onClick: () => this.setState({ side: v }), bg: s.side === v ? 'var(--bp-panel-2)' : 'transparent', fg: s.side === v ? 'var(--foreground)' : 'var(--foreground-muted)' })),
+      types: seg([['market', 'Market'], ['limit', 'Limit']], s.otype, (v) => this.setState({ otype: v, limit: q[s.sel].price.toFixed(2) })),
+      qty: s.qty, onQty: (e) => this.setState({ qty: e.target.value.replace(/[^\d.]/g, '') }),
+      inc: () => this.setState((x) => ({ qty: T.qtyFmt(x.sel, (parseFloat(x.qty) || 0) + this.step(x.sel)) })),
+      dec: () => this.setState((x) => ({ qty: T.qtyFmt(x.sel, Math.max(0, (parseFloat(x.qty) || 0) - this.step(x.sel))) })),
+      limit: s.limit, onLimit: (e) => this.setState({ limit: e.target.value.replace(/[^\d.]/g, '') }), limitOff: !lim, limitOp: lim ? 1 : 0.4,
+      est: T.money(est), bp: T.money(bpNow), after: T.money(Math.max(after, 0)), afterTone: short ? 'var(--destructive)' : 'var(--foreground)',
+      bar: `scaleX(${Math.min(est / Math.max(bpNow, 1), 1).toFixed(3)})`, barTone: short ? 'var(--destructive)' : 'var(--ember)', warn,
+      disabled, btnOp: disabled ? 0.45 : 1,
+      confirm: f.frozen ? 'Waiting for live prices…' : sq.stale ? `${verb} anyway · price ${sq.staleAge}` : closedStock && !lim ? `Queue ${verb.toLowerCase()} for the open · ${T.money(est)}` : `${verb} ${T.qtyFmt(s.sel, qty)} ${sq.mono} · ${T.money(est)}`,
+      onConfirm: () => { if (!disabled) this.submit(); },
+    };
+
+    // timeline
+    const r = this.run;
+    let tl = { none: true, has: false, id: '' };
+    if (r) {
+      const fr = r.frames[r.i], v = T.tlView(fr, r.of, red);
+      tl = { ...v, none: false, has: true, id: 'order ' + r.id, title: r.title, canCancel: this.working() && !fr.cancelReq,
+        cancel: () => this.cancel(), hasFix: fr.end === 'rejected' && !!fr.fixQty, fixLabel: fr.fix, fix: () => this.setState({ qty: T.qtyFmt(r.order.sym, fr.fixQty), sel: r.order.sym, side: r.order.side }) };
+    }
+
+    // drawer
+    const h = React.createElement, tr = this.trace;
+    let diagram = null, drSteps = [];
+    const QL = { apps: 'Apps', trading: 'Trading quantum', market: 'Market data', social: 'League' };
+    if (tr) {
+      const idx = Math.min(tr.i, tr.steps.length), cur = idx < tr.steps.length ? B.resolveStep(tr.steps[idx]) : null, touched = new Set();
+      tr.steps.slice(0, idx).forEach((st) => { const rs = B.resolveStep(st); touched.add(rs.a); touched.add(rs.b); });
+      diagram = B.renderDiagram(h, { uid: 'uth', nodes: T.TRACE.nodes, edges: T.TRACE.edges, moment: 4, prev: 4, style: 'blueprint', quanta: true, sync: true, data: false, flow: false, reduced: red,
+        viewBox: '0 52 900 250', step: cur || (tr.rej ? { edge: 'none', a: 'x', b: 'y' } : null), stepKey: tr.k + '-' + idx, touched, quantaLabels: QL, ariaLabel: 'Services touched by your last order' });
+      drSteps = tr.steps.map((st, k) => {
+        const done = k < idx, now_ = k === idx, fail = tr.rej && k === tr.steps.length - 1 && done;
+        return { caption: st.caption, detail: st.detail, op: done || now_ ? 1 : 0.42,
+          glyph: fail ? '✕' : done ? '✓' : String(k + 1), bg: fail ? 'var(--destructive)' : done ? 'var(--foreground)' : 'transparent', fg: fail ? 'oklch(98% 0.005 238)' : done ? 'var(--background)' : now_ ? 'var(--bp-accent-text)' : 'var(--foreground-muted)',
+          bd: done ? '0' : now_ ? '2px solid var(--ember)' : '1.5px solid var(--bp-hair)' };
+      });
+    } else {
+      diagram = B.renderDiagram(h, { uid: 'uth0', nodes: T.TRACE.nodes, edges: T.TRACE.edges, moment: 4, prev: 4, style: 'blueprint', quanta: true, sync: true, data: false, flow: false, reduced: red, viewBox: '0 52 900 250', quantaLabels: QL });
+    }
+    const dr = {
+      left: s.watchW + 1, hidden: s.drawer ? 'false' : 'true', pe: s.drawer ? 'auto' : 'none',
+      transform: red ? 'none' : s.drawer ? 'translateY(0)' : 'translateY(104%)', opacity: red ? (s.drawer ? 1 : 0) : 1,
+      tr: red ? 'opacity 200ms linear' : 'transform 320ms var(--bp-spring)',
+      title: tr ? 'What ' + tr.title.replace(' · ', ', ').toLowerCase().replace(/^(buy|sell)/, (m) => m) + ' touched' : 'Nothing traced yet',
+      noOrder: !tr, replay: () => { if (tr) this.startTrace(tr.title, this.run ? this.run.order.sym : s.sel, tr.rej); }, diagram, steps: drSteps,
+    };
+    if (tr) dr.title = `What “${tr.title}” touched`;
+
+    return {
+      ...base, eqChars: T.chars(T.money(eq), !red), dayTone: day >= 0 ? 'var(--bp-gain)' : 'var(--bp-loss)',
+      dayText: `${day >= 0 ? '▲' : '▼'} ${T.sMoney(day)} · ${B.signed(dayPct, 2, '', '%')}`,
+      rankText: f.first && !ses.positions.length ? 'Unranked' : f.first ? '#131 of 215' : '#9 of 214',
+      conns, banner, drawerOpen: s.drawer ? 'true' : 'false', drawerBtnBg: s.drawer ? 'var(--bp-panel-2)' : 'var(--surface-sunken)', traceBusy: !!tr && tr.i < tr.steps.length,
+      stockRows: stocks.map(row), cryptoRows: cryptos.map(row), stocksMeta: liveAge(stocks.filter((x) => !this.stale.has(x)), f.stocks), cryptoMeta: liveAge(cryptos, f.crypto),
+      ch, tfOpts: seg(T.TFS.map((x) => [x, x]), s.tf, (v) => this.setState({ tf: v })),
+      posEmpty: !posRows.length, posHas: !!posRows.length, posRows, posCount: posRows.length ? posRows.length + ' open' : '',
+      cashText: T.money(ses.cash), posFresh: f.frozen ? 'frozen' : f.stocks === 'closed' ? 'stocks at close, crypto live' : 'live',
+      openTicket: () => { this.setState({ side: 'buy' }); this.qtyRef.current && this.qtyRef.current.focus(); },
+      tk, tl, fills: ses.fills, noFills: !ses.fills.length, dr,
+    };
+  }
+}
+</script>
+</body>
+</html>

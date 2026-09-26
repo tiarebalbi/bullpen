@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{color:var(--ember)}
+.bp{--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238)}
+.bp.dark{--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+</style>
+</helmet>
+<div class="bp dark" style="position:relative;width:1200px;height:630px;overflow:hidden;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);font-variant-numeric:tabular-nums">
+  <div aria-hidden="true" style="position:absolute;right:-120px;top:40px;width:640px;height:560px;border-radius:9999px;background:radial-gradient(closest-side,color-mix(in oklch,var(--ember) 9%,transparent),transparent);filter:blur(24px)"></div>
+  <div style="position:absolute;left:72px;top:64px;bottom:64px;width:{{ colW }};display:flex;flex-direction:column">
+    <div style="display:flex;align-items:baseline;gap:12px"><span style="font:600 32px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:500 17px/1 var(--font-body);color:var(--foreground-muted)">{{ byline }}</span></div>
+    <div style="flex:1;display:flex;align-items:center">
+      <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}"><div style="font:500 76px/0.96 var(--font-display);letter-spacing:-0.045em;text-wrap:balance">Architecting software in 2026, <span style="color:var(--bp-accent-text)">built in public</span></div></sc-if>
+      <sc-if value="{{ isArch }}" hint-placeholder-val="{{ false }}"><div style="font:500 80px/0.96 var(--font-display);letter-spacing:-0.045em;text-wrap:balance">The architecture, <span style="color:var(--bp-accent-text)">part by part</span></div></sc-if>
+      <sc-if value="{{ isLeague }}" hint-placeholder-val="{{ false }}"><div><div style="font:500 112px/0.92 var(--font-display);letter-spacing:-0.05em">Fall Open</div><div style="margin-top:22px;font:500 26px/1.25 var(--font-body);color:var(--foreground-muted)">A Bullpen league. Play money, real prices.</div></div></sc-if>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:9999px;background:var(--bp-panel-2);font:600 22px/1 var(--font-body)"><span style="font-family:var(--font-mono);color:var(--bp-accent-text)">{{ glyph }}</span>{{ detail }}</span>
+      <span style="font:500 17px/1 var(--font-mono);color:var(--foreground-muted)">{{ fresh }}</span>
+    </div>
+  </div>
+  <sc-if value="{{ hasDiag }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;right:48px;top:95px;width:400px;height:440px;overflow:hidden;-webkit-mask-image:radial-gradient(farthest-side at 55% 50%,#000 58%,transparent 100%);mask-image:radial-gradient(farthest-side at 55% 50%,#000 58%,transparent 100%)">{{ diag }}</div>
+  </sc-if>
+  <sc-if value="{{ isLeague }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;right:72px;top:64px;bottom:64px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end">
+      <div style="font:500 176px/0.9 var(--font-mono);letter-spacing:-0.05em;color:var(--bp-accent-text)">214</div>
+      <div style="margin-top:18px;font:600 18px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Players · ends Oct 31</div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:630},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;landing&quot;,&quot;arch&quot;,&quot;league&quot;],&quot;default&quot;:&quot;landing&quot;,&quot;tsType&quot;:&quot;'landing'|'arch'|'league'&quot;}}">
+const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+class Component extends DCLogic {
+  uid = 'sc' + Math.random().toString(36).slice(2, 7);
+  componentDidMount() {
+    const base = document.baseURI;
+    Promise.all([import(new URL('bullpen.js', base).href), import(new URL('blog.js', base).href)]).then(([M, B]) => { this.M = M; this.B = B; this.forceUpdate(); });
+  }
+  renderVals() {
+    const kind = this.props.kind ?? Q.get('kind') ?? 'landing', M = this.M, B = this.B;
+    const C = {
+      landing: { byline: 'by Tiarê Balbi', glyph: '◆', detail: 'Part 4 of 6 published', fresh: 'as of Sep 25, 2026', part: 4 },
+      arch: { byline: 'Architecture', glyph: '◆', detail: 'Now at Part 4 · A live leaderboard', fresh: 'as of Aug 18, 2026', part: 4 },
+      league: { byline: 'League', glyph: '●', detail: 'Live now', fresh: 'as of Sep 25 · 14:02 ET' },
+    }[kind];
+    const hasDiag = !!C.part;
+    return {
+      ...C, isLanding: kind === 'landing', isArch: kind === 'arch', isLeague: kind === 'league', hasDiag, colW: hasDiag ? '640px' : '640px',
+      diag: hasDiag && M && B ? React.cloneElement(M.renderDiagram(React.createElement, { moment: C.part, prev: C.part, reduced: true, flow: false, uid: this.uid, highlight: B.HL[C.part], viewBox: B.cropBox(C.part, 400 * 1.12, 440 * 1.12), ariaLabel: 'Bullpen architecture at Part 4' }), { height: '100%', preserveAspectRatio: 'xMidYMid meet' }) : null,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0;background:oklch(10.5% 0.038 238)}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+.bp[data-cb="on"]{--bp-gain:oklch(50% 0.16 255);--bp-loss:oklch(55% 0.16 48)}
+.bp.dark[data-cb="on"]{--bp-gain:oklch(72% 0.14 250);--bp-loss:oklch(76% 0.15 62)}
+@keyframes bp-flow{to{stroke-dashoffset:-24}}
+@keyframes bp-grow{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:none}}
+@keyframes bp-gone{0%,40%{opacity:1}100%{opacity:0}}
+@keyframes bp-gone-hold{0%,40%{opacity:1}100%{opacity:.4}}
+@keyframes bp-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes bp-fade-out{from{opacity:1}to{opacity:0}}
+@keyframes bp-strike{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes bp-ring{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.14)}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" class="bp {{ themeCls }}" data-cb="{{ cb }}" style="min-height:100vh;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);padding:40px 48px 80px">
+
+<div style="display:flex;align-items:center;gap:24px;margin-bottom:40px">
+  <span style="font:600 11px/1 var(--font-mono);padding:4px 8px;border-radius:5px;background:var(--foreground);color:var(--background)">1</span>
+  <span style="font:600 14px/1 var(--font-body)">Bullpen landing · desktop and mobile, hero options below</span>
+  <div style="flex:1"></div>
+  <div role="group" aria-label="Theme" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Gain and loss palette" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ cbOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Motion" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ motionOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+</div>
+
+<div style="display:flex;gap:48px;align-items:flex-start">
+<div style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">Desktop · 1440 · hero <a href="#1j">1j</a></div>
+<div data-screen-label="Landing desktop" style="width:1440px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+
+  <div style="display:flex;align-items:center;gap:28px;padding:22px 72px">
+    <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 24px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:500 12.5px/1 var(--font-body);color:var(--foreground-muted)">by Tiarê Balbi</span></div>
+    <nav style="display:flex;gap:26px;margin-left:28px">
+      <a href="#l-series" style="text-decoration:none;font:600 14px/1 var(--font-body);color:var(--foreground-muted)" style-hover="color:var(--foreground)">Series</a>
+      <a href="#l-arch" style="text-decoration:none;font:600 14px/1 var(--font-body);color:var(--foreground-muted)" style-hover="color:var(--foreground)">Architecture</a>
+      <a href="#l-decisions" style="text-decoration:none;font:600 14px/1 var(--font-body);color:var(--foreground-muted)" style-hover="color:var(--foreground)">Decisions</a>
+      <a href="#l-rules" style="text-decoration:none;font:600 14px/1 var(--font-body);color:var(--foreground-muted)" style-hover="color:var(--foreground)">Rules</a>
+      <a href="#l-cost" style="text-decoration:none;font:600 14px/1 var(--font-body);color:var(--foreground-muted)" style-hover="color:var(--foreground)">Cost</a>
+    </nav>
+    <div style="flex:1"></div>
+    <div role="status" style="display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:9999px;background:var(--surface-sunken)"><span style="position:relative;width:8px;height:8px"><span data-pulse="1" style="position:absolute;inset:0;border-radius:9999px;background:var(--ember)"></span><span style="position:absolute;inset:0;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span></span><span style="font:600 12.5px/1 var(--font-body)">Live</span><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">214 players</span></div>
+    <button onClick="{{ toggleTheme }}" aria-label="{{ themeLabel }}" style="width:40px;height:40px;border:0;border-radius:9999px;cursor:pointer;background:var(--surface-sunken);color:var(--foreground);display:grid;place-items:center" style-hover="background:var(--bp-panel-2)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg></button>
+    <button style="border:0;cursor:pointer;padding:12px 20px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body);transition:box-shadow 160ms,transform 120ms" style-hover="box-shadow:var(--shadow-ember-glow)" style-active="transform:scale(0.97)" style-focus="outline:2px solid var(--ember);outline-offset:3px">Join the live league</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:64px;padding:88px 72px 72px;align-items:end">
+    <div data-reveal="0">
+      <div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">A series in six parts · Part 4 is out</div>
+      <h1 style="margin:26px 0 0;font:500 92px/0.95 var(--font-display);letter-spacing:-0.045em;text-wrap:balance">Architecting software in 2026, <span style="color:var(--bp-accent-text)">built in public</span></h1>
+      <div style="margin-top:30px;max-width:600px;font:400 19px/1.7 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">Bullpen is a paper-trading league: $100,000 of play money, real US stocks and crypto at live prices, and a live leaderboard. It’s also the system I’m designing in the open, one part at a time.</div>
+      <div style="margin-top:36px;display:flex;gap:12px;align-items:center">
+        <button style="border:0;cursor:pointer;padding:16px 26px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body);transition:box-shadow 160ms,transform 120ms" style-hover="box-shadow:var(--shadow-ember-glow);transform:scale(1.02)" style-active="transform:scale(0.97)" style-focus="outline:2px solid var(--ember);outline-offset:3px">Join the live league</button>
+        <a href="#l-arch" style="text-decoration:none;padding:16px 24px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 15px/1 var(--font-body)" style-hover="background:var(--accent);color:var(--foreground)">Explore the architecture</a>
+      </div>
+      <div style="margin-top:22px;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">Paper trading. Play money. Not investment advice.</div>
+    </div>
+    <div data-reveal="2" style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:22px">
+      <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font:600 11px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Fall Open · live</div><div style="margin-top:8px;font:500 22px/1 var(--font-display);letter-spacing:-0.02em">Leaderboard</div></div><div style="font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted);text-align:right">ends Oct 31<br>214 players</div></div>
+      <div style="position:relative;margin-top:16px;height:260px;overflow:hidden">
+        <sc-for list="{{ lb }}" as="r" hint-placeholder-count="5"><div style="position:absolute;left:0;right:0;top:0;height:52px;display:grid;grid-template-columns:26px minmax(0,1fr) 56px 76px;align-items:center;gap:10px;padding:0 10px;border-radius:10px;background:{{ r.bg }};transform:{{ r.y }};transition:{{ r.tr }}">
+          <span style="font:600 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.rank }}</span>
+          <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="flex:none;width:28px;height:28px;border-radius:9999px;display:grid;place-items:center;background:{{ r.av }};font:600 9.5px/1 var(--font-mono)">{{ r.mono }}</span><span style="font:600 14px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="flex:none;font:600 10.5px/1 var(--font-mono);padding:3px 6px;border-radius:9999px;color:{{ r.chipTone }};background:{{ r.chipBg }};opacity:{{ r.chipOp }};transition:{{ r.chipTr }}">{{ r.chipText }}</span></div>
+          <svg viewBox="0 0 56 20" style="width:56px;height:20px" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.tone }}" stroke-width="1.25"></path></svg>
+          <span style="text-align:right;font:600 13px/1 var(--font-mono);color:{{ r.tone }}">{{ r.arrow }} {{ r.ret }}</span>
+        </div></sc-for>
+      </div>
+      <div style="margin-top:8px;height:52px;display:grid;grid-template-columns:26px minmax(0,1fr) 56px 76px;align-items:center;gap:10px;padding:0 10px;border-radius:10px;background:color-mix(in oklch,var(--ember) 12%,var(--bp-panel));box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--ember) 40%,transparent)">
+        <span style="font:700 12.5px/1 var(--font-mono)">{{ me.rank }}</span>
+        <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="flex:none;width:28px;height:28px;border-radius:9999px;display:grid;place-items:center;background:var(--foreground);color:var(--background);font:700 9.5px/1 var(--font-mono)">?</span><span style="font:700 14px/1.2 var(--font-body)">Your spot is open</span></div>
+        <span></span>
+        <span style="text-align:right;font:600 12.5px/1 var(--font-mono);color:var(--foreground-muted)">$100k</span>
+      </div>
+      <div style="margin-top:14px;font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted)">Ranks follow fills within 2 s. Equity marks to live prices.</div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface-sunken);padding:0;display:flex;align-items:center;overflow:hidden">
+    <div style="flex:none;padding:16px 20px 16px 72px;font:600 10.5px/1.3 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted);background:var(--surface-sunken);position:relative;z-index:1">Most traded<br>in the league</div>
+    <div style="flex:1;overflow:hidden"><div data-tape="1" style="display:flex;width:max-content">
+      <sc-for list="{{ tape }}" as="q" hint-placeholder-count="8"><div style="position:relative;display:flex;align-items:center;gap:10px;padding:14px 22px;border-left:1px solid var(--bp-hair)"><span data-fa="{{ q.sym }}" aria-hidden="true" style="position:absolute;inset:0;opacity:0;pointer-events:none"></span><span style="position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:26px;padding:0 6px;border-radius:{{ q.badgeRadius }};background:{{ q.badgeBg }};font:600 10px/1 var(--font-mono)">{{ q.mono }}</span><span style="position:relative;font:500 14px/1 var(--font-mono)">{{ q.price }}</span><span style="position:relative;font:500 12px/1 var(--font-mono);color:{{ q.tone }}">{{ q.arrow }} {{ q.pct }}</span></div></sc-for>
+    </div></div>
+  </div>
+
+  <div id="l-series" style="padding:128px 72px 0">
+    <div data-reveal="0" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:end">
+      <div><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">The series</div><h2 style="margin:18px 0 0;font:500 56px/1 var(--font-display);letter-spacing:-0.04em">Six parts, one system</h2></div>
+      <div style="font:400 17px/1.7 var(--font-body);color:var(--foreground-muted);max-width:520px;text-wrap:pretty">Each part changes the architecture for a reason you can see: a new service, a split database, an event where there used to be a call.</div>
+    </div>
+    <div style="margin-top:48px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px">
+      <sc-for list="{{ series }}" as="p" hint-placeholder-count="6"><div data-reveal="{{ p.i }}" style="display:flex;flex-direction:column;gap:14px;min-height:280px;padding:20px;border-radius:16px;background:{{ p.bg }};border:{{ p.bd }};box-sizing:border-box">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">PART {{ p.part }}</span><span style="font:600 9.5px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;padding:4px 8px;border-radius:9999px;background:{{ p.chipBg }};color:{{ p.chipFg }};border:{{ p.chipBd }}">{{ p.status }}</span></div>
+        <div style="font:500 21px/1.12 var(--font-display);letter-spacing:-0.02em;text-wrap:pretty">{{ p.title }}</div>
+        <div style="margin-top:auto"><div style="font:600 10px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Introduced</div><div style="margin-top:6px;font:500 13.5px/1.45 var(--font-body)">{{ p.change }}</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--bp-hair)"><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ p.date }}</span><button onClick="{{ p.onView }}" style="border:0;background:transparent;cursor:pointer;color:var(--bp-accent-text);font:700 12.5px/1 var(--font-body);padding:6px 0">{{ p.cta }}</button></div>
+      </div></sc-for>
+    </div>
+  </div>
+
+  <div id="l-arch" style="margin-top:128px;background:var(--surface-sunken);padding:104px 72px 88px">
+    <div data-reveal="0" style="display:flex;align-items:flex-end;gap:48px">
+      <div style="flex:1"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Architecture explorer</div><h2 style="margin:18px 0 0;font:500 56px/1 var(--font-display);letter-spacing:-0.04em">The system, part by part</h2><div style="margin-top:18px;max-width:620px;font:400 17px/1.7 var(--font-body);color:var(--foreground-muted)">Scrub through the series to watch the architecture change. Select any service for its rules, decisions and monthly cost.</div></div>
+      <div style="display:flex;gap:8px">
+        <sc-for list="{{ x.toggles }}" as="t" hint-placeholder-count="3"><button role="switch" aria-checked="{{ t.on }}" onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:10px;border:0;cursor:pointer;background:var(--bp-panel);color:var(--foreground);padding:8px 14px 8px 8px;border-radius:9999px;font:600 13px/1 var(--font-body)" style-focus="outline:2px solid var(--ember);outline-offset:2px"><span style="width:30px;height:18px;border-radius:9999px;background:{{ t.track }};position:relative;transition:background 160ms"><span style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:9999px;background:{{ t.knob }};transform:{{ t.x }};transition:transform 160ms cubic-bezier(0.23,1,0.32,1)"></span></span>{{ t.label }}</button></sc-for>
+      </div>
+    </div>
+    <div style="margin-top:40px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:stretch">
+      <div style="position:relative;background:var(--background);border:1px solid var(--bp-hair);border-radius:20px;padding:22px 26px 18px">
+        <div style="display:flex;align-items:center;gap:22px;font:500 12px/1 var(--font-body);color:var(--foreground-muted);margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:8px"><svg width="28" height="8" aria-hidden="true"><path d="M0 4H28" style="stroke:var(--foreground-muted)" stroke-width="1.25"></path><path d="M4 4H6M16 4H18" style="stroke:var(--ember)" stroke-width="1.75" stroke-linecap="round"></path></svg>Synchronous call</span>
+          <span style="display:flex;align-items:center;gap:8px"><svg width="28" height="8" aria-hidden="true"><path d="M0 4H28" style="stroke:var(--foreground-muted)" stroke-width="1.25" stroke-dasharray="4 5"></path><circle cx="12" cy="4" r="2.6" style="fill:var(--ember)"></circle><circle cx="18" cy="4" r="2.6" style="fill:var(--ember)"></circle></svg>Asynchronous message</span>
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:11px;border-radius:3px;border:1px dashed var(--foreground-muted)"></span>External</span>
+          <div style="flex:1"></div>
+          <span style="font:600 11px/1 var(--font-mono)">PART {{ x.part }} · {{ x.statusText }}</span>
+        </div>
+        <div>{{ x.diag }}</div>
+        <sc-if value="{{ x.fol.on }}" hint-placeholder-val="{{ false }}"><div role="status" aria-live="polite" style="position:absolute;left:26px;right:26px;bottom:18px;display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:14px;background:var(--popover);border:1px solid var(--bp-hair);box-shadow:var(--shadow-ambient)"><span style="flex:none;font:600 11px/1 var(--font-mono);color:var(--bp-accent-text)">STEP {{ x.fol.n }} OF {{ x.fol.total }}</span><span style="font:700 14px/1.3 var(--font-body)">{{ x.fol.caption }}</span><span style="font:400 13.5px/1.4 var(--font-body);color:var(--foreground-muted)">{{ x.fol.detail }}</span></div></sc-if>
+      </div>
+      <aside style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:24px;display:flex;flex-direction:column">
+        <sc-if value="{{ x.hasSel }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">{{ x.node.kind }} · {{ x.node.meta }}</span><button onClick="{{ x.clearSel }}" aria-label="Close details" style="width:28px;height:28px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:500 14px/1 var(--font-mono)">✕</button></div>
+          <div style="margin-top:14px;font:500 30px/1.05 var(--font-display);letter-spacing:-0.03em">{{ x.node.label }}</div>
+          <div style="margin-top:12px;font:400 14.5px/1.6 var(--font-body);text-wrap:pretty">{{ x.node.purpose }}</div>
+          <div style="margin-top:20px;font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Characteristics</div>
+          <div style="margin-top:10px;display:grid;gap:6px"><sc-for list="{{ x.node.traits }}" as="t" hint-placeholder-count="2"><div style="display:flex;gap:8px;font:400 13.5px/1.5 var(--font-body)"><span style="color:var(--foreground-muted)">·</span>{{ t.text }}</div></sc-for></div>
+          <sc-if value="{{ x.node.hasRules }}" hint-placeholder-val="{{ true }}"><div style="margin-top:20px;font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Rules</div><div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ x.node.rules }}" as="r" hint-placeholder-count="2"><span style="display:inline-flex;gap:6px;padding:6px 10px;border-radius:9999px;background:{{ r.bg }};font:600 12px/1.3 var(--font-body)"><span style="font-family:var(--font-mono);color:{{ r.fg }}">{{ r.glyph }}</span>{{ r.text }}</span></sc-for></div></sc-if>
+          <div style="margin-top:20px;font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Decisions</div>
+          <div style="margin-top:10px;display:grid;gap:6px"><sc-for list="{{ x.node.adrs }}" as="a" hint-placeholder-count="1"><a href="#l-decisions" style="display:flex;gap:10px;text-decoration:none;font:500 13px/1.45 var(--font-body)"><span style="flex:none;font:600 12px/1.45 var(--font-mono);color:var(--bp-accent-text)">{{ a.id }}</span><span>{{ a.title }}</span></a></sc-for></div>
+          <div style="margin-top:auto;padding-top:20px;display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid var(--bp-hair)"><div><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Monthly cost</div><div style="margin-top:6px;font:400 12.5px/1.4 var(--font-body);color:var(--foreground-muted)">{{ x.node.costNote }}</div></div><span style="font:500 28px/1 var(--font-mono)">{{ x.node.cost }}</span></div>
+        </sc-if>
+        <sc-if value="{{ x.noSel }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">PART {{ x.part }}</span><span style="font:600 9.5px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;padding:4px 8px;border-radius:9999px;background:{{ x.chipBg }};color:{{ x.chipFg }};border:{{ x.chipBd }}">{{ x.status }}</span></div>
+          <div style="margin-top:14px;font:500 28px/1.08 var(--font-display);letter-spacing:-0.03em;text-wrap:pretty">{{ x.title }}</div>
+          <div style="margin-top:12px;font:400 14.5px/1.65 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">{{ x.summary }}</div>
+          <div style="margin-top:22px;font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">What changed</div>
+          <div style="margin-top:12px;display:grid;gap:8px"><sc-for list="{{ x.changes }}" as="c" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;font:500 13.5px/1.3 var(--font-body)"><span style="width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:{{ c.bg }};color:{{ c.tone }};font:700 12px/1 var(--font-mono)">{{ c.glyph }}</span>{{ c.label }}</div></sc-for></div>
+          <div style="margin-top:auto;padding-top:20px;font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted)">Select a node for details.</div>
+        </sc-if>
+      </aside>
+    </div>
+    <div style="margin-top:16px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px">
+      <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:20px 24px;display:flex;align-items:center;gap:18px">
+        <button onClick="{{ x.onPlay }}" aria-label="{{ x.playLabel }}" style="flex:none;width:40px;height:40px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:700 12px/1 var(--font-mono)" style-focus="outline:2px solid var(--ember);outline-offset:3px">{{ x.playGlyph }}</button>
+        <div role="group" aria-label="Series part" onKeyDown="{{ x.onKey }}" style="position:relative;flex:1">
+          <div style="position:absolute;left:8.33%;right:8.33%;top:9px;height:2px;background:var(--bp-hair)"></div>
+          <div style="position:absolute;left:8.33%;right:8.33%;top:9px;height:2px;background:var(--ember);transform:{{ x.fill }};transform-origin:left center;transition:transform 560ms var(--bp-spring)"></div>
+          <div style="position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))">
+            <sc-for list="{{ x.stops }}" as="s" hint-placeholder-count="6"><button onClick="{{ s.onClick }}" aria-current="{{ s.current }}" style="border:0;background:transparent;cursor:pointer;color:var(--foreground);display:grid;justify-items:center;gap:7px;padding:0 4px;text-align:center" style-focus="outline:2px solid var(--ember);outline-offset:2px;border-radius:8px"><span style="width:20px;height:20px;box-sizing:border-box;border-radius:9999px;background:{{ s.dotBg }};border:{{ s.dotBd }};transform:{{ s.dotScale }};transition:transform 240ms cubic-bezier(0.16,1,0.3,1),background 240ms"></span><span style="font:600 10.5px/1 var(--font-mono);color:var(--foreground-muted)">PART {{ s.part }}</span><span style="font:600 12.5px/1.3 var(--font-body);color:{{ s.labelFg }}">{{ s.title }}</span></button></sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:20px 24px;display:flex;flex-direction:column;justify-content:center;gap:12px">
+        <sc-if value="{{ x.fol.off }}" hint-placeholder-val="{{ true }}"><button onClick="{{ x.startFollow }}" style="border:0;cursor:pointer;padding:14px 18px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body);display:flex;align-items:center;justify-content:center;gap:10px" style-hover="box-shadow:var(--shadow-ember-glow)" style-focus="outline:2px solid var(--ember);outline-offset:3px">▶ Follow an order</button><div style="font:400 12.5px/1.45 var(--font-body);color:var(--foreground-muted);text-align:center">Watch one market order travel through Part {{ x.part }}.</div></sc-if>
+        <sc-if value="{{ x.fol.on }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:6px">
+            <button onClick="{{ x.fol.prev }}" aria-label="Previous step" style="width:36px;height:36px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:700 12px/1 var(--font-mono)">◀</button>
+            <button onClick="{{ x.fol.toggle }}" aria-label="{{ x.fol.toggleLabel }}" style="width:36px;height:36px;border:0;border-radius:9999px;cursor:pointer;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">{{ x.fol.toggleGlyph }}</button>
+            <button onClick="{{ x.fol.next }}" aria-label="Next step" style="width:36px;height:36px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:700 12px/1 var(--font-mono)">▶</button>
+            <div style="flex:1"></div>
+            <button onClick="{{ x.fol.exit }}" style="border:0;background:transparent;cursor:pointer;color:var(--foreground-muted);font:600 12.5px/1 var(--font-body);padding:8px">Exit</button>
+          </div>
+          <div style="display:flex;gap:4px"><sc-for list="{{ x.fol.pips }}" as="p" hint-placeholder-count="7"><button onClick="{{ p.onClick }}" aria-label="{{ p.label }}" style="flex:1;height:24px;border:0;padding:0;background:transparent;cursor:pointer;display:grid;align-items:center"><span style="display:block;height:4px;border-radius:9999px;background:{{ p.bg }};transition:background 240ms"></span></button></sc-for></div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:128px 72px 0;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px">
+    <div id="l-decisions" data-reveal="0" style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:32px">
+      <div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Decisions</div>
+      <h2 style="margin:16px 0 0;font:500 40px/1 var(--font-display);letter-spacing:-0.035em">Written down, then built</h2>
+      <div style="margin-top:28px;display:grid">
+        <sc-for list="{{ decisions }}" as="d" hint-placeholder-count="9"><div style="display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px 0;border-top:1px solid var(--bp-hair)"><span style="font:600 12px/1 var(--font-mono);color:var(--foreground-muted)">{{ d.id }}</span><div style="min-width:0"><div style="font:600 14.5px/1.35 var(--font-body);text-decoration:{{ d.deco }};color:{{ d.fg }}">{{ d.title }}</div><div style="font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">Part {{ d.part }}{{ d.note }}</div></div><span style="font:600 9.5px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;padding:5px 9px;border-radius:9999px;background:{{ d.chipBg }};color:{{ d.chipFg }};border:{{ d.chipBd }}">{{ d.status }}</span></div></sc-for>
+      </div>
+    </div>
+    <div id="l-rules" data-reveal="1" style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:32px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px"><div><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Rules</div><h2 style="margin:16px 0 0;font:500 40px/1 var(--font-display);letter-spacing:-0.035em">Checked, not hoped for</h2></div><div style="font:500 12.5px/1.4 var(--font-mono);color:var(--foreground-muted);text-align:right">{{ rulesSummary }}</div></div>
+      <div style="margin-top:28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+        <sc-for list="{{ rules }}" as="r" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;background:var(--background);border-radius:14px;overflow:hidden">
+          <div style="padding:12px 16px;font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted);border-bottom:1px solid var(--bp-hair)">{{ r.file }}</div>
+          <div style="padding:14px 16px;font:500 12.5px/1.75 var(--font-mono);white-space:pre;overflow-x:auto;flex:1"><sc-for list="{{ r.lines }}" as="ln" hint-placeholder-count="3"><div><sc-for list="{{ ln.toks }}" as="tk" hint-placeholder-count="3"><span style="color:{{ tk.c }};font-style:{{ tk.fs }}">{{ tk.t }}</span></sc-for></div></sc-for></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--surface-sunken)"><span style="font:500 12px/1.3 var(--font-body);color:var(--foreground-muted)">{{ r.check }}</span><span style="flex:none;display:inline-flex;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ r.bg }};color:{{ r.fg }};font:600 11px/1 var(--font-mono)">{{ r.result }}</span></div>
+        </div></sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div id="l-cost" style="padding:16px 72px 0">
+    <div data-reveal="0" style="display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px">
+      <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:32px;display:flex;flex-direction:column">
+        <div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Cost</div>
+        <h2 style="margin:16px 0 0;font:500 40px/1 var(--font-display);letter-spacing:-0.035em">What it costs to run</h2>
+        <div style="margin-top:auto;padding-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div><div style="font:500 60px/1 var(--font-mono);letter-spacing:-0.03em">$0.00</div><div style="margin-top:12px;font:600 10.5px/1.4 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Spent in September</div></div>
+          <div><div style="font:500 60px/1 var(--font-mono);letter-spacing:-0.03em;color:var(--bp-accent-text)">$1.84</div><div style="margin-top:12px;font:600 10.5px/1.4 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">Per 1,000 players / month, est.</div></div>
+        </div>
+        <div style="margin-top:22px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Everything fits in free tiers today. The estimate applies once usage passes them, at current prices.</div>
+      </div>
+      <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:32px">
+        <div style="display:flex;justify-content:space-between;font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)"><span>Free-tier usage</span><span style="font-family:var(--font-mono);letter-spacing:0.04em;text-transform:none">as of Sep 25, 14:00</span></div>
+        <div style="margin-top:22px;display:grid;gap:4px">
+          <sc-for list="{{ costs }}" as="c" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:190px minmax(0,1fr) 150px;gap:20px;align-items:center;padding:12px 0;border-top:1px solid var(--bp-hair)">
+            <div><div style="font:600 14px/1.3 var(--font-body)">{{ c.name }}</div><div style="font:400 12.5px/1.35 var(--font-body);color:var(--foreground-muted)">{{ c.what }}</div></div>
+            <div style="height:8px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div data-bar="1" style="height:100%;border-radius:9999px;background:{{ c.tone }};transform:{{ c.scale }};transform-origin:left center"></div></div>
+            <div style="text-align:right"><div style="font:500 13px/1.3 var(--font-mono)">{{ c.label }}</div><div style="font:600 11px/1.35 var(--font-mono);color:{{ c.noteFg }}">{{ c.note }}</div></div>
+          </div></sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:128px;background:var(--surface-sunken);padding:56px 72px 40px">
+    <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:48px">
+      <div><div style="font:600 26px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</div><div style="margin-top:14px;max-width:380px;font:400 14.5px/1.65 var(--font-body);color:var(--foreground-muted)">The live project behind “Architecting Software in 2026”, a series by Tiarê Balbi.</div></div>
+      <div style="display:grid;gap:10px;align-content:start;font:600 14px/1.3 var(--font-body)"><a href="https://www.tiarebalbi.com" style="text-decoration:none">tiarebalbi.com</a><a href="https://github.com/tiarebalbi" style="text-decoration:none">GitHub</a><a href="#l-decisions" style="text-decoration:none">Decision records</a></div>
+      <div style="display:grid;gap:10px;align-content:start;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span data-slot="attribution" style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+    </div>
+    <div style="margin-top:48px;padding-top:20px;border-top:1px solid var(--bp-hair);display:flex;justify-content:space-between;font:400 12.5px/1 var(--font-body);color:var(--foreground-muted)"><span>© 2026 Tiarê Balbi Bonamini</span><span>Crafted with intention.</span></div>
+  </div>
+</div>
+</div>
+
+<div style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">Mobile · 390</div>
+<div data-screen-label="Landing mobile" style="width:390px;background:var(--background);border-radius:28px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="display:flex;align-items:center;gap:10px;padding:18px 20px">
+    <span style="font:600 21px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span>
+    <div style="flex:1"></div>
+    <span style="display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9999px;background:var(--surface-sunken);font:600 12px/1 var(--font-body)"><span style="width:7px;height:7px;border-radius:9999px;background:var(--ember);box-shadow:0 0 8px var(--ember)"></span>Live</span>
+    <button onClick="{{ toggleTheme }}" aria-label="{{ themeLabel }}" style="width:44px;height:44px;border:0;border-radius:9999px;background:var(--surface-sunken);color:var(--foreground);display:grid;place-items:center;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg></button>
+    <button aria-label="Menu" style="width:44px;height:44px;border:0;border-radius:9999px;background:var(--surface-sunken);color:var(--foreground);display:grid;place-items:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+  </div>
+  <div style="padding:40px 20px 32px">
+    <div style="font:600 10.5px/1.4 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">A series in six parts · Part 4 is out</div>
+    <h1 style="margin:18px 0 0;font:500 46px/0.98 var(--font-display);letter-spacing:-0.045em">Architecting software in 2026, <span style="color:var(--bp-accent-text)">built in public</span></h1>
+    <div style="margin-top:20px;font:400 16px/1.65 var(--font-body);color:var(--foreground-muted)">A paper-trading league with $100,000 of play money and real prices, and the system I’m designing in the open.</div>
+    <div style="margin-top:26px;display:grid;gap:10px">
+      <button style="border:0;height:52px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body);cursor:pointer">Join the live league</button>
+      <a href="#m-arch" style="display:grid;place-items:center;height:52px;text-decoration:none;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 15px/1 var(--font-body)">Explore the architecture</a>
+    </div>
+    <div style="margin-top:14px;font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted);text-align:center">Paper trading. Play money. Not investment advice.</div>
+  </div>
+  <div style="background:var(--surface-sunken);overflow:hidden"><div data-tape="1" style="display:flex;width:max-content">
+    <sc-for list="{{ tape }}" as="q" hint-placeholder-count="4"><div style="position:relative;display:flex;align-items:center;gap:8px;padding:12px 16px;border-left:1px solid var(--bp-hair)"><span data-fa="{{ q.sym }}" aria-hidden="true" style="position:absolute;inset:0;opacity:0;pointer-events:none"></span><span style="position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:24px;padding:0 5px;border-radius:{{ q.badgeRadius }};background:{{ q.badgeBg }};font:600 9.5px/1 var(--font-mono)">{{ q.mono }}</span><span style="position:relative;font:500 13px/1 var(--font-mono)">{{ q.price }}</span><span style="position:relative;font:500 11.5px/1 var(--font-mono);color:{{ q.tone }}">{{ q.arrow }} {{ q.pct }}</span></div></sc-for>
+  </div></div>
+  <div style="padding:28px 20px 0">
+    <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:18px;padding:16px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 19px/1 var(--font-display);letter-spacing:-0.02em">Fall Open</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">214 players · live</span></div>
+      <div style="position:relative;margin-top:12px;height:156px;overflow:hidden">
+        <sc-for list="{{ lb }}" as="r" hint-placeholder-count="3"><div style="position:absolute;left:0;right:0;top:0;height:52px;display:grid;grid-template-columns:22px minmax(0,1fr) 72px;align-items:center;gap:8px;padding:0 8px;border-radius:10px;transform:{{ r.y }};transition:{{ r.tr }}"><span style="font:600 12.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.rank }}</span><div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:none;width:26px;height:26px;border-radius:9999px;display:grid;place-items:center;background:{{ r.av }};font:600 9px/1 var(--font-mono)">{{ r.mono }}</span><span style="font:600 13.5px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="flex:none;font:600 10px/1 var(--font-mono);padding:3px 5px;border-radius:9999px;color:{{ r.chipTone }};background:{{ r.chipBg }};opacity:{{ r.chipOp }};transition:{{ r.chipTr }}">{{ r.chipText }}</span></div><span style="text-align:right;font:600 12.5px/1 var(--font-mono);color:{{ r.tone }}">{{ r.arrow }} {{ r.ret }}</span></div></sc-for>
+      </div>
+    </div>
+  </div>
+  <div style="padding:64px 20px 0">
+    <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">The series</div>
+    <h2 style="margin:14px 0 0;font:500 34px/1 var(--font-display);letter-spacing:-0.04em">Six parts, one system</h2>
+  </div>
+  <div style="margin-top:22px;display:flex;gap:12px;overflow-x:auto;padding:0 20px 6px;scroll-snap-type:x mandatory;scrollbar-width:none">
+    <sc-for list="{{ series }}" as="p" hint-placeholder-count="3"><div style="flex:none;width:250px;scroll-snap-align:start;display:flex;flex-direction:column;gap:12px;min-height:230px;padding:18px;border-radius:16px;background:{{ p.bg }};border:{{ p.bd }};box-sizing:border-box">
+      <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">PART {{ p.part }}</span><span style="font:600 9.5px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;padding:4px 8px;border-radius:9999px;background:{{ p.chipBg }};color:{{ p.chipFg }};border:{{ p.chipBd }}">{{ p.status }}</span></div>
+      <div style="font:500 21px/1.12 var(--font-display);letter-spacing:-0.02em">{{ p.title }}</div>
+      <div style="margin-top:auto;font:500 13px/1.45 var(--font-body);color:var(--foreground-muted)">{{ p.change }}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--bp-hair)"><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ p.date }}</span><button onClick="{{ p.onView }}" style="border:0;background:transparent;cursor:pointer;color:var(--bp-accent-text);font:700 13px/1 var(--font-body);min-height:44px">{{ p.cta }}</button></div>
+    </div></sc-for>
+  </div>
+  <div id="m-arch" style="margin-top:64px;background:var(--surface-sunken);padding:48px 0 40px">
+    <div style="padding:0 20px"><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Architecture explorer</div><h2 style="margin:14px 0 0;font:500 34px/1 var(--font-display);letter-spacing:-0.04em">The system, part by part</h2></div>
+    <div style="margin-top:20px;display:flex;gap:8px;overflow-x:auto;padding:0 20px;scrollbar-width:none"><sc-for list="{{ x.stops }}" as="s" hint-placeholder-count="6"><button onClick="{{ s.onClick }}" aria-current="{{ s.current }}" style="flex:none;height:44px;padding:0 16px;border:{{ s.chipBd }};border-radius:9999px;cursor:pointer;background:{{ s.chipBg }};color:{{ s.chipFg }};font:600 13px/1 var(--font-body)">Part {{ s.part }}</button></sc-for></div>
+    <div style="margin:16px 20px 0;background:var(--background);border-radius:18px;overflow-x:auto;scrollbar-width:none"><div style="width:760px;padding:14px">{{ x.diagM }}</div></div>
+    <div style="padding:8px 20px 0;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">Drag to pan · tap a service for details</div>
+    <sc-if value="{{ x.fol.on }}" hint-placeholder-val="{{ false }}"><div role="status" aria-live="polite" style="margin:14px 20px 0;padding:14px 16px;border-radius:14px;background:var(--popover);border:1px solid var(--bp-hair)"><div style="font:600 10.5px/1 var(--font-mono);color:var(--bp-accent-text)">STEP {{ x.fol.n }} OF {{ x.fol.total }}</div><div style="margin-top:8px;font:700 15px/1.3 var(--font-body)">{{ x.fol.caption }}</div><div style="margin-top:4px;font:400 13.5px/1.45 var(--font-body);color:var(--foreground-muted)">{{ x.fol.detail }}</div><div style="margin-top:12px;display:flex;gap:8px"><button onClick="{{ x.fol.prev }}" aria-label="Previous step" style="width:44px;height:44px;border:0;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 12px/1 var(--font-mono)">◀</button><button onClick="{{ x.fol.toggle }}" aria-label="{{ x.fol.toggleLabel }}" style="width:44px;height:44px;border:0;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">{{ x.fol.toggleGlyph }}</button><button onClick="{{ x.fol.next }}" aria-label="Next step" style="width:44px;height:44px;border:0;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 12px/1 var(--font-mono)">▶</button><div style="flex:1"></div><button onClick="{{ x.fol.exit }}" style="height:44px;border:0;background:transparent;color:var(--foreground-muted);font:600 13px/1 var(--font-body)">Exit</button></div></div></sc-if>
+    <sc-if value="{{ x.fol.off }}" hint-placeholder-val="{{ true }}"><div style="padding:14px 20px 0"><button onClick="{{ x.startFollow }}" style="width:100%;height:52px;border:0;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body);cursor:pointer">▶ Follow an order</button></div></sc-if>
+    <div style="margin:16px 20px 0;background:var(--popover);border-radius:22px 22px 18px 18px;padding:10px 18px 20px;box-shadow:var(--shadow-ambient)">
+      <div style="width:36px;height:4px;border-radius:9999px;background:var(--bp-hair);margin:0 auto 14px"></div>
+      <sc-if value="{{ x.hasSel }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)">{{ x.node.kind }} · {{ x.node.meta }}</span><button onClick="{{ x.clearSel }}" aria-label="Close details" style="width:44px;height:44px;margin:-8px -10px -8px 0;border:0;border-radius:9999px;background:transparent;color:var(--foreground);font:500 15px/1 var(--font-mono)">✕</button></div><div style="font:500 26px/1.05 var(--font-display);letter-spacing:-0.03em">{{ x.node.label }}</div><div style="margin-top:10px;font:400 14.5px/1.6 var(--font-body)">{{ x.node.purpose }}</div><div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ x.node.rules }}" as="r" hint-placeholder-count="2"><span style="display:inline-flex;gap:6px;padding:6px 10px;border-radius:9999px;background:{{ r.bg }};font:600 12px/1.3 var(--font-body)"><span style="font-family:var(--font-mono);color:{{ r.fg }}">{{ r.glyph }}</span>{{ r.text }}</span></sc-for></div><div style="margin-top:14px;display:flex;justify-content:space-between;align-items:baseline;padding-top:12px;border-top:1px solid var(--bp-hair)"><span style="font:400 12.5px/1.4 var(--font-body);color:var(--foreground-muted)">Monthly · {{ x.node.costNote }}</span><span style="font:500 22px/1 var(--font-mono)">{{ x.node.cost }}</span></div></sc-if>
+      <sc-if value="{{ x.noSel }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:8px"><span style="font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">PART {{ x.part }}</span><span style="font:600 9.5px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;padding:4px 8px;border-radius:9999px;background:{{ x.chipBg }};color:{{ x.chipFg }};border:{{ x.chipBd }}">{{ x.status }}</span></div><div style="margin-top:12px;font:500 24px/1.08 var(--font-display);letter-spacing:-0.03em">{{ x.title }}</div><div style="margin-top:10px;font:400 14px/1.6 var(--font-body);color:var(--foreground-muted)">{{ x.summary }}</div><div style="margin-top:14px;display:grid;gap:8px"><sc-for list="{{ x.changes }}" as="c" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;font:500 13.5px/1.3 var(--font-body)"><span style="width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:{{ c.bg }};color:{{ c.tone }};font:700 12px/1 var(--font-mono)">{{ c.glyph }}</span>{{ c.label }}</div></sc-for></div></sc-if>
+    </div>
+  </div>
+  <div style="padding:64px 20px 0">
+    <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Decisions</div>
+    <h2 style="margin:14px 0 0;font:500 30px/1 var(--font-display);letter-spacing:-0.04em">Written down, then built</h2>
+    <div style="margin-top:18px"><sc-for list="{{ decisions }}" as="d" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--bp-hair)"><div style="min-width:0"><div style="font:600 11px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ d.id }} · Part {{ d.part }}</div><div style="font:600 14.5px/1.35 var(--font-body);text-decoration:{{ d.deco }};color:{{ d.fg }}">{{ d.title }}</div></div><span style="font:600 9px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;padding:5px 8px;border-radius:9999px;background:{{ d.chipBg }};color:{{ d.chipFg }};border:{{ d.chipBd }}">{{ d.status }}</span></div></sc-for></div>
+  </div>
+  <div style="padding:56px 20px 0">
+    <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Rules</div>
+    <h2 style="margin:14px 0 0;font:500 30px/1 var(--font-display);letter-spacing:-0.04em">Checked, not hoped for</h2>
+    <div style="margin-top:18px;display:grid;gap:12px"><sc-for list="{{ rules }}" as="r" hint-placeholder-count="2"><div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:14px;overflow:hidden"><div style="padding:11px 14px;font:500 11px/1.3 var(--font-mono);color:var(--foreground-muted)">{{ r.file }}</div><div style="padding:0 14px 12px;font:500 11.5px/1.7 var(--font-mono);white-space:pre;overflow-x:auto"><sc-for list="{{ r.lines }}" as="ln" hint-placeholder-count="3"><div><sc-for list="{{ ln.toks }}" as="tk" hint-placeholder-count="3"><span style="color:{{ tk.c }};font-style:{{ tk.fs }}">{{ tk.t }}</span></sc-for></div></sc-for></div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--surface-sunken)"><span style="font:500 11.5px/1.3 var(--font-body);color:var(--foreground-muted)">{{ r.check }}</span><span style="flex:none;padding:5px 9px;border-radius:9999px;background:{{ r.bg }};color:{{ r.fg }};font:600 10.5px/1 var(--font-mono)">{{ r.result }}</span></div></div></sc-for></div>
+  </div>
+  <div style="padding:56px 20px 0">
+    <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.22em;text-transform:uppercase;color:var(--foreground-muted)">Cost</div>
+    <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px"><div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:14px;padding:16px"><div style="font:500 32px/1 var(--font-mono)">$0.00</div><div style="margin-top:8px;font:600 9.5px/1.4 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Spent in September</div></div><div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:14px;padding:16px"><div style="font:500 32px/1 var(--font-mono);color:var(--bp-accent-text)">$1.84</div><div style="margin-top:8px;font:600 9.5px/1.4 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Per 1,000 players, est.</div></div></div>
+    <div style="margin-top:12px;display:grid"><sc-for list="{{ costs }}" as="c" hint-placeholder-count="5"><div style="padding:12px 0;border-top:1px solid var(--bp-hair)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px/1.3 var(--font-body)">{{ c.name }}</span><span style="font:500 12.5px/1.3 var(--font-mono)">{{ c.label }}</span></div><div style="margin-top:8px;height:6px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div style="height:100%;border-radius:9999px;background:{{ c.tone }};transform:{{ c.scale }};transform-origin:left center"></div></div></div></sc-for></div>
+  </div>
+  <div style="margin-top:64px;background:var(--surface-sunken);padding:32px 20px;display:grid;gap:10px;font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted)">
+    <span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em;color:var(--foreground)">Bullpen</span>
+    <span>Paper trading. Play money. Not investment advice.</span>
+    <span style="font-family:var(--font-mono);font-size:11.5px">Market data: IEX via Alpaca · Coinbase</span>
+    <span>© 2026 Tiarê Balbi Bonamini</span>
+  </div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:88px;display:flex;align-items:center;gap:14px"><span style="font:600 14px/1 var(--font-body)">Hero options</span><span style="font:400 13px/1 var(--font-body);color:var(--foreground-muted)">Same live data in each. <a href="#1j">1j</a> is used in the pages above.</span></div>
+<div style="margin-top:24px;display:flex;gap:48px;align-items:flex-start">
+
+<div id="1j" style="flex:none;display:grid;gap:10px">
+  <div style="display:flex;align-items:center;gap:8px"><a href="#1j" style="font:600 10.5px/1 var(--font-mono);padding:4px 7px;border-radius:5px;background:var(--foreground);color:var(--background);text-decoration:none">1j</a><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">Editorial headline + live leaderboard, tape as the floor</span></div>
+  <div style="width:1440px;height:820px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:28px;padding:22px 72px"><span style="font:600 24px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:8px;font:600 12.5px/1 var(--font-body)"><span style="width:8px;height:8px;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span>Live</span><span style="padding:12px 20px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body)">Join the live league</span></div>
+    <div style="flex:1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:64px;padding:0 72px;align-items:center">
+      <div><h1 style="margin:0;font:500 92px/0.95 var(--font-display);letter-spacing:-0.045em">Architecting software in 2026, <span style="color:var(--bp-accent-text)">built in public</span></h1><div style="margin-top:28px;max-width:560px;font:400 19px/1.7 var(--font-body);color:var(--foreground-muted)">A paper-trading league with real prices and play money, and the system behind it, designed in the open.</div><div style="margin-top:34px;display:flex;gap:12px"><span style="padding:16px 26px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body)">Join the live league</span><span style="padding:16px 24px;border-radius:9999px;background:var(--bp-panel-2);font:700 15px/1 var(--font-body)">Explore the architecture</span></div></div>
+      <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:22px"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Fall Open · live</div><div style="position:relative;margin-top:14px;height:260px;overflow:hidden"><sc-for list="{{ lb }}" as="r" hint-placeholder-count="5"><div style="position:absolute;left:0;right:0;top:0;height:52px;display:grid;grid-template-columns:26px minmax(0,1fr) 56px 76px;align-items:center;gap:10px;padding:0 10px;transform:{{ r.y }};transition:{{ r.tr }}"><span style="font:600 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.rank }}</span><div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="flex:none;width:28px;height:28px;border-radius:9999px;display:grid;place-items:center;background:{{ r.av }};font:600 9.5px/1 var(--font-mono)">{{ r.mono }}</span><span style="font:600 14px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="flex:none;font:600 10.5px/1 var(--font-mono);padding:3px 6px;border-radius:9999px;color:{{ r.chipTone }};background:{{ r.chipBg }};opacity:{{ r.chipOp }};transition:{{ r.chipTr }}">{{ r.chipText }}</span></div><svg viewBox="0 0 56 20" style="width:56px;height:20px" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.tone }}" stroke-width="1.25"></path></svg><span style="text-align:right;font:600 13px/1 var(--font-mono);color:{{ r.tone }}">{{ r.arrow }} {{ r.ret }}</span></div></sc-for></div></div>
+    </div>
+    <div style="background:var(--surface-sunken);overflow:hidden"><div data-tape="1" style="display:flex;width:max-content"><sc-for list="{{ tape }}" as="q" hint-placeholder-count="8"><div style="position:relative;display:flex;align-items:center;gap:10px;padding:16px 22px;border-left:1px solid var(--bp-hair)"><span data-fa="{{ q.sym }}" aria-hidden="true" style="position:absolute;inset:0;opacity:0"></span><span style="position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:26px;padding:0 6px;border-radius:{{ q.badgeRadius }};background:{{ q.badgeBg }};font:600 10px/1 var(--font-mono)">{{ q.mono }}</span><span style="position:relative;font:500 14px/1 var(--font-mono)">{{ q.price }}</span><span style="position:relative;font:500 12px/1 var(--font-mono);color:{{ q.tone }}">{{ q.arrow }} {{ q.pct }}</span></div></sc-for></div></div>
+  </div>
+</div>
+
+<div id="1k" style="flex:none;display:grid;gap:10px">
+  <div style="display:flex;align-items:center;gap:8px"><a href="#1k" style="font:600 10.5px/1 var(--font-mono);padding:4px 7px;border-radius:5px;background:var(--foreground);color:var(--background);text-decoration:none">1k</a><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">The system is the hero: live architecture, tape on top</span></div>
+  <div style="width:1440px;height:820px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient);display:flex;flex-direction:column">
+    <div style="background:var(--surface-sunken);overflow:hidden"><div data-tape="1" style="display:flex;width:max-content"><sc-for list="{{ tape }}" as="q" hint-placeholder-count="8"><div style="position:relative;display:flex;align-items:center;gap:8px;padding:9px 18px;border-left:1px solid var(--bp-hair)"><span data-fa="{{ q.sym }}" aria-hidden="true" style="position:absolute;inset:0;opacity:0"></span><span style="position:relative;font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ q.mono }}</span><span style="position:relative;font:500 12.5px/1 var(--font-mono)">{{ q.price }}</span><span style="position:relative;font:500 11.5px/1 var(--font-mono);color:{{ q.tone }}">{{ q.arrow }} {{ q.pct }}</span></div></sc-for></div></div>
+    <div style="display:flex;align-items:center;gap:28px;padding:20px 72px"><span style="font:600 24px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><div style="flex:1"></div><span style="padding:12px 20px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body)">Join the live league</span></div>
+    <div style="flex:1;display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;padding:12px 72px 56px">
+      <div style="display:flex;flex-direction:column;justify-content:center"><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Part 4 of 6 · live</div><h1 style="margin:22px 0 0;font:500 64px/0.98 var(--font-display);letter-spacing:-0.045em">Architecting software in 2026, <span style="color:var(--bp-accent-text)">built in public</span></h1><div style="margin-top:24px;font:400 17px/1.7 var(--font-body);color:var(--foreground-muted)">This is Bullpen’s real architecture right now. Calls flow, events queue, and a new part changes it every few weeks.</div><div style="margin-top:30px;display:flex;flex-wrap:wrap;gap:10px"><span style="padding:15px 22px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body)">Join the live league</span><span style="padding:15px 22px;border-radius:9999px;background:var(--bp-panel-2);font:700 15px/1 var(--font-body)">Explore the architecture</span></div></div>
+      <div style="background:var(--surface-sunken);border-radius:24px;padding:26px 30px;display:flex;flex-direction:column;justify-content:center">{{ heroDiag }}</div>
+    </div>
+  </div>
+</div>
+
+<div id="1l" style="flex:none;display:grid;gap:10px">
+  <div style="display:flex;align-items:center;gap:8px"><a href="#1l" style="font:600 10.5px/1 var(--font-mono);padding:4px 7px;border-radius:5px;background:var(--foreground);color:var(--background);text-decoration:none">1l</a><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">Prices as type: a quote board as the hero graphic</span></div>
+  <div style="width:1440px;height:820px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:28px;padding:22px 72px"><span style="font:600 24px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><div style="flex:1"></div><span style="display:flex;align-items:center;gap:8px;font:600 12.5px/1 var(--font-body)"><span style="width:8px;height:8px;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span>Live · stocks open · crypto 24/7</span><span style="padding:12px 20px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body)">Join the live league</span></div>
+    <div style="padding:40px 72px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:48px">
+      <h1 style="margin:0;font:500 76px/0.96 var(--font-display);letter-spacing:-0.045em;max-width:860px">Architecting software in 2026, <span style="color:var(--bp-accent-text)">built in public</span></h1>
+      <div style="flex:none;display:grid;gap:10px;justify-items:end"><span style="padding:16px 26px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body)">Join the live league</span><span style="padding:12px 4px;font:700 15px/1 var(--font-body)">Explore the architecture →</span></div>
+    </div>
+    <div style="flex:1;margin:44px 72px 56px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:1px;background:var(--bp-hair);border-radius:20px;overflow:hidden;border:1px solid var(--bp-hair)">
+      <sc-for list="{{ board }}" as="q" hint-placeholder-count="8"><div style="position:relative;background:var(--background);padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between"><span data-fa="{{ q.sym }}" aria-hidden="true" style="position:absolute;inset:0;opacity:0;pointer-events:none"></span><div style="position:relative;display:flex;align-items:center;justify-content:space-between"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:30px;padding:0 8px;border-radius:{{ q.badgeRadius }};background:{{ q.badgeBg }};font:600 11px/1 var(--font-mono)">{{ q.mono }}</span><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">{{ q.name }}</span></div><div style="position:relative"><div style="font:500 46px/1 var(--font-mono);letter-spacing:-0.03em">{{ q.price }}</div><div style="margin-top:10px;font:500 15px/1 var(--font-mono);color:{{ q.tone }}">{{ q.arrow }} {{ q.pct }}</div></div></div></sc-for>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TAPE = ['NVDA', 'BTC-USD', 'TSLA', 'AAPL', 'ETH-USD', 'SPY', 'SOL-USD', 'MSFT'];
+const KIND = { app: 'App', service: 'Service', data: 'Data', infra: 'Infra', ext: 'External' };
+const EXPO = 'cubic-bezier(0.16,1,0.3,1)';
+const STATUS = {
+  published: { label: 'Published', bg: 'var(--lime-glow)', fg: 'var(--lime-glow-foreground)', bd: '0' },
+  next: { label: 'Next', bg: 'color-mix(in oklch, var(--ember) 18%, transparent)', fg: 'var(--bp-accent-text)', bd: '0' },
+  planned: { label: 'Planned', bg: 'transparent', fg: 'var(--foreground-muted)', bd: '1px dashed var(--foreground-muted)' },
+};
+const DSTAT = {
+  Accepted: { bg: 'var(--bp-panel-2)', fg: 'var(--foreground)', bd: '0' },
+  Proposed: { bg: 'color-mix(in oklch, var(--ember) 18%, transparent)', fg: 'var(--bp-accent-text)', bd: '0' },
+  Draft: { bg: 'transparent', fg: 'var(--foreground-muted)', bd: '1px dashed var(--foreground-muted)' },
+  Superseded: { bg: 'transparent', fg: 'var(--foreground-muted)', bd: '1px solid var(--bp-hair)' },
+};
+const TOK = { kw: 'var(--bp-accent-text)', str: 'var(--foreground)', id: 'var(--foreground-muted)', cm: 'var(--foreground-muted)' };
+
+class Component extends DCLogic {
+  state = { theme: 'dark', cb: false, reduced: false, moment: 4, prev: 4, sel: null, quanta: true, sync: true, data: false, fol: { on: false, idx: 0, playing: false, k: 0 }, playing: false };
+  rootRef = React.createRef();
+  svgD = React.createRef();
+  svgM = React.createRef();
+  wm = new WeakMap();
+  loops = [];
+
+  componentDidMount() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.setState({ reduced: true });
+    import(new URL('bullpen.js', document.baseURI).href).then((M) => {
+      this.M = M; this.market = M.createMarket(3); this.league = M.createLeague(5);
+      this.forceUpdate(() => { this.startLoops(); this.observe(); });
+      this.iv1 = setInterval(() => this.onTick(), 800);
+      this.iv2 = setInterval(() => this.onLeague(), 2600);
+    });
+  }
+  componentWillUnmount() { [this.iv1, this.iv2, this.fT, this.pT].forEach(clearInterval); this.stopLoops(); if (this.io) this.io.disconnect(); }
+  componentDidUpdate() {
+    const ps = this._ps || { theme: 'dark', reduced: this.state.reduced }; this._ps = { theme: this.state.theme, reduced: this.state.reduced };
+    if (ps.theme !== this.state.theme) document.body.style.background = this.state.theme === 'dark' ? 'oklch(10.5% 0.038 238)' : 'oklch(94% 0.010 238)';
+    if (ps.reduced !== this.state.reduced) { this.stopLoops(); this.startLoops(); }
+  }
+  startLoops() {
+    const root = this.rootRef.current; if (!root || this.state.reduced) return;
+    root.querySelectorAll('[data-tape]').forEach((el) => this.loops.push(el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-50%)' }], { duration: 48000, iterations: Infinity, easing: 'linear' })));
+    root.querySelectorAll('[data-pulse]').forEach((el) => this.loops.push(el.animate([{ transform: 'scale(1)', opacity: 0.6 }, { transform: 'scale(2.8)', opacity: 0 }], { duration: 2000, iterations: Infinity, easing: 'cubic-bezier(0.23,1,0.32,1)' })));
+  }
+  stopLoops() { this.loops.forEach((a) => a.cancel()); this.loops = []; }
+  observe() {
+    const root = this.rootRef.current; if (!root || !window.IntersectionObserver) return;
+    this.io = new IntersectionObserver((ents) => ents.forEach((e) => {
+      if (!e.isIntersecting || e.target.__r) return; e.target.__r = 1; this.io.unobserve(e.target);
+      const d = (+e.target.dataset.reveal || 0) * 80;
+      e.target.animate(this.state.reduced ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], { duration: 700, delay: d, easing: EXPO, fill: 'backwards' });
+      e.target.querySelectorAll('[data-bar]').forEach((b, i) => { if (!this.state.reduced) b.animate([{ transform: 'scaleX(0)' }, { transform: b.style.transform }], { duration: 700, delay: 200 + i * 80, easing: EXPO, fill: 'backwards' }); });
+    }), { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
+    root.querySelectorAll('[data-reveal]').forEach((el) => this.io.observe(el));
+  }
+  onTick() {
+    const ch = this.market.tick(3);
+    this.forceUpdate(() => {
+      const root = this.rootRef.current; if (!root) return;
+      const now = performance.now(), seen = new Set();
+      ch.forEach(({ sym, dir }) => {
+        if (!dir || seen.has(sym)) return; seen.add(sym);
+        const tone = dir > 0 ? 'var(--bp-gain)' : 'var(--bp-loss)';
+        root.querySelectorAll(`[data-fa="${sym}"]`).forEach((el) => {
+          if (now - (this.wm.get(el) || 0) < 500) return; this.wm.set(el, now);
+          el.style.background = `color-mix(in oklch, ${tone} 22%, transparent)`;
+          el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'linear' });
+        });
+      });
+    });
+  }
+  onLeague() { this.league.tick(); this.forceUpdate(); setTimeout(() => this.forceUpdate(), 1650); }
+
+  setMoment(m) {
+    m = Math.max(1, Math.min(6, m));
+    if (m === this.state.moment) return;
+    this.stopFollow();
+    this.setState((s) => ({ prev: s.moment, moment: m, sel: s.sel && this.alive(s.sel, m) ? s.sel : null }));
+  }
+  alive(id, m) { const n = this.M.ARCH.nodes.find((x) => x.id === id); return n && n.from <= m && (n.until == null || m < n.until); }
+  togglePlay() {
+    if (this.state.playing) { clearInterval(this.pT); this.setState({ playing: false }); return; }
+    if (this.state.moment === 6) this.setMoment(1);
+    this.setState({ playing: true });
+    this.pT = setInterval(() => { if (this.state.moment >= 6) { clearInterval(this.pT); this.setState({ playing: false }); return; } this.setMoment(this.state.moment + 1); }, 2400);
+  }
+  path() { return this.M.orderPath(this.state.moment); }
+  startFollow() {
+    clearInterval(this.pT);
+    this.setState((s) => ({ playing: false, sel: null, fol: { on: true, idx: 0, playing: true, k: s.fol.k + 1 } }), () => this.runFollow());
+  }
+  runFollow() {
+    clearInterval(this.fT);
+    this.fT = setInterval(() => {
+      const f = this.state.fol, n = this.path().length;
+      if (f.idx >= n - 1) { clearInterval(this.fT); this.setState({ fol: { ...f, playing: false } }); return; }
+      this.setState({ fol: { ...f, idx: f.idx + 1, k: f.k + 1 } });
+    }, 1900);
+  }
+  stepTo(i) {
+    const n = this.path().length; i = Math.max(0, Math.min(n - 1, i));
+    clearInterval(this.fT); this.resumeSvgs();
+    this.setState((s) => ({ fol: { ...s.fol, idx: i, playing: false, k: s.fol.k + 1 } }));
+  }
+  toggleFollow() {
+    const f = this.state.fol;
+    if (f.playing) { clearInterval(this.fT); [this.svgD, this.svgM].forEach((r) => r.current && r.current.pauseAnimations()); this.setState({ fol: { ...f, playing: false } }); }
+    else { this.resumeSvgs(); const restart = f.idx >= this.path().length - 1; this.setState({ fol: { ...f, playing: true, idx: restart ? 0 : f.idx, k: f.k + 1 } }, () => this.runFollow()); }
+  }
+  resumeSvgs() { [this.svgD, this.svgM].forEach((r) => r.current && r.current.unpauseAnimations()); }
+  stopFollow() { clearInterval(this.fT); this.resumeSvgs(); this.setState((s) => ({ fol: { ...s.fol, on: false, playing: false, idx: 0 } })); }
+
+  seg(opts, cur, set) {
+    return opts.map(([v, l]) => ({ label: l, pressed: cur === v ? 'true' : 'false', bg: cur === v ? 'var(--bp-panel-2)' : 'transparent', fg: cur === v ? 'var(--foreground)' : 'var(--foreground-muted)', onClick: () => set(v) }));
+  }
+
+  renderVals() {
+    const s = this.state, M = this.M, red = s.reduced;
+    const base = {
+      rootRef: this.rootRef, themeCls: s.theme === 'dark' ? 'dark' : '', cb: s.cb ? 'on' : 'off',
+      themeOpts: this.seg([['dark', 'Dark'], ['light', 'Light']], s.theme, (v) => this.setState({ theme: v })),
+      cbOpts: this.seg([[false, 'Standard'], [true, 'Color-blind safe']], s.cb, (v) => this.setState({ cb: v })),
+      motionOpts: this.seg([[false, 'Full motion'], [true, 'Reduced']], s.reduced, (v) => this.setState({ reduced: v })),
+      toggleTheme: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark' }), themeLabel: s.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme',
+    };
+    if (!M) return { ...base, me: { rank: '—' }, rulesSummary: '', heroDiag: null, x: { part: 4, statusText: '', diag: null, diagM: null, playGlyph: '▶', fol: { on: false, off: true }, noSel: true, toggles: [], stops: [], changes: [] } };
+    const q = this.market.q;
+    const tape = [...TAPE, ...TAPE].map((sym) => M.quoteView(q[sym]));
+    const board = TAPE.map((sym) => M.quoteView(q[sym]));
+
+    const now = Date.now(), H = 52;
+    const lb = this.league.ps.filter((p) => !p.me).map((p) => {
+      const ret = ((p.eq - 100000) / 100000) * 100, up = ret >= 0, fresh = now - p.changedAt < 1600 && p.delta !== 0;
+      const rank = this.league.ps.filter((o) => !o.me && o.eq > p.eq).length + 1;
+      const tone = p.delta > 0 ? 'var(--bp-gain)' : 'var(--bp-loss)';
+      return { name: p.name, mono: p.mono, rank: String(rank), ret: M.signed(ret, 2, '', '%'), arrow: up ? '▲' : '▼', tone: up ? 'var(--bp-gain)' : 'var(--bp-loss)',
+        spark: M.sparkD(p.hist, 56, 20), av: `color-mix(in oklch, var(--surface-elevated) 78%, oklch(66% 0.1 ${p.hue}))`, bg: 'transparent',
+        y: `translateY(${(rank - 1) * H}px)`, tr: red ? 'none' : 'transform 560ms var(--bp-spring)',
+        chipText: p.delta ? (p.delta > 0 ? '▲ +' : '▼ −') + Math.abs(p.delta) : '', chipTone: tone, chipBg: `color-mix(in oklch, ${tone} 16%, transparent)`,
+        chipOp: fresh ? 1 : 0, chipTr: fresh ? 'opacity 160ms' : 'opacity 400ms' };
+    });
+
+    const series = M.MOMENTS.map((m, i) => {
+      const st = STATUS[m.status], cur = m.part === s.moment;
+      return { i, part: m.part, title: m.title, change: m.change, status: st.label, chipBg: st.bg, chipFg: st.fg, chipBd: st.bd,
+        date: m.status === 'planned' ? 'Planned' : m.date, cta: cur ? 'In explorer' : 'See it →', onView: () => this.setMoment(m.part),
+        bg: m.status === 'planned' ? 'transparent' : 'var(--bp-panel)', bd: cur ? '1px solid var(--ember)' : m.status === 'planned' ? '1px dashed var(--bp-hair)' : '1px solid var(--bp-hair)' };
+    });
+
+    // explorer
+    const mo = M.MOMENTS[s.moment - 1], st = STATUS[mo.status], diff = M.momentDiff(s.moment), path = M.orderPath(s.moment);
+    const f = s.fol, step = f.on ? M.resolveStep(path[Math.min(f.idx, path.length - 1)]) : null;
+    const touched = new Set();
+    if (f.on) path.slice(0, f.idx).forEach((p) => { const r = M.resolveStep(p); touched.add(r.a); touched.add(r.b); });
+    const h = React.createElement;
+    const dOpts = { moment: s.moment, prev: s.prev, style: 'blueprint', quanta: s.quanta, sync: s.sync, data: s.data, reduced: red, selected: s.sel,
+      onSelect: (id) => { if (!f.on) this.setState({ sel: s.sel === id ? null : id }); }, step, stepKey: f.k, touched };
+    const info = s.sel && M.NODE_INFO[s.sel], nd = s.sel && M.ARCH.nodes.find((n) => n.id === s.sel);
+    const node = info ? {
+      label: nd.label, kind: KIND[nd.kind], meta: nd.meta, purpose: info.purpose, cost: info.cost, costNote: info.costNote,
+      traits: info.traits.map((t) => ({ text: t })), hasRules: info.rules.length > 0,
+      rules: info.rules.map(([t, ok]) => ({ text: t, glyph: ok ? '✓' : '✕', fg: ok ? 'var(--bp-gain)' : 'var(--destructive)', bg: ok ? 'color-mix(in oklch, var(--bp-gain) 12%, transparent)' : 'color-mix(in oklch, var(--destructive) 13%, transparent)' })),
+      adrs: info.adrs.map((id) => ({ id, title: (M.DECISIONS.find((d) => d.id === id) || {}).title })),
+    } : {};
+    const toggle = (key, label) => ({ label, on: s[key] ? 'true' : 'false', track: s[key] ? 'var(--ember)' : 'var(--bp-panel-2)', knob: s[key] ? 'oklch(14% 0.048 238)' : 'var(--foreground-muted)', x: s[key] ? 'translateX(12px)' : 'none', onClick: () => this.setState({ [key]: !s[key] }) });
+    const x = {
+      part: mo.part, title: mo.title, summary: mo.summary, status: st.label, chipBg: st.bg, chipFg: st.fg, chipBd: st.bd,
+      statusText: mo.status === 'published' ? 'PUBLISHED ' + mo.date.toUpperCase() : mo.status === 'next' ? 'NEXT · SUBJECT TO CHANGE' : 'PLANNED · SUBJECT TO CHANGE',
+      toggles: [toggle('quanta', 'Group by quanta'), toggle('sync', 'Sync vs async'), toggle('data', 'Data ownership')],
+      changes: [...diff.added.map((l) => ({ glyph: '+', label: l, tone: 'var(--bp-gain)', bg: 'color-mix(in oklch, var(--bp-gain) 14%, transparent)' })),
+        ...diff.removed.map((l) => ({ glyph: '−', label: l, tone: 'var(--bp-loss)', bg: 'color-mix(in oklch, var(--bp-loss) 14%, transparent)' })),
+        ...diff.changed.map((l) => ({ glyph: '~', label: l + ' changed', tone: 'var(--bp-accent-text)', bg: 'color-mix(in oklch, var(--ember) 14%, transparent)' }))],
+      hasSel: !!info, noSel: !info, node, clearSel: () => this.setState({ sel: null }),
+      diag: M.renderDiagram(h, { ...dOpts, uid: 'xd', svgRef: this.svgD }),
+      diagM: M.renderDiagram(h, { ...dOpts, uid: 'xm', svgRef: this.svgM }),
+      fill: `scaleX(${((s.moment - 1) / 5).toFixed(3)})`,
+      playGlyph: s.playing ? '❚❚' : '▶', playLabel: s.playing ? 'Pause' : 'Play the series', onPlay: () => this.togglePlay(),
+      onKey: (e) => { if (e.key === 'ArrowRight') { e.preventDefault(); this.setMoment(s.moment + 1); } if (e.key === 'ArrowLeft') { e.preventDefault(); this.setMoment(s.moment - 1); } },
+      stops: M.MOMENTS.map((m) => { const c = m.part === s.moment; return { part: m.part, title: m.title, current: c ? 'step' : 'false', onClick: () => this.setMoment(m.part),
+        dotBg: c ? 'var(--ember)' : m.part < s.moment ? 'var(--foreground)' : 'var(--bp-panel)',
+        dotBd: c || m.part < s.moment ? '0' : m.status === 'planned' ? '1.5px dashed var(--foreground-muted)' : '1.5px solid var(--foreground-muted)',
+        dotScale: c ? 'scale(1.2)' : 'scale(1)', labelFg: c ? 'var(--foreground)' : 'var(--foreground-muted)',
+        chipBg: c ? 'var(--foreground)' : 'var(--background)', chipFg: c ? 'var(--background)' : 'var(--foreground)', chipBd: m.status === 'planned' && !c ? '1px dashed var(--foreground-muted)' : '0' }; }),
+      startFollow: () => this.startFollow(),
+      fol: { on: f.on, off: !f.on, n: f.idx + 1, total: path.length, caption: step ? step.caption : '', detail: step ? step.detail : '',
+        toggleGlyph: f.playing ? '❚❚' : '▶', toggleLabel: f.playing ? 'Pause' : 'Play',
+        prev: () => this.stepTo(f.idx - 1), next: () => this.stepTo(f.idx + 1), toggle: () => this.toggleFollow(), exit: () => this.stopFollow(),
+        pips: path.map((p, i) => ({ label: `Step ${i + 1}: ${p.caption}`, bg: i <= f.idx ? 'var(--ember)' : 'var(--bp-panel-2)', onClick: () => this.stepTo(i) })) },
+    };
+
+    const decisions = M.DECISIONS.map((d) => { const c = DSTAT[d.status]; return { ...d, note: d.note ? ' · ' + d.note : '', chipBg: c.bg, chipFg: c.fg, chipBd: c.bd, deco: d.status === 'Superseded' ? 'line-through' : 'none', fg: d.status === 'Superseded' ? 'var(--foreground-muted)' : 'var(--foreground)' }; });
+    const rules = M.RULES.map((r) => ({ file: r.file, check: r.check, result: r.pass ? `✓ pass · ${r.when}` : `✕ fail · ${r.result}`,
+      bg: r.pass ? 'color-mix(in oklch, var(--bp-gain) 13%, transparent)' : 'color-mix(in oklch, var(--destructive) 14%, transparent)', fg: r.pass ? 'var(--bp-gain)' : 'var(--destructive)',
+      lines: r.lines.map((ln) => ({ toks: ln.map((t) => ({ t: t.t, c: TOK[t.k], fs: t.k === 'cm' ? 'italic' : 'normal' })) })) }));
+    const passing = M.RULES.filter((r) => r.pass).length;
+    const costs = M.COSTS.map((c) => { const p = c.used / c.cap, fmtU = (v) => (c.unit === 'k' ? (v >= 1000 ? v / 1000 + 'M' : v + 'k') : v + c.unit);
+      return { name: c.name, what: c.what, label: `${fmtU(c.used)} / ${fmtU(c.cap)}`, scale: `scaleX(${p.toFixed(3)})`, tone: p >= 0.8 ? 'var(--warning)' : 'var(--ember)',
+        note: p >= 0.8 ? `${Math.round(p * 100)}% · near limit` : `${Math.round(p * 100)}%`, noteFg: p >= 0.8 ? 'var(--warning)' : 'var(--foreground-muted)' }; });
+
+    const meP = this.league.ps.find((p) => p.me);
+    return {
+      ...base, tape, board, lb, series, x, decisions, rules, costs,
+      me: { rank: '—' }, rulesSummary: `${passing} of ${M.RULES.length} passing`,
+      heroDiag: M.renderDiagram(h, { uid: 'hk', moment: 4, prev: 4, style: 'blueprint', quanta: true, sync: true, data: false, reduced: red, ariaLabel: 'Bullpen architecture, Part 4' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,478 @@
+/* ─────────────────────────────────────────────────────────────
+   Bullpen landing — page composition
+   Component visual language (color, radius, spacing tokens) comes from
+   @bullpen/ui's tokens.css/styles.css (imported in layout.tsx before this
+   file). This file only holds layout: page structure, section rhythm,
+   and the few presentational bits (tables, cards) that packages/ui
+   doesn't provide primitives for.
+───────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+.bp-eyebrow {
+  font: 600 11px/1 var(--font-body);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+
+.bp-accent {
+  color: var(--bp-accent-text);
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.bp-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-8);
+  border-bottom: 1px solid var(--bp-hair);
+}
+.bp-nav__brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.bp-nav__wordmark {
+  font: 600 24px/1 var(--font-display);
+  letter-spacing: -0.03em;
+}
+.bp-nav__byline {
+  font: 500 12.5px/1 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-nav__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+.bp-nav__links a {
+  text-decoration: none;
+  font: 600 14px/1 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-nav__links a:hover {
+  color: var(--foreground);
+}
+.bp-nav__spacer {
+  flex: 1;
+}
+.bp-nav__cta {
+  padding: 12px 20px !important;
+  font: 700 14px/1 var(--font-body) !important;
+}
+.bp-nav__toggle {
+  display: none;
+}
+
+/* Below this width the design collapses the links into a menu button and
+   drops the CTA from the header entirely (confirmed against Bullpen
+   Landing.dc.html's 390px frame; the CTA stays in the hero). 900px is
+   measured from this header's own content -- see the comment above the
+   Nav component -- not a value taken from the export, which has no coded
+   breakpoint of its own. */
+@media (max-width: 900px) {
+  .bp-nav__links {
+    display: none;
+    order: 5;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+  }
+  .bp-nav__links[data-open="true"] {
+    display: flex;
+  }
+  .bp-nav__spacer {
+    order: 3;
+  }
+  .bp-nav__cta {
+    /* LinkButton sets display: inline-flex inline; !important matches the
+       pattern already used above (padding/font) to override it. */
+    display: none !important;
+  }
+  .bp-nav__toggle {
+    order: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--bp-hair);
+    background: transparent;
+    cursor: pointer;
+  }
+  .bp-nav__toggle-icon,
+  .bp-nav__toggle-icon::before,
+  .bp-nav__toggle-icon::after {
+    content: "";
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--foreground);
+  }
+  .bp-nav__toggle-icon {
+    position: relative;
+  }
+  .bp-nav__toggle-icon::before {
+    position: absolute;
+    top: -6px;
+  }
+  .bp-nav__toggle-icon::after {
+    position: absolute;
+    top: 6px;
+  }
+}
+
+/* ── Section rhythm ──────────────────────────────────────────── */
+.bp-section {
+  padding: var(--space-20) var(--space-8);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.bp-section--sunken {
+  max-width: none;
+  background: var(--surface-sunken);
+}
+.bp-section--sunken > * {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.bp-section__head {
+  max-width: 680px;
+}
+.bp-section__head h2 {
+  margin: var(--space-4) 0 0;
+  font: 500 clamp(1.75rem, 3vw, 2.5rem)/1.05 var(--font-display);
+  letter-spacing: -0.03em;
+}
+.bp-section__lede {
+  margin-top: var(--space-4);
+  font: 400 17px/1.7 var(--font-body);
+  color: var(--foreground-muted);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.bp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr);
+  gap: var(--space-14);
+  align-items: center;
+  padding: var(--space-20) var(--space-8);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.bp-hero__heading {
+  margin: var(--space-6) 0 0;
+  font: 500 clamp(2.5rem, 5vw, 4.5rem)/0.98 var(--font-display);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.bp-hero__sub {
+  margin-top: var(--space-6);
+  max-width: 560px;
+  font: 400 19px/1.7 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-hero__ctas {
+  margin-top: var(--space-8);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.bp-hero__disclaimer {
+  margin-top: var(--space-6);
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-hero__panel {
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .bp-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Series rail ─────────────────────────────────────────────── */
+.bp-series-grid {
+  list-style: none;
+  margin: var(--space-8) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+.bp-series-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 180px;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-hair);
+}
+.bp-series-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.bp-series-card__num {
+  font: 600 11px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-series-card__title {
+  font: 500 20px/1.15 var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+.bp-series-card__foot {
+  margin-top: auto;
+  font: 500 12px/1.4 var(--font-body);
+  color: var(--foreground-muted);
+}
+
+/* ── Architecture ─────────────────────────────────────────────── */
+.bp-arch-panel {
+  margin-top: var(--space-8);
+  background: var(--background);
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+}
+.bp-arch-panel__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.bp-arch-planned {
+  margin-top: var(--space-8);
+}
+.bp-arch-planned__label {
+  font: 600 11px/1 var(--font-body);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-arch-planned__list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.bp-arch-planned__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--background);
+  border: 1px solid var(--bp-hair);
+  font: 500 14px/1.3 var(--font-body);
+}
+.bp-arch-planned__note {
+  margin-left: auto;
+  font: 500 12px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+
+/* ── Decisions ────────────────────────────────────────────────── */
+.bp-adr-list {
+  margin-top: var(--space-8);
+  display: grid;
+  gap: var(--space-4);
+}
+.bp-adr-card {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-hair);
+}
+.bp-adr-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.bp-adr-card__id {
+  font: 600 12px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-adr-card__date {
+  margin-left: auto;
+  font: 500 12px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-adr-card__title {
+  margin: var(--space-3) 0 0;
+  font: 500 22px/1.2 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.bp-adr-card__section {
+  margin: var(--space-3) 0 0;
+  font: 400 15px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-adr-card__section strong {
+  color: var(--foreground);
+}
+
+/* ── Rules ────────────────────────────────────────────────────── */
+.bp-rules-grid {
+  margin-top: var(--space-8);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-8);
+}
+.bp-rules-subhead {
+  margin: 0 0 var(--space-3);
+  font: 600 13px/1 var(--font-body);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-rules-list {
+  margin: 0;
+  padding-left: 1.1em;
+  display: grid;
+  gap: var(--space-2);
+  font: 400 15px/1.6 var(--font-body);
+}
+.bp-check-arch {
+  margin-top: var(--space-8);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  border: 1px solid var(--bp-hair);
+}
+.bp-check-arch__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.bp-check-arch__time {
+  margin-left: auto;
+  font: 500 12px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-check-arch__command {
+  display: block;
+  margin-top: var(--space-4);
+  color: var(--foreground-muted);
+}
+.bp-check-arch__output {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--bp-panel-2);
+  font: 400 12.5px/1.6 var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow: auto;
+}
+
+/* ── Tables (Rules + Cost) ────────────────────────────────────── */
+.bp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 14px/1.5 var(--font-body);
+}
+.bp-table th {
+  text-align: left;
+  font: 600 11px/1 var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--bp-hair);
+}
+.bp-table td {
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--bp-hair);
+  vertical-align: top;
+}
+.bp-table__muted {
+  color: var(--foreground-muted);
+  font-size: 0.9em;
+}
+
+/* ── Cost ─────────────────────────────────────────────────────── */
+.bp-usage {
+  margin-top: var(--space-10);
+}
+.bp-usage__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+.bp-usage__note {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  font: 400 13.5px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-cost-per-player {
+  margin-top: var(--space-8);
+  font: 500 13px/1.4 var(--font-body);
+  color: var(--foreground-muted);
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.bp-footer {
+  padding: var(--space-10) var(--space-8) var(--space-14);
+  border-top: 1px solid var(--bp-hair);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.bp-footer p {
+  max-width: 720px;
+  font: 400 14px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+
+@media (max-width: 640px) {
+  .bp-section,
+  .bp-hero,
+  .bp-nav,
+  .bp-footer {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}

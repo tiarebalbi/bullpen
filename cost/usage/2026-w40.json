@@ -1,0 +1,20 @@
+{
+  "week": "2026-w40",
+  "period": {
+    "start": "2026-09-28",
+    "end": "2026-10-04"
+  },
+  "status": "pending",
+  "note": "Week 40 has not happened yet as of when this ledger was created (2026-09-25). Actual usage gets filled in from the Vercel dashboard at or after the end of the week (2026-10-04), by a human or a later automated step. Until then every `value` below is null and `status` stays \"pending\" — do not replace these with invented or estimated numbers.",
+  "usage": [
+    { "service": "vercel-hobby", "metric": "active_cpu_time", "value": null, "unit": "hours" },
+    { "service": "vercel-hobby", "metric": "provisioned_memory", "value": null, "unit": "GB-hrs" },
+    { "service": "vercel-hobby", "metric": "function_invocations", "value": null, "unit": "invocations" },
+    { "service": "vercel-hobby", "metric": "edge_requests", "value": null, "unit": "requests" },
+    { "service": "vercel-hobby", "metric": "deployments_per_day", "value": null, "unit": "deployments (peak day in week)" },
+    { "service": "vercel-queues", "metric": "api_operations", "value": null, "unit": "operations" },
+    { "service": "vercel-workflows", "metric": "workflow_events", "value": null, "unit": "events" },
+    { "service": "vercel-workflows", "metric": "workflow_data_written", "value": null, "unit": "GB" },
+    { "service": "coingecko-demo", "metric": "monthly_calls", "value": null, "unit": "calls" }
+  ]
+}

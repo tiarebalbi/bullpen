@@ -1,0 +1,8 @@
+ADL: GOOD FIXTURE
+TYPE Structural
+DESCRIPTION Fixture used for structure-check tests: fully compliant
+DEFINE SYSTEM Fixture AS fixture
+DEFINE COMPONENT One AS apps/one
+DEFINE LIBRARY Two AS packages/two
+ASSERT(every directory under apps/ and packages/ is DEFINED here)
+ASSERT(every DEFINED component and library exists as a directory)

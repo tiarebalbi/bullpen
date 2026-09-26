@@ -1,0 +1,119 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "bullpen-part-01",
+  "name": "Bullpen — Part 1",
+  "description": "What actually runs at the end of Part 1: two Next.js apps (a public landing site and the trading app) on Vercel Hobby, and a single serverless function backing the trading app's price snapshot endpoint, which in turn calls out to an external market-data provider. No split, no queue, no workflow engine yet — see ADR-0002 for why distribution is deferred until it earns its place.",
+  "metadata": {
+    "status": "current",
+    "part": 1
+  },
+  "adrs": [
+    "architecture/adr/0001-stack.md",
+    "architecture/adr/0002-why-distribute-at-all.md",
+    "architecture/adr/0003-monorepo.md",
+    "architecture/adr/0005-crypto-market-data-coingecko.md"
+  ],
+  "nodes": [
+    {
+      "unique-id": "reader",
+      "node-type": "actor",
+      "name": "Reader",
+      "description": "A blog reader who lands on the public site to learn about Bullpen."
+    },
+    {
+      "unique-id": "player",
+      "node-type": "actor",
+      "name": "Player",
+      "description": "A registered player who opens the trading app to view prices and (in later parts) place paper trades."
+    },
+    {
+      "unique-id": "landing-app",
+      "node-type": "webclient",
+      "name": "Bullpen Landing",
+      "description": "The public landing site (apps/landing) that introduces Bullpen to readers of the blog series."
+    },
+    {
+      "unique-id": "trading-app",
+      "node-type": "webclient",
+      "name": "Bullpen Trading App",
+      "description": "The trading app (apps/web) where players will view live prices and place paper trades."
+    },
+    {
+      "unique-id": "price-snapshot-service",
+      "node-type": "service",
+      "name": "Price Snapshot Service",
+      "description": "Serverless function backing GET /api/price/[symbol] in apps/web; fetches a point-in-time price for a symbol from the external market-data provider and returns it to the trading app."
+    },
+    {
+      "unique-id": "market-data-provider",
+      "node-type": "external-system",
+      "name": "CoinGecko",
+      "description": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use, which forbid public display of their data (see issue #6, ADR-0005, docs/data-sources.md)."
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "reader-to-landing",
+      "description": "Reader browses the public landing site.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "reader",
+          "nodes": ["landing-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "player-to-trading-app",
+      "description": "Player opens the trading app.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "player",
+          "nodes": ["trading-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "trading-app-to-price-snapshot",
+      "description": "Trading app requests a live price snapshot for a symbol.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "price-snapshot-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
+      }
+    },
+    {
+      "unique-id": "price-snapshot-to-market-data",
+      "description": "Price snapshot service calls CoinGecko's /simple/price endpoint for the current BTC-USD price, authenticated via a server-side Demo API key header.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "price-snapshot-service" },
+          "destination": { "node": "market-data-provider" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
+      },
+      "controls": {
+        "attribution": {
+          "description": "CoinGecko's API Terms of Service require a 'Powered by CoinGecko' credit (or an approved equivalent), legible font no smaller than 10px, linked to coingecko.com, on every screen that displays the price this relationship fetches. See ADR-0005 and docs/data-sources.md.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-COINGECKO-ATTRIBUTION",
+                "name": "CoinGecko attribution",
+                "description": "apps/web's PriceCell/CoinGeckoCredit rendering satisfies this: a linked 'Powered by CoinGecko' credit next to every price sourced from this relationship."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

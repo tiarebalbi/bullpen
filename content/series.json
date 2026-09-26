@@ -1,0 +1,38 @@
+[
+  {
+    "part": 1,
+    "title": "Why distribute at all",
+    "status": "next",
+    "url": ""
+  },
+  {
+    "part": 2,
+    "title": "Architecture as code",
+    "status": "planned",
+    "url": ""
+  },
+  {
+    "part": 3,
+    "title": "Data ownership and the first split",
+    "status": "planned",
+    "url": ""
+  },
+  {
+    "part": 4,
+    "title": "The order saga",
+    "status": "planned",
+    "url": ""
+  },
+  {
+    "part": 5,
+    "title": "The market open and the bill",
+    "status": "planned",
+    "url": ""
+  },
+  {
+    "part": 6,
+    "title": "What held, what broke",
+    "status": "planned",
+    "url": ""
+  }
+]

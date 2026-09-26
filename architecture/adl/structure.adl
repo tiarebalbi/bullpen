@@ -1,0 +1,11 @@
+ADL: BULLPEN STRUCTURE
+TYPE Structural
+DESCRIPTION Apps and libraries that exist in Part 1
+DEFINE SYSTEM Bullpen AS bullpen
+DEFINE COMPONENT Landing AS apps/landing
+DEFINE COMPONENT Trading App AS apps/web
+DEFINE LIBRARY UI AS packages/ui
+DEFINE LIBRARY Contracts AS packages/contracts
+ASSERT(every directory under apps/ and packages/ is DEFINED here)
+ASSERT(every DEFINED component and library exists as a directory)
+ASSERT(apps NEVER DEPEND ON other apps)

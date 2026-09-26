@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bullpen.dev/schemas/coingecko-price.schema.json",
+  "title": "CoinGecko /simple/price upstream response",
+  "description": "Response shape from CoinGecko's GET /simple/price?ids=<id>&vs_currencies=usd&include_last_updated_at=true (see ADR-0005). Validated in apps/web's price route before being remapped into price-snapshot.schema.json's shape -- never returned to clients as-is (CoinGecko's terms forbid redistributing the raw payload).",
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": false,
+  "patternProperties": {
+    "^[a-z0-9-]+$": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["usd", "usd_24h_change", "last_updated_at"],
+      "properties": {
+        "usd": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "usd_24h_change": {
+          "type": "number",
+          "description": "Signed 24h percent change, from include_24hr_change=true. Real upstream data -- the only way to feed PriceCell's change row without inventing a number."
+        },
+        "last_updated_at": {
+          "type": "integer",
+          "description": "Unix epoch seconds of the upstream price tick."
+        }
+      }
+    }
+  }
+}
