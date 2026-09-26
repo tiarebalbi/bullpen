@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0;background:oklch(10.5% 0.038 238)}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+</style>
+</helmet>
+<div class="bp {{ themeCls }}" style="min-height:100vh;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);padding:40px 48px 80px">
+
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:40px">
+  <span style="font:600 11px/1 var(--font-mono);padding:4px 8px;border-radius:5px;background:var(--foreground);color:var(--background)">5</span>
+  <span style="font:600 14px/1 var(--font-body)">Join a league and the lobby · 1440 and 390</span>
+  <a href="Bullpen Terminal.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Terminal →</a>
+  <a href="Bullpen Prototype.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Prototype →</a>
+  <div style="flex:1"></div>
+  <div role="group" aria-label="Theme" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+</div>
+
+<div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+<div style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">5a · Join · desktop 1440</div>
+<div data-screen-label="Join desktop" style="width:1440px;min-height:900px;display:flex;flex-direction:column;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="display:flex;align-items:center;gap:12px;padding:22px 72px"><span style="font:600 24px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:500 12.5px/1 var(--font-body);color:var(--foreground-muted)">by Tiarê Balbi</span><div style="flex:1"></div><a href="#5c" style="font:600 14px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">I already play →</a></div>
+  <div style="flex:1;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:88px;padding:56px 72px 72px">
+    <div>
+      <div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Join a league · about a minute</div>
+      <h1 style="margin:22px 0 0;font:500 64px/0.98 var(--font-display);letter-spacing:-0.045em;text-wrap:balance">Pick a league, pick a name, <span style="color:var(--bp-accent-text)">start trading.</span></h1>
+
+      <div style="margin-top:48px;display:grid;grid-template-columns:28px minmax(0,1fr);gap:18px">
+        <span style="font:600 12px/1.5 var(--font-mono);color:var(--foreground-muted)">01</span>
+        <div>
+          <div style="font:600 16px/1.5 var(--font-body)">League</div>
+          <div role="tablist" aria-label="How to join" style="margin-top:12px;display:inline-flex;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ d.modes }}" as="o" hint-placeholder-count="2"><button role="tab" onClick="{{ o.onClick }}" aria-selected="{{ o.pressed }}" style="border:0;cursor:pointer;height:34px;padding:0 16px;border-radius:9999px;font:600 13px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+          <sc-if value="{{ d.isCode }}" hint-placeholder-val="{{ true }}">
+            <label style="margin-top:18px;display:grid;gap:8px;max-width:420px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Invite code</span><input value="{{ d.code }}" onChange="{{ d.onCode }}" placeholder="FALL-7Q2K" aria-describedby="dcode" style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 22px/1 var(--font-mono);letter-spacing:0.08em;height:48px;outline:none" style-focus="border-bottom-color:var(--ember)"></label>
+            <div id="dcode" role="status" style="margin-top:12px;display:flex;align-items:center;gap:10px;font:500 13.5px/1.4 var(--font-body);color:{{ d.codeTone }}"><span style="font:700 13px/1 var(--font-mono)">{{ d.codeGlyph }}</span><span>{{ d.codeMsg }}</span></div>
+          </sc-if>
+          <sc-if value="{{ d.isOpen }}" hint-placeholder-val="{{ false }}">
+            <div role="radiogroup" aria-label="Open leagues" style="margin-top:18px;display:grid;gap:8px">
+              <sc-for list="{{ d.open }}" as="l" hint-placeholder-count="3"><button role="radio" aria-checked="{{ l.checked }}" onClick="{{ l.onClick }}" style="border:0;cursor:pointer;display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 16px;border-radius:12px;background:{{ l.bg }};box-shadow:{{ l.ring }};color:var(--foreground);text-align:left" style-hover="background:var(--bp-panel-2)">
+                <span style="width:18px;height:18px;box-sizing:border-box;border-radius:9999px;border:{{ l.dotBd }};display:grid;place-items:center"><span style="width:8px;height:8px;border-radius:9999px;background:var(--ember);opacity:{{ l.dotOp }}"></span></span>
+                <span><span style="display:block;font:600 15px/1.3 var(--font-body)">{{ l.name }}</span><span style="display:block;font:500 12px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ l.dates }} · {{ l.players }} players · {{ l.note }}</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:{{ l.chip.bd }};font:600 10px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ l.chip.glyph }}</span>{{ l.chip.label }}</span>
+              </button></sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <span style="font:600 12px/1.5 var(--font-mono);color:var(--foreground-muted);margin-top:28px">02</span>
+        <div style="margin-top:28px">
+          <div style="font:600 16px/1.5 var(--font-body)">Display name</div>
+          <div style="margin-top:12px;display:flex;align-items:flex-end;gap:18px;max-width:520px">
+            <span aria-hidden="true" style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:54px;height:48px;padding:0 10px;box-sizing:border-box;border-radius:10px;background:{{ d.av.bg }};border:{{ d.av.bd }};font:600 14px/1 var(--font-mono);color:{{ d.av.fg }};transition:background 240ms">{{ d.av.mono }}</span>
+            <label style="flex:1;display:grid;gap:8px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Shown on the leaderboard</span><input value="{{ d.name }}" onChange="{{ d.onName }}" maxlength="20" placeholder="e.g. Tiarê B." style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 20px/1 var(--font-body);height:48px;outline:none" style-focus="border-bottom-color:var(--ember)"></label>
+          </div>
+          <div style="margin-top:10px;font:400 13px/1.5 var(--font-body);color:{{ d.nameTone }}">{{ d.nameMsg }}</div>
+        </div>
+
+        <span style="font:600 12px/1.5 var(--font-mono);color:var(--foreground-muted);margin-top:28px">03</span>
+        <div style="margin-top:28px">
+          <div style="padding:16px 18px;border-radius:12px;background:var(--surface-sunken);max-width:560px"><div style="font:700 14px/1.5 var(--font-body)">Paper trading. Play money. Not investment advice.</div><div style="margin-top:4px;font:400 13.5px/1.6 var(--font-body);color:var(--foreground-muted)">Prices are real; the money isn’t. Nothing here touches a brokerage account, and no trade you make is a recommendation.</div></div>
+          <div style="margin-top:24px;display:flex;align-items:center;gap:16px">
+            <a href="{{ d.startHref }}" aria-disabled="{{ d.startDisabled }}" style="display:inline-flex;align-items:center;height:56px;padding:0 30px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 16px/1 var(--font-body);text-decoration:none;opacity:{{ d.startOp }};pointer-events:{{ d.startPe }};transition:box-shadow 160ms,transform 120ms" style-hover="box-shadow:var(--shadow-ember-glow);color:oklch(14% 0.048 238)" style-active="transform:scale(0.97)">Start with $100,000</a>
+            <span style="font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">{{ d.startHint }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="align-self:start;position:sticky;top:24px;background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:26px">
+      <div style="font:600 11px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">You’ll start with</div>
+      <div style="margin-top:14px;font:500 52px/1 var(--font-mono);letter-spacing:-0.02em">$100,000.00</div>
+      <div style="margin-top:10px;font:400 14px/1.6 var(--font-body);color:var(--foreground-muted)">Cash to spend on US stocks and crypto at live prices. Your rank is your equity against everyone else’s.</div>
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--bp-hair);display:flex;align-items:center;justify-content:space-between;gap:12px"><div><div style="font:500 20px/1.15 var(--font-display);letter-spacing:-0.02em">{{ d.league.name }}</div><div style="margin-top:6px;font:500 12px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ d.league.dates }} · {{ d.league.players }} players</div></div><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ d.league.chip.bg }};color:{{ d.league.chip.fg }};border:{{ d.league.chip.bd }};font:600 10px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ d.league.chip.glyph }}</span>{{ d.league.chip.label }}</span></div>
+      <div style="margin-top:18px;display:grid;gap:4px">
+        <sc-for list="{{ d.board }}" as="r" hint-placeholder-count="4"><div style="height:52px;display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;padding:0 10px;border-radius:10px;background:{{ r.bg }};box-shadow:{{ r.ring }}"><span style="font:600 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ r.rank }}</span><span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="flex:none;min-width:30px;height:28px;padding:0 5px;box-sizing:border-box;border-radius:7px;display:grid;place-items:center;background:{{ r.av }};color:{{ r.avFg }};font:600 9.5px/1 var(--font-mono)">{{ r.mono }}</span><span style="font:600 13.5px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span></span><span style="font:600 12.5px/1 var(--font-mono);color:{{ r.tone }}">{{ r.ret }}</span></div></sc-for>
+      </div>
+      <div style="margin-top:12px;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">Ranks as of {{ asOf }} · you enter at $100,000.00, ranked from your first fill</div>
+    </div>
+  </div>
+  <div style="background:var(--surface-sunken);padding:24px 72px;display:flex;justify-content:space-between;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+</div>
+</div>
+
+<div style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">5b · Join · mobile 390</div>
+<div data-screen-label="Join mobile" style="position:relative;width:390px;height:844px;display:flex;flex-direction:column;background:var(--background);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="flex:none;height:46px;display:flex;align-items:center;padding:0 30px;font:600 14px/1 var(--font-body)">{{ time }}</div>
+  <div style="flex:1;min-height:0;overflow:auto;padding:8px 20px 20px">
+    <span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span>
+    <h1 style="margin:26px 0 0;font:500 36px/1 var(--font-display);letter-spacing:-0.04em">Pick a league, pick a name, <span style="color:var(--bp-accent-text)">start trading.</span></h1>
+    <div role="tablist" aria-label="How to join" style="margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ m.modes }}" as="o" hint-placeholder-count="2"><button role="tab" onClick="{{ o.onClick }}" aria-selected="{{ o.pressed }}" style="border:0;cursor:pointer;height:44px;border-radius:9999px;font:600 14px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+    <sc-if value="{{ m.isCode }}" hint-placeholder-val="{{ false }}">
+      <label style="margin-top:18px;display:grid;gap:8px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Invite code</span><input value="{{ m.code }}" onChange="{{ m.onCode }}" placeholder="FALL-7Q2K" style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 22px/1 var(--font-mono);letter-spacing:0.08em;height:52px;outline:none" style-focus="border-bottom-color:var(--ember)"></label>
+      <div role="status" style="margin-top:10px;display:flex;gap:8px;font:500 13px/1.4 var(--font-body);color:{{ m.codeTone }}"><span style="font:700 13px/1.4 var(--font-mono)">{{ m.codeGlyph }}</span><span>{{ m.codeMsg }}</span></div>
+    </sc-if>
+    <sc-if value="{{ m.isOpen }}" hint-placeholder-val="{{ true }}">
+      <div role="radiogroup" aria-label="Open leagues" style="margin-top:16px;display:grid;gap:8px">
+        <sc-for list="{{ m.open }}" as="l" hint-placeholder-count="3"><button role="radio" aria-checked="{{ l.checked }}" onClick="{{ l.onClick }}" style="border:0;cursor:pointer;display:grid;grid-template-columns:20px minmax(0,1fr);gap:12px;align-items:start;padding:14px;min-height:64px;border-radius:14px;background:{{ l.bg }};box-shadow:{{ l.ring }};color:var(--foreground);text-align:left">
+          <span style="margin-top:2px;width:18px;height:18px;box-sizing:border-box;border-radius:9999px;border:{{ l.dotBd }};display:grid;place-items:center"><span style="width:8px;height:8px;border-radius:9999px;background:var(--ember);opacity:{{ l.dotOp }}"></span></span>
+          <span><span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:600 15px/1.3 var(--font-body)">{{ l.name }}</span><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:9999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:{{ l.chip.bd }};font:600 9.5px/1 var(--font-body);letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ l.chip.glyph }}</span>{{ l.chip.label }}</span></span><span style="display:block;margin-top:4px;font:500 11.5px/1.45 var(--font-mono);color:var(--foreground-muted)">{{ l.dates }} · {{ l.players }} players</span></span>
+        </button></sc-for>
+      </div>
+    </sc-if>
+    <div style="margin-top:24px;display:flex;align-items:flex-end;gap:14px">
+      <span aria-hidden="true" style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:48px;padding:0 9px;box-sizing:border-box;border-radius:10px;background:{{ m.av.bg }};border:{{ m.av.bd }};font:600 14px/1 var(--font-mono);color:{{ m.av.fg }}">{{ m.av.mono }}</span>
+      <label style="flex:1;display:grid;gap:8px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Display name</span><input value="{{ m.name }}" onChange="{{ m.onName }}" maxlength="20" placeholder="e.g. Tiarê B." style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 19px/1 var(--font-body);height:48px;outline:none" style-focus="border-bottom-color:var(--ember)"></label>
+    </div>
+    <div style="margin-top:8px;font:400 12.5px/1.5 var(--font-body);color:{{ m.nameTone }}">{{ m.nameMsg }}</div>
+    <div style="margin-top:20px;padding:14px 16px;border-radius:12px;background:var(--surface-sunken)"><div style="font:700 13.5px/1.5 var(--font-body)">Paper trading. Play money. Not investment advice.</div><div style="margin-top:2px;font:400 12.5px/1.55 var(--font-body);color:var(--foreground-muted)">Prices are real; the money isn’t. Nothing here touches a brokerage account.</div></div>
+    <div style="margin-top:14px;font:500 11px/1.5 var(--font-mono);color:var(--foreground-muted)">Market data: IEX via Alpaca · Coinbase</div>
+  </div>
+  <div style="flex:none;padding:12px 20px 30px;background:var(--background);box-shadow:0 -1px 0 var(--bp-hair)">
+    <a href="{{ m.startHref }}" aria-disabled="{{ m.startDisabled }}" style="display:grid;place-items:center;height:56px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 16px/1 var(--font-body);text-decoration:none;opacity:{{ m.startOp }};pointer-events:{{ m.startPe }}" style-active="transform:scale(0.97)">Start with $100,000</a>
+    <div style="margin-top:8px;text-align:center;font:400 12px/1.4 var(--font-body);color:var(--foreground-muted)">{{ m.startHint }}</div>
+  </div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:64px;display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+<div id="5c" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">5c · Lobby · desktop 1440</div>
+<div data-screen-label="Lobby desktop" style="width:1440px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="display:flex;align-items:center;gap:12px;padding:22px 72px"><span style="font:600 24px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><div style="flex:1"></div>
+    <div role="status" style="display:flex;align-items:center;border-radius:9999px;background:var(--surface-sunken)"><div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><span style="width:8px;height:8px;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span><span style="font:600 12.5px/1 var(--font-body)">Stocks live</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">0.6 s ago</span></div><div style="width:1px;align-self:stretch;background:var(--bp-hair)"></div><div style="display:flex;align-items:center;gap:8px;padding:8px 13px"><span style="width:8px;height:8px;border-radius:9999px;background:var(--ember);box-shadow:0 0 10px var(--ember)"></span><span style="font:600 12.5px/1 var(--font-body)">Crypto live</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">0.2 s ago</span></div></div>
+    <span style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">TB</span></div>
+  <div style="padding:48px 72px 0;display:flex;align-items:flex-end;gap:24px"><div><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">Lobby</div><h1 style="margin:18px 0 0;font:500 64px/0.98 var(--font-display);letter-spacing:-0.045em">Your leagues</h1></div><div style="flex:1"></div>
+    <label style="display:flex;align-items:flex-end;gap:12px"><span style="display:grid;gap:8px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Have an invite code?</span><input value="{{ lc.code }}" onChange="{{ lc.onCode }}" placeholder="RUST-22VN" style="width:200px;border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);letter-spacing:0.08em;height:40px;outline:none" style-focus="border-bottom-color:var(--ember)"></span><button onClick="{{ lc.join }}" disabled="{{ lc.disabled }}" style="border:0;cursor:pointer;height:40px;padding:0 18px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 13.5px/1 var(--font-body);opacity:{{ lc.op }}">Join</button></label>
+  </div>
+  <div style="padding:10px 72px 0;min-height:20px;font:500 13px/1.4 var(--font-body);color:{{ lc.tone }};text-align:right">{{ lc.msg }}</div>
+  <div style="padding:22px 72px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+    <sc-for list="{{ mine }}" as="l" hint-placeholder-count="3"><a href="{{ l.href }}" style="display:flex;flex-direction:column;gap:18px;padding:24px;border-radius:18px;background:var(--bp-panel);color:var(--foreground);text-decoration:none;transition:transform 160ms,box-shadow 160ms;opacity:{{ l.op }}" style-hover="transform:translateY(-2px);box-shadow:var(--shadow-ambient-hover);color:var(--foreground)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><div style="font:500 24px/1.1 var(--font-display);letter-spacing:-0.03em">{{ l.name }}</div><div style="margin-top:8px;font:500 12px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ l.dates }} · {{ l.players }} players</div></div><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:{{ l.chip.bd }};font:600 10px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ l.chip.glyph }}</span>{{ l.chip.label }}</span></div>
+      <div style="display:flex;align-items:flex-end;gap:28px"><div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">{{ l.rankLabel }}</div><div style="margin-top:8px;font:500 40px/1 var(--font-mono);letter-spacing:-0.02em">#{{ l.rank }}<span style="font-size:14px;color:var(--foreground-muted)"> of {{ l.players }}</span></div></div><div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Equity</div><div style="margin-top:8px;font:500 15px/1 var(--font-mono)">{{ l.eq }}</div><div style="margin-top:6px;font:500 12px/1 var(--font-mono);color:{{ l.tone }}">{{ l.ret }}</div></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--bp-hair)"><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ l.fresh }}</span><span style="font:700 13.5px/1 var(--font-body)">{{ l.cta }}</span></div>
+    </a></sc-for>
+  </div>
+  <div style="padding:88px 72px 0"><div style="font:500 32px/1 var(--font-display);letter-spacing:-0.03em">Open leagues</div><div style="margin-top:10px;font:400 15px/1.6 var(--font-body);color:var(--foreground-muted)">Anyone can join these. Each one is a fresh $100,000.</div></div>
+  <div style="padding:24px 72px 0">
+    <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.3fr) 110px 160px 150px;gap:20px;padding:0 16px 12px;border-bottom:1px solid var(--bp-hair);font:600 10.5px/1 var(--font-body);letter-spacing:0.18em;text-transform:uppercase;color:var(--foreground-muted)"><span>League</span><span>Runs</span><span style="text-align:right">Players</span><span>Status</span><span></span></div>
+    <sc-for list="{{ openAll }}" as="l" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.3fr) 110px 160px 150px;gap:20px;align-items:center;padding:16px;border-bottom:1px solid var(--bp-hair)">
+      <div><div style="font:600 15.5px/1.3 var(--font-body)">{{ l.name }}</div><div style="font:400 13px/1.4 var(--font-body);color:var(--foreground-muted)">{{ l.note }}</div></div>
+      <span style="font:500 13px/1.4 var(--font-mono)">{{ l.dates }}</span>
+      <span style="text-align:right;font:500 13px/1 var(--font-mono)">{{ l.players }}</span>
+      <span><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:{{ l.chip.bd }};font:600 10px/1 var(--font-body);letter-spacing:0.14em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ l.chip.glyph }}</span>{{ l.chip.label }}</span></span>
+      <span style="text-align:right"><sc-if value="{{ l.joinable }}" hint-placeholder-val="{{ true }}"><a href="Bullpen Prototype.dc.html" style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 13px/1 var(--font-body);text-decoration:none" style-hover="box-shadow:var(--shadow-ember-glow);color:oklch(14% 0.048 238)">Join</a></sc-if><sc-if value="{{ l.joined }}" hint-placeholder-val="{{ false }}"><span style="font:600 13px/1 var(--font-body);color:var(--foreground-muted)">✓ Joined</span></sc-if><sc-if value="{{ l.ended }}" hint-placeholder-val="{{ false }}"><a href="#5c" style="font:600 13px/1 var(--font-body);text-decoration:none;color:var(--foreground-muted)">Final standings →</a></sc-if></span>
+    </div></sc-for>
+  </div>
+  <div style="margin-top:96px;background:var(--surface-sunken);padding:24px 72px;display:flex;justify-content:space-between;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+</div>
+</div>
+
+<div style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">5d · Lobby · mobile 390</div>
+<div data-screen-label="Lobby mobile" style="width:390px;height:844px;display:flex;flex-direction:column;background:var(--background);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="flex:none;height:46px;display:flex;align-items:center;padding:0 30px;font:600 14px/1 var(--font-body)">{{ time }}</div>
+  <div style="flex:1;min-height:0;overflow:auto">
+    <div style="padding:8px 20px 0;display:flex;align-items:center;justify-content:space-between"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 12px/1 var(--font-mono)">TB</span></div>
+    <h1 style="margin:22px 20px 0;font:500 36px/1 var(--font-display);letter-spacing:-0.04em">Your leagues</h1>
+    <div style="margin:18px 20px 0;display:grid;gap:12px">
+      <sc-for list="{{ mine }}" as="l" hint-placeholder-count="3"><a href="{{ l.href }}" style="display:grid;gap:14px;padding:18px;border-radius:16px;background:var(--bp-panel);color:var(--foreground);text-decoration:none;opacity:{{ l.op }}" style-active="transform:scale(0.99)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div><div style="font:500 19px/1.15 var(--font-display);letter-spacing:-0.02em">{{ l.name }}</div><div style="margin-top:5px;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ l.dates }}</div></div><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:9999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:{{ l.chip.bd }};font:600 9.5px/1 var(--font-body);letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ l.chip.glyph }}</span>{{ l.chip.label }}</span></div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 28px/1 var(--font-mono)">#{{ l.rank }}<span style="font-size:12.5px;color:var(--foreground-muted)"> of {{ l.players }}</span></span><span style="text-align:right"><span style="display:block;font:500 13px/1.3 var(--font-mono)">{{ l.eq }}</span><span style="display:block;font:500 12px/1.3 var(--font-mono);color:{{ l.tone }}">{{ l.ret }}</span></span></div>
+        <div style="font:500 10.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ l.fresh }}</div>
+      </a></sc-for>
+    </div>
+    <div style="margin:36px 20px 0;font:500 24px/1 var(--font-display);letter-spacing:-0.03em">Open leagues</div>
+    <div style="margin:14px 20px 0;display:grid;gap:10px">
+      <sc-for list="{{ openAll }}" as="l" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--surface-sunken)">
+        <div style="min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font:600 15px/1.3 var(--font-body)">{{ l.name }}</span></div><div style="margin-top:4px;font:500 11.5px/1.45 var(--font-mono);color:var(--foreground-muted)">{{ l.dates }} · {{ l.players }}</div><span style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:9999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:{{ l.chip.bd }};font:600 9.5px/1 var(--font-body);letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap"><span style="font-family:var(--font-mono);letter-spacing:0">{{ l.chip.glyph }}</span>{{ l.chip.label }}</span></div>
+        <sc-if value="{{ l.joinable }}" hint-placeholder-val="{{ true }}"><a href="Bullpen Prototype.dc.html" style="display:grid;place-items:center;height:44px;padding:0 18px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body);text-decoration:none">Join</a></sc-if>
+        <sc-if value="{{ l.joined }}" hint-placeholder-val="{{ false }}"><span style="font:600 13px/1 var(--font-body);color:var(--foreground-muted)">✓ Joined</span></sc-if>
+        <sc-if value="{{ l.ended }}" hint-placeholder-val="{{ false }}"><span style="font:600 13px/1 var(--font-body);color:var(--foreground-muted)">Ended</span></sc-if>
+      </div></sc-for>
+    </div>
+    <div style="margin-top:36px;padding:22px 20px 34px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const L = {
+  fall: { name: 'Fall Open', status: 'live', dates: 'Sep 1 – Oct 31', players: 214, note: 'Stocks and crypto · the league on the landing page' },
+  rust: { name: 'Vancouver Rust meetup', status: 'live', dates: 'Sep 15 – Oct 15', players: 22, note: 'Invite only' },
+  crypto: { name: 'Crypto Weekend', status: 'starting', dates: 'Sat Sep 27 – Sun Sep 28', players: 38, note: 'Crypto only · 24/7', startsIn: 'Starts Sat 00:00' },
+  oct: { name: 'October Classic', status: 'starting', dates: 'Oct 1 – Oct 31', players: 96, note: 'Stocks and crypto', startsIn: 'Starts Oct 1' },
+  summer: { name: 'Summer Sprint', status: 'ended', dates: 'Jul 1 – Aug 31', players: 180, note: 'Stocks only' },
+  q3: { name: 'Q3 Classic', status: 'ended', dates: 'Jul 1 – Sep 19', players: 301, note: 'Stocks and crypto' },
+};
+const CODES = { 'FALL-7Q2K': 'fall', 'RUST-22VN': 'rust', 'WKND-38CR': 'crypto' };
+const OPEN = ['fall', 'crypto', 'oct'];
+const MINE = [['fall', 9, '$107,962.30', 7.96], ['rust', 3, '$112,418.05', 12.42], ['summer', 14, '$109,240.77', 9.24]];
+const BOARD = [['Priya N.', 'PN', 18.42], ['Marcus O.', 'MO', 16.9], ['Lena V.', 'LV', 14.23]];
+
+class Component extends DCLogic {
+  state = { theme: 'dark', d: { mode: 'code', code: 'FALL-7Q2K', pick: 'fall', name: 'Tiarê B.' }, m: { mode: 'open', code: '', pick: 'crypto', name: '' }, lc: '' };
+  componentDidMount() { this.iv = setInterval(() => this.forceUpdate(), 15000); }
+  componentWillUnmount() { clearInterval(this.iv); }
+  componentDidUpdate(pp, ps) { if (ps.theme !== this.state.theme) document.body.style.background = this.state.theme === 'dark' ? 'oklch(10.5% 0.038 238)' : 'oklch(94% 0.010 238)'; }
+  chip(st, l) {
+    if (st === 'live') return { glyph: '●', label: 'Live', bg: 'color-mix(in oklch, var(--ember) 16%, transparent)', fg: 'var(--bp-accent-text)', bd: '0' };
+    if (st === 'starting') return { glyph: '◷', label: l.startsIn || 'Starting', bg: 'var(--bp-panel-2)', fg: 'var(--foreground)', bd: '0' };
+    return { glyph: '✓', label: 'Ended', bg: 'transparent', fg: 'var(--foreground-muted)', bd: '1px dashed var(--foreground-muted)' };
+  }
+  av(name) {
+    const n = name.trim(); if (!n) return { mono: '?', bg: 'var(--bp-panel-2)', bd: '1px dashed var(--foreground-muted)', fg: 'var(--foreground-muted)' };
+    const w = n.split(/\s+/), mono = (w.length > 1 ? w[0][0] + w[w.length - 1][0] : n.slice(0, 2)).toUpperCase();
+    let h = 0; for (const c of n) h = (h * 31 + c.charCodeAt(0)) % 360;
+    return { mono, bg: `color-mix(in oklch, var(--surface-elevated) 78%, oklch(66% 0.12 ${h}))`, bd: '0', fg: 'var(--foreground)' };
+  }
+  form(key) {
+    const f = this.state[key], set = (x) => this.setState((s) => ({ [key]: { ...s[key], ...x } }));
+    const code = f.code.trim(), codeHit = CODES[code], id = f.mode === 'code' ? codeHit : f.pick, league = id ? L[id] : null;
+    const nm = f.name.trim(), nameOk = nm.length >= 3 && nm.length <= 20, taken = nm.toLowerCase() === 'priya n.';
+    const okName = nameOk && !taken, ok = !!league && okName;
+    const seg = [['code', 'Invite code'], ['open', 'Open leagues']].map(([v, l]) => ({ label: l, pressed: f.mode === v ? 'true' : 'false', bg: f.mode === v ? 'var(--bp-panel-2)' : 'transparent', fg: f.mode === v ? 'var(--foreground)' : 'var(--foreground-muted)', onClick: () => set({ mode: v }) }));
+    const lg = (lid) => ({ ...L[lid], id: lid, chip: this.chip(L[lid].status, L[lid]) });
+    const av = this.av(f.name);
+    return {
+      modes: seg, isCode: f.mode === 'code', isOpen: f.mode === 'open', code: f.code,
+      onCode: (e) => set({ code: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 9) }),
+      codeGlyph: !code ? '·' : codeHit ? '✓' : code.length < 9 ? '…' : '✕',
+      codeMsg: !code ? 'Codes look like FALL-7Q2K. Ask whoever invited you.' : codeHit ? `${L[codeHit].name} · ${L[codeHit].players} players · ${L[codeHit].dates}` : code.length < 9 ? 'Keep typing…' : 'No league uses that code. Check it, or pick an open league.',
+      codeTone: codeHit ? 'var(--bp-gain)' : code.length >= 9 ? 'var(--destructive)' : 'var(--foreground-muted)',
+      open: OPEN.map((lid) => { const x = lg(lid), on = f.pick === lid; return { ...x, checked: on ? 'true' : 'false', onClick: () => set({ pick: lid }), bg: on ? 'var(--bp-panel)' : 'var(--surface-sunken)', ring: on ? 'inset 0 0 0 1.5px var(--ember)' : 'none', dotBd: on ? '1.5px solid var(--ember)' : '1.5px solid var(--foreground-muted)', dotOp: on ? 1 : 0 }; }),
+      name: f.name, onName: (e) => set({ name: e.target.value }), av,
+      nameMsg: !nm ? 'Add a display name. 3 to 20 characters; your monogram comes from it.' : taken ? '“Priya N.” is taken in this league. Try another.' : !nameOk ? '3 to 20 characters.' : `Shows as ${av.mono} on the leaderboard.`,
+      nameTone: taken || (nm && !nameOk) ? 'var(--destructive)' : 'var(--foreground-muted)',
+      league: league ? lg(id) : { name: 'No league picked', dates: '—', players: '—', chip: this.chip('starting', { startsIn: 'Pick one' }) },
+      startHref: ok ? 'Bullpen Prototype.dc.html' : '#', startDisabled: ok ? 'false' : 'true', startOp: ok ? 1 : 0.45, startPe: ok ? 'auto' : 'none',
+      startHint: ok ? (league.status === 'starting' ? `Trading opens when the league starts. ${league.startsIn}.` : 'Your terminal opens with $100,000.00 in cash.') : !league ? 'Pick a league first.' : 'Add a display name first.',
+      board: [...BOARD.map(([n, mo, r], i) => ({ rank: i + 1, name: n, mono: mo, ret: '▲ +' + r.toFixed(2) + '%', tone: 'var(--bp-gain)', bg: 'transparent', ring: 'none', av: `color-mix(in oklch, var(--surface-elevated) 78%, oklch(66% 0.1 ${i * 47}))`, avFg: 'var(--foreground)' })),
+        { rank: '—', name: (nm || 'You') + ' · you', mono: av.mono, ret: '$100,000.00', tone: 'var(--foreground-muted)', bg: 'color-mix(in oklch, var(--ember) 12%, var(--bp-panel))', ring: 'inset 0 0 0 1px color-mix(in oklch, var(--ember) 40%, transparent)', av: 'var(--ember)', avFg: 'oklch(14% 0.048 238)' }],
+    };
+  }
+  renderVals() {
+    const s = this.state, now = new Date();
+    const hit = CODES[s.lc.trim()];
+    return {
+      themeCls: s.theme === 'dark' ? 'dark' : '', time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      asOf: now.toLocaleTimeString('en-GB', { hour12: false }),
+      themeOpts: [['dark', 'Dark'], ['light', 'Light']].map(([v, l]) => ({ label: l, pressed: s.theme === v ? 'true' : 'false', bg: s.theme === v ? 'var(--bp-panel-2)' : 'transparent', fg: s.theme === v ? 'var(--foreground)' : 'var(--foreground-muted)', onClick: () => this.setState({ theme: v }) })),
+      d: this.form('d'), m: this.form('m'),
+      lc: { code: s.lc, onCode: (e) => this.setState({ lc: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 9) }), disabled: !hit || hit === 'fall' || hit === 'rust', op: hit && hit !== 'fall' && hit !== 'rust' ? 1 : 0.45,
+        msg: !s.lc ? '' : hit === 'fall' || hit === 'rust' ? `✓ You’re already in ${L[hit].name}.` : hit ? `✓ ${L[hit].name} · ${L[hit].players} players` : s.lc.length >= 9 ? '✕ No league uses that code.' : '',
+        tone: hit ? 'var(--bp-gain)' : 'var(--destructive)', join: () => { window.location.href = 'Bullpen Prototype.dc.html'; } },
+      mine: MINE.map(([id, rank, eq, ret]) => { const l = L[id], ended = l.status === 'ended'; return { ...l, rank, eq, ret: '▲ +' + ret.toFixed(2) + '%', tone: 'var(--bp-gain)', chip: this.chip(l.status, l), href: ended ? '#5c' : 'Bullpen Terminal.dc.html', op: ended ? 0.8 : 1,
+        rankLabel: ended ? 'Final rank' : 'Your rank', fresh: ended ? 'Final · Aug 31, 16:00 ET' : 'Live · ranks lag fills by ≤ 2 s', cta: ended ? 'Final standings →' : 'Open terminal →' }; }),
+      openAll: ['fall', 'crypto', 'oct', 'q3'].map((id) => { const l = L[id]; return { ...l, chip: this.chip(l.status, l), joinable: l.status !== 'ended' && id !== 'fall', joined: id === 'fall', ended: l.status === 'ended' }; }),
+    };
+  }
+}
+</script>
+</body>
+</html>

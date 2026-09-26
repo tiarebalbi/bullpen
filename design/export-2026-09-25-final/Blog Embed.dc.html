@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp:not(.dark){--background:oklch(98.5% 0.006 238);--foreground:oklch(14% 0.048 238);--foreground-muted:oklch(47% 0.028 238);--surface-elevated:oklch(100% 0 0);--surface-sunken:oklch(94% 0.010 238);--card:var(--surface-elevated);--card-foreground:var(--foreground);--popover:oklch(99% 0.004 238);--muted:oklch(93% 0.009 238);--muted-foreground:oklch(50% 0.024 238);--border:oklch(87% 0.012 238);--ring:var(--ember)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+@keyframes bp-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes bp-fade-out{from{opacity:1}to{opacity:0}}
+</style>
+</helmet>
+<div class="bp {{ themeCls }}" style="container-type:inline-size;position:relative;box-sizing:border-box;width:100%;height:100%;overflow:hidden;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);font-variant-numeric:tabular-nums">
+<div onKeyDown="{{ onKey }}" style="box-sizing:border-box;height:100%;display:flex;flex-direction:column;gap:12px;padding:clamp(16px,3.2cqw,24px) clamp(16px,3.6cqw,26px) 14px">
+
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px">
+    <span style="font:600 10.5px/1.3 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Bullpen · {{ eyebrow }}</span>
+    <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:var(--bp-panel-2);font:600 11px/1 var(--font-mono)"><span style="color:var(--bp-accent-text)">{{ stampGlyph }}</span>{{ stamp }}</span>
+  </div>
+  <div style="font:500 clamp(19px,3.5cqw,24px)/1.15 var(--font-display);letter-spacing:-0.02em;text-wrap:balance">{{ title }}</div>
+
+  <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 8px 8px 12px;border-radius:10px;background:color-mix(in oklch,var(--destructive) 14%,transparent)">
+      <span style="font:700 12px/1 var(--font-mono);color:var(--destructive)">✕</span>
+      <span style="flex:1;min-width:160px;font:500 12.5px/1.35 var(--font-body)">Couldn’t load the live embed. Showing the published image.</span>
+      <button onClick="{{ retry }}" style="min-height:44px;padding:0 16px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:600 12.5px/1 var(--font-body)" style-hover="background:var(--bp-panel)" style-focus="outline:2px solid var(--ember);outline-offset:2px">Retry</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <div role="status" aria-label="Loading" style="flex:1;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px">
+      <div style="border-radius:12px;background:var(--bp-panel);display:grid;place-items:center"><span style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">◷ Loading {{ loadingWhat }}</span></div>
+      <div style="display:flex;gap:8px"><span style="width:44%;height:12px;border-radius:9999px;background:var(--bp-panel)"></span><span style="width:22%;height:12px;border-radius:9999px;background:var(--bp-panel)"></span></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showArch }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;min-height:0;position:relative;overflow:hidden;border-radius:12px"><div style="position:absolute;inset:0">{{ archDiag }}</div></div>
+    <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}"><div style="font:400 12px/1.45 var(--font-body);color:var(--foreground-muted)">Showing what Part {{ part }} changed. The full diagram is on the live page.</div></sc-if>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:18px;height:0;border-top:1.5px solid var(--foreground-muted)"></span>sync</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:18px;height:0;border-top:1.5px dashed var(--foreground-muted)"></span>async</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;box-sizing:border-box;border-radius:3px;border:1.5px solid var(--ember);background:color-mix(in oklch,var(--ember) 14%,transparent)"></span>changed in Part {{ part }}</span>
+      </div>
+      <sc-if value="{{ isStatic }}" hint-placeholder-val="{{ false }}"><span style="font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">Live at tiarebalbi.com/bullpen/architecture</span></sc-if>
+      <sc-if value="{{ isLive }}" hint-placeholder-val="{{ true }}"><a href="Architecture Page.dc.html" target="_top" style="display:inline-flex;align-items:center;min-height:44px;padding:0 2px;font:600 13px/1 var(--font-body);color:var(--bp-accent-text);text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid var(--ember);outline-offset:2px;border-radius:6px">See it live →</a></sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showOrder }}" hint-placeholder-val="{{ false }}">
+    <div ref="{{ vpRef }}" style="flex:1;min-height:0;position:relative;overflow:hidden;border-radius:12px">
+      <div style="position:absolute;left:0;top:0;width:{{ panW }};height:{{ panH }};transform:{{ panT }};transition:{{ panTr }}">{{ orderDiag }}</div>
+    </div>
+    <sc-if value="{{ orderLive }}" hint-placeholder-val="{{ true }}">
+      <div aria-live="polite" style="display:grid;gap:5px;min-height:52px">
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px"><span style="font:600 11px/1 var(--font-mono);color:var(--foreground-muted)">STEP {{ stepN }} OF {{ stepCount }}</span><span style="font:700 15px/1.2 var(--font-body)">{{ caption }}</span></div>
+        <div style="font:500 12.5px/1.45 var(--font-mono);color:var(--foreground-muted)">{{ detail }}</div>
+      </div>
+      <div role="group" aria-label="Order playback" style="display:flex;align-items:center;gap:8px">
+        <button onClick="{{ back }}" aria-label="Previous step" disabled="{{ atStart }}" style="flex:none;width:44px;height:44px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:700 15px/1 var(--font-mono)" style-hover="background:var(--bp-panel)" style-focus="outline:2px solid var(--ember);outline-offset:2px">←</button>
+        <button onClick="{{ toggle }}" aria-label="{{ playLabel }}" style="flex:none;width:44px;height:44px;border:0;border-radius:9999px;cursor:pointer;background:var(--ember);color:oklch(14% 0.048 238);font:700 13px/1 var(--font-mono)" style-hover="box-shadow:var(--shadow-ember-glow)" style-focus="outline:2px solid var(--ember);outline-offset:3px">{{ playGlyph }}</button>
+        <button onClick="{{ fwd }}" aria-label="Next step" disabled="{{ atEnd }}" style="flex:none;width:44px;height:44px;border:0;border-radius:9999px;cursor:pointer;background:var(--bp-panel-2);color:var(--foreground);font:700 15px/1 var(--font-mono)" style-hover="background:var(--bp-panel)" style-focus="outline:2px solid var(--ember);outline-offset:2px">→</button>
+        <div aria-hidden="true" style="flex:1;display:flex;gap:4px;margin-left:6px">
+          <sc-for list="{{ segs }}" as="s" hint-placeholder-count="5"><span style="flex:1;height:3px;border-radius:9999px;background:var(--bp-hair);overflow:hidden"><span style="display:block;height:100%;background:var(--ember);transform:{{ s.fill }};transform-origin:left center;transition:{{ s.tr }}"></span></span></sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ orderStatic }}" hint-placeholder-val="{{ false }}">
+      <ol style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px">
+        <sc-for list="{{ stepList }}" as="s" hint-placeholder-count="5"><li style="display:flex;gap:8px;align-items:baseline;min-width:0"><span style="flex:none;width:18px;height:18px;border-radius:9999px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 10px/1 var(--font-mono)">{{ s.n }}</span><span style="min-width:0;font:600 12.5px/1.35 var(--font-body)">{{ s.caption }}<span style="display:block;font:500 11px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ s.detail }}</span></span></li></sc-for>
+      </ol>
+      <div style="font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">Play it at tiarebalbi.com/bullpen/part-{{ part }}</div>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ showBill }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--bp-panel);border-radius:12px;padding:14px 16px"><div style="font:500 clamp(26px,5cqw,34px)/1 var(--font-mono);letter-spacing:-0.02em">$0.00</div><div style="margin-top:8px;font:600 9.5px/1.4 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Spent this week</div></div>
+      <div style="background:var(--bp-panel);border-radius:12px;padding:14px 16px"><div style="font:500 clamp(26px,5cqw,34px)/1 var(--font-mono);letter-spacing:-0.02em;color:var(--bp-accent-text)">$1.84</div><div style="margin-top:8px;font:600 9.5px/1.4 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Per 1,000 players / month, est.</div></div>
+    </div>
+    <div style="flex:1;min-height:0;display:grid;align-content:start;gap:0">
+      <div style="padding-bottom:6px;font:600 9.5px/1.4 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Free-tier usage · month to date</div>
+      <sc-for list="{{ costs }}" as="c" hint-placeholder-count="5"><div style="padding:8px 0;border-top:1px solid var(--bp-hair)">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px"><span style="font:600 13px/1.3 var(--font-body)">{{ c.name }} <span style="font-weight:400;color:var(--foreground-muted)">· {{ c.what }}</span></span><span style="font:500 12px/1.3 var(--font-mono)">{{ c.label }}</span></div>
+        <div style="margin-top:6px;height:6px;border-radius:9999px;background:var(--bp-panel);overflow:hidden"><div style="height:100%;border-radius:9999px;background:{{ c.tone }};transform:{{ c.scale }};transform-origin:left center"></div></div>
+        <sc-if value="{{ c.hot }}" hint-placeholder-val="{{ false }}"><div style="margin-top:5px;font:500 11.5px/1.3 var(--font-body);color:var(--foreground-muted)"><span style="font-family:var(--font-mono);color:var(--warning)">!</span> {{ c.pct }} used · resets Oct 1</div></sc-if>
+      </div></sc-for>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 16px">
+      <span style="font:400 11.5px/1.4 var(--font-body);color:var(--foreground-muted)">The cost model isn’t final. Estimates are marked est.</span>
+      <sc-if value="{{ isLive }}" hint-placeholder-val="{{ true }}"><a href="Architecture Page.dc.html" target="_top" style="display:inline-flex;align-items:center;min-height:44px;font:600 13px/1 var(--font-body);color:var(--bp-accent-text);text-decoration:none" style-hover="text-decoration:underline" style-focus="outline:2px solid var(--ember);outline-offset:2px;border-radius:6px">Full cost ledger →</a></sc-if>
+      <sc-if value="{{ isStatic }}" hint-placeholder-val="{{ false }}"><span style="font:500 11.5px/1.3 var(--font-mono);color:var(--foreground-muted)">tiarebalbi.com/bullpen/cost</span></sc-if>
+    </div>
+  </sc-if>
+
+  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;font:400 10.5px/1.4 var(--font-body);color:var(--foreground-muted)">
+    <span>Paper trading. Play money. Not investment advice.</span>
+    <span style="font-family:var(--font-mono)">Market data: IEX via Alpaca · Coinbase</span>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:684,&quot;height&quot;:540},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;arch&quot;,&quot;order&quot;,&quot;bill&quot;],&quot;default&quot;:&quot;arch&quot;,&quot;tsType&quot;:&quot;'arch'|'order'|'bill'&quot;},&quot;part&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:1,&quot;max&quot;:6,&quot;default&quot;:3,&quot;tsType&quot;:&quot;number&quot;},&quot;w&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;684&quot;,&quot;360&quot;],&quot;default&quot;:&quot;684&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;fallback&quot;,&quot;loading&quot;,&quot;error&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;reduced&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+const EXPO = 'cubic-bezier(0.16,1,0.3,1)';
+class Component extends DCLogic {
+  state = { i: 0, playing: false, k: 0, vpW: 0 };
+  vpRef = React.createRef();
+  uid = 'be' + Math.random().toString(36).slice(2, 7);
+  componentDidMount() {
+    this.rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const base = document.baseURI;
+    Promise.all([import(new URL('bullpen.js', base).href), import(new URL('blog.js', base).href)]).then(([M, B]) => { this.M = M; this.B = B; this.forceUpdate(); });
+    if (window.ResizeObserver) { this.ro = new ResizeObserver(() => { const el = this.vpRef.current; if (el && el.clientWidth !== this.state.vpW) this.setState({ vpW: el.clientWidth, vpH: el.clientHeight }); }); this.obs = setInterval(() => { const el = this.vpRef.current; if (el && !el.__o) { el.__o = 1; this.ro.observe(el); } }, 300); }
+  }
+  componentWillUnmount() { clearInterval(this.pT); clearInterval(this.obs); if (this.ro) this.ro.disconnect(); }
+  p(name, def) { const v = this.props[name]; if (v !== undefined && v !== null && v !== '') return v; return Q.get(name) ?? def; }
+  go(i) { const n = this.path.length; this.setState((s) => ({ i: Math.max(0, Math.min(n - 1, i)), k: s.k + 1 })); }
+  play() {
+    clearInterval(this.pT);
+    if (this.state.i >= this.path.length - 1) this.go(0);
+    this.setState({ playing: true });
+    this.pT = setInterval(() => {
+      if (this.state.i >= this.path.length - 1) { clearInterval(this.pT); this.setState({ playing: false }); return; }
+      this.go(this.state.i + 1);
+    }, this.reduced ? 1600 : 2200);
+  }
+  pause() { clearInterval(this.pT); this.setState({ playing: false }); }
+  renderVals() {
+    const kind = this.p('kind', 'arch'), part = +this.p('part', kind === 'order' ? 4 : 3), width = +this.p('w', this.p('width', 684));
+    const theme = this.p('theme', 'dark'), mode = this.p('mode', 'live');
+    const narrow = width < 500, reduced = this.rm || this.props.reduced === true || this.props.reduced === 'true';
+    this.reduced = reduced;
+    const M = this.M, B = this.B, h = React.createElement;
+    const isStatic = mode === 'fallback' || mode === 'error', isLoading = mode === 'loading', isLive = mode === 'live';
+    const mom = M ? M.MOMENTS[part - 1] : { title: '' };
+    const date = B ? B.DATES[part] : '';
+    const base = { themeCls: theme === 'dark' ? 'dark' : '', part, narrow, isStatic, isLive, isLoading, isError: mode === 'error', retry: () => {},
+      stampGlyph: '◆', stamp: `Part ${part} · as of ${date}`, loadingWhat: '' };
+    const fit = (el) => el && React.cloneElement(el, { height: '100%', preserveAspectRatio: 'xMidYMid meet' });
+    if (kind === 'arch') {
+      return { ...base, eyebrow: `Architecture at Part ${part}`, title: mom.title, loadingWhat: `the Part ${part} diagram`,
+        showArch: !isLoading, showOrder: false, showBill: false,
+        archDiag: M && B ? fit(M.renderDiagram(h, { moment: part, prev: part, reduced: true, flow: false, uid: this.uid, highlight: B.HL[part], data: !!B.HL[part].data,
+          viewBox: narrow ? B.NARROW_CROP[part] : (B.HL[part].data ? '0 20 1160 680' : '0 20 1160 640'), ariaLabel: `Architecture at Part ${part}: ${mom.title}. Highlighted: ${B.HL[part].note}.` })) : null };
+    }
+    if (kind === 'bill') {
+      const costs = M ? M.COSTS.map((c) => {
+        const k = c.used / c.cap, hot = k >= 0.8;
+        const f = (v) => (c.unit === 'k' ? (v >= 1000 ? (v / 1000) + 'M' : v + 'k') : v + c.unit);
+        return { name: c.name, what: c.what, label: `${f(c.used)} of ${f(c.cap)}`, pct: Math.round(k * 100) + '%', hot, tone: hot ? 'var(--warning)' : 'var(--foreground-muted)', scale: `scaleX(${k.toFixed(3)})` };
+      }) : [];
+      return { ...base, eyebrow: `This week’s bill · Part ${part}`, title: 'Everything still fits in free tiers', stampGlyph: '◷', stamp: 'Week of Sep 14–20 · closed Sep 21, 06:00 UTC', loadingWhat: 'this week’s bill',
+        showArch: false, showOrder: false, showBill: !isLoading, costs };
+    }
+    // order
+    const path = M ? M.orderPath(part).map(M.resolveStep) : [];
+    this.path = path;
+    const i = Math.min(this.state.i, Math.max(0, path.length - 1)), st = path[i];
+    const vbFull = '0 0 1160 660';
+    let orderDiag = null, panW = '100%', panH = '100%', panT = 'none', panTr = 'none';
+    if (M && B && !isLoading) {
+      if (isStatic) {
+        const hl = { nodes: [...new Set(path.flatMap((s) => [s.a, s.b]))], edges: path.map((s) => s.edge) };
+        orderDiag = fit(M.renderDiagram(h, { moment: part, prev: part, reduced: true, flow: false, uid: this.uid, highlight: hl, viewBox: B.ORDER_CROP[part], ariaLabel: `Order path at Part ${part}` }));
+      } else {
+        const touched = new Set(path.slice(0, i).flatMap((s) => [s.a, s.b]));
+        const el = M.renderDiagram(h, { moment: part, prev: part, reduced, flow: false, uid: this.uid, step: st, stepKey: i + '-' + this.state.k, touched, viewBox: narrow ? vbFull : B.ORDER_CROP[part], ariaLabel: `Order at Part ${part}, step ${i + 1}: ${st ? st.caption : ''}` });
+        if (narrow) {
+          const vw = this.state.vpW || 328, vh = this.state.vpH || 300, s = 0.64, W = 1160 * s, H = 660 * s;
+          const e = M.ARCH.edges.find((x) => x.id === st.edge), A = M.ARCH.nodes.find((n) => n.id === e.a), Bn = M.ARCH.nodes.find((n) => n.id === e.b);
+          const mx = ((A.x + Bn.x) / 2) * s, my = ((A.y + Bn.y) / 2) * s;
+          const tx = Math.max(0, Math.min(W - vw, mx - vw / 2)), ty = Math.max(0, Math.min(H - vh, my - vh / 2));
+          panW = W + 'px'; panH = H + 'px'; panT = `translate(${-tx.toFixed(1)}px, ${-ty.toFixed(1)}px)`; panTr = reduced ? 'none' : `transform 560ms ${EXPO}`;
+          orderDiag = el;
+        } else orderDiag = fit(el);
+      }
+    }
+    return { ...base, eyebrow: `Follow an order at Part ${part}`, title: 'Buy 10 NVDA at market', loadingWhat: 'the order playback',
+      showArch: false, showBill: false, showOrder: !isLoading, orderLive: !isStatic, orderStatic: isStatic, vpRef: this.vpRef,
+      orderDiag, panW, panH, panT, panTr,
+      stepN: i + 1, stepCount: path.length, caption: st ? st.caption : '', detail: st ? st.detail : '',
+      stepList: path.map((s, n) => ({ n: n + 1, caption: s.caption, detail: s.detail })),
+      segs: path.map((_, n) => ({ fill: n <= i ? 'scaleX(1)' : 'scaleX(0)', tr: reduced ? 'none' : `transform 400ms ${EXPO}` })),
+      atStart: i === 0, atEnd: i >= path.length - 1,
+      playLabel: this.state.playing ? 'Pause' : 'Play', playGlyph: this.state.playing ? '❚❚' : '▶',
+      toggle: () => (this.state.playing ? this.pause() : this.play()),
+      back: () => { this.pause(); this.go(i - 1); }, fwd: () => { this.pause(); this.go(i + 1); },
+      onKey: (ev) => { if (kind !== 'order' || isStatic) return; if (ev.key === 'ArrowRight') { this.pause(); this.go(i + 1); } else if (ev.key === 'ArrowLeft') { this.pause(); this.go(i - 1); } },
+    };
+  }
+}
+</script>
+</body>
+</html>

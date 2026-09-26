@@ -1,5 +1,5 @@
 /**
- * Formatting helpers ported from design/export-2026-09-25/bullpen.js
+ * Formatting helpers ported from design/export-2026-09-25-final/bullpen.js
  * (the same module the Landing page imports at runtime), so the
  * ported components sign and format numbers exactly like the export.
  */

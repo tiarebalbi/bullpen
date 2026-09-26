@@ -127,7 +127,7 @@ export function orderFrames(o, px, cash, hold) {
   if (o.side === 'sell' && q > hold) {
     return { ...base, frames: [F(0, [], `Rejected · you hold ${fq(hold)} ${mono}`, `Sell ${fq(hold)} or fewer. Nothing was reserved.`, { end: 'rejected', fixQty: hold, fix: `Sell ${fq(hold)} instead` })] };
   }
-  const rests = lim && (o.side === 'buy' ? o.limit < px : o.limit > px);
+  const rests = o.rest != null ? o.rest : lim && (o.side === 'buy' ? o.limit < px : o.limit > px);
   const a = roundQ(o.sym, q * 0.6), b = roundQ(o.sym, q - a);
   if (rests) {
     return { ...base, frames: [

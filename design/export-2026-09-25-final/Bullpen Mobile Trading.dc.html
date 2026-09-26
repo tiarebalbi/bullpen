@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0;background:oklch(10.5% 0.038 238)}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+.bp[data-cb="on"]{--bp-gain:oklch(50% 0.16 255);--bp-loss:oklch(55% 0.16 48)}
+.bp.dark[data-cb="on"]{--bp-gain:oklch(72% 0.14 250);--bp-loss:oklch(76% 0.15 62)}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" class="bp {{ themeCls }}" data-cb="{{ cb }}" style="min-height:100vh;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);padding:40px 48px 80px">
+
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+  <span style="font:600 11px/1 var(--font-mono);padding:4px 8px;border-radius:5px;background:var(--foreground);color:var(--background)">4</span>
+  <span style="font:600 14px/1 var(--font-body)">Trading on mobile · 390</span>
+  <a href="Bullpen Terminal.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Desktop terminal →</a>
+  <a href="Bullpen Prototype.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Prototype →</a>
+  <div style="flex:1"></div>
+  <div role="group" aria-label="Theme" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Gain and loss palette" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ cbOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Motion" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ motionOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+</div>
+<div style="max-width:900px;margin-bottom:40px;font:400 14px/1.6 var(--font-body);color:var(--foreground-muted)">Every phone is live. Tap a symbol to watch its TickerBadge morph into the detail header on --bp-spring; Buy opens the ticket as a bottom sheet with confirm in thumb reach; the order timeline collapses to one line and expands on tap. Reset returns a phone to its starting state.</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:48px 40px;align-items:flex-start">
+<sc-for list="{{ phones }}" as="p" hint-placeholder-count="4">
+<div id="{{ p.id }}" style="flex:none;width:390px;display:grid;gap:12px">
+  <div style="display:flex;align-items:center;gap:10px"><a href="#{{ p.id }}" style="font:600 10.5px/1 var(--font-mono);padding:4px 7px;border-radius:5px;background:var(--foreground);color:var(--background);text-decoration:none">{{ p.id }}</a><span style="font:600 14px/1.2 var(--font-body)">{{ p.caption }}</span><div style="flex:1"></div><button onClick="{{ p.reset }}" style="border:0;cursor:pointer;padding:6px 10px;border-radius:9999px;background:var(--background);color:var(--foreground-muted);font:600 11.5px/1 var(--font-body)" style-hover="color:var(--foreground)">Reset ↺</button></div>
+  <div data-phone="{{ p.id }}" data-screen-label="{{ p.label }}" style="position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;background:var(--background);box-shadow:var(--shadow-ambient);display:flex;flex-direction:column">
+    <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font:600 14px/1 var(--font-body)"><span>{{ p.time }}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:22px;height:11px;border-radius:3px;border:1.2px solid currentColor;box-sizing:border-box;padding:1px"><span style="display:block;width:70%;height:100%;border-radius:1px;background:currentColor"></span></span></span></div>
+
+    <sc-if value="{{ p.isWatch }}" hint-placeholder-val="{{ true }}">
+    <div data-screen="{{ p.id }}" style="flex:1;min-height:0;overflow:auto">
+      <div style="padding:6px 20px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Fall Open · ends Oct 31</div>
+          <div style="margin-top:10px;display:flex;font:500 32px/1 var(--font-mono);letter-spacing:-0.02em;font-variant-numeric:tabular-nums"><sc-for list="{{ p.eqChars }}" as="c" hint-placeholder-count="11"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;height:1.15em;line-height:1.15em">{{ c.ch }}</span></sc-if></sc-for></div>
+          <div style="margin-top:8px;display:flex;gap:12px;font:500 12px/1 var(--font-mono)"><span style="color:{{ p.dayTone }}">{{ p.dayText }}</span><span style="color:var(--foreground-muted)">{{ p.rankText }}</span></div>
+        </div>
+        <span style="flex:none;width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 12px/1 var(--font-mono)">TB</span>
+      </div>
+      <div role="status" style="margin:18px 20px 0;display:grid;grid-template-columns:1fr 1fr;border-radius:14px;background:var(--surface-sunken)">
+        <sc-for list="{{ p.conns }}" as="k" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:8px;padding:11px 12px;border-left:{{ k.divider }};min-width:0">
+          <sc-if value="{{ k.live }}" hint-placeholder-val="{{ true }}"><span style="flex:none;width:8px;height:8px;border-radius:9999px;background:var(--ember);box-shadow:0 0 8px var(--ember)"></span></sc-if>
+          <sc-if value="{{ k.closed }}" hint-placeholder-val="{{ false }}"><svg style="flex:none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--foreground-muted)" stroke-width="2.2" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if>
+          <sc-if value="{{ k.recon }}" hint-placeholder-val="{{ false }}"><svg data-spin="1" style="flex:none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2.4" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.56"></path></svg></sc-if>
+          <sc-if value="{{ k.offline }}" hint-placeholder-val="{{ false }}"><span style="flex:none;font:700 12px/1 var(--font-mono);color:var(--destructive)">✕</span></sc-if>
+          <span style="min-width:0"><span style="display:block;font:600 12.5px/1.2 var(--font-body)">{{ k.label }}</span><span style="display:block;font:500 10.5px/1.3 var(--font-mono);color:var(--foreground-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ k.meta }}</span></span>
+        </div></sc-for>
+      </div>
+      <sc-if value="{{ p.banner.show }}" hint-placeholder-val="{{ false }}"><div role="alert" style="margin:12px 20px 0;padding:14px 16px;border-radius:14px;background:{{ p.banner.bg }};display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px"><span style="font:700 13px/1.45 var(--font-mono);color:{{ p.banner.tone }}">{{ p.banner.glyph }}</span><div><div style="font:700 14px/1.4 var(--font-body)">{{ p.banner.title }}</div><div style="font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">{{ p.banner.text }}</div><sc-if value="{{ p.banner.canRetry }}" hint-placeholder-val="{{ false }}"><button onClick="{{ p.retry }}" style="margin-top:10px;border:0;cursor:pointer;height:44px;padding:0 20px;border-radius:9999px;background:var(--foreground);color:var(--background);font:700 14px/1 var(--font-body)">Retry now</button></sc-if></div></div></sc-if>
+      <sc-if value="{{ p.first }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 20px 0;padding:18px;border-radius:16px;background:var(--bp-panel)"><div style="font:500 19px/1.2 var(--font-display);letter-spacing:-0.02em">No positions yet</div><div style="margin-top:6px;font:400 13.5px/1.55 var(--font-body);color:var(--foreground-muted)">You have $100,000.00 to start. Pick a symbol below and buy; your first fill ranks you in the league.</div><button onClick="{{ p.firstPick }}" style="margin-top:14px;border:0;cursor:pointer;height:44px;padding:0 18px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body)">Start with Apple</button></div></sc-if>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:22px 20px 6px;font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)"><span>Stocks</span><span style="font:500 11px/1 var(--font-mono);letter-spacing:0;text-transform:none">{{ p.stocksMeta }}</span></div>
+      <sc-for list="{{ p.stockRows }}" as="r" hint-placeholder-count="5"><button onClick="{{ r.onClick }}" aria-label="{{ r.aria }}" style="border:0;cursor:pointer;width:100%;min-height:64px;display:grid;grid-template-columns:auto minmax(0,1fr) 48px 106px;gap:12px;align-items:center;padding:6px 20px;background:transparent;color:var(--foreground);text-align:left" style-active="background:var(--bp-panel-2)" style-focus="outline:2px solid var(--ember);outline-offset:-2px">
+        <span data-mb="{{ r.mb }}" style="display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:38px;padding:0 7px;box-sizing:border-box;border-radius:{{ r.badgeRadius }};background:{{ r.badgeBgS }};border:{{ r.badgeBd }};font:600 11px/1 var(--font-mono);color:{{ r.priceTone }}">{{ r.mono }}</span>
+        <span style="min-width:0"><span style="display:block;font:600 15px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="display:block;font:500 11.5px/1.4 var(--font-mono);color:{{ r.subTone }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+        <svg viewBox="0 0 64 22" preserveAspectRatio="none" style="width:48px;height:22px;display:block" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.sparkTone }}" stroke-width="1.25" stroke-dasharray="{{ r.sparkDash }}" vector-effect="non-scaling-stroke"></path></svg>
+        <span style="position:relative;display:block;padding:5px 8px;border-radius:8px;text-align:right"><span data-fa="{{ r.fa }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><span style="position:relative;display:block;font:500 15px/1.3 var(--font-mono);font-variant-numeric:tabular-nums;color:{{ r.priceTone }}">{{ r.price }}</span><span style="position:relative;display:block;font:500 12px/1.3 var(--font-mono);color:{{ r.pctTone }}">{{ r.arrow }} {{ r.pct }}</span></span>
+      </button></sc-for>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:22px 20px 6px;font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)"><span>Crypto</span><span style="font:500 11px/1 var(--font-mono);letter-spacing:0;text-transform:none">{{ p.cryptoMeta }}</span></div>
+      <sc-for list="{{ p.cryptoRows }}" as="r" hint-placeholder-count="3"><button onClick="{{ r.onClick }}" aria-label="{{ r.aria }}" style="border:0;cursor:pointer;width:100%;min-height:64px;display:grid;grid-template-columns:auto minmax(0,1fr) 48px 106px;gap:12px;align-items:center;padding:6px 20px;background:transparent;color:var(--foreground);text-align:left" style-active="background:var(--bp-panel-2)" style-focus="outline:2px solid var(--ember);outline-offset:-2px">
+        <span data-mb="{{ r.mb }}" style="display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:38px;padding:0 7px;box-sizing:border-box;border-radius:{{ r.badgeRadius }};background:{{ r.badgeBgS }};border:{{ r.badgeBd }};font:600 11px/1 var(--font-mono);color:{{ r.priceTone }}">{{ r.mono }}</span>
+        <span style="min-width:0"><span style="display:block;font:600 15px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="display:block;font:500 11.5px/1.4 var(--font-mono);color:{{ r.subTone }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></span>
+        <svg viewBox="0 0 64 22" preserveAspectRatio="none" style="width:48px;height:22px;display:block" aria-hidden="true"><path d="{{ r.spark }}" style="fill:none;stroke:{{ r.sparkTone }}" stroke-width="1.25" stroke-dasharray="{{ r.sparkDash }}" vector-effect="non-scaling-stroke"></path></svg>
+        <span style="position:relative;display:block;padding:5px 8px;border-radius:8px;text-align:right"><span data-fa="{{ r.fa }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><span style="position:relative;display:block;font:500 15px/1.3 var(--font-mono);font-variant-numeric:tabular-nums;color:{{ r.priceTone }}">{{ r.price }}</span><span style="position:relative;display:block;font:500 12px/1.3 var(--font-mono);color:{{ r.pctTone }}">{{ r.arrow }} {{ r.pct }}</span></span>
+      </button></sc-for>
+      <div style="margin-top:28px;padding:22px 20px 34px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ p.isDetail }}" hint-placeholder-val="{{ false }}">
+    <div data-screen="{{ p.id }}" style="flex:1;min-height:0;display:flex;flex-direction:column">
+      <div style="flex:1;min-height:0;overflow:auto">
+        <div data-dc="{{ p.id }}" style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 8px">
+          <button onClick="{{ p.back }}" aria-label="Back to watchlist" style="border:0;cursor:pointer;height:44px;padding:0 12px;display:flex;align-items:center;gap:4px;border-radius:9999px;background:transparent;color:var(--foreground);font:600 15px/1 var(--font-body)" style-active="background:var(--bp-panel-2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Watchlist</button>
+          <span style="display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9999px;background:{{ p.d.freshBg }};font:500 11.5px/1 var(--font-mono)"><sc-if value="{{ p.d.live }}" hint-placeholder-val="{{ true }}"><span style="width:7px;height:7px;border-radius:9999px;background:var(--ember)"></span></sc-if>{{ p.d.freshText }}</span>
+        </div>
+        <div style="padding:10px 20px 0;display:flex;align-items:center;gap:14px">
+          <span data-md="{{ p.id }}" style="display:inline-flex;align-items:center;justify-content:center;min-width:60px;height:52px;padding:0 10px;box-sizing:border-box;border-radius:{{ p.d.badgeRadiusLg }};background:{{ p.d.badgeBgS }};border:{{ p.d.badgeBd }};font:600 14px/1 var(--font-mono);color:{{ p.d.priceTone }};transform-origin:0 0">{{ p.d.mono }}</span>
+          <div data-dc="{{ p.id }}"><div style="font:500 22px/1.1 var(--font-display);letter-spacing:-0.02em">{{ p.d.name }}</div><div style="margin-top:4px;font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">{{ p.d.kindLabel }}</div></div>
+        </div>
+        <div data-dc="{{ p.id }}">
+          <div style="padding:16px 20px 0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <span style="position:relative;padding:2px 8px;margin-left:-8px;border-radius:8px"><span data-fa="{{ p.d.fa }}" aria-hidden="true" style="position:absolute;inset:0;border-radius:8px;opacity:0;pointer-events:none"></span><span style="position:relative;font:500 38px/1.1 var(--font-mono);letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:{{ p.d.priceTone }}">{{ p.d.price }}</span></span>
+            <span style="font:500 13px/1 var(--font-mono);color:{{ p.d.pctTone }}">{{ p.d.arrow }} {{ p.d.change }} · {{ p.d.pct }}</span>
+          </div>
+          <div style="position:relative;height:180px;margin:18px 20px 0">
+            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible" role="img" aria-label="{{ p.d.aria }}">
+              <line x1="0" x2="1000" y1="{{ p.d.prevY }}" y2="{{ p.d.prevY }}" style="stroke:var(--foreground-muted)" stroke-dasharray="3 5" vector-effect="non-scaling-stroke" opacity="0.6"></line>
+              <path d="{{ p.d.area }}" style="fill:{{ p.d.areaFill }}"></path>
+              <path d="{{ p.d.line }}" style="fill:none;stroke:{{ p.d.lineTone }}" stroke-width="1.75" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+              <path d="{{ p.d.tail }}" style="fill:none;stroke:var(--bp-stale)" stroke-width="1.5" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"></path>
+            </svg>
+            <span style="position:absolute;left:{{ p.d.dotX }}%;top:{{ p.d.lastPct }}%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:9999px;background:{{ p.d.lineTone }}"></span>
+          </div>
+          <div style="margin:6px 20px 0;display:flex;justify-content:space-between;font:500 10.5px/1 var(--font-mono);color:var(--foreground-muted)"><span>{{ p.d.lo }}</span><span>{{ p.d.hi }}</span></div>
+          <div role="group" aria-label="Timeframe" style="margin:14px 20px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ p.tfOpts }}" as="o" hint-placeholder-count="5"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:40px;border-radius:9999px;font:600 13px/1 var(--font-mono);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+
+          <sc-if value="{{ p.tl.has }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:18px 20px 0;border-radius:16px;background:var(--bp-panel);overflow:hidden">
+            <button onClick="{{ p.toggleTl }}" aria-expanded="{{ p.tlExpanded }}" style="border:0;cursor:pointer;width:100%;min-height:56px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 16px;background:transparent;color:var(--foreground);text-align:left">
+              <span style="font:700 13px/1 var(--font-mono);color:{{ p.tl.msgTone }}">{{ p.tl.msgGlyph }}</span>
+              <span style="min-width:0"><span style="display:block;font:600 14px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.tl.oneLine }}</span><span style="position:relative;display:block;margin-top:6px;height:4px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><span style="position:absolute;inset:0;background:var(--ember);transform:{{ p.tl.miniBar }};transform-origin:left center;transition:transform 320ms cubic-bezier(0.16,1,0.3,1)"></span></span></span>
+              <span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ p.tl.short }}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="transform:{{ p.tl.chev }};transition:transform 240ms cubic-bezier(0.23,1,0.32,1)"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <sc-if value="{{ p.tlOpen }}" hint-placeholder-val="{{ false }}">
+            <div data-tlx="{{ p.id }}" style="padding:4px 16px 16px">
+              <div style="font:500 16px/1.2 var(--font-display);letter-spacing:-0.02em">{{ p.tl.title }}</div>
+              <div style="position:relative;margin-top:16px">
+                <div style="position:absolute;left:10%;right:10%;top:11px;height:2px;background:var(--bp-hair)"></div>
+                <div style="position:absolute;left:10%;right:10%;top:11px;height:2px;background:{{ p.tl.lineTone }};transform:{{ p.tl.line }};transform-origin:left center;transition:{{ p.tl.lineTr }}"></div>
+                <div style="position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))"><sc-for list="{{ p.tl.steps }}" as="s" hint-placeholder-count="5"><div style="display:grid;justify-items:center;gap:6px;text-align:center;opacity:{{ s.op }}"><span style="width:24px;height:24px;box-sizing:border-box;border-radius:9999px;display:grid;place-items:center;font:700 11px/1 var(--font-mono);background:{{ s.bg }};color:{{ s.fg }};border:{{ s.bd }};box-shadow:{{ s.glow }};transition:background 240ms,border-color 240ms">{{ s.glyph }}</span><span style="font:600 11px/1.2 var(--font-body);color:{{ s.lc }}">{{ s.label }}</span><span style="font:500 10px/1.2 var(--font-mono);color:var(--foreground-muted);min-height:12px">{{ s.sub }}</span></div></sc-for></div>
+              </div>
+              <div style="position:relative;margin-top:12px;height:8px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><sc-for list="{{ p.tl.segs }}" as="g" hint-placeholder-count="4"><span style="position:absolute;top:0;bottom:0;left:{{ g.left }};width:{{ g.width }};background:{{ g.bg }};transform:{{ g.scale }};transform-origin:left center;transition:transform 320ms cubic-bezier(0.16,1,0.3,1);border-right:2px solid var(--bp-panel)"></span></sc-for></div>
+              <div role="status" aria-live="assertive" style="margin-top:12px;padding:12px 14px;border-radius:12px;background:{{ p.tl.msgBg }}"><div style="font:600 13.5px/1.4 var(--font-body)">{{ p.tl.status }}</div><div style="font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted)">{{ p.tl.detail }}</div></div>
+              <sc-if value="{{ p.tl.canCancel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ p.cancel }}" style="margin-top:12px;width:100%;border:0;cursor:pointer;height:44px;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 16%,transparent);color:var(--destructive);font:700 14px/1 var(--font-body)">Cancel order</button></sc-if>
+            </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <div style="margin:18px 20px 0;padding:16px;border-radius:16px;background:var(--bp-panel)">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Your position</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ p.pos.fresh }}</span></div>
+            <sc-if value="{{ p.pos.none }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;font:400 13.5px/1.55 var(--font-body);color:var(--foreground-muted)">You don’t hold {{ p.d.mono }}. Buying power {{ p.pos.bp }}.</div></sc-if>
+            <sc-if value="{{ p.pos.has }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+                <div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Quantity</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">{{ p.pos.qty }}</div></div>
+                <div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Avg cost</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">{{ p.pos.avg }}</div></div>
+                <div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Value</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">{{ p.pos.value }}</div></div>
+              </div>
+              <div style="margin-top:14px;display:flex;align-items:center;gap:10px;color:{{ p.pos.tone }}"><span style="display:flex;align-items:center;font:600 18px/1.15 var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap"><span style="margin-right:5px">{{ p.pos.lead }}</span><sc-for list="{{ p.pos.pl }}" as="c" hint-placeholder-count="6"><sc-if value="{{ c.digit }}" hint-placeholder-val="{{ true }}"><span style="display:inline-block;height:1.15em;line-height:1.15em;overflow:hidden"><span style="display:flex;flex-direction:column;transform:{{ c.y }};transition:{{ c.tr }}"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{ c.sep }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;height:1.15em;line-height:1.15em">{{ c.ch }}</span></sc-if></sc-for></span><span style="font:500 12.5px/1 var(--font-mono)">{{ p.pos.pct }}</span></div>
+            </sc-if>
+          </div>
+          <div style="margin-top:22px;padding:18px 20px 22px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+        </div>
+      </div>
+      <div data-dc="{{ p.id }}" style="flex:none;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 20px 30px;background:var(--background);box-shadow:0 -1px 0 var(--bp-hair)">
+        <button onClick="{{ p.openSell }}" style="border:0;cursor:pointer;height:54px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 16px/1 var(--font-body)" style-active="transform:scale(0.97)">Sell</button>
+        <button onClick="{{ p.openBuy }}" style="border:0;cursor:pointer;height:54px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 16px/1 var(--font-body)" style-active="transform:scale(0.97)">Buy</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ p.sheet }}" hint-placeholder-val="{{ false }}">
+    <div data-scrim="{{ p.id }}" onClick="{{ p.closeSheet }}" style="position:absolute;inset:0;z-index:20;background:color-mix(in oklch,oklch(10% 0.04 238) 55%,transparent)"></div>
+    <div data-sheet="{{ p.id }}" role="dialog" aria-label="{{ p.t.aria }}" style="position:absolute;left:0;right:0;bottom:0;z-index:21;border-radius:26px 26px 0 0;background:var(--popover);box-shadow:var(--shadow-ambient);padding:8px 20px 30px">
+      <div style="display:grid;place-items:center;height:18px"><span style="width:40px;height:5px;border-radius:9999px;background:var(--bp-hair)"></span></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:36px;padding:0 7px;box-sizing:border-box;border-radius:{{ p.d.badgeRadius }};background:{{ p.d.badgeBgS }};border:{{ p.d.badgeBd }};font:600 11px/1 var(--font-mono)">{{ p.d.mono }}</span>
+        <div style="flex:1;min-width:0"><div style="font:500 19px/1.15 var(--font-display);letter-spacing:-0.02em">{{ p.t.heading }}</div><div style="font:500 11.5px/1.35 var(--font-mono);color:var(--foreground-muted)">{{ p.t.fresh }}</div></div>
+        <button onClick="{{ p.closeSheet }}" aria-label="Close ticket" style="border:0;cursor:pointer;width:44px;height:44px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:600 15px/1 var(--font-mono)">✕</button>
+      </div>
+      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface-sunken)"><sc-for list="{{ p.t.sides }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:44px;border-radius:11px;font:700 15px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+      <div style="margin-top:10px;display:flex;gap:8px"><sc-for list="{{ p.t.types }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;height:44px;padding:0 18px;border-radius:9999px;font:600 14px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:{{ p.t.cols }};gap:14px">
+        <div style="display:grid;gap:6px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Quantity</span><div style="display:flex;align-items:center;border-bottom:2px solid var(--bp-hair)"><button onClick="{{ p.t.dec }}" aria-label="Decrease quantity" style="border:0;background:transparent;color:var(--foreground);cursor:pointer;width:44px;height:48px;font:500 22px/1 var(--font-mono)">−</button><span style="flex:1;text-align:center;font:500 22px/1 var(--font-mono)">{{ p.t.qty }}</span><button onClick="{{ p.t.inc }}" aria-label="Increase quantity" style="border:0;background:transparent;color:var(--foreground);cursor:pointer;width:44px;height:48px;font:500 22px/1 var(--font-mono)">+</button></div></div>
+        <sc-if value="{{ p.t.lim }}" hint-placeholder-val="{{ false }}"><div style="display:grid;gap:6px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Limit</span><div style="height:48px;display:flex;align-items:center;border-bottom:2px solid var(--ember);font:500 20px/1 var(--font-mono)">{{ p.t.limit }}</div></div></sc-if>
+      </div>
+      <div style="margin-top:16px;display:grid;gap:9px;font:500 14px/1.3 var(--font-body)">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--foreground-muted)">Estimated cost</span><span style="font-family:var(--font-mono)">{{ p.t.est }}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--foreground-muted)">Buying power</span><span style="font-family:var(--font-mono);font-size:13px">{{ p.t.bp }} → <span style="color:{{ p.t.afterTone }}">{{ p.t.after }}</span></span></div>
+        <div style="height:6px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div style="height:100%;width:100%;border-radius:9999px;background:{{ p.t.barTone }};transform:{{ p.t.bar }};transform-origin:left center;transition:transform 240ms cubic-bezier(0.23,1,0.32,1)"></div></div>
+      </div>
+      <sc-if value="{{ p.t.warn.show }}" hint-placeholder-val="{{ false }}"><div role="alert" style="margin-top:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px 14px;border-radius:12px;background:{{ p.t.warn.bg }};font:500 13px/1.5 var(--font-body)"><span style="font:700 13px/1.5 var(--font-mono);color:{{ p.t.warn.tone }}">{{ p.t.warn.glyph }}</span><div><div style="font-weight:700">{{ p.t.warn.title }}</div><div style="color:var(--foreground-muted)">{{ p.t.warn.text }}</div><sc-if value="{{ p.t.warn.hasAction }}" hint-placeholder-val="{{ false }}"><button onClick="{{ p.t.warn.action }}" style="margin-top:8px;border:0;cursor:pointer;height:44px;padding:0 16px;border-radius:9999px;background:var(--foreground);color:var(--background);font:700 13.5px/1 var(--font-body)">{{ p.t.warn.actionLabel }}</button></sc-if></div></div></sc-if>
+      <button onClick="{{ p.t.onConfirm }}" disabled="{{ p.t.disabled }}" style="margin-top:16px;width:100%;border:0;cursor:pointer;height:56px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 16px/1 var(--font-body);opacity:{{ p.t.btnOp }}" style-active="transform:scale(0.98)">{{ p.t.confirm }}</button>
+      <div style="margin-top:10px;text-align:center;font:400 11.5px/1.4 var(--font-body);color:var(--foreground-muted)">Paper trading. Play money. Not investment advice.</div>
+    </div>
+    </sc-if>
+  </div>
+  <div style="font:400 13px/1.55 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">{{ p.note }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const CONF = [
+  ['2a', 'Watchlist · live', 'live', { screen: 'watch' }, 'Watchlist first. Each row is a PriceCell with Sparkline and day change; section headers carry freshness.'],
+  ['2b', 'Detail · after the morph', 'live', { screen: 'detail', sel: 'NVDA' }, 'The badge you tapped becomes the header. Buy and Sell sit at the bottom, in thumb reach.'],
+  ['2c', 'Ticket · bottom sheet', 'live', { screen: 'detail', sel: 'NVDA', sheet: true }, 'Confirm is the last thing in the sheet, 56 px tall, right above the home indicator.'],
+  ['2d', 'Partial fill · timeline expanded', 'partial', { screen: 'detail', sel: 'AAPL', tlOpen: true, auto: 'partial' }, '“60 of 100 filled” and the rest working. Tap the line to collapse it to one row.'],
+  ['2e', 'Stocks closed, crypto live', 'closed', { screen: 'watch' }, 'Stock rows show their close; the indicator says when they open. Crypto keeps ticking.'],
+  ['2f', 'Stale price · ticket warns', 'stale', { screen: 'detail', sel: 'NVDA', sheet: true }, 'Over 15 s without a tick: muted, labeled with its time, and the confirm button says so.'],
+  ['2g', 'Reconnecting', 'reconnecting', { screen: 'watch' }, 'Every price is labeled with its time while the stream reconnects.'],
+  ['2h', 'Offline with retry', 'offline', { screen: 'watch' }, 'Retries count down on their own; “Retry now” is 44 px and reconnects.'],
+  ['2i', 'Rejected · shortfall and fix', 'rejected', { screen: 'detail', sel: 'NVDA', sheet: true, qty: '400' }, 'The ledger would reject this. The sheet shows the shortfall and a one-tap fix before you confirm.'],
+  ['2j', 'Cancel races a fill', 'race', { screen: 'detail', sel: 'TSLA', tlOpen: true, auto: 'race' }, 'A fill lands before the cancel: 40 of 100 settle and stay in your positions.'],
+  ['2k', 'First visit', 'first', { screen: 'watch' }, 'No positions yet, and the next step right under the balance.'],
+];
+const CQ = { 'BTC-USD': ['0.05', 0.01], 'ETH-USD': ['0.5', 0.1], 'SOL-USD': ['5', 1] };
+
+class Component extends DCLogic {
+  state = { theme: 'dark', cb: false, reduced: false, v: 0 };
+  rootRef = React.createRef(); wm = new WeakMap(); loops = [];
+
+  componentDidMount() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.setState({ reduced: true });
+    import(new URL('trading.js', document.baseURI).href).then((T) => {
+      this.T = T; this.B = T.B; this.market = T.B.createMarket(7);
+      this.phones = CONF.map((c) => this.make(c));
+      this.forceUpdate(() => this.restartLoops());
+      this.iv1 = setInterval(() => this.onTick(), 700);
+      this.iv2 = setInterval(() => this.onSecond(), 1000);
+    });
+  }
+  componentWillUnmount() { clearInterval(this.iv1); clearInterval(this.iv2); (this.phones || []).forEach((p) => { clearTimeout(p.runT); clearTimeout(p.scT); }); this.loops.forEach((a) => a.cancel()); }
+  componentDidUpdate(pp, ps) {
+    if (ps.theme !== this.state.theme) document.body.style.background = this.state.theme === 'dark' ? 'oklch(10.5% 0.038 238)' : 'oklch(94% 0.010 238)';
+    if (ps.reduced !== this.state.reduced) this.restartLoops();
+  }
+  restartLoops() {
+    this.loops.forEach((a) => a.cancel()); this.loops = []; const root = this.rootRef.current; if (!root || this.state.reduced) return;
+    root.querySelectorAll('[data-spin]').forEach((el) => this.loops.push(el.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 900, iterations: Infinity })));
+  }
+  make([id, caption, sc, init, note]) {
+    const T = this.T, now = Date.now(), p = { id, caption, sc, init, note, f: T.flags(sc), ses: T.createSession(sc), run: null, stale: new Set(), snap: {}, retry: 8, tf: '1D',
+      screen: init.screen, sel: init.sel || 'NVDA', sheet: !!init.sheet, tlOpen: !!init.tlOpen, side: 'buy', otype: 'market', qty: init.qty || '10', limit: '' };
+    const q = this.market.q;
+    const snap = (sym, age) => { p.snap[sym] = { ...q[sym], hist: [...q[sym].hist], at: now - age }; };
+    if (sc === 'stale') { p.stale.add('NVDA'); snap('NVDA', 22000); }
+    if (p.f.frozen) T.WATCH.forEach((s) => snap(s, 3000 + Math.random() * 900));
+    if (sc === 'closed') T.WATCH.filter((s) => !T.isCrypto(s)).forEach((s) => snap(s, 0));
+    p.dayOpen = sc === 'first' ? 100000 : T.equity(p.ses, this.market) - 1240.55;
+    if (CQ[p.sel]) p.qty = CQ[p.sel][0];
+    if (init.auto === 'partial') { Object.assign(p, { otype: 'limit', qty: '100', limit: '240.00' }); p.scT = setTimeout(() => this.submit(p, { rest: true }), 600); }
+    if (init.auto === 'race') { Object.assign(p, { otype: 'limit', qty: '100', limit: '348.00' }); p.scT = setTimeout(() => this.submit(p, { rest: true, noPartial: true, then: () => { p.scT = setTimeout(() => this.cancel(p, true), 1400); } }), 600); }
+    p.limit = p.limit || this.q(p, p.sel).price.toFixed(2);
+    return p;
+  }
+  reset(p) { clearTimeout(p.runT); clearTimeout(p.scT); const i = this.phones.indexOf(p); this.phones[i] = this.make(CONF[i]); this.forceUpdate(() => this.restartLoops()); }
+  q(p, sym) {
+    if (p.snap[sym] && (p.f.frozen || p.stale.has(sym) || (p.f.stocks === 'closed' && !this.T.isCrypto(sym)))) return p.snap[sym];
+    return this.market.q[sym];
+  }
+  liveSym(p, sym) { return this.q(p, sym) === this.market.q[sym]; }
+  hold(p, sym) { const x = p.ses.positions.find((y) => y.sym === sym); return x ? x.qty : 0; }
+  bp(p) {
+    const r = p.run; let res = 0;
+    if (r && r.order.side === 'buy') { const fr = r.frames[r.i]; if (!fr.end || fr.end === 'open') { const ref = r.order.type === 'limit' ? r.order.limit : this.q(p, r.order.sym).price; res = (r.of - fr.fills.reduce((a, b) => a + b, 0)) * ref; } }
+    return p.ses.cash - res;
+  }
+  submit(p, x = {}) {
+    const T = this.T, qq = this.q(p, p.sel), qty = parseFloat(p.qty) || 0; if (qty <= 0) return;
+    const o = { sym: p.sel, side: p.side, type: p.otype, qty, limit: parseFloat(p.limit) || qq.price }; if (x.rest) o.rest = true;
+    const run = T.orderFrames(o, qq.price, this.bp(p), this.hold(p, p.sel));
+    if (x.noPartial) { run.frames = run.frames.slice(0, 2); run.frames[1] = { ...run.frames[1], end: 'open' }; }
+    clearTimeout(p.runT); run.i = 0; run.applied = 0; p.run = run; this.apply(p); this.forceUpdate(); this.advance(p, x.then);
+  }
+  advance(p, then) {
+    const run = p.run; if (run.i >= run.frames.length - 1) { if (then) then(); return; }
+    p.runT = setTimeout(() => { if (p.run !== run) return; run.i++; this.apply(p); this.forceUpdate(); this.advance(p, then); }, 1000);
+  }
+  apply(p) { const run = p.run, fr = run.frames[run.i], o = run.order; while (run.applied < fr.fills.length) { const j = run.applied++; this.T.applyFill(p.ses, o.sym, o.side, fr.fills[j], (fr.px || [])[j] || o.limit); } }
+  working(p) { const r = p.run; if (!r) return false; const fr = r.frames[r.i]; return (fr.end === 'open' || !fr.end) && !fr.cancelReq && r.frames[r.frames.length - 1].end !== 'rejected'; }
+  cancel(p, race) {
+    if (!this.working(p)) return; clearTimeout(p.runT);
+    const run = p.run, fr = run.frames[run.i];
+    run.frames = [...run.frames.slice(0, run.i + 1), ...this.T.cancelFrames(run, fr, race ?? p.sc === 'race')];
+    run.i++; this.apply(p); this.forceUpdate(); this.advance(p);
+  }
+  onTick() {
+    const T = this.T, nowT = Date.now(); if (this.lastTick && nowT - this.lastTick > 3000) T.WATCH.forEach((s) => (this.market.q[s].at = nowT - 300)); this.lastTick = nowT; const ch = this.market.tick(4);
+    this.forceUpdate(() => {
+      const root = this.rootRef.current; if (!root) return;
+      const now = performance.now(), seen = new Set();
+      ch.forEach(({ sym, dir }) => {
+        if (!dir || seen.has(sym)) return; seen.add(sym);
+        const tone = dir > 0 ? 'var(--bp-gain)' : 'var(--bp-loss)';
+        root.querySelectorAll(`[data-fa="${sym}"]`).forEach((el) => {
+          if (now - (this.wm.get(el) || 0) < 500) return; this.wm.set(el, now);
+          el.style.background = `color-mix(in oklch, ${tone} 22%, transparent)`;
+          el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'linear' });
+        });
+      });
+    });
+  }
+  onSecond() { (this.phones || []).forEach((p) => { if (p.sc !== 'offline') return; p.retry--; if (p.retry <= 0) this.retry(p); }); }
+  retry(p) {
+    Object.assign(p, { sc: 'reconnecting', f: this.T.flags('reconnecting'), retry: 8 }); this.forceUpdate(() => this.restartLoops());
+    clearTimeout(p.scT); p.scT = setTimeout(() => { Object.assign(p, { sc: 'live', f: this.T.flags('live'), snap: {} }); this.forceUpdate(); }, 2400);
+  }
+  el(p, sel) { const root = this.rootRef.current; return root && root.querySelector(`[data-phone="${p.id}"] ${sel}`); }
+  spring() { const root = this.rootRef.current; return (root && getComputedStyle(root).getPropertyValue('--bp-spring').trim()) || 'cubic-bezier(0.16,1,0.3,1)'; }
+  morph(p, to) {
+    const red = this.state.reduced;
+    const phoneEl = this.rootRef.current.querySelector(`[data-phone="${p.id}"]`), k = phoneEl.getBoundingClientRect().width / 390;
+    const fromEl = to === 'detail' ? phoneEl.querySelector(`[data-mb="${p.id}-${p.sel}"]`) : phoneEl.querySelector('[data-md]');
+    const a = fromEl && fromEl.getBoundingClientRect();
+    p.screen = to;
+    this.forceUpdate(() => {
+      const scr = phoneEl.querySelector('[data-screen]');
+      if (red || !a) { if (scr) scr.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'linear' }); return; }
+      const toEl = to === 'detail' ? phoneEl.querySelector('[data-md]') : phoneEl.querySelector(`[data-mb="${p.id}-${p.sel}"]`); if (!toEl) return;
+      const b = toEl.getBoundingClientRect(), dx = (a.left - b.left) / k, dy = (a.top - b.top) / k, sx = a.width / b.width, sy = a.height / b.height;
+      toEl.style.transformOrigin = '0 0'; toEl.style.position = 'relative'; toEl.style.zIndex = '5';
+      toEl.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: 'none' }], { duration: 320, easing: this.spring() });
+      phoneEl.querySelectorAll(to === 'detail' ? '[data-dc]' : '[data-screen] > *').forEach((el) => { if (el.contains(toEl)) return; el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: 80, easing: 'cubic-bezier(0.23,1,0.32,1)', fill: 'backwards' }); });
+    });
+  }
+  openSheet(p, side) {
+    p.sheet = true; p.side = side;
+    this.forceUpdate(() => {
+      const sh = this.el(p, '[data-sheet]'), sc = this.el(p, '[data-scrim]'); if (!sh) return;
+      if (this.state.reduced) { sh.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); }
+      else sh.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], { duration: 320, easing: this.spring() });
+      if (sc) sc.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240 });
+    });
+  }
+  closeSheet(p) {
+    const sh = this.el(p, '[data-sheet]');
+    let fin = false; const done = () => { if (fin) return; fin = true; p.sheet = false; this.forceUpdate(); }; setTimeout(done, 280);
+    if (!sh) return done();
+    const an = this.state.reduced ? sh.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }) : sh.animate([{ transform: 'none' }, { transform: 'translateY(100%)' }], { duration: 240, easing: 'cubic-bezier(0.23,1,0.32,1)', fill: 'forwards' });
+    an.onfinish = done;
+  }
+  toggleTl(p) {
+    p.tlOpen = !p.tlOpen;
+    this.forceUpdate(() => { const x = this.el(p, '[data-tlx]'); if (x) x.animate(this.state.reduced ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(0.23,1,0.32,1)' }); });
+  }
+  step(sym) { return CQ[sym] ? CQ[sym][1] : 1; }
+
+  phoneView(p) {
+    const T = this.T, B = this.B, now = Date.now(), f = p.f, red = this.state.reduced, ses = p.ses;
+    const eq = ses.cash + ses.positions.reduce((a, x) => a + x.qty * this.q(p, x.sym).price, 0), day = eq - p.dayOpen;
+    const ageOf = (list) => Math.min(...list.map((x) => now - this.q(p, x).at));
+    const stocks = T.WATCH.filter((x) => !T.isCrypto(x)), cryptos = T.WATCH.filter(T.isCrypto);
+    const cs = T.conn('stocks', f.stocks, { age: ageOf(stocks.filter((x) => !p.stale.has(x))), retry: p.retry }), cc = T.conn('crypto', f.crypto, { age: ageOf(cryptos), retry: p.retry });
+    if (cs.closed) cs.meta = 'opens Mon 9:30';
+    const row = (sym) => {
+      const v = T.quoteRow(this.q(p, sym), f, now), h = this.hold(p, sym);
+      return { ...v, mb: p.id + '-' + sym, fa: this.liveSym(p, sym) ? sym : 'none', aria: `${v.name}, ${v.price}, ${v.up ? 'up' : 'down'} ${v.pct}`,
+        onClick: () => { p.sel = sym; p.qty = CQ[sym] ? CQ[sym][0] : '10'; p.limit = this.q(p, sym).price.toFixed(2); this.morph(p, 'detail'); },
+        sub: v.stale ? '◷ as of ' + T.clock(this.q(p, sym).at) : v.closed ? '☾ ' + v.fresh : h ? `${T.qtyFmt(sym, h)} held` : v.isCrypto ? '24/7' : 'US stock',
+        subTone: v.stale ? 'var(--bp-stale)' : 'var(--foreground-muted)', pctTone: v.stale ? 'var(--bp-stale)' : v.tone };
+    };
+    const meta = (list, st) => (st === 'closed' ? 'closed' : st === 'live' ? 'live · ' + T.ageText(ageOf(list)) : st === 'offline' ? 'offline' : 'reconnecting');
+    const banner = f.stocks === 'offline' ? { show: true, glyph: '✕', tone: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 12%, var(--background))', title: 'You’re offline', text: `Prices are frozen and labeled with their time. Retrying in ${p.retry} s.`, canRetry: true }
+      : f.frozen ? { show: true, glyph: '◌', tone: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 13%, var(--background))', title: 'Reconnecting to market data', text: 'Prices shown are the last we received. Orders wait until quotes are live.' } : { show: false };
+
+    const sq = T.quoteRow(this.q(p, p.sel), f, now), pts = T.series(this.market, p.sel, p.tf);
+    const pts2 = this.liveSym(p, p.sel) || p.tf !== '1D' ? pts : this.q(p, p.sel).hist;
+    const cv = T.chartView(pts2, 1000, 300, { prev: p.tf === '1D' ? this.q(p, p.sel).prev : null, right: 40 });
+    const d = { ...sq, badgeRadiusLg: sq.isCrypto ? '9999px' : '12px', kindLabel: sq.sym + (sq.isCrypto ? ' · crypto · 24/7' : ' · US stock'), fa: this.liveSym(p, p.sel) ? p.sel : 'none',
+      pctTone: sq.stale ? 'var(--bp-stale)' : sq.tone, freshText: sq.live ? sq.fresh : sq.stale ? '◷ ' + sq.fresh.replace('as of ', '') + ' · ' + sq.staleAge : '☾ ' + sq.fresh,
+      freshBg: sq.stale ? 'color-mix(in oklch, var(--warning) 14%, transparent)' : 'var(--surface-sunken)',
+      line: cv.line, area: cv.area, lineTone: sq.stale ? 'var(--bp-stale)' : sq.tone, areaFill: `color-mix(in oklch, ${sq.stale ? 'var(--bp-stale)' : sq.tone} 9%, transparent)`,
+      tail: sq.stale ? `M${cv.lastX} ${cv.lastY}H1000` : 'M0 0', dotX: (+cv.lastX / 10).toFixed(2), lastPct: (+cv.lastY / 3).toFixed(2), prevY: cv.prevY,
+      lo: 'Low ' + B.fmt(Math.min(...pts2)), hi: 'High ' + B.fmt(Math.max(...pts2)), aria: `${sq.name} ${p.tf} chart` };
+
+    const pp = ses.positions.find((x) => x.sym === p.sel);
+    let pos = { none: true, has: false, fresh: sq.live ? 'P/L live' : sq.stale || f.frozen ? 'P/L as of ' + T.clock(this.q(p, p.sel).at) : 'P/L at close', bp: T.money(this.bp(p)) };
+    if (pp) { const last = this.q(p, p.sel).price, pl = (last - pp.avg) * pp.qty, up = pl >= 0;
+      pos = { ...pos, none: false, has: true, qty: T.qtyFmt(p.sel, pp.qty), avg: B.fmt(pp.avg), value: T.money(last * pp.qty), tone: up ? 'var(--bp-gain)' : 'var(--bp-loss)', lead: up ? '▲ +$' : '▼ −$', pl: T.chars(B.fmt(Math.abs(pl)), !red), pct: B.signed(((last - pp.avg) / pp.avg) * 100, 2, '', '%') }; }
+
+    let tl = { has: false };
+    if (p.run && p.run.order.sym === p.sel) {
+      const r = p.run, fr = r.frames[r.i], v = T.tlView(fr, r.of, red), fq = (n) => T.qtyFmt(r.order.sym, n);
+      const oneLine = fr.end === 'rejected' ? `${r.title.split(' · ')[0]} · rejected` : fr.end === 'cancelled' ? fr.status : `${r.title.split(' · ')[0]} · ${fq(v.filled)} of ${fq(r.of)} filled`;
+      tl = { ...v, has: true, title: r.title, oneLine, miniBar: `scaleX(${(v.pct / 100).toFixed(3)})`, chev: p.tlOpen ? 'rotate(180deg)' : 'none', canCancel: this.working(p) && !fr.cancelReq };
+    }
+
+    const qty = parseFloat(p.qty) || 0, lim = p.otype === 'limit', px = lim ? parseFloat(p.limit) || 0 : sq.price === '' ? 0 : this.q(p, p.sel).price, est = qty * px, bpNow = this.bp(p);
+    const after = p.side === 'buy' ? bpNow - est : bpNow + est, short = p.side === 'buy' && est > bpNow, hv = this.hold(p, p.sel), overSell = p.side === 'sell' && qty > hv;
+    const closedStock = !sq.isCrypto && f.stocks === 'closed', max = T.maxQty(p.sel, bpNow, px || 1), verb = p.side === 'buy' ? 'Buy' : 'Sell';
+    let warn = { show: false };
+    if (f.frozen) warn = { show: true, glyph: '◌', tone: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 13%, transparent)', title: 'Waiting for live prices', text: 'Orders resume when quotes are live.' };
+    else if (short) warn = { show: true, glyph: '!', tone: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 12%, transparent)', title: `${T.money(est - bpNow)} short`, text: `This needs ${T.money(est)}; you have ${T.money(bpNow)}. ${T.qtyFmt(p.sel, max)} ${sq.mono} fits.`, hasAction: true, actionLabel: `Buy ${T.qtyFmt(p.sel, max)} instead`, action: () => { p.qty = T.qtyFmt(p.sel, max); this.forceUpdate(); } };
+    else if (overSell) warn = { show: true, glyph: '!', tone: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 12%, transparent)', title: hv ? `You hold ${T.qtyFmt(p.sel, hv)} ${sq.mono}` : `You don’t hold ${sq.mono}`, text: hv ? 'Sell that many or fewer.' : 'Buy first to sell.', hasAction: !!hv, actionLabel: `Sell ${T.qtyFmt(p.sel, hv)}`, action: () => { p.qty = T.qtyFmt(p.sel, hv); this.forceUpdate(); } };
+    else if (sq.stale) warn = { show: true, glyph: '◷', tone: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 14%, transparent)', title: `Price is ${sq.staleAge}`, text: `Last tick at ${T.clock(this.q(p, p.sel).at)}. The order fills at the next live price.`, hasAction: true, actionLabel: 'Refresh quote', action: () => { p.stale.delete(p.sel); delete p.snap[p.sel]; this.forceUpdate(); } };
+    else if (closedStock) warn = { show: true, glyph: '☾', tone: 'var(--foreground-muted)', bg: 'var(--surface-sunken)', title: 'Stocks are closed', text: 'A market order queues for the open, Mon 9:30 ET.' };
+    const disabled = qty <= 0 || f.frozen || overSell;
+    const t = {
+      aria: `${verb} ${sq.name}`, heading: `${verb} ${sq.name}`, fresh: `${sq.price} · ${sq.live ? 'last ' + sq.fresh : sq.stale ? sq.staleAge : sq.fresh}`, lim, cols: lim ? '1fr 1fr' : '1fr',
+      sides: [['buy', 'Buy'], ['sell', 'Sell']].map(([v, l]) => ({ label: l, pressed: p.side === v ? 'true' : 'false', bg: p.side === v ? 'var(--bp-panel-2)' : 'transparent', fg: p.side === v ? 'var(--foreground)' : 'var(--foreground-muted)', onClick: () => { p.side = v; this.forceUpdate(); } })),
+      types: T.seg([['market', 'Market'], ['limit', 'Limit']], p.otype, (v) => { p.otype = v; p.limit = this.q(p, p.sel).price.toFixed(2); this.forceUpdate(); }, 'var(--bp-panel-2)'),
+      qty: p.qty, limit: p.limit,
+      inc: () => { p.qty = T.qtyFmt(p.sel, qty + this.step(p.sel)); this.forceUpdate(); }, dec: () => { p.qty = T.qtyFmt(p.sel, Math.max(0, qty - this.step(p.sel))); this.forceUpdate(); },
+      est: T.money(est), bp: T.money(bpNow), after: T.money(Math.max(after, 0)), afterTone: short ? 'var(--destructive)' : 'var(--foreground)',
+      bar: `scaleX(${Math.min(est / Math.max(bpNow, 1), 1).toFixed(3)})`, barTone: short ? 'var(--destructive)' : 'var(--ember)', warn, disabled, btnOp: disabled ? 0.45 : 1,
+      confirm: f.frozen ? 'Waiting for live prices…' : sq.stale ? `${verb} anyway · ${sq.staleAge}` : closedStock && !lim ? `Queue for the open · ${T.money(est)}` : `${verb} ${T.qtyFmt(p.sel, qty)} ${sq.mono} · ${T.money(est)}`,
+      onConfirm: () => { if (disabled) return; this.submit(p); p.tlOpen = false; this.closeSheet(p); },
+    };
+
+    return {
+      id: p.id, caption: p.caption, note: p.note, label: 'Mobile ' + p.id, time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      reset: () => this.reset(p), isWatch: p.screen === 'watch', isDetail: p.screen === 'detail', sheet: p.sheet, tlOpen: p.tlOpen, tlExpanded: p.tlOpen ? 'true' : 'false',
+      eqChars: T.chars(T.money(eq), !red), dayTone: day >= 0 ? 'var(--bp-gain)' : 'var(--bp-loss)', dayText: `${day >= 0 ? '▲' : '▼'} ${T.sMoney(day)} today`,
+      rankText: f.first && !ses.positions.length ? 'Unranked' : '#9 of 214',
+      conns: [{ ...cs, divider: '0' }, { ...cc, divider: '1px solid var(--bp-hair)' }], banner, retry: () => this.retry(p),
+      first: f.first && !ses.positions.length, firstPick: () => { p.sel = 'AAPL'; p.qty = '10'; this.morph(p, 'detail'); },
+      stockRows: stocks.map(row), cryptoRows: cryptos.map(row), stocksMeta: meta(stocks.filter((x) => !p.stale.has(x)), f.stocks), cryptoMeta: meta(cryptos, f.crypto),
+      back: () => this.morph(p, 'watch'), d, tfOpts: T.seg(T.TFS.map((x) => [x, x]), p.tf, (v) => { p.tf = v; this.forceUpdate(); }, 'var(--bp-panel-2)'),
+      pos, tl, toggleTl: () => this.toggleTl(p), cancel: () => this.cancel(p),
+      openBuy: () => this.openSheet(p, 'buy'), openSell: () => this.openSheet(p, 'sell'), closeSheet: () => this.closeSheet(p), t,
+    };
+  }
+
+  renderVals() {
+    const s = this.state, T = this.T;
+    const seg = (opts, cur, set) => opts.map(([v, l]) => ({ label: l, pressed: cur === v ? 'true' : 'false', bg: cur === v ? 'var(--bp-panel-2)' : 'transparent', fg: cur === v ? 'var(--foreground)' : 'var(--foreground-muted)', onClick: () => set(v) }));
+    return {
+      rootRef: this.rootRef, themeCls: s.theme === 'dark' ? 'dark' : '', cb: s.cb ? 'on' : 'off',
+      themeOpts: seg([['dark', 'Dark'], ['light', 'Light']], s.theme, (v) => this.setState({ theme: v })),
+      cbOpts: seg([[false, 'Standard'], [true, 'Color-blind safe']], s.cb, (v) => this.setState({ cb: v })),
+      motionOpts: seg([[false, 'Full'], [true, 'Reduced']], s.reduced, (v) => this.setState({ reduced: v })),
+      phones: T && this.phones ? this.phones.map((p) => this.phoneView(p)) : [],
+    };
+  }
+}
+</script>
+</body>
+</html>

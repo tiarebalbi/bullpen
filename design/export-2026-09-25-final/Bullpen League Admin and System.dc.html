@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+body{margin:0;background:oklch(10.5% 0.038 238)}
+a{color:inherit}a:hover{color:var(--ember)}
+button{font-family:inherit}
+.bp{--bp-gain:oklch(50% 0.12 166);--bp-loss:oklch(52% 0.2 27);--bp-stale:oklch(58% 0.012 238);--bp-accent-text:oklch(54% 0.16 50);--bp-hair:color-mix(in oklch,var(--foreground) 11%,transparent);--bp-panel:oklch(100% 0 0);--bp-panel-2:oklch(96.5% 0.008 238);--bp-spring:linear(0,0.062 5%,0.191 10%,0.337 15%,0.475 20%,0.594 25%,0.692 30%,0.769 35%,0.829 40%,0.908 50%,0.952 60%,0.976 70%,0.988 80%,1)}
+.bp.dark{--bp-gain:#02C39A;--bp-loss:oklch(68% 0.19 25);--bp-stale:oklch(55% 0.015 238);--bp-accent-text:var(--ember);--bp-panel:oklch(18% 0.042 238);--bp-panel-2:oklch(22% 0.042 238)}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" class="bp {{ themeCls }}" style="min-height:100vh;background:var(--surface-sunken);color:var(--foreground);font-family:var(--font-body);padding:40px 48px 80px;color-scheme:{{ scheme }}">
+
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:36px">
+  <span style="font:600 11px/1 var(--font-mono);padding:4px 8px;border-radius:5px;background:var(--foreground);color:var(--background)">7</span>
+  <span style="font:600 14px/1 var(--font-body)">League admin and system pages · 1440 and 390</span>
+  <a href="Bullpen Portfolio and Leaderboard.dc.html" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">Portfolio and leaderboard →</a>
+  <a href="#7c" style="font:600 13px/1 var(--font-body);color:var(--foreground-muted);text-decoration:none">System pages ↓</a>
+  <div style="flex:1"></div>
+  <div role="group" aria-label="Motion" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ motionOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+  <div role="group" aria-label="Theme" style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--background)"><sc-for list="{{ themeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" aria-pressed="{{ o.pressed }}" style="border:0;cursor:pointer;padding:7px 13px;border-radius:9999px;font:600 12px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+</div>
+<div role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">{{ announce }}</div>
+
+<div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+<div id="7a" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">7a · League admin · desktop 1440</div>
+<div data-screen-label="Admin desktop" style="width:1440px;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="height:64px;display:flex;align-items:center;gap:24px;padding:0 40px;border-bottom:1px solid var(--bp-hair)">
+    <span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span>
+    <nav aria-label="Primary" style="align-self:stretch;display:flex;gap:4px;margin-left:12px"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="5"><a href="{{ n.href }}" aria-current="{{ n.cur }}" style="position:relative;display:flex;align-items:center;padding:0 12px;font:600 14px/1 var(--font-body);text-decoration:none;color:{{ n.fg }}" style-hover="color:var(--foreground)">{{ n.label }}<span style="position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:var(--ember);opacity:{{ n.rule }}"></span></a></sc-for></nav>
+    <div style="flex:1"></div>
+    <span style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">TB</span>
+  </div>
+  <div style="padding:48px 56px 0;display:flex;align-items:flex-end;gap:32px">
+    <div><div style="font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">League admin · you own this league</div><h1 style="margin:18px 0 0;font:500 64px/0.98 var(--font-display);letter-spacing:-0.045em">Vancouver Rust meetup</h1><div style="margin-top:16px;font:500 13px/1.4 var(--font-mono);color:var(--foreground-muted)">22 players · Sep 15 – Oct 15 · invite only · Free plan</div></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:9999px;background:var(--surface-sunken)"><span style="font:600 10px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Invite code</span><span style="font:600 15px/1 var(--font-mono);letter-spacing:0.06em">RUST-22VN</span><button onClick="{{ copyInvite }}" style="border:0;cursor:pointer;height:32px;padding:0 14px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 12.5px/1 var(--font-body)" style-hover="background:var(--accent)">{{ inviteLabel }}</button></div>
+  </div>
+
+  <div style="padding:40px 56px 0;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px;align-items:start">
+    <nav aria-label="Admin sections" style="position:sticky;top:24px;display:grid;gap:2px"><sc-for list="{{ secNav }}" as="n" hint-placeholder-count="4"><a href="{{ n.href }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:40px;padding:0 12px;border-radius:10px;text-decoration:none;font:600 14px/1.2 var(--font-body);color:var(--foreground)" style-hover="background:var(--bp-panel-2);color:var(--foreground)"><span>{{ n.label }}</span><span style="font:500 11.5px/1 var(--font-mono);color:{{ n.tone }}">{{ n.meta }}</span></a></sc-for></nav>
+
+    <div style="display:grid;gap:72px">
+      <section id="7a-create">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><h2 style="margin:0;font:500 32px/1 var(--font-display);letter-spacing:-0.03em">New league</h2><span style="font:400 13.5px/1.5 var(--font-body);color:var(--foreground-muted)">Free plan · 1 of 2 active leagues used</span></div>
+        <div style="margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start">
+          <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:28px;display:grid;gap:32px">
+            <sc-if value="{{ f.notCreated }}" hint-placeholder-val="{{ true }}">
+              <label style="display:grid;gap:8px;max-width:520px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Name</span><input value="{{ f.name }}" onChange="{{ f.onName }}" maxlength="40" placeholder="e.g. Rust meetup · November" style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 22px/1 var(--font-body);height:48px;outline:none" style-focus="border-bottom-color:var(--ember)"><span style="font:400 13px/1.5 var(--font-body);color:{{ f.nameTone }}">{{ f.nameMsg }}</span></label>
+              <div style="display:grid;gap:14px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Allowed symbols</span><span style="font:500 12px/1 var(--font-mono);color:{{ f.symTone }}">{{ f.symMsg }}</span></div>
+                <sc-for list="{{ f.groups }}" as="g" hint-placeholder-count="2"><div role="group" aria-label="{{ g.label }}" style="display:grid;gap:10px">
+                  <div style="display:flex;align-items:center;gap:12px"><span style="font:600 13.5px/1 var(--font-body)">{{ g.label }}</span><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ g.meta }}</span><button onClick="{{ g.toggle }}" style="margin-left:auto;border:0;cursor:pointer;height:28px;padding:0 12px;border-radius:9999px;background:transparent;color:var(--bp-accent-text);font:600 12.5px/1 var(--font-body)" style-hover="background:var(--bp-panel-2)">{{ g.toggleLabel }}</button></div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ g.items }}" as="c" hint-placeholder-count="5"><button role="checkbox" aria-checked="{{ c.on }}" aria-disabled="{{ c.dis }}" onClick="{{ c.onClick }}" title="{{ c.name }}" style="display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px 0 9px;border-radius:9999px;cursor:{{ c.cursor }};border:{{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:600 12.5px/1 var(--font-mono);transition:background 120ms" style-focus="outline:2px solid var(--ember);outline-offset:2px"><span style="width:16px;height:16px;box-sizing:border-box;border-radius:5px;display:grid;place-items:center;font-size:10px;background:{{ c.boxBg }};color:{{ c.boxFg }};border:{{ c.boxBd }}">{{ c.tick }}</span>{{ c.label }}</button></sc-for></div>
+                </div></sc-for>
+              </div>
+              <div style="display:grid;gap:10px">
+                <span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Start and end</span>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:520px"><label style="display:grid;gap:6px"><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">Starts 00:00 ET</span><input type="date" value="{{ f.start }}" onChange="{{ f.onStart }}" style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);height:44px;outline:none" style-focus="border-bottom-color:var(--ember)"></label><label style="display:grid;gap:6px"><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">Ends 16:00 ET</span><input type="date" value="{{ f.end }}" onChange="{{ f.onEnd }}" style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);height:44px;outline:none" style-focus="border-bottom-color:var(--ember)"></label></div>
+                <span style="font:400 13px/1.5 var(--font-body);color:{{ f.dateTone }}">{{ f.dateMsg }}</span>
+              </div>
+              <div style="display:grid;gap:10px">
+                <span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Starting cash per player</span>
+                <div role="radiogroup" aria-label="Starting cash" style="display:inline-flex;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken);width:max-content"><sc-for list="{{ f.cashOpts }}" as="o" hint-placeholder-count="4"><button role="radio" aria-checked="{{ o.pressed }}" onClick="{{ o.onClick }}" style="border:0;cursor:pointer;height:36px;padding:0 16px;border-radius:9999px;font:600 13px/1 var(--font-mono);background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button></sc-for></div>
+                <span style="font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">Play money. Everyone starts with the same amount and it can’t change once the league starts.</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding-top:4px"><button onClick="{{ f.onCreate }}" disabled="{{ f.disabled }}" style="border:0;cursor:pointer;height:48px;padding:0 26px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body);opacity:{{ f.btnOp }};transition:box-shadow 160ms,transform 120ms" style-hover="box-shadow:var(--shadow-ember-glow)" style-active="transform:scale(0.97)" style-focus="outline:2px solid var(--ember);outline-offset:3px">Create league</button><span style="font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">{{ f.hint }}</span></div>
+            </sc-if>
+            <sc-if value="{{ f.created }}" hint-placeholder-val="{{ false }}">
+              <div role="status" style="display:grid;gap:18px"><div style="display:flex;align-items:center;gap:10px"><span style="font:700 14px/1 var(--font-mono);color:var(--bp-gain)">✓</span><span style="font:600 11px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">League created</span></div><div style="font:500 30px/1.1 var(--font-display);letter-spacing:-0.03em">{{ f.name }}</div><div style="font:400 15px/1.6 var(--font-body);color:var(--foreground-muted)">{{ f.createdMsg }}</div>
+                <div style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:14px;background:var(--surface-sunken);width:max-content"><span style="font:600 10px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Invite code</span><span style="font:600 24px/1 var(--font-mono);letter-spacing:0.06em">NOV-4R8T</span><button onClick="{{ copyNew }}" style="border:0;cursor:pointer;height:36px;padding:0 16px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 13px/1 var(--font-body)">{{ newLabel }}</button></div>
+                <button onClick="{{ f.reset }}" style="justify-self:start;border:0;cursor:pointer;height:36px;padding:0 4px;background:transparent;color:var(--foreground);font:700 14px/1 var(--font-body)">Set up another →</button></div>
+            </sc-if>
+          </div>
+          <aside style="position:sticky;top:24px;background:var(--surface-sunken);border-radius:20px;padding:24px">
+            <div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Players will see</div>
+            <div style="margin-top:16px;font:500 22px/1.15 var(--font-display);letter-spacing:-0.02em;text-wrap:pretty">{{ f.previewName }}</div>
+            <div style="margin-top:8px;font:500 12px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ f.previewDates }}</div>
+            <div style="margin-top:22px;font:500 11px/1 var(--font-body);color:var(--foreground-muted)">You’ll start with</div>
+            <div style="margin-top:8px;font:500 34px/1 var(--font-mono);letter-spacing:-0.02em">{{ f.cashText }}</div>
+            <div style="margin-top:22px;font:500 11px/1 var(--font-body);color:var(--foreground-muted)">{{ f.previewSymMeta }}</div>
+            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ f.previewSyms }}" as="c" hint-placeholder-count="6"><span style="font:600 11px/1 var(--font-mono);padding:5px 8px;border-radius:6px;background:var(--background)">{{ c }}</span></sc-for></div>
+            <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--bp-hair);font:400 12.5px/1.55 var(--font-body);color:var(--foreground-muted)">Invite only. Anyone with the code can join until the league ends.</div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="7a-members">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><h2 style="margin:0;font:500 32px/1 var(--font-display);letter-spacing:-0.03em">Members</h2><span style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">Equity as of {{ asOf }} · ranks lag fills by ≤ 2 s</span></div>
+        <div style="margin-top:20px;background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:12px 24px 18px">
+          <div style="display:grid;grid-template-columns:minmax(0,1.5fr) 100px 150px 80px minmax(0,1.3fr) 110px;gap:16px;padding:12px 0;font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)"><span>Player</span><span>Joined</span><span style="text-align:right">Equity</span><span style="text-align:right">Trades</span><span>Status</span><span></span></div>
+          <sc-for list="{{ members }}" as="m" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:minmax(0,1.5fr) 100px 150px 80px minmax(0,1.3fr) 110px;gap:16px;align-items:center;min-height:56px;border-top:1px solid var(--bp-hair)">
+            <span style="display:flex;align-items:center;gap:12px;min-width:0"><span style="flex:none;min-width:34px;height:32px;border-radius:8px;display:grid;place-items:center;background:{{ m.av }};color:{{ m.avFg }};font:600 10.5px/1 var(--font-mono)">{{ m.mono }}</span><span style="font:600 14.5px/1.2 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.name }}</span></span>
+            <span style="font:500 13px/1 var(--font-mono);color:var(--foreground-muted)">{{ m.joined }}</span>
+            <span style="text-align:right;font:500 14px/1 var(--font-mono)">{{ m.eq }}</span>
+            <span style="text-align:right;font:500 14px/1 var(--font-mono)">{{ m.trades }}</span>
+            <span><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9999px;background:{{ m.st.bg }};border:{{ m.st.bd }};font:600 11.5px/1 var(--font-body);white-space:nowrap"><span style="font-family:var(--font-mono);color:{{ m.st.gc }}">{{ m.st.glyph }}</span>{{ m.st.label }}</span></span>
+            <span style="text-align:right"><sc-if value="{{ m.canRemove }}" hint-placeholder-val="{{ true }}"><button style="border:0;cursor:pointer;height:32px;padding:0 12px;border-radius:9999px;background:transparent;color:var(--foreground-muted);font:600 13px/1 var(--font-body)" style-hover="background:var(--bp-panel-2);color:var(--foreground)">{{ m.action }}</button></sc-if></span>
+          </div></sc-for>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--bp-hair)"><span style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">8 of 22 shown</span><a href="#7a-members" style="font:700 13.5px/1 var(--font-body);text-decoration:none">Show all 22 →</a></div>
+        </div>
+      </section>
+
+      <section id="7a-flags">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><h2 style="margin:0;font:500 32px/1 var(--font-display);letter-spacing:-0.03em">Anti-cheat flags</h2><span style="font:400 13.5px/1.5 var(--font-body);color:var(--foreground-muted)">{{ flagSummary }}</span></div>
+        <div style="margin-top:20px;display:grid;gap:12px">
+          <sc-for list="{{ flags }}" as="g" hint-placeholder-count="3"><div data-flag="{{ g.id }}" style="display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:28px;padding:22px 24px;border-radius:18px;background:{{ g.bg }};border:{{ g.bd }}">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:6px;font:600 10px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase"><span style="font:700 12px/1 var(--font-mono);letter-spacing:0;color:{{ g.gc }}">{{ g.glyph }}</span>{{ g.state }}</span><span style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">· {{ g.who }} · {{ g.when }}</span></div>
+              <div style="margin-top:12px;font:500 21px/1.2 var(--font-display);letter-spacing:-0.02em">{{ g.title }}</div>
+              <div style="margin-top:8px;max-width:680px;font:400 14.5px/1.6 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">{{ g.reason }}</div>
+              <div style="margin-top:16px;display:flex;gap:32px;flex-wrap:wrap"><sc-for list="{{ g.ev }}" as="e" hint-placeholder-count="3"><div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">{{ e.k }}</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">{{ e.v }}</div></div></sc-for></div>
+              <sc-if value="{{ g.hasOutcome }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;font:500 12.5px/1.5 var(--font-body)">{{ g.outcome }}</div></sc-if>
+            </div>
+            <div style="display:grid;gap:8px;align-content:start"><sc-for list="{{ g.actions }}" as="a" hint-placeholder-count="3"><button onClick="{{ a.onClick }}" style="border:0;cursor:pointer;height:40px;padding:0 16px;border-radius:9999px;background:{{ a.bg }};color:{{ a.fg }};font:700 13px/1 var(--font-body);text-align:center" style-hover="box-shadow:var(--shadow-ambient-hover)" style-focus="outline:2px solid var(--ember);outline-offset:2px">{{ a.label }}</button></sc-for></div>
+          </div></sc-for>
+        </div>
+      </section>
+
+      <section id="7a-plan">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><h2 style="margin:0;font:500 32px/1 var(--font-display);letter-spacing:-0.03em">Plan and billing</h2><span style="font:400 13.5px/1.5 var(--font-body);color:var(--foreground-muted)">Prices are estimates until the cost model is published</span></div>
+        <div style="margin-top:20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start">
+          <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:26px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Current plan</div><div style="margin-top:12px;font:500 28px/1 var(--font-display);letter-spacing:-0.03em">Free</div></div><span style="font:500 22px/1 var(--font-mono)">$0.00<span style="font-size:12px;color:var(--foreground-muted)"> / month</span></span></div>
+            <div style="margin-top:24px;display:grid;gap:18px"><sc-for list="{{ meters }}" as="m" hint-placeholder-count="3"><div><div style="display:flex;justify-content:space-between;gap:12px;font:500 13px/1.3 var(--font-mono)"><span style="font-family:var(--font-body);font-weight:600">{{ m.label }}</span><span>{{ m.val }}</span></div><div style="margin-top:8px;height:6px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div style="height:100%;border-radius:9999px;background:{{ m.tone }};transform:{{ m.scale }};transform-origin:left center"></div></div><div style="margin-top:6px;font:400 12.5px/1.45 var(--font-body);color:var(--foreground-muted)"><span style="font-family:var(--font-mono);color:{{ m.tone }}">{{ m.glyph }}</span> {{ m.note }}</div></div></sc-for></div>
+          </div>
+          <div style="background:var(--bp-panel);border:1px solid var(--bp-hair);border-radius:20px;padding:26px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Upgrade</div><div style="margin-top:12px;font:500 28px/1 var(--font-display);letter-spacing:-0.03em">League plan</div></div><span style="text-align:right"><span style="display:block;font:500 22px/1 var(--font-mono)">$9.00<span style="font-size:12px;color:var(--foreground-muted)"> / month</span></span><span style="display:block;margin-top:6px;font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">per league · est.</span></span></div>
+            <div style="margin-top:22px;display:grid;gap:10px"><sc-for list="{{ perks }}" as="k" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;font:400 14px/1.5 var(--font-body)"><span style="font:700 12px/1.6 var(--font-mono);color:var(--bp-accent-text)">+</span><span>{{ k }}</span></div></sc-for></div>
+            <div style="margin-top:24px;display:flex;align-items:center;gap:14px"><a href="#7a-plan" style="display:inline-flex;align-items:center;height:44px;padding:0 22px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 14px/1 var(--font-body);text-decoration:none" style-hover="box-shadow:var(--shadow-ember-glow);color:oklch(14% 0.048 238)">Upgrade on Stripe</a><span style="font:400 12.5px/1.5 var(--font-body);color:var(--foreground-muted)">Checkout happens on Stripe. Bullpen never sees your card.</span></div>
+            <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--bp-hair);display:flex;justify-content:space-between;font:500 12px/1.4 var(--font-mono);color:var(--foreground-muted)"><span>Invoices</span><span>None yet · free plans aren’t billed</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div style="margin-top:96px;background:var(--surface-sunken);padding:24px 56px;display:flex;justify-content:space-between;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+</div>
+</div>
+
+<div id="7b" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">7b · League admin · mobile 390</div>
+<div data-screen-label="Admin mobile" style="width:390px;height:844px;display:flex;flex-direction:column;background:var(--background);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="flex:none;height:46px;display:flex;align-items:center;padding:0 30px;font:600 14px/1 var(--font-body)">{{ time }}</div>
+  <div style="flex:1;min-height:0;overflow:auto">
+    <div style="padding:6px 20px 0;display:flex;align-items:center;justify-content:space-between"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 12px/1 var(--font-mono)">TB</span></div>
+    <div style="margin:20px 20px 0;font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">League admin</div>
+    <h1 style="margin:10px 20px 0;font:500 32px/1.02 var(--font-display);letter-spacing:-0.04em">Vancouver Rust meetup</h1>
+    <div style="margin:10px 20px 0;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">22 players · Sep 15 – Oct 15 · RUST-22VN</div>
+    <div role="tablist" aria-label="Admin sections" style="margin-top:18px;display:flex;gap:2px;overflow-x:auto;padding:0 20px"><div style="display:flex;gap:2px;padding:3px;border-radius:9999px;background:var(--surface-sunken)"><sc-for list="{{ mTabs }}" as="o" hint-placeholder-count="4"><button role="tab" aria-selected="{{ o.pressed }}" onClick="{{ o.onClick }}" style="flex:none;border:0;cursor:pointer;height:44px;padding:0 15px;border-radius:9999px;font:600 13.5px/1 var(--font-body);background:{{ o.bg }};color:{{ o.fg }};white-space:nowrap">{{ o.label }}</button></sc-for></div></div>
+
+    <sc-if value="{{ mt.create }}" hint-placeholder-val="{{ true }}"><div style="margin:18px 20px 0;display:grid;gap:26px">
+      <sc-if value="{{ f.notCreated }}" hint-placeholder-val="{{ true }}">
+        <label style="display:grid;gap:8px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Name</span><input value="{{ f.name }}" onChange="{{ f.onName }}" maxlength="40" style="border:0;border-bottom:2px solid var(--bp-hair);border-radius:4px 4px 0 0;background:transparent;color:var(--foreground);font:500 19px/1 var(--font-body);height:48px;outline:none" style-focus="border-bottom-color:var(--ember)"><span style="font:400 12.5px/1.5 var(--font-body);color:{{ f.nameTone }}">{{ f.nameMsg }}</span></label>
+        <div style="display:grid;gap:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Allowed symbols</span><span style="font:500 11.5px/1 var(--font-mono);color:{{ f.symTone }}">{{ f.symMsg }}</span></div>
+          <sc-for list="{{ f.groups }}" as="g" hint-placeholder-count="2"><div role="group" aria-label="{{ g.label }}" style="display:grid;gap:8px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 13.5px/1 var(--font-body)">{{ g.label }}</span><button onClick="{{ g.toggle }}" style="border:0;cursor:pointer;height:44px;padding:0 12px;border-radius:9999px;background:transparent;color:var(--bp-accent-text);font:600 13px/1 var(--font-body)">{{ g.toggleLabel }}</button></div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ g.items }}" as="c" hint-placeholder-count="5"><button role="checkbox" aria-checked="{{ c.on }}" aria-disabled="{{ c.dis }}" onClick="{{ c.onClick }}" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px 0 10px;border-radius:9999px;cursor:{{ c.cursor }};border:{{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:600 13px/1 var(--font-mono)"><span style="width:18px;height:18px;box-sizing:border-box;border-radius:5px;display:grid;place-items:center;font-size:11px;background:{{ c.boxBg }};color:{{ c.boxFg }};border:{{ c.boxBd }}">{{ c.tick }}</span>{{ c.labelM }}</button></sc-for></div></div></sc-for></div>
+        <div style="display:grid;gap:12px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Start and end</span><label style="display:grid;gap:6px"><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">Starts 00:00 ET</span><input type="date" value="{{ f.start }}" onChange="{{ f.onStart }}" style="border:0;border-bottom:2px solid var(--bp-hair);background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);height:48px;outline:none"></label><label style="display:grid;gap:6px"><span style="font:500 12px/1 var(--font-body);color:var(--foreground-muted)">Ends 16:00 ET</span><input type="date" value="{{ f.end }}" onChange="{{ f.onEnd }}" style="border:0;border-bottom:2px solid var(--bp-hair);background:transparent;color:var(--foreground);font:500 17px/1 var(--font-mono);height:48px;outline:none"></label><span style="font:400 12.5px/1.5 var(--font-body);color:{{ f.dateTone }}">{{ f.dateMsg }}</span></div>
+        <div style="display:grid;gap:10px"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">Starting cash per player</span><div role="radiogroup" aria-label="Starting cash" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><sc-for list="{{ f.cashOpts }}" as="o" hint-placeholder-count="4"><button role="radio" aria-checked="{{ o.pressed }}" onClick="{{ o.onClick }}" style="border:0;cursor:pointer;height:48px;border-radius:12px;font:600 14px/1 var(--font-mono);background:{{ o.bgM }};color:{{ o.fgM }}">{{ o.label }}</button></sc-for></div></div>
+        <div style="display:grid;gap:8px"><button onClick="{{ f.onCreate }}" disabled="{{ f.disabled }}" style="border:0;cursor:pointer;height:56px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 16px/1 var(--font-body);opacity:{{ f.btnOp }}" style-active="transform:scale(0.97)">Create league</button><span style="text-align:center;font:400 12px/1.4 var(--font-body);color:var(--foreground-muted)">{{ f.hint }}</span></div>
+      </sc-if>
+      <sc-if value="{{ f.created }}" hint-placeholder-val="{{ false }}"><div role="status" style="padding:20px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair);display:grid;gap:12px"><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)"><span style="font-family:var(--font-mono);color:var(--bp-gain)">✓</span> League created</div><div style="font:500 24px/1.1 var(--font-display);letter-spacing:-0.02em">{{ f.name }}</div><div style="font:400 13.5px/1.55 var(--font-body);color:var(--foreground-muted)">{{ f.createdMsg }}</div><div style="font:600 24px/1 var(--font-mono);letter-spacing:0.06em">NOV-4R8T</div><button onClick="{{ copyNew }}" style="border:0;cursor:pointer;height:48px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 14px/1 var(--font-body)">{{ newLabel }}</button><button onClick="{{ f.reset }}" style="border:0;cursor:pointer;height:44px;background:transparent;color:var(--foreground);font:700 14px/1 var(--font-body)">Set up another →</button></div></sc-if>
+    </div></sc-if>
+
+    <sc-if value="{{ mt.members }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0">
+      <div style="font:500 11px/1.4 var(--font-mono);color:var(--foreground-muted)">Equity as of {{ asOf }}</div>
+      <div style="margin-top:8px;display:grid"><sc-for list="{{ members }}" as="m" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;min-height:64px;border-top:1px solid var(--bp-hair)"><span style="min-width:36px;height:34px;border-radius:9px;display:grid;place-items:center;background:{{ m.av }};color:{{ m.avFg }};font:600 11px/1 var(--font-mono)">{{ m.mono }}</span><span style="min-width:0"><span style="display:block;font:600 14.5px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.name }}</span><span style="display:block;margin-top:2px;font:500 11px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ m.eq }} · {{ m.trades }} trades · {{ m.joined }}</span></span><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:9999px;background:{{ m.st.bg }};border:{{ m.st.bd }};font:600 11px/1 var(--font-body);white-space:nowrap"><span style="font-family:var(--font-mono);color:{{ m.st.gc }}">{{ m.st.glyph }}</span>{{ m.st.short }}</span></div></sc-for></div>
+      <button style="margin-top:12px;width:100%;border:0;cursor:pointer;height:48px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 14px/1 var(--font-body)">Show all 22</button>
+    </div></sc-if>
+
+    <sc-if value="{{ mt.flags }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;display:grid;gap:12px">
+      <div style="font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)">{{ flagSummary }}</div>
+      <sc-for list="{{ flags }}" as="g" hint-placeholder-count="3"><div data-flag="{{ g.id }}" style="padding:18px;border-radius:16px;background:{{ g.bg }};border:{{ g.bd }}">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px/1 var(--font-mono);color:{{ g.gc }}">{{ g.glyph }}</span><span style="font:600 9.5px/1 var(--font-body);letter-spacing:0.16em;text-transform:uppercase">{{ g.state }}</span><span style="margin-left:auto;font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ g.when }}</span></div>
+        <div style="margin-top:10px;font:500 18px/1.2 var(--font-display);letter-spacing:-0.02em">{{ g.title }}</div>
+        <div style="margin-top:4px;font:600 12.5px/1.4 var(--font-body)">{{ g.who }}</div>
+        <div style="margin-top:8px;font:400 13.5px/1.55 var(--font-body);color:var(--foreground-muted)">{{ g.reason }}</div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><sc-for list="{{ g.ev }}" as="e" hint-placeholder-count="3"><div><div style="font:500 10.5px/1 var(--font-body);color:var(--foreground-muted)">{{ e.k }}</div><div style="margin-top:5px;font:500 13.5px/1 var(--font-mono)">{{ e.v }}</div></div></sc-for></div>
+        <sc-if value="{{ g.hasOutcome }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;font:500 12.5px/1.5 var(--font-body)">{{ g.outcome }}</div></sc-if>
+        <div style="margin-top:14px;display:grid;gap:8px"><sc-for list="{{ g.actions }}" as="a" hint-placeholder-count="3"><button onClick="{{ a.onClick }}" style="border:0;cursor:pointer;height:44px;border-radius:9999px;background:{{ a.bg }};color:{{ a.fg }};font:700 14px/1 var(--font-body)">{{ a.label }}</button></sc-for></div>
+      </div></sc-for>
+    </div></sc-if>
+
+    <sc-if value="{{ mt.plan }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;display:grid;gap:12px">
+      <div style="padding:20px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 24px/1 var(--font-display);letter-spacing:-0.02em">Free</span><span style="font:500 16px/1 var(--font-mono)">$0.00 / mo</span></div>
+        <div style="margin-top:18px;display:grid;gap:16px"><sc-for list="{{ meters }}" as="m" hint-placeholder-count="3"><div><div style="display:flex;justify-content:space-between;gap:10px;font:500 12px/1.3 var(--font-mono)"><span style="font-family:var(--font-body);font-weight:600">{{ m.label }}</span><span>{{ m.val }}</span></div><div style="margin-top:7px;height:6px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div style="height:100%;border-radius:9999px;background:{{ m.tone }};transform:{{ m.scale }};transform-origin:left center"></div></div><div style="margin-top:5px;font:400 12px/1.45 var(--font-body);color:var(--foreground-muted)"><span style="font-family:var(--font-mono);color:{{ m.tone }}">{{ m.glyph }}</span> {{ m.note }}</div></div></sc-for></div></div>
+      <div style="padding:20px;border-radius:16px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 24px/1 var(--font-display);letter-spacing:-0.02em">League plan</span><span style="text-align:right;font:500 16px/1.2 var(--font-mono)">$9.00 / mo<span style="display:block;font-size:10.5px;color:var(--foreground-muted)">per league · est.</span></span></div>
+        <div style="margin-top:14px;display:grid;gap:8px"><sc-for list="{{ perks }}" as="k" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:16px minmax(0,1fr);gap:6px;font:400 13.5px/1.5 var(--font-body)"><span style="font:700 12px/1.6 var(--font-mono);color:var(--bp-accent-text)">+</span><span>{{ k }}</span></div></sc-for></div>
+        <a href="#7b" style="margin-top:18px;display:grid;place-items:center;height:52px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body);text-decoration:none">Upgrade on Stripe</a><div style="margin-top:8px;text-align:center;font:400 12px/1.4 var(--font-body);color:var(--foreground-muted)">Checkout happens on Stripe. Bullpen never sees your card.</div></div>
+    </div></sc-if>
+    <div style="margin-top:32px;padding:22px 20px 34px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<div id="7c" style="margin-top:88px;font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)">System pages · same calm voice, one next step each</div>
+<sc-for list="{{ notices }}" as="n" hint-placeholder-count="3"><div style="margin-top:28px;display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+<div id="{{ n.idD }}" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">{{ n.idD }} · {{ n.kind }} · desktop 1440</div>
+<div data-screen-label="{{ n.kind }} desktop" style="width:1440px;min-height:900px;display:flex;flex-direction:column;background:var(--background);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="height:64px;display:flex;align-items:center;gap:12px;padding:0 40px;border-bottom:1px solid var(--bp-hair)"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:600 13px/1 var(--font-body);color:var(--foreground-muted)">{{ n.context }}</span><div style="flex:1"></div><span style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--ember);color:oklch(14% 0.048 238);font:700 11px/1 var(--font-mono)">TB</span></div>
+  <div data-enter="1" style="flex:1;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:96px;padding:96px 96px 80px;align-items:start">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;font:600 11px/1 var(--font-body);letter-spacing:0.24em;text-transform:uppercase;color:var(--foreground-muted)"><span style="font:700 13px/1 var(--font-mono);letter-spacing:0;color:{{ n.glyphTone }}">{{ n.glyph }}</span>{{ n.eyebrow }}</div>
+      <h1 style="margin:24px 0 0;font:500 72px/0.98 var(--font-display);letter-spacing:-0.045em;text-wrap:balance">{{ n.title }}</h1>
+      <p style="margin:28px 0 0;max-width:640px;font:400 19px/1.65 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">{{ n.body }}</p>
+      <div style="margin-top:36px;display:grid;grid-template-columns:180px minmax(0,1fr);max-width:640px"><sc-for list="{{ n.facts }}" as="x" hint-placeholder-count="3"><span style="padding:13px 0;border-top:1px solid var(--bp-hair);font:600 10.5px/1.6 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">{{ x.k }}</span><span style="padding:13px 0;border-top:1px solid var(--bp-hair);font:500 14px/1.5 var(--font-mono)">{{ x.v }}</span></sc-for></div>
+      <div style="margin-top:36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><a href="{{ n.primaryHref }}" style="display:inline-flex;align-items:center;height:52px;padding:0 26px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 15px/1 var(--font-body);text-decoration:none;transition:box-shadow 160ms,transform 120ms" style-hover="box-shadow:var(--shadow-ember-glow);color:oklch(14% 0.048 238)" style-active="transform:scale(0.97)">{{ n.primary }}</a><a href="{{ n.secondaryHref }}" style="display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:9999px;background:var(--bp-panel-2);color:var(--foreground);font:700 15px/1 var(--font-body);text-decoration:none" style-hover="background:var(--accent);color:var(--foreground)">{{ n.secondary }}</a></div>
+    </div>
+    <div style="display:grid;gap:16px">
+      <div style="padding:22px 24px;border-radius:18px;background:var(--surface-sunken)"><div style="font:700 14.5px/1.5 var(--font-body)">{{ n.safeTitle }}</div><div style="margin-top:6px;font:400 14px/1.65 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">{{ n.safe }}</div></div>
+      <sc-if value="{{ n.isPaused }}" hint-placeholder-val="{{ false }}"><div style="padding:24px;border-radius:18px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Your portfolio</span><span style="font:500 11.5px/1 var(--font-mono)">❚❚ Frozen · as of 18:42 ET</span></div><div style="margin-top:16px;font:500 44px/1 var(--font-mono);letter-spacing:-0.02em">$107,962.30</div><div style="margin-top:10px;font:600 14px/1 var(--font-mono);color:var(--bp-gain)">▲ +$7,962.30 · +7.96% since start</div><div style="margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:16px;border-top:1px solid var(--bp-hair)"><div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Rank</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">#9 of 214</div></div><div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Positions</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">6 kept</div></div><div><div style="font:500 11px/1 var(--font-body);color:var(--foreground-muted)">Cash</div><div style="margin-top:6px;font:500 15px/1 var(--font-mono)">$22,318.68</div></div></div><div style="margin-top:16px;font:400 12.5px/1.55 var(--font-body);color:var(--foreground-muted)">Values stay at their 18:42 ET marks until trading resumes, then re-mark at live prices.</div></div></sc-if>
+      <sc-if value="{{ n.isMaint }}" hint-placeholder-val="{{ false }}"><div style="padding:24px;border-radius:18px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">Progress</span><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">updated 02:13 ET</span></div><div style="margin-top:18px;display:flex;justify-content:space-between;font:500 15px/1 var(--font-mono)"><span>02:00</span><span>02:45 ET</span></div><div style="margin-top:10px;height:8px;border-radius:9999px;background:var(--surface-sunken);overflow:hidden"><div style="height:100%;border-radius:9999px;background:var(--ember);transform:scaleX(0.29);transform-origin:left center"></div></div><div style="margin-top:10px;font:500 12.5px/1.4 var(--font-mono);color:var(--foreground-muted)">13 of 45 min · on schedule</div><div style="margin-top:20px;display:grid;gap:10px;padding-top:16px;border-top:1px solid var(--bp-hair)"><sc-for list="{{ maintSteps }}" as="k" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;font:500 13.5px/1.4 var(--font-body)"><span style="width:20px;height:20px;box-sizing:border-box;border-radius:9999px;display:grid;place-items:center;font:700 10px/1 var(--font-mono);background:{{ k.bg }};color:{{ k.fg }};border:{{ k.bd }}">{{ k.glyph }}</span><span>{{ k.label }}</span><span style="font:500 11.5px/1 var(--font-mono);color:var(--foreground-muted)">{{ k.when }}</span></div></sc-for></div></div></sc-if>
+      <sc-if value="{{ n.is404 }}" hint-placeholder-val="{{ false }}"><div style="padding:24px;border-radius:18px;background:var(--bp-panel);border:1px solid var(--bp-hair)"><div style="font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)">You might be looking for</div><div style="margin-top:12px;display:grid"><sc-for list="{{ lost }}" as="k" hint-placeholder-count="3"><a href="{{ k.href }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;border-top:1px solid var(--bp-hair);text-decoration:none;color:var(--foreground)" style-hover="color:var(--ember)"><span><span style="display:block;font:600 15px/1.3 var(--font-body)">{{ k.label }}</span><span style="display:block;font:500 11.5px/1.4 var(--font-mono);color:var(--foreground-muted)">{{ k.meta }}</span></span><span style="font:600 14px/1 var(--font-body)">→</span></a></sc-for></div></div></sc-if>
+    </div>
+  </div>
+  <div style="background:var(--surface-sunken);padding:24px 56px;display:flex;justify-content:space-between;font:400 13px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:12px">Market data: IEX via Alpaca · Coinbase</span></div>
+</div>
+</div>
+<div id="{{ n.idM }}" style="flex:none;display:grid;gap:10px">
+<div style="font:500 12px/1 var(--font-mono);color:var(--foreground-muted)">{{ n.idM }} · {{ n.kind }} · mobile 390</div>
+<div data-screen-label="{{ n.kind }} mobile" style="width:390px;height:844px;display:flex;flex-direction:column;background:var(--background);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-ambient)">
+  <div style="flex:none;height:46px;display:flex;align-items:center;padding:0 30px;font:600 14px/1 var(--font-body)">{{ time }}</div>
+  <div style="flex:1;min-height:0;overflow:auto">
+    <div style="padding:6px 20px 0;display:flex;align-items:center;justify-content:space-between"><span style="font:600 20px/1 var(--font-display);letter-spacing:-0.03em">Bullpen</span><span style="font:500 11px/1 var(--font-mono);color:var(--foreground-muted)">{{ n.context }}</span></div>
+    <div data-enter="1" style="padding:40px 20px 0">
+      <div style="display:flex;align-items:center;gap:8px;font:600 10.5px/1 var(--font-body);letter-spacing:0.2em;text-transform:uppercase;color:var(--foreground-muted)"><span style="font:700 12px/1 var(--font-mono);letter-spacing:0;color:{{ n.glyphTone }}">{{ n.glyph }}</span>{{ n.eyebrow }}</div>
+      <h1 style="margin:18px 0 0;font:500 38px/1 var(--font-display);letter-spacing:-0.04em;text-wrap:balance">{{ n.title }}</h1>
+      <p style="margin:18px 0 0;font:400 15.5px/1.6 var(--font-body);color:var(--foreground-muted);text-wrap:pretty">{{ n.body }}</p>
+      <div style="margin-top:22px;display:grid"><sc-for list="{{ n.facts }}" as="x" hint-placeholder-count="3"><div style="padding:11px 0;border-top:1px solid var(--bp-hair)"><div style="font:600 10px/1.4 var(--font-body);letter-spacing:0.16em;text-transform:uppercase;color:var(--foreground-muted)">{{ x.k }}</div><div style="margin-top:4px;font:500 13.5px/1.45 var(--font-mono)">{{ x.v }}</div></div></sc-for></div>
+      <div style="margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--surface-sunken)"><div style="font:700 13.5px/1.5 var(--font-body)">{{ n.safeTitle }}</div><div style="margin-top:4px;font:400 13px/1.6 var(--font-body);color:var(--foreground-muted)">{{ n.safe }}</div></div>
+    </div>
+    <div style="margin-top:28px;padding:22px 20px 24px;background:var(--surface-sunken);display:grid;gap:6px;font:400 12px/1.5 var(--font-body);color:var(--foreground-muted)"><span>Paper trading. Play money. Not investment advice.</span><span style="font-family:var(--font-mono);font-size:11px">Market data: IEX via Alpaca · Coinbase</span></div>
+  </div>
+  <div style="flex:none;padding:12px 20px 30px;display:grid;gap:4px;background:var(--background);box-shadow:0 -1px 0 var(--bp-hair)"><a href="{{ n.primaryHref }}" style="display:grid;place-items:center;height:56px;border-radius:9999px;background:var(--ember);color:oklch(14% 0.048 238);font:700 16px/1 var(--font-body);text-decoration:none" style-active="transform:scale(0.97)">{{ n.primary }}</a><a href="{{ n.secondaryHref }}" style="display:grid;place-items:center;height:44px;color:var(--foreground);font:700 14px/1 var(--font-body);text-decoration:none">{{ n.secondary }}</a></div>
+</div>
+</div>
+</div></sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const MUTED = 'var(--foreground-muted)';
+const SYMS = { Stocks: [['AAPL', 'Apple'], ['MSFT', 'Microsoft'], ['NVDA', 'NVIDIA'], ['TSLA', 'Tesla'], ['SPY', 'S&P 500 ETF']], Crypto: [['BTC-USD', 'Bitcoin'], ['ETH-USD', 'Ether'], ['SOL-USD', 'Solana'], ['DOGE-USD', 'Dogecoin', true]] };
+const HOLIDAYS = ['2026-11-26', '2026-12-25', '2027-01-01'];
+const CASHES = [10000, 50000, 100000, 250000];
+const MEMBERS = [['Ana G.', 'AG', 'Sep 15', '$118,840.20', 42, 'active'], ['Wes H.', 'WH', 'Sep 15', '$114,102.66', 31, 'f2'], ['Tiarê B.', 'TB', 'Sep 15', '$112,418.05', 27, 'owner'], ['Mateus R.', 'MR', 'Sep 16', '$109,877.31', 55, 'f1'], ['Chloe D.', 'CD', 'Sep 16', '$107,520.90', 18, 'active'], ['Ivan P.', 'IP', 'Sep 18', '$105,300.12', 12, 'active'], ['Grace Y.', 'GY', 'Sep 17', '$103,914.48', 9, 'active'], ['Priya K.', 'PK', 'Sep 24', '—', 0, 'invited']];
+const FLAGS = [
+  { id: 'f1', who: 'Mateus R.', when: 'Sep 24, 10:44 ET', title: 'Traded on stale quotes', reason: 'Placed 9 market orders on NVDA while its quote was more than 15 s old, during the reconnect from 10:41 to 10:44 ET. 8 of the 9 closed at a gain once prices caught up.', ev: [['Orders', '9'], ['Quote age', '16–41 s'], ['Gain from stale prices', '$2,140.55 est.']], acts: [['dismiss', 'Dismiss'], ['reverse', 'Reverse 9 fills'], ['hold', 'Hold player']] },
+  { id: 'f2', who: 'Wes H. and W. Huang', when: 'Sep 21, 14:05 ET', title: 'Possible second account', reason: '“Wes H.” and “W. Huang” joined from the same device 4 minutes apart, and have traded the same symbols within 3 s of each other 14 times.', ev: [['Joined', '4 min apart'], ['Mirrored trades', '14'], ['Device', 'same']], acts: [['dismiss', 'Dismiss'], ['remove', 'Remove “W. Huang”'], ['hold', 'Hold both']] },
+  { id: 'f3', who: 'Chloe D.', when: 'Sep 19, 09:58 ET', title: 'Unusual win rate', reason: '31 of 33 closing trades ended at a gain, well above the league’s median of 17 of 33.', ev: [['Closing trades', '33'], ['At a gain', '31'], ['League median', '17']], acts: [] },
+];
+const OUT = { dismiss: 'Dismissed by you. Fills stand as they are.', reverse: 'You reversed 9 fills. Mateus R. is back to the positions and cash he had at 10:41 ET, and ranks re-run within 2 s.', hold: 'Held by you. Trading is paused for this player; positions stay where they are.', remove: 'You removed “W. Huang”. Wes H. keeps trading.', dismissedOld: 'Dismissed by you on Sep 20: consistent with a momentum strategy on a rising market.' };
+const LOST = [['Your leagues', 'Lobby · Fall Open, Vancouver Rust meetup', 'Bullpen Join and Lobby.dc.html#5c'], ['Summer Sprint final standings', 'Ended Aug 31 · you finished #14 of 180', 'Bullpen Portfolio and Leaderboard.dc.html#6c'], ['Portfolio · Fall Open', '$107,962.30 · marked live', 'Bullpen Portfolio and Leaderboard.dc.html#6a']];
+
+class Component extends DCLogic {
+  state = { theme: 'dark', reduced: false, mTab: 'create', f: { name: 'Rust meetup · November', on: ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY', 'BTC-USD', 'ETH-USD'], start: '2026-11-02', end: '2026-11-27', cash: 100000 }, created: false, flags: { f1: 'open', f2: 'open', f3: 'dismissedOld' }, copied: '', announce: '' };
+  rootRef = React.createRef();
+  componentDidMount() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.setState({ reduced: true });
+    this.enter();
+    this.iv = setInterval(() => this.forceUpdate(), 15000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  componentDidUpdate(pp, ps) {
+    if (!ps) return;
+    if (ps.theme !== this.state.theme) document.body.style.background = this.state.theme === 'dark' ? 'oklch(10.5% 0.038 238)' : 'oklch(94% 0.010 238)';
+    if (ps.reduced !== this.state.reduced) this.enter();
+  }
+  enter() {
+    const root = this.rootRef.current; if (!root) return;
+    root.querySelectorAll('[data-enter]').forEach((el) => el.animate(this.state.reduced ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], { duration: this.state.reduced ? 300 : 700, easing: 'cubic-bezier(0.16,1,0.3,1)' }));
+  }
+  seg(opts, cur, set, on, onFg) { return opts.map(([v, l]) => ({ label: l, pressed: cur === v ? 'true' : 'false', bg: cur === v ? (on || 'var(--bp-panel-2)') : 'transparent', fg: cur === v ? (onFg || 'var(--foreground)') : MUTED, onClick: () => set(v) })); }
+  setF(x) { this.setState((s) => ({ f: { ...s.f, ...x } })); }
+  copy(k) { this.setState({ copied: k, announce: 'Copied to clipboard' }); clearTimeout(this.ct); this.ct = setTimeout(() => this.setState({ copied: '' }), 1600); }
+  act(id, a) {
+    this.setState((s) => ({ flags: { ...s.flags, [id]: a }, announce: OUT[a] }), () => {
+      const root = this.rootRef.current; if (!root) return;
+      root.querySelectorAll(`[data-flag="${id}"]`).forEach((el) => el.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 200 }));
+    });
+  }
+  fmtD(iso) { const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+  form() {
+    const f = this.state.f, name = f.name.trim(), nameOk = name.length >= 3 && name.length <= 40;
+    const today = new Date(); const iso = (d) => d.toISOString().slice(0, 10); const todayIso = iso(new Date(today.getTime() - today.getTimezoneOffset() * 60000));
+    const a = new Date(f.start + 'T12:00:00'), b = new Date(f.end + 'T12:00:00'), valid = !isNaN(a) && !isNaN(b);
+    let td = 0; if (valid && b >= a) for (let d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) { const w = d.getDay(), k = iso(d); if (w && w < 6 && !HOLIDAYS.includes(k)) td++; }
+    const days = valid ? Math.round((b - a) / 86400000) + 1 : 0;
+    const dateErr = !valid ? 'Pick both dates.' : f.start < todayIso ? 'The start can’t be in the past.' : b <= a ? 'The end must come after the start.' : days > 92 ? 'Leagues run for 3 months at most on the Free plan.' : '';
+    const on = new Set(f.on), stockOn = SYMS.Stocks.filter(([s]) => on.has(s)).length, cryptoOn = SYMS.Crypto.filter(([s, , u]) => !u && on.has(s)).length, nOn = stockOn + cryptoOn;
+    const ok = nameOk && !dateErr && nOn > 0;
+    const groups = Object.entries(SYMS).map(([label, items]) => {
+      const avail = items.filter((x) => !x[2]), allOn = avail.every(([s]) => on.has(s));
+      return { label, meta: label === 'Stocks' ? 'IEX via Alpaca · market hours' : 'Coinbase · 24/7', toggleLabel: allOn ? `Clear ${label.toLowerCase()}` : `All ${label.toLowerCase()}`,
+        toggle: () => { const n = new Set(f.on); avail.forEach(([s]) => (allOn ? n.delete(s) : n.add(s))); this.setF({ on: [...n] }); },
+        items: items.map(([s, nm, u]) => { const o = on.has(s) && !u, m = s.replace('-USD', '');
+          return { label: u ? `${m} · not in feed` : m, labelM: u ? `${m} · n/a` : m, name: nm, on: o ? 'true' : 'false', dis: u ? 'true' : 'false', cursor: u ? 'not-allowed' : 'pointer',
+            bg: u ? 'transparent' : o ? 'var(--foreground)' : 'var(--bp-panel-2)', fg: u ? MUTED : o ? 'var(--background)' : 'var(--foreground)', bd: u ? '1px dashed var(--foreground-muted)' : '0',
+            boxBg: o ? 'var(--background)' : 'transparent', boxFg: 'var(--foreground)', boxBd: o ? '0' : u ? '1.5px dashed var(--foreground-muted)' : '1.5px solid var(--foreground-muted)', tick: o ? '✓' : '',
+            onClick: () => { if (u) return; const n = new Set(f.on); o ? n.delete(s) : n.add(s); this.setF({ on: [...n] }); } }; }) };
+    });
+    const cashText = '$' + f.cash.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    return {
+      notCreated: !this.state.created, created: this.state.created, name: f.name, onName: (e) => this.setF({ name: e.target.value }),
+      nameMsg: !name ? 'Give it a name players will recognize.' : nameOk ? `${name.length} of 40 characters.` : '3 to 40 characters.', nameTone: !name || !nameOk ? 'var(--destructive)' : MUTED,
+      groups, symMsg: nOn ? `${nOn} selected · ${stockOn} stocks, ${cryptoOn} crypto` : 'Pick at least one symbol', symTone: nOn ? MUTED : 'var(--destructive)',
+      start: f.start, end: f.end, onStart: (e) => this.setF({ start: e.target.value }), onEnd: (e) => this.setF({ end: e.target.value }),
+      dateMsg: dateErr || `${days} days · ${td} trading days for stocks · US market holidays excluded`, dateTone: dateErr ? 'var(--destructive)' : MUTED,
+      cashOpts: CASHES.map((c) => { const p = f.cash === c; return { label: '$' + (c / 1000) + 'k', pressed: p ? 'true' : 'false', bg: p ? 'var(--bp-panel-2)' : 'transparent', fg: p ? 'var(--foreground)' : MUTED, bgM: p ? 'var(--foreground)' : 'var(--bp-panel-2)', fgM: p ? 'var(--background)' : 'var(--foreground)', onClick: () => this.setF({ cash: c }) }; }),
+      cashText, disabled: !ok, btnOp: ok ? 1 : 0.45,
+      hint: ok ? `Opens ${this.fmtD(f.start)} at 00:00 ET. You get an invite code next.` : !nameOk ? 'Add a name first.' : nOn === 0 ? 'Pick at least one symbol.' : 'Fix the dates first.',
+      onCreate: () => { if (ok) this.setState({ created: true, announce: 'League created. Invite code NOV-4R8T.' }); },
+      reset: () => this.setState({ created: false }),
+      createdMsg: `Opens ${this.fmtD(f.start)} at 00:00 ET and ends ${this.fmtD(f.end)} at 16:00 ET. Everyone starts with ${cashText}. Share the code; you can change symbols until it starts.`,
+      previewName: name || 'Untitled league', previewDates: valid ? `${this.fmtD(f.start).replace(', 2026', '')} – ${this.fmtD(f.end).replace(', 2026', '')} · ${td} trading days` : '—',
+      previewSyms: f.on.filter((s) => !s.startsWith('DOGE')).map((s) => s.replace('-USD', '')), previewSymMeta: `${nOn} symbols at live prices`,
+    };
+  }
+
+  renderVals() {
+    const s = this.state, now = new Date(), fl = s.flags;
+    const nav = [['Trade', 'Bullpen Terminal.dc.html'], ['Portfolio', 'Bullpen Portfolio and Leaderboard.dc.html#6a'], ['Leaderboard', 'Bullpen Portfolio and Leaderboard.dc.html#6c'], ['Leagues', 'Bullpen Join and Lobby.dc.html#5c'], ['Admin', '#7a']].map(([label, href], i) => ({ label, href, cur: i === 4 ? 'page' : 'false', fg: i === 4 ? 'var(--foreground)' : MUTED, rule: i === 4 ? 1 : 0 }));
+    const open = Object.values(fl).filter((v) => v === 'open').length;
+    const stateOf = (v) => ({
+      open: { state: 'Needs review', glyph: '◷', gc: 'var(--warning)', bg: 'color-mix(in oklch, var(--warning) 11%, var(--bp-panel))', bd: '0' },
+      hold: { state: 'Player held', glyph: '✕', gc: 'var(--destructive)', bg: 'color-mix(in oklch, var(--destructive) 9%, var(--bp-panel))', bd: '0' },
+      reverse: { state: 'Fills reversed', glyph: '↺', gc: 'var(--foreground)', bg: 'var(--bp-panel)', bd: '1px solid var(--bp-hair)' },
+      remove: { state: 'Account removed', glyph: '–', gc: 'var(--foreground)', bg: 'var(--bp-panel)', bd: '1px solid var(--bp-hair)' },
+    }[v] || { state: 'Dismissed', glyph: '–', gc: MUTED, bg: 'transparent', bd: '1px dashed var(--foreground-muted)' });
+    const flags = FLAGS.map((g) => { const v = fl[g.id], st = stateOf(v), isOpen = v === 'open';
+      const actions = isOpen ? g.acts.map(([a, label], i) => ({ label, onClick: () => this.act(g.id, a), bg: a === 'hold' ? 'color-mix(in oklch, var(--destructive) 16%, transparent)' : i === 0 ? 'var(--bp-panel-2)' : 'var(--foreground)', fg: a === 'hold' ? 'var(--foreground)' : i === 0 ? 'var(--foreground)' : 'var(--background)' }))
+        : [{ label: 'Reopen', onClick: () => this.act(g.id, 'open'), bg: 'transparent', fg: 'var(--foreground)' }];
+      return { ...g, ...st, ev: g.ev.map(([k, v2]) => ({ k, v: v2 })), actions, hasOutcome: !isOpen, outcome: OUT[v] || '' }; });
+    const mst = (k) => {
+      if (k === 'owner') return { glyph: '★', label: 'Owner · you', short: 'Owner', bg: 'color-mix(in oklch, var(--ember) 16%, transparent)', bd: '0', gc: 'var(--bp-accent-text)' };
+      if (k === 'invited') return { glyph: '◷', label: 'Invited · not joined yet', short: 'Invited', bg: 'transparent', bd: '1px dashed var(--foreground-muted)', gc: MUTED };
+      const v = k.startsWith('f') ? fl[k] : 'none';
+      if (v === 'hold') return { glyph: '✕', label: 'Held · trading paused', short: 'Held', bg: 'color-mix(in oklch, var(--destructive) 14%, transparent)', bd: '0', gc: 'var(--destructive)' };
+      if (v === 'open') return { glyph: '⚑', label: 'Active · 1 open flag', short: 'Flagged', bg: 'color-mix(in oklch, var(--warning) 16%, transparent)', bd: '0', gc: 'var(--warning)' };
+      return { glyph: '●', label: 'Active', short: 'Active', bg: 'var(--bp-panel-2)', bd: '0', gc: 'var(--foreground)' };
+    };
+    const members = MEMBERS.map(([name, mono, joined, eq, trades, k], i) => ({ name: k === 'owner' ? name + ' · you' : name, mono, joined, eq, trades, st: mst(k), canRemove: k !== 'owner', action: k === 'invited' ? 'Revoke' : 'Remove',
+      av: k === 'owner' ? 'var(--ember)' : `color-mix(in oklch, var(--surface-elevated) 78%, oklch(66% 0.1 ${(i * 47) % 360}))`, avFg: k === 'owner' ? 'oklch(14% 0.048 238)' : 'var(--foreground)' }));
+    const meters = [
+      ['Players', '22 of 25', 0.88, 'var(--warning)', '!', '3 seats left in this league.'],
+      ['Active leagues', '1 of 2', 0.5, 'var(--foreground)', '·', 'The November league would use the second.'],
+      ['Market data · shared free pool', '812k of 1M', 0.812, 'var(--warning)', '!', 'Shared by every free league this month. If it runs out, free leagues pause until it resets on Oct 1.'],
+    ].map(([label, val, k, tone, glyph, note]) => ({ label, val, scale: `scaleX(${k})`, tone, glyph, note }));
+    const notices = [
+      { idD: '7c', idM: '7d', kind: 'League paused', context: 'Fall Open', glyph: '❚❚', glyphTone: 'var(--foreground)', eyebrow: 'League paused · free-tier limit reached', title: 'Trading is paused until Oct 1.',
+        body: 'Fall Open is on the Free plan, and free leagues share one market-data allowance: 1,000,000 price lookups a month. September’s ran out at 18:42 ET. Without it we can’t price new orders honestly, so we stopped taking them rather than fill at stale prices.',
+        facts: [['Limit reached', 'Market data · 1,000,000 of 1,000,000'], ['Paused at', 'Thu Sep 25, 18:42 ET'], ['Trading resumes', 'Thu Oct 1, 00:00 ET, when it resets'], ['Or sooner', 'If the owner moves to the League plan']],
+        primary: 'See the Cost tab', primaryHref: 'Bullpen Architecture.dc.html', secondary: 'Status page →', secondaryHref: '#7c',
+        safeTitle: 'Your positions are kept.', safe: 'Nothing is sold and nothing is lost. Cash and all 6 positions stay exactly as they are, and your working order (Buy 20 SOL-USD, limit 205.00) waits instead of being cancelled. Ranks are frozen too, so nobody moves while trading is stopped.', isPaused: true },
+      { idD: '7e', idM: '7f', kind: 'Maintenance', context: 'Scheduled', glyph: '◷', glyphTone: 'var(--warning)', eyebrow: 'Planned maintenance', title: 'Back at 02:45 ET.',
+        body: 'Bullpen is down for planned maintenance on Sunday. We’re moving order handling onto a durable workflow engine, the change Part 5 of the series is about, so an order survives a deploy halfway through.',
+        facts: [['Started', 'Sun Sep 27, 02:00 ET'], ['Expected back', '02:45 ET · in about 32 min'], ['Paused', 'New orders, fills and ranks'], ['Still running', 'Crypto prices, from Coinbase']],
+        primary: 'Read what’s changing', primaryHref: 'Bullpen Architecture.dc.html', secondary: 'Status page →', secondaryHref: '#7e',
+        safeTitle: 'Your positions are safe in the ledger.', safe: 'Working orders wait and resume when we’re back; none will fill at a price we didn’t see. Crypto keeps moving meanwhile, so crypto positions re-mark at the live price the moment we return.', isMaint: true },
+      { idD: '7g', idM: '7h', kind: 'Not found', context: '404', glyph: '?', glyphTone: 'var(--foreground-muted)', eyebrow: 'Not found', title: 'There’s nothing at this address.',
+        body: 'The link may be old, or it may point to a league that has ended. Ended leagues close their terminal but keep their final standings.',
+        facts: [['Requested', '/leagues/summer-sprint/trade'], ['Likely reason', 'Summer Sprint ended Aug 31, 16:00 ET']],
+        primary: 'Go to your leagues', primaryHref: 'Bullpen Join and Lobby.dc.html#5c', secondary: 'Summer Sprint standings →', secondaryHref: 'Bullpen Portfolio and Leaderboard.dc.html#6c',
+        safeTitle: 'Nothing about your account changed.', safe: 'Your positions and cash are where you left them. This page only means the address is wrong.', is404: true },
+    ].map((n) => ({ isPaused: false, isMaint: false, is404: false, ...n, facts: n.facts.map(([k, v]) => ({ k, v })) }));
+    const stepV = { done: { glyph: '✓', bg: 'var(--foreground)', fg: 'var(--background)', bd: '0' }, cur: { glyph: '●', bg: 'transparent', fg: 'var(--bp-accent-text)', bd: '2px solid var(--ember)' }, todo: { glyph: '', bg: 'transparent', fg: MUTED, bd: '1.5px solid var(--bp-hair)' } };
+    return {
+      rootRef: this.rootRef, themeCls: s.theme === 'dark' ? 'dark' : '', scheme: s.theme === 'dark' ? 'dark' : 'light', announce: s.announce,
+      time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }), asOf: now.toLocaleTimeString('en-GB', { hour12: false }),
+      themeOpts: this.seg([['dark', 'Dark'], ['light', 'Light']], s.theme, (v) => this.setState({ theme: v })),
+      motionOpts: this.seg([[false, 'Full motion'], [true, 'Reduced']], s.reduced, (v) => this.setState({ reduced: v })),
+      nav, f: this.form(), members, flags, meters,
+      perks: ['Up to 500 players in the league', 'Its own market-data allowance, so the shared free pool can’t pause it', 'Full trade history and exports'],
+      secNav: [['#7a-create', 'New league', 'draft', MUTED], ['#7a-members', 'Members', '22', MUTED], ['#7a-flags', 'Flags', open ? `${open} open` : 'clear', open ? 'var(--warning)' : MUTED], ['#7a-plan', 'Plan', 'Free', MUTED]].map(([href, label, meta, tone]) => ({ href, label, meta, tone })),
+      flagSummary: open ? `${open} open · you decide; nothing is reversed automatically` : 'Nothing open · you decide; nothing is reversed automatically',
+      mTabs: this.seg([['create', 'New league'], ['members', 'Members'], ['flags', open ? `Flags · ${open}` : 'Flags'], ['plan', 'Plan']], s.mTab, (v) => this.setState({ mTab: v })),
+      mt: { create: s.mTab === 'create', members: s.mTab === 'members', flags: s.mTab === 'flags', plan: s.mTab === 'plan' },
+      copyInvite: () => this.copy('invite'), inviteLabel: s.copied === 'invite' ? '✓ Copied' : 'Copy link',
+      copyNew: () => this.copy('new'), newLabel: s.copied === 'new' ? '✓ Copied' : 'Copy invite link',
+      notices, lost: LOST.map(([label, meta, href]) => ({ label, meta, href })),
+      maintSteps: [['Orders drained, ledger snapshotted', '02:04', 'done'], ['Workflow engine deployed', '02:13', 'cur'], ['Orders resume, ranks re-run', '02:45', 'todo']].map(([label, when, k]) => ({ label, when, ...stepV[k] })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -310,7 +310,7 @@ export function renderDiagram(h, o) {
     if ((!now && !before) || !nm[e.a] || !nm[e.b]) continue;
     edges.push({ ...e, state: now && !before ? 'added' : !now && before ? 'removed' : 'same', g: edgeGeom(nm[e.a], nm[e.b], st) });
   }
-  const step = o.step || null, touched = o.touched || new Set();
+  const step = o.step || null, touched = o.touched || new Set(), hl = o.highlight || null;
   const kids = [];
   kids.push(h('defs', { key: 'defs' },
     h('marker', { id: uid + '-ar', viewBox: '0 0 8 8', refX: 7, refY: 4, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' },
@@ -334,13 +334,13 @@ export function renderDiagram(h, o) {
             : { fill: 'color-mix(in oklch, var(--foreground) 3%, transparent)', stroke: GHOST, strokeDasharray: '3 5' } }));
       }
       parts.push(h('text', { key: 't', x: x0 + 14, y: y0 + 17, style: { fill: 'var(--foreground-muted)', fontSize: 9.5, letterSpacing: '0.18em', fontFamily: st === 'port' ? 'var(--font-mono)' : 'var(--font-body)', fontWeight: 600, textTransform: 'uppercase' } }, label.toUpperCase()));
-      kids.push(h('g', { key: 'q-' + q, style: { transition: 'opacity 300ms' } }, parts));
+      kids.push(h('g', { key: 'q-' + q, style: { transition: 'opacity 300ms', opacity: hl ? 0.55 : 1 } }, parts));
     });
   }
 
   // edges
   edges.forEach((e) => {
-    const onPath = step && step.edge === e.id, dim = step && !onPath;
+    const onPath = (step && step.edge === e.id) || (hl && hl.edges.includes(e.id)), dim = (step && !onPath) || (hl && !onPath);
     const showType = o.sync !== false, async = e.type === 'async' && showType, gone = e.state === 'removed';
     const parts = [h('path', { key: 'b', d: e.g.d, 'data-e': uid + e.id, markerEnd: `url(#${uid}-ar)`,
       style: { fill: 'none', stroke: onPath ? 'var(--ember)' : LINE, strokeWidth: onPath ? 1.75 : 1.25, strokeDasharray: async ? '4 5' : undefined, transition: 'stroke 200ms' } })];
@@ -356,14 +356,14 @@ export function renderDiagram(h, o) {
           h('animate', { attributeName: 'opacity', dur: '4.2s', repeatCount: 'indefinite', values: '0;1;1;1;1;0', keyTimes: kt })));
       });
     }
-    kids.push(h('g', { key: e.id, style: { opacity: dim ? 0.22 : (o.ghostFrom && (e.from ?? 1) >= o.ghostFrom) ? 0.4 : 1, transition: 'opacity 240ms',
+    kids.push(h('g', { key: e.id, style: { opacity: dim ? (hl ? 0.3 : 0.22) : (o.ghostFrom && (e.from ?? 1) >= o.ghostFrom) ? 0.4 : 1, transition: 'opacity 240ms',
       animation: rd ? undefined : e.state === 'added' ? 'bp-fade-in 500ms 320ms both' : gone ? 'bp-fade-out 600ms both' : undefined } }, parts));
   });
 
   // nodes
   nodes.forEach((n) => {
-    const sel = o.selected === n.id, act = step && (step.a === n.id || step.b === n.id), lit = touched.has(n.id);
-    const dim = step && !act && !lit, gone = n.state === 'removed', ext = n.kind === 'ext', data = n.kind === 'data' || n.kind === 'infra';
+    const sel = o.selected === n.id || (hl && hl.nodes.includes(n.id)), act = step && (step.a === n.id || step.b === n.id), lit = touched.has(n.id);
+    const dim = (step && !act && !lit) || (hl && !sel), gone = n.state === 'removed', ext = n.kind === 'ext', data = n.kind === 'data' || n.kind === 'infra';
     const hot = sel || act, gh = !!o.ghostFrom && (n.from ?? 1) >= o.ghostFrom && !gone;
     const rx = st === 'tile' ? 22 : st === 'port' ? 3 : data ? 26 : 10;
     const c = [];
