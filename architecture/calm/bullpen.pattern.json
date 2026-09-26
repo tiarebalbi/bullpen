@@ -1,0 +1,109 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "$id": "https://bullpen.dev/architecture/calm/bullpen.pattern.json",
+  "title": "Bullpen Architecture Pattern",
+  "description": "The shape every Bullpen architecture moment (current or planned) must conform to: at least one actor, one webclient, one service (or function) and one external-system node, an actor-to-webclient 'interacts' relationship, and at least two synchronous HTTPS 'connects' relationships on the user-facing read path. Additional node and relationship types (databases, queues, workflow engines, more external systems) are always allowed on top of this minimum, so later parts of the series can extend a moment without breaking the pattern.",
+  "type": "object",
+  "properties": {
+    "unique-id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": ["current", "planned"]
+        }
+      },
+      "required": ["status"]
+    },
+    "adrs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "$ref": "https://calm.finos.org/release/1.2/meta/core.json#/defs/node"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "node-type": { "const": "actor" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "node-type": { "const": "webclient" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "node-type": { "const": "service" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "node-type": { "const": "external-system" }
+            }
+          }
+        }
+      ]
+    },
+    "relationships": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "https://calm.finos.org/release/1.2/meta/core.json#/defs/relationship"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "relationship-type": {
+                "type": "object",
+                "allOf": [{ "required": ["interacts"] }]
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "relationship-type": {
+                "type": "object",
+                "allOf": [{ "required": ["connects"] }]
+              },
+              "protocol": { "const": "HTTPS" }
+            },
+            "required": ["protocol"]
+          },
+          "minContains": 2
+        }
+      ]
+    }
+  },
+  "required": ["unique-id", "name", "description", "metadata", "nodes", "relationships"]
+}
