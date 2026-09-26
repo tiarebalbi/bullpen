@@ -14,6 +14,7 @@
     { "service": "vercel-hobby", "metric": "deployments_per_day", "value": null, "unit": "deployments (peak day in week)" },
     { "service": "vercel-queues", "metric": "api_operations", "value": null, "unit": "operations" },
     { "service": "vercel-workflows", "metric": "workflow_events", "value": null, "unit": "events" },
-    { "service": "vercel-workflows", "metric": "workflow_data_written", "value": null, "unit": "GB" }
+    { "service": "vercel-workflows", "metric": "workflow_data_written", "value": null, "unit": "GB" },
+    { "service": "coingecko-demo", "metric": "monthly_calls", "value": null, "unit": "calls" }
   ]
 }

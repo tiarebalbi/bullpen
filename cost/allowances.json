@@ -178,5 +178,23 @@
     "source_url": "https://aws.amazon.com/free/compute/",
     "checked_on": "2026-09-25",
     "note": "Listed under AWS's 'Always Free' category (perpetual, not the 12-month free trial tier). Equivalent to up to 3.2 million seconds of compute time per month."
+  },
+  {
+    "service": "coingecko-demo",
+    "metric": "monthly_calls",
+    "allowance": 10000,
+    "unit": "calls/month",
+    "source_url": "https://www.coingecko.com/en/api/pricing",
+    "checked_on": "2026-09-26",
+    "note": "Demo plan monthly call credit. See ADR-0005 and docs/data-sources.md. architecture/fitness's budget check keeps modeled monthly usage (from apps/web's actual configured cache interval) at or under 90% of this figure."
+  },
+  {
+    "service": "coingecko-demo",
+    "metric": "rate_limit",
+    "allowance": 100,
+    "unit": "calls/min",
+    "source_url": "https://www.coingecko.com/en/api/pricing",
+    "checked_on": "2026-09-26",
+    "note": "Demo plan rate limit. Not a concern at Bullpen's Part 1 volume (one route, cached for 300s), recorded for completeness."
   }
 ]
