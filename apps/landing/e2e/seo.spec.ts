@@ -40,14 +40,8 @@ test.describe("SEO metadata", () => {
     expect(html).toMatch(/<meta property="og:image" content="https:\/\/bullpen\.tiarebalbi\.com\/opengraph-image\.png/);
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image"');
     expect(html).toMatch(/<meta name="twitter:image" content="https:\/\/bullpen\.tiarebalbi\.com\/opengraph-image\.png/);
-    // twitter:image:alt / og:image:alt: opengraph-image.alt.txt is a real,
-    // documented Next.js file convention (confirmed in Next's own bundled
-    // docs) and is present at apps/landing/app/opengraph-image.alt.txt,
-    // but empirically its file-convention discovery was flaky across
-    // otherwise-identical rebuilds during this session (present in some
-    // builds, absent in others, with no source change in between) --
-    // not asserted here since a framework-level non-determinism would
-    // make this assertion flake in CI, not indicate a real regression.
+    expect(html).toContain('<meta property="og:image:alt" content="Bullpen: Architecting Software in 2026, Built in Public"');
+    expect(html).toContain('<meta name="twitter:image:alt" content="Bullpen: Architecting Software in 2026, Built in Public"');
   });
 
   test("the production .vercel.app alias redirects permanently to the custom domain", async ({ request }) => {
@@ -153,13 +147,17 @@ test.describe("SEO metadata", () => {
     });
 
     expect(bodyText).not.toMatch(/\bwe\b/i);
-    expect(bodyText).not.toMatch(/\bus\b/i);
+    // [Uu]s, not /\bus\b/i -- the voice rule bans the pronoun "us", not the
+    // "US" abbreviation, which is real, correct text (e.g. "US stocks").
+    expect(bodyText).not.toMatch(/\b[Uu]s\b/);
     expect(bodyText).not.toMatch(/\bour\b/i);
     expect(bodyText).not.toContain("Tiarê Balbi");
     expect(bodyText).not.toContain("Tiare Balbi");
   });
 
-  test("opening every real ADR's modal renders no raw markdown (no backtick, no \"](\")", async ({ page }) => {
+  test("opening every real ADR's modal renders no raw markdown (no backtick, no \"](\") and no we/us/our/third-person name", async ({
+    page,
+  }) => {
     await mockPriceRoute(page);
     for (const id of ["adr-0001", "adr-0002", "adr-0003", "adr-0005", "adr-0006", "adr-0007"]) {
       await page.goto(`/#${id}`);
@@ -168,6 +166,11 @@ test.describe("SEO metadata", () => {
       const text = await dialog.innerText();
       expect(text, `${id} should have no literal backtick`).not.toContain("`");
       expect(text, `${id} should have no raw markdown link syntax`).not.toContain("](");
+      expect(text, `${id} should not contain "we"`).not.toMatch(/\bwe\b/i);
+      expect(text, `${id} should not contain "us"`).not.toMatch(/\b[Uu]s\b/);
+      expect(text, `${id} should not contain "our"`).not.toMatch(/\bour\b/i);
+      expect(text, `${id} should not name the author`).not.toContain("Tiarê Balbi");
+      expect(text, `${id} should not name the author`).not.toContain("Tiare Balbi");
     }
   });
 });
