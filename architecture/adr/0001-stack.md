@@ -8,6 +8,10 @@ Accepted
 
 2026-09-25
 
+## Summary
+
+Vercel Hobby, Turborepo and TypeScript
+
 ## Context
 
 Bullpen is a public prototype and blog demo — a paper-trading league where players compete with play money on real US stock and crypto prices, with a live leaderboard. It is not a commercial product: there is no billing, no SLA, and no expectation of production traffic beyond what a blog audience generates.

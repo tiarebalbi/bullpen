@@ -8,6 +8,10 @@ Accepted
 
 2026-09-26
 
+## Summary
+
+BTC-USD from CoinGecko, with credit
+
 ## Context
 
 Issue #6 (one live symbol) originally proposed the Coinbase Exchange public

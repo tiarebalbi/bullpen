@@ -8,6 +8,10 @@ Accepted
 
 2026-09-25
 
+## Summary
+
+Every split must earn one of five reasons
+
 ## Context
 
 The 2010s microservices wave was largely driven by one problem: a monolith couldn't scale its hot path independently of the rest of the system, so teams split services to scale them separately. On modern per-request serverless compute — Vercel Functions and equivalents — that problem is already solved by the platform: every function autoscales independently by default. Splitting a system into services purely to "scale the hot path" no longer buys what it used to, because the hot path already scales without a split.

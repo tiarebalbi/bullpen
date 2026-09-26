@@ -7,6 +7,8 @@ export interface Adr {
   title: string;
   status: string;
   date: string;
+  /** The "## Summary" section: one line, at or under SUMMARY_MAX_LENGTH characters. */
+  summary: string;
   /** First paragraph of the "## Context" section. */
   contextExcerpt: string;
   /** First paragraph of the "## Decision" section. */
@@ -17,7 +19,12 @@ export interface Adr {
 const TITLE_LINE = /^#\s*(ADR-\d+):\s*(.+)$/m;
 const HEADING_LINE = /^##\s+(.+)$/;
 
-const REQUIRED_SECTIONS = ["status", "date", "context", "decision"] as const;
+const REQUIRED_SECTIONS = ["status", "date", "summary", "context", "decision"] as const;
+
+// The design's decisions row has one line for the summary -- measured from
+// that row, not picked arbitrarily (see content/series.json's identical
+// budget pattern for card copy).
+export const SUMMARY_MAX_LENGTH = 60;
 
 function firstParagraph(text: string): string {
   const trimmed = text.trim();
@@ -68,11 +75,19 @@ export function parseAdr(content: string, filename: string): Adr {
     }
   }
 
+  const summary = sections.get("summary")!.trim();
+  if (summary.length > SUMMARY_MAX_LENGTH) {
+    throw new Error(
+      `${filename}: "## Summary" is ${summary.length} characters, over the ${SUMMARY_MAX_LENGTH}-character row budget: ${JSON.stringify(summary)}`,
+    );
+  }
+
   return {
     id: id!,
     title: title!.trim(),
     status: sections.get("status")!,
     date: sections.get("date")!,
+    summary,
     contextExcerpt: firstParagraph(sections.get("context")!),
     decisionExcerpt: firstParagraph(sections.get("decision")!),
     filename,
