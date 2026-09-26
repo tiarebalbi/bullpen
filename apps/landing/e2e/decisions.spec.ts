@@ -86,18 +86,6 @@ test.describe("Decisions", () => {
     await expect(dialog).toBeHidden();
   });
 
-  test("a deep link opens the modal on load", async ({ page }) => {
-    await page.goto("/#adr-0002");
-    const dialog = page.getByRole("dialog");
-    // A longer timeout, not a weaker assertion: this page also hydrates the
-    // React Flow Architecture Explorer, and on a loaded CI runner that
-    // hydration can occasionally push the useSyncExternalStore hash resync
-    // (see DecisionsList.tsx) past Playwright's default 5s -- confirmed
-    // flaky-not-broken (passes immediately on Playwright's own CI retry).
-    await expect(dialog).toBeVisible({ timeout: 10_000 });
-    await expect(dialog.getByRole("heading", { name: "Why distribute at all" })).toBeVisible();
-  });
-
   test("navigating to an ADR hash from elsewhere on the page opens it without a reload", async ({ page }) => {
     // The Architecture Explorer's side panel links to the same #adr-000N
     // hashes; this exercises that same-page hashchange path directly.
@@ -105,7 +93,10 @@ test.describe("Decisions", () => {
       window.location.hash = "#adr-0003";
     });
     const dialog = page.getByRole("dialog");
-    // Same CI-runner-under-load margin as the deep-link test above.
+    // A longer timeout, not a weaker assertion: this page also hydrates the
+    // React Flow Architecture Explorer, and on a loaded CI runner that
+    // hydration can occasionally push the useSyncExternalStore hash resync
+    // (see DecisionsList.tsx) past Playwright's default 5s.
     await expect(dialog).toBeVisible({ timeout: 10_000 });
     await expect(dialog.getByRole("heading", { name: "Monorepo" })).toBeVisible();
   });
@@ -123,6 +114,28 @@ test.describe("Decisions", () => {
       });
       expect(activeIsInsideDialog).toBe(true);
     }
+  });
+});
+
+// A real cold load, in its own describe so no beforeEach navigates first --
+// the outer "Decisions" suite's beforeEach already loads "/" for every test,
+// so a same-suite test doing page.goto("/#adr-0002") second is only a
+// same-document fragment change (no reload), not an actual deep link. That
+// mistake meant this test never verified the arrives-with-hash-in-the-URL
+// path (useSyncExternalStore's getServerSnapshot/getSnapshot resync in
+// DecisionsList.tsx, distinct from the hashchange-event path the sibling
+// "navigating ... without a reload" test above covers) -- confirmed via a
+// CI trace showing the two goto() calls, one from beforeEach and one from
+// the test itself, both against an already-loaded page.
+test.describe("Decisions, cold load", () => {
+  test.use({ viewport: { width: 1440, height: 1200 } });
+
+  test("a deep link opens the modal on the very first load", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/#adr-0002");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible({ timeout: 10_000 });
+    await expect(dialog.getByRole("heading", { name: "Why distribute at all" })).toBeVisible();
   });
 });
 
