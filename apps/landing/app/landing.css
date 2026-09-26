@@ -82,6 +82,65 @@ code {
   padding: 12px 20px !important;
   font: 700 14px/1 var(--font-body) !important;
 }
+.bp-nav__toggle {
+  display: none;
+}
+
+/* Below this width the design collapses the links into a menu button
+   (confirmed against Bullpen Landing.dc.html's 390px frame) rather than
+   wrapping them onto a second line. */
+@media (max-width: 640px) {
+  .bp-nav__links {
+    display: none;
+    order: 5;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+  }
+  .bp-nav__links[data-open="true"] {
+    display: flex;
+  }
+  .bp-nav__spacer {
+    order: 3;
+  }
+  .bp-nav__cta {
+    order: 4;
+  }
+  .bp-nav__toggle {
+    order: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--bp-hair);
+    background: transparent;
+    cursor: pointer;
+  }
+  .bp-nav__toggle-icon,
+  .bp-nav__toggle-icon::before,
+  .bp-nav__toggle-icon::after {
+    content: "";
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--foreground);
+  }
+  .bp-nav__toggle-icon {
+    position: relative;
+  }
+  .bp-nav__toggle-icon::before {
+    position: absolute;
+    top: -6px;
+  }
+  .bp-nav__toggle-icon::after {
+    position: absolute;
+    top: 6px;
+  }
+}
 
 /* ── Section rhythm ──────────────────────────────────────────── */
 .bp-section {
