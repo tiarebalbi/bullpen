@@ -1,0 +1,8 @@
+{
+  "name": "app-a",
+  "private": true,
+  "version": "0.1.0",
+  "dependencies": {
+    "app-b": "workspace:*"
+  }
+}
