@@ -86,6 +86,38 @@ test.describe("Architecture Explorer", () => {
     await expect(architecture.getByText("prices-service_db")).toBeVisible();
   });
 
+  test("scrubbing to a part with more nodes than the initial one refits the viewport, not just the DOM", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    // Part 1 (the initial, smallest part) mounts and fits the viewport
+    // first. Part 6 has far more nodes spread further out; without a
+    // refit on part change, React Flow's `fitView` only ever fires once
+    // on mount, so Part 6's outer nodes render outside that stale,
+    // Part-1-sized viewport -- present in the DOM, but not actually
+    // visible on screen.
+    await scrubber.getByRole("button", { name: "PART 6" }).click();
+    // Let both the node-settling animation and fitView's own pan/zoom
+    // transition finish before measuring -- otherwise this reads
+    // mid-animation, moving numbers.
+    await page.waitForTimeout(1200);
+
+    // Captured after the click (which scrolls the section into view) --
+    // measuring it beforehand would compare against a stale scroll offset.
+    // Measured against React Flow's own viewport element (not the outer
+    // canvas panel, which also includes the legend and its own padding).
+    const canvasBox = (await architecture.locator(".react-flow").boundingBox())!;
+
+    for (const name of ["Leaderboard Service, Service", "Alpaca, External", "Massive, External", "Stripe, External"]) {
+      const box = await architecture.getByRole("button", { name }).boundingBox();
+      expect(box, `${name} should be in the DOM`).not.toBeNull();
+      expect(box!.x, `${name} left edge within canvas`).toBeGreaterThanOrEqual(canvasBox.x);
+      expect(box!.y, `${name} top edge within canvas`).toBeGreaterThanOrEqual(canvasBox.y);
+      expect(box!.x + box!.width, `${name} right edge within canvas`).toBeLessThanOrEqual(canvasBox.x + canvasBox.width);
+      expect(box!.y + box!.height, `${name} bottom edge within canvas`).toBeLessThanOrEqual(canvasBox.y + canvasBox.height);
+    }
+  });
+
   test("a planned part ghosts nodes and edges the built system doesn't have yet", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });

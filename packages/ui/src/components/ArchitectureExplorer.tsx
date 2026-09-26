@@ -5,6 +5,7 @@ import {
   Background,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
   type Edge,
   type Node,
 } from "@xyflow/react";
@@ -74,6 +75,7 @@ function ArchitectureExplorerInner({
   className,
 }: ArchitectureExplorerProps): ReactNode {
   const reduced = useReducedMotion();
+  const { fitView } = useReactFlow();
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);
   const maxPart = parts.length;
 
@@ -339,6 +341,17 @@ function ArchitectureExplorerInner({
       } satisfies ArchFlowEdgeData,
     };
   });
+
+  // React Flow's `fitView` prop only fits once, on mount (for whichever
+  // part happened to be initial). Without this, scrubbing to a part whose
+  // nodes extend further than the initially-fitted part's did leaves the
+  // new nodes rendered outside the still-stale viewport -- invisible, not
+  // just dimmed. Refit whenever the part or the quanta grouping (which
+  // changes the layout's effective bounds) changes.
+  useEffect(() => {
+    fitView({ padding: 0.25, duration: reduced ? 0 : 500 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [part, showQuanta, fitView]);
 
   return (
     <div className={["bp-arch-explorer", className].filter(Boolean).join(" ")}>
