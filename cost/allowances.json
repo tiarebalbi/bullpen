@@ -1,0 +1,182 @@
+[
+  {
+    "service": "vercel-hobby",
+    "metric": "active_cpu_time",
+    "allowance": 4,
+    "unit": "hours/month",
+    "source_url": "https://vercel.com/docs/limits/fair-use-guidelines",
+    "checked_on": "2026-09-25",
+    "note": "Fluid compute Active CPU included for the Hobby plan, from the 'Typical monthly usage guidelines' table."
+  },
+  {
+    "service": "vercel-hobby",
+    "metric": "provisioned_memory",
+    "allowance": 360,
+    "unit": "GB-hrs/month",
+    "source_url": "https://vercel.com/docs/limits/fair-use-guidelines",
+    "checked_on": "2026-09-25",
+    "note": "Fluid compute Provisioned Memory included for the Hobby plan."
+  },
+  {
+    "service": "vercel-hobby",
+    "metric": "function_memory_max",
+    "allowance": 2,
+    "unit": "GB per function (1 vCPU)",
+    "source_url": "https://vercel.com/docs/functions/limitations",
+    "checked_on": "2026-09-25",
+    "note": "Default and maximum memory for a Vercel Function on Hobby; there is no separate lower default to configure."
+  },
+  {
+    "service": "vercel-hobby",
+    "metric": "function_max_duration",
+    "allowance": 300,
+    "unit": "seconds (default and maximum)",
+    "source_url": "https://vercel.com/docs/functions/limitations",
+    "checked_on": "2026-09-25",
+    "note": "With Fluid compute (default for new projects), Hobby functions default to and cap at 300s (5 minutes)."
+  },
+  {
+    "service": "vercel-hobby",
+    "metric": "function_invocations",
+    "allowance": 1000000,
+    "unit": "invocations/month",
+    "source_url": "https://vercel.com/docs/limits/fair-use-guidelines",
+    "checked_on": "2026-09-25",
+    "note": null
+  },
+  {
+    "service": "vercel-hobby",
+    "metric": "edge_requests",
+    "allowance": 1000000,
+    "unit": "requests/month",
+    "source_url": "https://vercel.com/pricing",
+    "checked_on": "2026-09-25",
+    "note": "Listed on the marketing pricing page as '1M / month included'; not broken out separately on the fair-use-guidelines table."
+  },
+  {
+    "service": "vercel-hobby",
+    "metric": "deployments_per_day",
+    "allowance": 100,
+    "unit": "deployments/day",
+    "source_url": "https://vercel.com/docs/limits",
+    "checked_on": "2026-09-25",
+    "note": "Also enforced as a rate limit: 100 per day, 100 per hour, 60 per five minutes."
+  },
+  {
+    "service": "vercel-queues",
+    "metric": "api_operations",
+    "allowance": 1000000,
+    "unit": "operations/month",
+    "source_url": "https://vercel.com/docs/queues/pricing",
+    "checked_on": "2026-09-25",
+    "note": "Vercel Queues is in Beta. Send/Receive/Delete/Visibility-change/Notify each count as one operation; messages are metered in 4 KiB chunks."
+  },
+  {
+    "service": "vercel-workflows",
+    "metric": "workflow_events",
+    "allowance": 50000,
+    "unit": "events/month",
+    "source_url": "https://vercel.com/docs/workflows/pricing",
+    "checked_on": "2026-09-25",
+    "note": "Every state transition in a workflow run is persisted as an event; this is the Hobby included allowance."
+  },
+  {
+    "service": "vercel-workflows",
+    "metric": "workflow_data_written",
+    "allowance": 1,
+    "unit": "GB/month",
+    "source_url": "https://vercel.com/docs/workflows/pricing",
+    "checked_on": "2026-09-25",
+    "note": "Table lists '1 GB' with no explicit period; the page's prose says 'Hobby includes monthly allowances for Workflow Events and Workflow Data Written', so this is read as a monthly allowance. Workflow Data Retained is not available on Hobby at all."
+  },
+  {
+    "service": "neon",
+    "metric": "storage",
+    "allowance": 0.5,
+    "unit": "GB/project",
+    "source_url": "https://neon.com/docs/introduction/plans",
+    "checked_on": "2026-09-25",
+    "note": "Neon Free plan storage allowance per project."
+  },
+  {
+    "service": "neon",
+    "metric": "compute",
+    "allowance": 100,
+    "unit": "CU-hours/project/month",
+    "source_url": "https://neon.com/docs/introduction/plans",
+    "checked_on": "2026-09-25",
+    "note": "Neon's docs note this is enough to run a 0.25 CU compute for 400 hours/month."
+  },
+  {
+    "service": "upstash-redis",
+    "metric": "data_size",
+    "allowance": 256,
+    "unit": "MB",
+    "source_url": "https://upstash.com/docs/redis/overall/pricing",
+    "checked_on": "2026-09-25",
+    "note": "Max data size on the free tier database."
+  },
+  {
+    "service": "upstash-redis",
+    "metric": "monthly_commands",
+    "allowance": 500000,
+    "unit": "commands/month",
+    "source_url": "https://upstash.com/docs/redis/overall/pricing",
+    "checked_on": "2026-09-25",
+    "note": null
+  },
+  {
+    "service": "upstash-redis",
+    "metric": "monthly_bandwidth",
+    "allowance": 10,
+    "unit": "GB/month",
+    "source_url": "https://upstash.com/docs/redis/overall/pricing",
+    "checked_on": "2026-09-25",
+    "note": null
+  },
+  {
+    "service": "grafana-cloud",
+    "metric": "metrics_active_series",
+    "allowance": 10000,
+    "unit": "active series",
+    "source_url": "https://grafana.com/pricing/",
+    "checked_on": "2026-09-25",
+    "note": "Grafana Cloud Free tier metrics allowance, 14 day retention."
+  },
+  {
+    "service": "grafana-cloud",
+    "metric": "logs_ingest",
+    "allowance": 50,
+    "unit": "GB/month",
+    "source_url": "https://grafana.com/pricing/",
+    "checked_on": "2026-09-25",
+    "note": "14 day retention on the Free tier."
+  },
+  {
+    "service": "grafana-cloud",
+    "metric": "traces_ingest",
+    "allowance": 50,
+    "unit": "GB/month",
+    "source_url": "https://grafana.com/pricing/",
+    "checked_on": "2026-09-25",
+    "note": "14 day retention on the Free tier."
+  },
+  {
+    "service": "aws-lambda",
+    "metric": "requests",
+    "allowance": 1000000,
+    "unit": "requests/month",
+    "source_url": "https://aws.amazon.com/free/compute/",
+    "checked_on": "2026-09-25",
+    "note": "Listed under AWS's 'Always Free' category (perpetual, not the 12-month free trial tier)."
+  },
+  {
+    "service": "aws-lambda",
+    "metric": "compute",
+    "allowance": 400000,
+    "unit": "GB-seconds/month",
+    "source_url": "https://aws.amazon.com/free/compute/",
+    "checked_on": "2026-09-25",
+    "note": "Listed under AWS's 'Always Free' category (perpetual, not the 12-month free trial tier). Equivalent to up to 3.2 million seconds of compute time per month."
+  }
+]

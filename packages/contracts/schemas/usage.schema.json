@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bullpen.dev/schemas/usage.schema.json",
+  "title": "Weekly cost usage snapshot",
+  "description": "Actual usage against the allowances ledger for one ISO week. While status is 'pending', every usage value must be null: this file's numbers are filled in from provider dashboards at or after the end of the week, never invented ahead of time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["week", "period", "status", "usage"],
+  "properties": {
+    "week": {
+      "type": "string",
+      "pattern": "^\\d{4}-w\\d{2}$",
+      "description": "ISO week identifier, e.g. '2026-w40'."
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "end": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "measured"]
+    },
+    "note": {
+      "type": ["string", "null"]
+    },
+    "usage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["service", "metric", "value", "unit"],
+        "properties": {
+          "service": { "type": "string", "minLength": 1 },
+          "metric": { "type": "string", "minLength": 1 },
+          "value": {
+            "type": ["number", "null"],
+            "description": "The measured usage in `unit`. Must be null while status is 'pending'."
+          },
+          "unit": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "if": {
+    "type": "object",
+    "properties": { "status": { "const": "pending" } }
+  },
+  "then": {
+    "type": "object",
+    "properties": {
+      "usage": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": { "value": { "type": "null" } }
+        }
+      }
+    }
+  },
+  "else": {
+    "type": "object",
+    "properties": {
+      "usage": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": { "value": { "type": "number" } }
+        }
+      }
+    }
+  }
+}
