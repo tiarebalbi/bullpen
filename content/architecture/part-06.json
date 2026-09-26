@@ -185,7 +185,7 @@
   ],
   "groups": [],
   "request": {
-    "name": "An order, ranked on the leaderboard",
+    "name": "an order, ranked on the leaderboard",
     "steps": [
       { "edge": "trading-app-to-orders", "caption": "Submit", "detail": "Player submits a paper trade order from the ticket." },
       { "edge": "orders-to-queue", "caption": "Queue it", "detail": "Buffered for a sustainable processing rate." },

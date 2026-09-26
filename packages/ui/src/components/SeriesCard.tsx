@@ -33,10 +33,12 @@ const STATUS_TONE: Record<SeriesCardStatus, ChipTone> = {
   planned: "outline",
 };
 
+// Natural-case text (never shouted caps in the markup): a screen reader or
+// search engine should read "Published", not letters/a fabricated acronym.
 const STATUS_LABEL: Record<SeriesCardStatus, string> = {
-  published: "PUBLISHED",
-  next: "NEXT",
-  planned: "PLANNED",
+  published: "Published",
+  next: "Next",
+  planned: "Planned",
 };
 
 const CARD_STYLE: CSSProperties = {
@@ -64,7 +66,7 @@ export function SeriesCard({
   return (
     <div className={["bp-series-card", className].filter(Boolean).join(" ")} style={CARD_STYLE}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ font: "600 11px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>PART {part}</span>
+        <span style={{ font: "600 11px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>Part {part}</span>
         <Chip tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Chip>
       </div>
       <div

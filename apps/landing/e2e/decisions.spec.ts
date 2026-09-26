@@ -90,7 +90,7 @@ test.describe("Decisions", () => {
     await page.goto("/#adr-0002");
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("heading", { name: "Why Distribute at All" })).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "Why distribute at all" })).toBeVisible();
   });
 
   test("navigating to an ADR hash from elsewhere on the page opens it without a reload", async ({ page }) => {

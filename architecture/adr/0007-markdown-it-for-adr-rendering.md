@@ -1,4 +1,4 @@
-# ADR-0007: markdown-it for Rendering ADRs in the Decisions Modal
+# ADR-0007: markdown-it for rendering ADRs in the Decisions modal
 
 ## Status
 
@@ -73,7 +73,7 @@ the Architecture Explorer's `adrHrefs` fix already established.
 
 ## Links
 
-- ADR-0006 (React Flow for the Architecture Explorer) — the prior
+- ADR-0006 (React Flow for the architecture explorer) — the prior
   "pin the exact version, record the decision" precedent this ADR
   follows for a second UI-facing dependency.
 - `apps/landing/lib/adr.ts` — where `markdown-it` is used, and where the

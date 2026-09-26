@@ -17,7 +17,7 @@
       "label": "Player",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "A registered player who views live and historical prices and places paper trades.",
+      "purpose": "Views live and historical prices. Paper trades arrive in Part 4.",
       "x": 400,
       "y": 40
     },
@@ -105,7 +105,7 @@
   ],
   "groups": [],
   "request": {
-    "name": "A price request",
+    "name": "a price request",
     "steps": [
       { "edge": "trading-app-to-prices", "caption": "Ask for a live quote", "detail": "The trading app requests a live price snapshot from the Prices Service." },
       { "edge": "prices-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the (still TBD) market-data provider." },

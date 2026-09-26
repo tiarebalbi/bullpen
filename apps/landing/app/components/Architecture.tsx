@@ -22,9 +22,8 @@ export function Architecture({ parts, adrs }: { parts: ArchPartData[]; adrs: Adr
         <div className="bp-eyebrow">Architecture</div>
         <h2 id="architecture-heading">The system, part by part</h2>
         <p className="bp-section__lede">
-          Scrub through the series to watch the architecture change. Select any node for its purpose,
-          decisions and cost. Content comes from <code>content/architecture/</code>, checked against the
-          real CALM model on every build.
+          Scrub through the series to watch the architecture change. Select any part of the system to see
+          what it does and which decision put it there.
         </p>
       </div>
 

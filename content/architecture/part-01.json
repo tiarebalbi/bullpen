@@ -17,7 +17,7 @@
       "label": "Player",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "A registered player who opens the trading app to view prices and (in later parts) place paper trades.",
+      "purpose": "Opens the trading app to see live prices. Paper trades arrive in Part 4.",
       "x": 320,
       "y": 40
     },
@@ -74,7 +74,7 @@
   ],
   "groups": [],
   "request": {
-    "name": "A price request",
+    "name": "a price request",
     "steps": [
       { "edge": "trading-app-to-price-snapshot", "caption": "Ask for a quote", "detail": "The trading app requests a live BTC-USD snapshot." },
       { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to CoinGecko, Demo API key in a header, never the URL." },

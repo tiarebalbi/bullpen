@@ -151,7 +151,7 @@
   ],
   "groups": [],
   "request": {
-    "name": "An order, at market open",
+    "name": "an order, at market open",
     "steps": [
       { "edge": "trading-app-to-orders", "caption": "Submit", "detail": "Player submits a paper trade order from the ticket." },
       { "edge": "orders-to-queue", "caption": "Queue it", "detail": "Orders Service publishes the request onto the market-open queue instead of starting the saga directly." },

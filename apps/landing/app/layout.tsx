@@ -4,9 +4,9 @@ import "@bullpen/ui/styles.css";
 import "./landing.css";
 
 export const metadata: Metadata = {
-  title: "Bullpen — Architecting Software in 2026",
+  title: "Bullpen: Architecting Software in 2026, Built in Public",
   description:
-    "A paper-trading league, built in public. Part 1: the stack, the architecture record, the rules, and what it costs to run.",
+    "Bullpen is a paper-trading league built in public for Tiarê Balbi's series Architecting Software in 2026, with its architecture, decisions, checks and costs.",
 };
 
 // Applies the persisted (or default dark, matching the design) theme class

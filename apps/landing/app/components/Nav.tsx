@@ -48,7 +48,12 @@ export function Nav(): ReactNode {
     <header className="bp-nav">
       <div className="bp-nav__brand">
         <span className="bp-nav__wordmark">Bullpen</span>
-        <span className="bp-nav__byline">by Tiarê Balbi</span>
+        <a href="https://tiarebalbi.com" className="bp-nav__byline">
+          by Tiarê Balbi
+        </a>
+        <a href="https://tiarebalbi.com/en/blog" className="bp-nav__series-link">
+          Read the series
+        </a>
       </div>
       <nav
         id="bp-nav-links"

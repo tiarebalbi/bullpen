@@ -1,4 +1,4 @@
-# ADR-0002: Why Distribute at All
+# ADR-0002: Why distribute at all
 
 ## Status
 

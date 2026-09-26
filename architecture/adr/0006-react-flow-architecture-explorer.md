@@ -1,4 +1,4 @@
-# ADR-0006: React Flow for the Architecture Explorer
+# ADR-0006: React Flow for the architecture explorer
 
 ## Status
 

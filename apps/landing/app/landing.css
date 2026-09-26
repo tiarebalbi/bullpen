@@ -94,6 +94,26 @@ code {
 .bp-nav__byline {
   font: 500 12.5px/1 var(--font-body);
   color: var(--foreground-muted);
+  text-decoration: none;
+}
+.bp-nav__byline:hover {
+  color: var(--foreground);
+}
+.bp-nav__series-link {
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--bp-hair);
+  font: 600 12.5px/1 var(--font-body);
+  color: var(--foreground-muted);
+  text-decoration: none;
+}
+.bp-nav__series-link:hover {
+  color: var(--bp-accent-text);
+}
+@media (max-width: 640px) {
+  .bp-nav__series-link {
+    display: none;
+  }
 }
 .bp-nav__links {
   display: flex;
@@ -592,6 +612,23 @@ code {
 }
 .bp-bento__more table {
   margin-top: var(--space-4);
+}
+.bp-bento__later {
+  margin-top: var(--space-6);
+}
+.bp-bento__section-label {
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-bento__later ul {
+  margin: var(--space-3) 0 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--space-2);
+  font: 400 13.5px/1.5 var(--font-body);
+  color: var(--foreground-muted);
 }
 
 /* Decisions card: denser than the full-width list it replaced. */

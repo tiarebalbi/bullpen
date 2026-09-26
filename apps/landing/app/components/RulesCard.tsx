@@ -29,6 +29,7 @@ export function RulesCard({
           {passingCount} of {knownCount} passing at build time
         </span>
       </div>
+      <p className="bp-bento__note">I run these checks in CI on every push, and check them again at build time.</p>
 
       <div className="bp-rule-grid">
         {cards.map((card) => {

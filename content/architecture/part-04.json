@@ -140,7 +140,7 @@
   ],
   "groups": [],
   "request": {
-    "name": "An order",
+    "name": "an order",
     "steps": [
       { "edge": "trading-app-to-orders", "caption": "Submit", "detail": "Player submits a paper trade order from the ticket." },
       { "edge": "orders-to-saga", "caption": "Start the saga", "detail": "Orders Service hands the order to the durable workflow, one asynchronous step." },

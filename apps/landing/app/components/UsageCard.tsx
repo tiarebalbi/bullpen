@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { AllowanceEntry, UsageSnapshot } from "../../lib/cost.js";
 import { joinUsageWithAllowances } from "../../lib/cost.js";
+import { PART_1_SERVICES, humanUnit, metricLabel, pendingUsageNote, serviceLabel } from "../../lib/costDisplay.js";
 
 /**
  * Real usage stays 100% pending until week 40 actually happens (see
@@ -11,7 +12,8 @@ import { joinUsageWithAllowances } from "../../lib/cost.js";
  * numbers.
  */
 export function UsageCard({ allowances, usage }: { allowances: AllowanceEntry[]; usage: UsageSnapshot }): ReactNode {
-  const rows = joinUsageWithAllowances(allowances, usage);
+  const rows = joinUsageWithAllowances(allowances, usage).filter((row) => PART_1_SERVICES.has(row.allowance.service));
+  const note = pendingUsageNote(usage);
 
   return (
     <section id="cost-usage" className="bp-bento__card" aria-labelledby="cost-usage-heading">
@@ -28,15 +30,15 @@ export function UsageCard({ allowances, usage }: { allowances: AllowanceEntry[];
         {rows.map(({ entry, allowance }) => (
           <div key={`${entry.service}-${entry.metric}`} className="bp-usage-row">
             <div className="bp-usage-row__name">
-              <span className="bp-usage-row__service">{allowance.service}</span>
-              <span className="bp-usage-row__metric">{entry.metric.replace(/_/g, " ")}</span>
+              <span className="bp-usage-row__service">{serviceLabel(allowance.service)}</span>
+              <span className="bp-usage-row__metric">{metricLabel(entry.metric)}</span>
             </div>
             <div className="bp-usage-row__value">
               {entry.value === null ? (
                 <span className="bp-usage-row__pending">usage pending</span>
               ) : (
                 <span>
-                  {entry.value.toLocaleString("en-US")} / {allowance.allowance.toLocaleString("en-US")} {allowance.unit}
+                  {entry.value.toLocaleString("en-US")} / {allowance.allowance.toLocaleString("en-US")} {humanUnit(allowance.unit)}
                 </span>
               )}
             </div>
@@ -44,7 +46,7 @@ export function UsageCard({ allowances, usage }: { allowances: AllowanceEntry[];
         ))}
       </div>
 
-      {usage.note ? <p className="bp-bento__note">{usage.note}</p> : null}
+      {note ? <p className="bp-bento__note">{note}</p> : null}
     </section>
   );
 }

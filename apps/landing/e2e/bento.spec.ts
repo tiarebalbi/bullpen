@@ -96,13 +96,19 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
     await expect(details.locator("table tbody tr").first()).toBeHidden();
     await details.locator("summary").click();
     await expect(details.locator("table tbody tr").first()).toBeVisible();
-    await expect(details.locator("table tbody tr")).toHaveCount(22);
+    // Filtered to Part 1's real allowances (Vercel Hobby's 7 metrics +
+    // CoinGecko Demo's 2); the other 13 show up grouped in "Arrives in
+    // later parts" below, not as individual rows.
+    await expect(details.locator("table tbody tr")).toHaveCount(9);
+    await expect(details.locator(".bp-bento__later li")).toHaveCount(6);
   });
 
   test("Free-tier usage shows the real pending state for every real metric, with no bars", async ({ page }) => {
     const usage = page.locator("#cost-usage");
     await expect(usage.getByText("2026-w40", { exact: false })).toBeVisible();
-    await expect(usage.locator(".bp-usage-row")).toHaveCount(9);
+    // Filtered to Part 1's real services (Vercel Hobby + CoinGecko Demo) --
+    // Vercel Queues/Workflows rows belong to services that don't exist yet.
+    await expect(usage.locator(".bp-usage-row")).toHaveCount(6);
     await expect(usage.getByText("usage pending").first()).toBeVisible();
     await expect(usage.locator(".bp-meter")).toHaveCount(0);
   });

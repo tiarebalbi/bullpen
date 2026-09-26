@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import type { AllowanceEntry } from "../../lib/cost.js";
+import { PART_1_SERVICES, groupLaterServices, humanAllowance, metricLabel, serviceLabel } from "../../lib/costDisplay.js";
 
 export function CostCard({ allowances }: { allowances: AllowanceEntry[] }): ReactNode {
   const latestChecked = allowances.reduce((latest, a) => (a.checked_on > latest ? a.checked_on : latest), allowances[0]?.checked_on ?? "");
+  const part1Allowances = allowances.filter((a) => PART_1_SERVICES.has(a.service));
+  const laterServices = groupLaterServices(allowances);
 
   return (
     <section id="cost" className="bp-bento__card" aria-labelledby="cost-heading">
@@ -12,6 +15,10 @@ export function CostCard({ allowances }: { allowances: AllowanceEntry[] }): Reac
           <h2 id="cost-heading">What it costs to run</h2>
         </div>
       </div>
+      <p className="bp-bento__note">
+        I run Bullpen on free tiers. Here is what it has used so far against each allowance, with a link to
+        the page that states each limit.
+      </p>
 
       <div className="bp-cost-figures">
         <div>
@@ -28,11 +35,6 @@ export function CostCard({ allowances }: { allowances: AllowanceEntry[] }): Reac
         </div>
       </div>
 
-      <p className="bp-bento__note">
-        Each allowance is read from <code>cost/allowances.json</code> and checked against its schema at build time;
-        every figure links to the plan it was verified against.
-      </p>
-
       <details className="bp-bento__more">
         <summary>All {allowances.length} allowances and sources</summary>
         <table className="bp-table bp-table--cost">
@@ -45,13 +47,11 @@ export function CostCard({ allowances }: { allowances: AllowanceEntry[] }): Reac
             </tr>
           </thead>
           <tbody>
-            {allowances.map((entry) => (
+            {part1Allowances.map((entry) => (
               <tr key={`${entry.service}-${entry.metric}`}>
-                <td>{entry.service}</td>
-                <td>{entry.metric}</td>
-                <td>
-                  {entry.allowance.toLocaleString("en-US")} {entry.unit}
-                </td>
+                <td>{serviceLabel(entry.service)}</td>
+                <td>{metricLabel(entry.metric)}</td>
+                <td>{humanAllowance(entry)}</td>
                 <td>
                   <a href={entry.source_url} target="_blank" rel="noopener noreferrer">
                     source
@@ -62,6 +62,18 @@ export function CostCard({ allowances }: { allowances: AllowanceEntry[] }): Reac
             ))}
           </tbody>
         </table>
+
+        <div className="bp-bento__later">
+          <div className="bp-bento__section-label">Arrives in later parts</div>
+          <ul>
+            {laterServices.map((service) => (
+              <li key={service.service}>
+                {service.label}
+                {service.arrivesInPart ? ` — Part ${service.arrivesInPart}` : " — tracked ahead of time, not yet placed in the plan"}
+              </li>
+            ))}
+          </ul>
+        </div>
       </details>
     </section>
   );

@@ -12,8 +12,8 @@ describe("SeriesCard", () => {
         introduced="Monorepo skeleton, architecture-as-code, and BTC-USD live via CoinGecko."
       />,
     );
-    expect(screen.getByText("PART 1")).toBeInTheDocument();
-    expect(screen.getByText("NEXT")).toBeInTheDocument();
+    expect(screen.getByText("Part 1")).toBeInTheDocument();
+    expect(screen.getByText("Next")).toBeInTheDocument();
     expect(screen.getByText("Why distribute at all")).toBeInTheDocument();
     expect(screen.getByText(/Monorepo skeleton/)).toBeInTheDocument();
   });
