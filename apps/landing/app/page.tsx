@@ -7,14 +7,12 @@ import { loadCheckArchResult } from "../lib/check-arch.js";
 import { loadAllowances, loadUsage } from "../lib/cost.js";
 import { loadSeries } from "../lib/series.js";
 import { Architecture } from "./components/Architecture.js";
-import { Cost } from "./components/Cost.js";
-import { Decisions } from "./components/Decisions.js";
 import { Footer } from "./components/Footer.js";
 import { Hero } from "./components/Hero.js";
 import { MarketStripSection } from "./components/MarketStripSection.js";
 import { Nav } from "./components/Nav.js";
-import { Rules } from "./components/Rules.js";
 import { SeriesRail } from "./components/SeriesRail.js";
+import { StatusBento } from "./components/StatusBento.js";
 
 // No dynamic APIs (headers/cookies/searchParams) are read below, so Next
 // already prerenders this route statically; this just makes that explicit.
@@ -41,9 +39,7 @@ export default function LandingPage(): ReactNode {
         <MarketStripSection />
         <SeriesRail parts={series} />
         <Architecture parts={architectureParts} adrs={adrs} />
-        <Decisions adrs={adrs} />
-        <Rules adl={adl} checkArch={checkArch} />
-        <Cost allowances={allowances} usage={usage} />
+        <StatusBento adrs={adrs} adl={adl} checkArch={checkArch} allowances={allowances} usage={usage} />
       </main>
       <Footer />
     </>

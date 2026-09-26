@@ -85,3 +85,20 @@ export function parseAdl(content: string): Adl {
 export function loadAdl(filePath: string): Adl {
   return parseAdl(readFileSync(filePath, "utf8"));
 }
+
+export type AdlRuleToken = { text: string; keyword: boolean };
+
+// Longest first, so "NEVER DEPEND ON" matches whole rather than leaving a
+// stray "DEPEND ON" unmatched by a shorter, earlier alternative.
+const ADL_KEYWORDS = ["NEVER DEPEND ON", "DEFINED", "ASSERT"] as const;
+const KEYWORD_PATTERN = new RegExp(`(${ADL_KEYWORDS.join("|")})`, "g");
+
+/**
+ * Splits one real ASSERT rule's text into plain/keyword segments, so the
+ * Rules card can highlight structure.adl's actual vocabulary (never a
+ * fictional pseudocode-DSL) without hand-authoring markup per rule.
+ */
+export function tokenizeAdlRule(rule: string): AdlRuleToken[] {
+  const parts = rule.split(KEYWORD_PATTERN).filter((part) => part.length > 0);
+  return parts.map((text) => ({ text, keyword: (ADL_KEYWORDS as readonly string[]).includes(text) }));
+}

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseAllowances, parseUsage } from "./cost.js";
+import { joinUsageWithAllowances, parseAllowances, parseUsage } from "./cost.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 
@@ -50,5 +50,31 @@ describe("parseUsage", () => {
   it("throws a clear error on structurally invalid data", () => {
     const malformed = JSON.stringify({ week: "not-a-week", status: "unknown" });
     expect(() => parseUsage(malformed)).toThrow(/failed schema validation/);
+  });
+});
+
+describe("joinUsageWithAllowances", () => {
+  it("pairs every real usage metric with its real allowance", () => {
+    const allowances = parseAllowances(readFileSync(join(repoRoot, "cost", "allowances.json"), "utf8"));
+    const usage = parseUsage(readFileSync(join(repoRoot, "cost", "usage", "2026-w40.json"), "utf8"));
+
+    const rows = joinUsageWithAllowances(allowances, usage);
+    expect(rows.length).toBe(usage.usage.length);
+    for (const row of rows) {
+      expect(row.allowance.service).toBe(row.entry.service);
+      expect(row.allowance.metric).toBe(row.entry.metric);
+      expect(row.allowance.allowance).toBeGreaterThan(0);
+    }
+  });
+
+  it("throws when a usage metric has no matching allowance", () => {
+    const usage = {
+      week: "2026-w41",
+      period: { start: "2026-10-05", end: "2026-10-11" },
+      status: "pending" as const,
+      note: null,
+      usage: [{ service: "ghost-service", metric: "ghost-metric", value: null, unit: "x" }],
+    };
+    expect(() => joinUsageWithAllowances([], usage)).toThrow(/no "ghost-service"\/"ghost-metric" entry/);
   });
 });

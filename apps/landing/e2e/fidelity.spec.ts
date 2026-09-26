@@ -67,7 +67,10 @@ test.describe("landing fidelity at 1440px", () => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");
 
-    const emptyState = page.locator(".bp-empty-state");
+    // Scoped to the hero's own empty state, not just any ".bp-empty-state"
+    // on the page -- defensive against a second instance elsewhere ever
+    // reusing the same class and breaking this locator's strict mode.
+    const emptyState = page.locator(".bp-hero .bp-empty-state");
     await expect(emptyState).toBeVisible();
     await expect(emptyState).not.toContainText("Coinbase");
     await expect(emptyState).not.toContainText("blocked");
@@ -137,14 +140,14 @@ test.describe("landing fidelity at 1440px", () => {
 test.describe("landing fidelity at 390px", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("the touched sections (nav, hero, strip, series, architecture) don't cause horizontal overflow", async ({
+  test("the touched sections (nav, hero, strip, series, architecture, bento) don't cause horizontal overflow", async ({
     page,
   }) => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");
 
     const vw = 390;
-    for (const selector of [".bp-nav", ".bp-hero", ".bp-market-strip", "#series", "#architecture"]) {
+    for (const selector of [".bp-nav", ".bp-hero", ".bp-market-strip", "#series", "#architecture", ".bp-bento"]) {
       const right = await page.locator(selector).evaluate((el) => el.getBoundingClientRect().right);
       expect(right, `${selector} right edge`).toBeLessThanOrEqual(vw + 1);
     }
