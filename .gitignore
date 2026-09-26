@@ -9,3 +9,9 @@ coverage/
 .env.local
 .DS_Store
 .vercel/
+architecture/calm/generated/
+apps/landing/.generated/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
