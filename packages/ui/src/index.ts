@@ -22,6 +22,15 @@ export type { EmptyStateProps } from "./components/EmptyState.js";
 export { ErrorState } from "./components/ErrorState.js";
 export type { ErrorStateProps } from "./components/ErrorState.js";
 
+export { SeriesCard } from "./components/SeriesCard.js";
+export type { SeriesCardProps, SeriesCardStatus } from "./components/SeriesCard.js";
+
+export { MarketStrip } from "./components/MarketStrip.js";
+export type { MarketStripProps, MarketStripQuote, MarketStripStatus } from "./components/MarketStrip.js";
+
+export { ThemeToggle } from "./components/ThemeToggle.js";
+export type { ThemeToggleProps } from "./components/ThemeToggle.js";
+
 export { useReducedMotion } from "./lib/useReducedMotion.js";
 export { useNow } from "./lib/useNow.js";
 export { MINUS, fmt, signed, mono, badgeBg, formatTime } from "./lib/format.js";

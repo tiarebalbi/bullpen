@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ThemeToggle } from "./ui.js";
 import { LinkButton } from "./LinkButton.js";
+import { useTheme } from "../lib/useTheme.js";
 
 const LINKS: Array<{ href: string; label: string }> = [
   { href: "#series", label: "Series" },
@@ -19,9 +21,16 @@ const LINKS: Array<{ href: string; label: string }> = [
 // brand + links + CTA naturally need ~854px (694px of non-flex content +
 // 4 * 24px gaps + 2 * 32px padding) before they'd wrap on one line; 900px
 // gives a small safety margin above that measured minimum.
+//
+// DOM order here (brand, links, spacer, theme toggle, mobile menu button,
+// CTA) is the design's real desktop order (~line 47-60 of the export) read
+// left to right with no CSS `order` needed at desktop -- the design's own
+// live-player-count pill is omitted entirely (no real league yet, see
+// content/series.json/Hero), not just visually hidden.
 export function Nav(): ReactNode {
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const [theme, toggleTheme] = useTheme();
 
   useEffect(() => {
     if (!open) return;
@@ -41,21 +50,6 @@ export function Nav(): ReactNode {
         <span className="bp-nav__wordmark">Bullpen</span>
         <span className="bp-nav__byline">by Tiarê Balbi</span>
       </div>
-      <button
-        ref={toggleRef}
-        type="button"
-        className="bp-nav__toggle"
-        aria-expanded={open}
-        aria-controls="bp-nav-links"
-        aria-label={open ? "Close menu" : "Open menu"}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span aria-hidden="true" className="bp-nav__toggle-icon" />
-      </button>
-      <div className="bp-nav__spacer" />
-      <LinkButton href="#series" className="bp-nav__cta">
-        League opens in Part 3
-      </LinkButton>
       <nav
         id="bp-nav-links"
         aria-label="Page sections"
@@ -68,6 +62,22 @@ export function Nav(): ReactNode {
           </a>
         ))}
       </nav>
+      <div className="bp-nav__spacer" />
+      <ThemeToggle theme={theme} onToggle={toggleTheme} className="bp-nav__theme-toggle" />
+      <button
+        ref={toggleRef}
+        type="button"
+        className="bp-nav__toggle"
+        aria-expanded={open}
+        aria-controls="bp-nav-links"
+        aria-label={open ? "Close menu" : "Open menu"}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span aria-hidden="true" className="bp-nav__toggle-icon" />
+      </button>
+      <LinkButton href="#series" className="bp-nav__cta">
+        League opens in Part 3
+      </LinkButton>
     </header>
   );
 }

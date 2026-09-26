@@ -3,6 +3,26 @@ import { expect, test } from "@playwright/test";
 const SECTION_IDS = ["series", "architecture", "decisions", "rules", "cost"];
 
 test("landing page renders every section with no console/page errors", async ({ page }) => {
+  // The "Live prices" strip fetches apps/web's route cross-origin; mocked
+  // here so this test never depends on a real, deployed external service
+  // (and never trips CORS in a browser console during an unrelated smoke
+  // test -- see apps/landing/e2e/fidelity.spec.ts for the strip's own
+  // dedicated coverage).
+  await page.route("**/api/price/BTC-USD", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        symbol: "BTC-USD",
+        price: 65432.1,
+        changePercent: 2.34,
+        time: new Date().toISOString(),
+        source: "coingecko",
+        fetchedAt: new Date().toISOString(),
+      }),
+    }),
+  );
+
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   page.on("console", (msg) => {

@@ -10,6 +10,7 @@ import { Cost } from "./components/Cost.js";
 import { Decisions } from "./components/Decisions.js";
 import { Footer } from "./components/Footer.js";
 import { Hero } from "./components/Hero.js";
+import { MarketStripSection } from "./components/MarketStripSection.js";
 import { Nav } from "./components/Nav.js";
 import { Rules } from "./components/Rules.js";
 import { SeriesRail } from "./components/SeriesRail.js";
@@ -35,6 +36,7 @@ export default function LandingPage(): ReactNode {
       <Nav />
       <main>
         <Hero />
+        <MarketStripSection />
         <SeriesRail parts={series} />
         <Architecture plannedParts={series.filter((part) => part.part > 1)} />
         <Decisions adrs={adrs} />
