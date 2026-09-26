@@ -115,6 +115,39 @@ test.describe("Architecture Explorer", () => {
     await expect(groupLabel).toHaveCount(0);
   });
 
+  test("the group rect visually contains its member nodes, including after a resize", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    const groupRect = architecture.locator(".bp-arch-group__label", { hasText: "Prices Service" }).locator("..");
+    const service = architecture.getByRole("button", { name: "Prices Service, Service" });
+    const database = architecture.getByRole("button", { name: "Prices Database, Data" });
+
+    async function expectGroupContainsMembers() {
+      const groupBox = (await groupRect.boundingBox())!;
+      const serviceBox = (await service.boundingBox())!;
+      const dbBox = (await database.boundingBox())!;
+      for (const memberBox of [serviceBox, dbBox]) {
+        expect(memberBox.x).toBeGreaterThanOrEqual(groupBox.x - 1);
+        expect(memberBox.y).toBeGreaterThanOrEqual(groupBox.y - 1);
+        expect(memberBox.x + memberBox.width).toBeLessThanOrEqual(groupBox.x + groupBox.width + 1);
+        expect(memberBox.y + memberBox.height).toBeLessThanOrEqual(groupBox.y + groupBox.height + 1);
+      }
+    }
+
+    await expectGroupContainsMembers();
+
+    // The bug this regresses: the group rect was a separately
+    // absolutely-positioned overlay div using raw, untransformed data
+    // coordinates, so it didn't move with the canvas's own pan/zoom
+    // transform (which React Flow's fitView recalculates whenever the
+    // container resizes) -- it drifted away from its member nodes. Real
+    // React Flow parent/child nodes (sub-flows) share that transform.
+    await page.setViewportSize({ width: 1000, height: 900 });
+    await expectGroupContainsMembers();
+  });
+
   test("moving from part 2 to part 3 shows what was added and removed", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });

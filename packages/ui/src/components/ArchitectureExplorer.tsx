@@ -12,7 +12,8 @@ import "@xyflow/react/dist/style.css";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
-import type { ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
+import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
+import type { ArchGroupData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
 export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData } from "./ArchitectureExplorer.types.js";
 
@@ -27,8 +28,22 @@ export interface ArchitectureExplorerProps {
   className?: string;
 }
 
-const NODE_TYPES = { archNode: ArchitectureExplorerNode };
+const NODE_TYPES = { archNode: ArchitectureExplorerNode, archGroup: ArchitectureExplorerGroup };
 const EDGE_TYPES = { archEdge: ArchitectureExplorerEdge };
+const GROUP_NODE_WIDTH = 176;
+const GROUP_NODE_HEIGHT = 60;
+const GROUP_PAD = 24;
+
+/** Bounding box (in the same absolute coordinate space as node.x/y) around a group's real member nodes. */
+function groupBounds(group: ArchGroupData, nodesById: Map<string, ArchNodeData>): { x: number; y: number; width: number; height: number } | null {
+  const members = group.nodeIds.map((id) => nodesById.get(id)).filter((n): n is ArchNodeData => Boolean(n));
+  if (members.length === 0) return null;
+  const x0 = Math.min(...members.map((n) => n.x)) - GROUP_PAD;
+  const y0 = Math.min(...members.map((n) => n.y)) - GROUP_PAD - 16;
+  const x1 = Math.max(...members.map((n) => n.x + GROUP_NODE_WIDTH)) + GROUP_PAD;
+  const y1 = Math.max(...members.map((n) => n.y + GROUP_NODE_HEIGHT)) + GROUP_PAD;
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
 
 const REQUEST_STEP_MS = 1900;
 const SCRUB_PLAY_MS = 2400;
@@ -247,23 +262,64 @@ function ArchitectureExplorerInner({
     return set;
   }, [request, requestSteps, current.edges]);
 
-  const flowNodes: Node[] = displayNodes.map((n) => ({
-    id: n.id,
-    type: "archNode",
-    position: { x: n.x, y: n.y },
-    draggable: false,
-    selectable: false,
-    data: {
-      node: n,
-      visualState: nodeStates.get(n.id) ?? "same",
-      ghosted: current.status === "planned" && (nodeStates.get(n.id) ?? "same") !== "removed" && !builtNodeIds.has(n.id),
-      reduced,
-      dimmed: Boolean(selectedId) && selectedId !== n.id && !(request.on && touchedIds.has(n.id)),
-      touched: request.on && touchedIds.has(n.id),
-      showData,
-      onSelect: setSelectedId,
-    } satisfies ArchFlowNodeData,
-  }));
+  const groups = useMemo(() => (showQuanta ? current.groups : []), [showQuanta, current.groups]);
+
+  const nodesById = useMemo(() => new Map(displayNodes.map((n) => [n.id, n])), [displayNodes]);
+  const groupNodes: Node[] = useMemo(() => {
+    const out: Node[] = [];
+    for (const g of groups) {
+      const bounds = groupBounds(g, nodesById);
+      if (!bounds) continue;
+      out.push({
+        id: g.id,
+        type: "archGroup",
+        position: { x: bounds.x, y: bounds.y },
+        style: { width: bounds.width, height: bounds.height },
+        draggable: false,
+        selectable: false,
+        zIndex: -1,
+        data: { label: g.label } satisfies ArchFlowGroupData,
+      });
+    }
+    return out;
+  }, [groups, nodesById]);
+  const parentByNodeId = useMemo(() => {
+    const map = new Map<string, { id: string; x: number; y: number }>();
+    for (const g of groups) {
+      const bounds = groupBounds(g, nodesById);
+      if (!bounds) continue;
+      for (const id of g.nodeIds) map.set(id, { id: g.id, x: bounds.x, y: bounds.y });
+    }
+    return map;
+  }, [groups, nodesById]);
+
+  // Group containers must precede their members in the array -- React Flow
+  // requires a parent node to already be known when it processes a child
+  // that references it via parentId.
+  const flowNodes: Node[] = [
+    ...groupNodes,
+    ...displayNodes.map((n) => {
+      const parent = parentByNodeId.get(n.id);
+      return {
+        id: n.id,
+        type: "archNode",
+        position: parent ? { x: n.x - parent.x, y: n.y - parent.y } : { x: n.x, y: n.y },
+        parentId: parent?.id,
+        draggable: false,
+        selectable: false,
+        data: {
+          node: n,
+          visualState: nodeStates.get(n.id) ?? "same",
+          ghosted: current.status === "planned" && (nodeStates.get(n.id) ?? "same") !== "removed" && !builtNodeIds.has(n.id),
+          reduced,
+          dimmed: Boolean(selectedId) && selectedId !== n.id && !(request.on && touchedIds.has(n.id)),
+          touched: request.on && touchedIds.has(n.id),
+          showData,
+          onSelect: setSelectedId,
+        } satisfies ArchFlowNodeData,
+      };
+    }),
+  ];
 
   const flowEdges: Edge[] = displayEdges.map((e) => {
     const ghosted = current.status === "planned" && current.edges.some((ce) => ce.id === e.id) && !builtEdgeIds.has(e.id);
@@ -283,8 +339,6 @@ function ArchitectureExplorerInner({
       } satisfies ArchFlowEdgeData,
     };
   });
-
-  const groups = showQuanta ? current.groups : [];
 
   return (
     <div className={["bp-arch-explorer", className].filter(Boolean).join(" ")}>
@@ -356,7 +410,6 @@ function ArchitectureExplorerInner({
                 </defs>
               </svg>
             </ReactFlow>
-            <GroupOverlay groups={groups} nodes={displayNodes} />
           </div>
           {request.on && activeStep ? (
             <div
@@ -650,58 +703,6 @@ function Legend({ showType, planned }: { showType: boolean; planned: boolean }):
           Planned, ghosted
         </span>
       ) : null}
-    </div>
-  );
-}
-
-function GroupOverlay({ groups, nodes }: { groups: ArchPartData["groups"]; nodes: ArchNodeData[] }): ReactNode {
-  // Real, but currently always empty: no CALM moment models a "quanta"
-  // grouping yet (see ADR-0006), so this renders nothing today -- the
-  // toggle and this renderer both function correctly and will draw group
-  // rects the moment a part's data includes one.
-  if (groups.length === 0) return null;
-  const byId = new Map(nodes.map((n) => [n.id, n]));
-  return (
-    <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }} aria-hidden="true">
-      {groups.map((g) => {
-        const members = g.nodeIds.map((id) => byId.get(id)).filter((n): n is ArchNodeData => Boolean(n));
-        if (members.length === 0) return null;
-        const pad = 24;
-        const x0 = Math.min(...members.map((n) => n.x)) - pad;
-        const y0 = Math.min(...members.map((n) => n.y)) - pad - 16;
-        const x1 = Math.max(...members.map((n) => n.x + 176)) + pad;
-        const y1 = Math.max(...members.map((n) => n.y + 60)) + pad;
-        return (
-          <div
-            key={g.id}
-            style={{
-              position: "absolute",
-              left: x0,
-              top: y0,
-              width: x1 - x0,
-              height: y1 - y0,
-              borderRadius: 18,
-              background: "color-mix(in oklch, var(--foreground) 3%, transparent)",
-              border: "1px dashed color-mix(in oklch, var(--foreground) 16%, transparent)",
-            }}
-          >
-            <span
-              className="bp-arch-group__label"
-              style={{
-                position: "absolute",
-                left: 14,
-                top: 8,
-                font: "600 9.5px/1 var(--font-body)",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "var(--foreground-muted)",
-              }}
-            >
-              {g.label}
-            </span>
-          </div>
-        );
-      })}
     </div>
   );
 }
