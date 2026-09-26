@@ -86,10 +86,13 @@ code {
   display: none;
 }
 
-/* Below this width the design collapses the links into a menu button
-   (confirmed against Bullpen Landing.dc.html's 390px frame) rather than
-   wrapping them onto a second line. */
-@media (max-width: 640px) {
+/* Below this width the design collapses the links into a menu button and
+   drops the CTA from the header entirely (confirmed against Bullpen
+   Landing.dc.html's 390px frame; the CTA stays in the hero). 900px is
+   measured from this header's own content -- see the comment above the
+   Nav component -- not a value taken from the export, which has no coded
+   breakpoint of its own. */
+@media (max-width: 900px) {
   .bp-nav__links {
     display: none;
     order: 5;
@@ -106,7 +109,9 @@ code {
     order: 3;
   }
   .bp-nav__cta {
-    order: 4;
+    /* LinkButton sets display: inline-flex inline; !important matches the
+       pattern already used above (padding/font) to override it. */
+    display: none !important;
   }
   .bp-nav__toggle {
     order: 2;

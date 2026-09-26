@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LinkButton } from "./LinkButton.js";
 
 const LINKS: Array<{ href: string; label: string }> = [
@@ -11,10 +11,29 @@ const LINKS: Array<{ href: string; label: string }> = [
   { href: "#cost", label: "Cost" },
 ];
 
-// Bullpen Landing.dc.html collapses these links behind a menu button below
-// desktop width (confirmed against the final design export at 390px).
+// Bullpen Landing.dc.html collapses these links (and drops the header CTA
+// entirely) behind a menu button below desktop width -- confirmed against
+// the final design export at 390px. The export has no coded breakpoint of
+// its own (no @media rules, no documented breakpoint token anywhere in it),
+// so the 900px cutover here is measured from this component's own content:
+// brand + links + CTA naturally need ~854px (694px of non-flex content +
+// 4 * 24px gaps + 2 * 32px padding) before they'd wrap on one line; 900px
+// gives a small safety margin above that measured minimum.
 export function Nav(): ReactNode {
   const [open, setOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <header className="bp-nav">
@@ -23,6 +42,7 @@ export function Nav(): ReactNode {
         <span className="bp-nav__byline">by Tiarê Balbi</span>
       </div>
       <button
+        ref={toggleRef}
         type="button"
         className="bp-nav__toggle"
         aria-expanded={open}
