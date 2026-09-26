@@ -50,6 +50,22 @@ describe("GET /api/price/[symbol]", () => {
     expect((calledInit.headers as Record<string, string>)["x-cg-demo-api-key"]).toBe("test-demo-key");
   });
 
+  it("sets a scoped Access-Control-Allow-Origin for the landing app's cross-origin fetch", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(coinGeckoResponse(200, { bitcoin: { usd: 1, usd_24h_change: 0, last_updated_at: 1758870000 } })),
+    );
+
+    const response = await GET(new Request("http://localhost/api/price/BTC-USD"), withParams("BTC-USD"));
+
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("https://bullpen-landing.vercel.app");
+  });
+
+  it("also sets Access-Control-Allow-Origin on error responses", async () => {
+    const response = await GET(new Request("http://localhost/api/price/DOGE-USD"), withParams("DOGE-USD"));
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("https://bullpen-landing.vercel.app");
+  });
+
   it("sets Cache-Control matching the configured revalidate interval", async () => {
     vi.stubGlobal(
       "fetch",

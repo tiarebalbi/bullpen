@@ -26,12 +26,26 @@ const SUPPORTED_SYMBOLS: Record<string, string> = {
 
 const UPSTREAM_BASE = "https://api.coingecko.com/api/v3/simple/price";
 
+/**
+ * The landing app's own "Live prices" strip (apps/landing's
+ * MarketStripSection) fetches this route client-side, cross-origin --
+ * needs CORS, scoped to that one known origin rather than a wildcard.
+ * Configurable via env for preview/custom-domain deploys.
+ */
+const ALLOWED_ORIGIN = process.env.BULLPEN_LANDING_ORIGIN ?? "https://bullpen-landing.vercel.app";
+
+function withCors(response: NextResponse): NextResponse {
+  response.headers.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  response.headers.set("Vary", "Origin");
+  return response;
+}
+
 function jsonError(message: string, status: number, retryAfterSeconds?: number): NextResponse {
   const headers = new Headers();
   if (retryAfterSeconds !== undefined) {
     headers.set("Retry-After", String(retryAfterSeconds));
   }
-  return NextResponse.json({ error: message }, { status, headers });
+  return withCors(NextResponse.json({ error: message }, { status, headers }));
 }
 
 export async function GET(
@@ -102,9 +116,11 @@ export async function GET(
     return jsonError("Internal error building response.", 502);
   }
 
-  return NextResponse.json(snapshot, {
-    headers: {
-      "Cache-Control": `s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=${REVALIDATE_SECONDS * 2}`,
-    },
-  });
+  return withCors(
+    NextResponse.json(snapshot, {
+      headers: {
+        "Cache-Control": `s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=${REVALIDATE_SECONDS * 2}`,
+      },
+    }),
+  );
 }

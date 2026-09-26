@@ -24,3 +24,9 @@ a per-fetch Data Cache setting rather than route-segment `revalidate`
 (avoids a build-time call to CoinGecko). The configured interval is checked
 against the CoinGecko Demo plan's monthly call allowance by
 `architecture/fitness`'s budget check, part of `check:arch`.
+
+The route also serves apps/landing's "Live prices" strip directly
+(cross-origin, browser-side fetch), so it sets a scoped
+`Access-Control-Allow-Origin` for that one caller — `BULLPEN_LANDING_ORIGIN`
+env var, defaulting to `https://bullpen-landing.vercel.app`. Set it if
+landing is ever deployed at a different origin.
