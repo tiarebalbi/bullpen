@@ -23,6 +23,17 @@ test.describe("Decisions", () => {
   test.beforeEach(async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
+    // page.goto resolves on the browser's "load" event, which is not the
+    // same moment React finishes hydrating this page's heaviest client
+    // component (the React Flow Architecture Explorer). A CI trace of the
+    // hashchange test below showed window.location.hash being set (via
+    // page.evaluate) essentially the instant goto resolved, then *nothing*
+    // -- no error, no repaint, for the full 10s timeout -- consistent with
+    // DecisionsList's useSyncExternalStore hashchange listener (see
+    // DecisionsList.tsx) not being attached yet when that one-shot event
+    // fired, so it was simply never caught. Waiting for the network to go
+    // idle gives the client bundle real room to finish executing first.
+    await page.waitForLoadState("networkidle");
   });
 
   test("the list shows id, summary, part and status chip for every real ADR", async ({ page }) => {
