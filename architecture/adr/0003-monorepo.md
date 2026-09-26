@@ -12,6 +12,10 @@ Accepted
 
 One Turborepo monorepo, my call
 
+## Part
+
+1
+
 ## Context
 
 Bullpen already spans multiple deployables (a landing app and a trading app) and shared code (a data model, UI, config) that both depend on. Later parts of the series add more moving pieces — the order saga, the Rust ingestion service — that will need to evolve alongside shared contracts without every change becoming a multi-repo coordination exercise. The build/test tooling also needs to scale with the codebase: as more apps and packages are added, CI shouldn't have to rebuild and retest everything on every change.

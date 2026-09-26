@@ -12,6 +12,10 @@ Accepted
 
 BTC-USD from CoinGecko, with credit
 
+## Part
+
+1
+
 ## Context
 
 Issue #6 (one live symbol) originally proposed the Coinbase Exchange public

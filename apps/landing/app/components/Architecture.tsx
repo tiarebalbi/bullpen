@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Adr } from "../../lib/adr.js";
+import { adrHashId } from "../../lib/adrHashId.js";
 import type { ArchPartData } from "./ui.js";
 import { ArchitectureExplorer } from "./ui.js";
 
@@ -13,7 +14,7 @@ import { ArchitectureExplorer } from "./ui.js";
  */
 export function Architecture({ parts, adrs }: { parts: ArchPartData[]; adrs: Adr[] }): ReactNode {
   const adrTitles = Object.fromEntries(adrs.map((a) => [a.id, a.title]));
-  const adrHrefs = Object.fromEntries(adrs.map((a) => [a.id, `#adr-${a.id.replace("ADR-", "").toLowerCase()}`]));
+  const adrHrefs = Object.fromEntries(adrs.map((a) => [a.id, `#${adrHashId(a.id)}`]));
 
   return (
     <section id="architecture" className="bp-section bp-section--sunken" aria-labelledby="architecture-heading">
