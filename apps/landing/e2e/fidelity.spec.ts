@@ -85,6 +85,25 @@ test.describe("landing fidelity at 1440px", () => {
     await expect(page.getByTestId("market-strip-quote")).toHaveCount(0);
   });
 
+  test("the strip shows a loading placeholder before the route responds", async ({ page }) => {
+    await page.route("**/api/price/BTC-USD", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(LIVE_QUOTE) });
+    });
+    await page.goto("/");
+
+    await expect(page.getByTestId("market-strip-loading")).toBeVisible();
+    await expect(page.getByTestId("market-strip-quote")).toHaveCount(0);
+  });
+
+  test("the strip labels the quote stale once it's more than 10 minutes old", async ({ page }) => {
+    const elevenMinutesAgo = new Date(Date.now() - 11 * 60 * 1000).toISOString();
+    await mockPriceRoute(page, { ...LIVE_QUOTE, time: elevenMinutesAgo });
+    await page.goto("/");
+
+    await expect(page.getByTestId("market-strip-time")).toContainText("stale", { ignoreCase: true });
+  });
+
   test("six series cards render in one row", async ({ page }) => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");
@@ -100,14 +119,14 @@ test.describe("landing fidelity at 1440px", () => {
 test.describe("landing fidelity at 390px", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("the touched sections (nav, hero, strip, series) don't cause horizontal overflow", async ({
+  test("the touched sections (nav, hero, strip, series, architecture) don't cause horizontal overflow", async ({
     page,
   }) => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");
 
     const vw = 390;
-    for (const selector of [".bp-nav", ".bp-hero", ".bp-market-strip", "#series"]) {
+    for (const selector of [".bp-nav", ".bp-hero", ".bp-market-strip", "#series", "#architecture"]) {
       const right = await page.locator(selector).evaluate((el) => el.getBoundingClientRect().right);
       expect(right, `${selector} right edge`).toBeLessThanOrEqual(vw + 1);
     }
