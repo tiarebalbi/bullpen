@@ -33,8 +33,44 @@ open (200 with or without a `User-Agent` header), and public rate limits are
 ([docs.cdp.coinbase.com/exchange/introduction/rate-limits-overview](https://docs.cdp.coinbase.com/exchange/introduction/rate-limits-overview)).
 Neither of those is the blocker — the terms of use are.
 
+## CoinGecko Demo API — chosen
+
+Decision: BTC-USD live price comes from CoinGecko's free Demo API. Chosen
+directly by Tiare after Coinbase was ruled out; see ADR-0005 for the full
+record (context, consequences, rejected alternatives).
+
+Read 2026-09-26:
+
+- **Terms:** [API Terms of Service](https://www.coingecko.com/en/api_terms),
+  latest version **5 Sept 2025**.
+- **Attribution rule:** "you shall duly attribute ownership of the CoinGecko
+  API to CoinGecko by displaying prominently the message 'Powered by
+  CoinGecko' in a legible font ... no smaller than font size 10." The
+  [attribution guide](https://brand.coingecko.com/resources/attribution-guide)
+  additionally requires the credit be placed "close to where the data is
+  displayed, i.e. above or below the data set," linked to
+  `https://www.coingecko.com` or `https://www.coingecko.com/en/api`, and
+  forbids claiming a partnership ("we partner with CoinGecko," etc.) or
+  altering the CoinGecko logo.
+- **No-redistribution clause:** "you are not permitted to sell, rent, lease,
+  sub-license, re-distribute or syndicate access to the CoinGecko API or part
+  thereof." Bullpen's route only ever returns Bullpen's own one-symbol shape,
+  never the raw upstream payload, to stay inside this.
+- **Cache-refresh rule:** "You should refresh the cache at least every 24
+  hours" — i.e. a maximum staleness bound. Bullpen's 300s (5 min) cache is
+  far inside that.
+- **Demo plan limits**, from the
+  [pricing page](https://www.coingecko.com/en/api/pricing): **10,000 calls
+  per month**, **100 calls/min**, upstream data itself refreshed roughly
+  every 1–5 minutes, no historical depth needed for this use.
+- **Checked and ruled out:** a same-session first-pass read misreported a
+  "no commercial use" restriction on the Demo plan. Re-verified with an
+  exact-quote fetch against both the terms and pricing pages — that
+  restriction does not exist in either document. Not a blocker.
+
 ## Next step
 
-Needs a decision on a replacement provider before `apps/web`'s price route
-and page are implemented. `architecture/calm/moments/part-01.architecture.json`
-uses a placeholder "Market Data Provider" external system until then.
+None — the CoinGecko Demo integration is implemented in `apps/web` (issue
+#6). `architecture/calm/moments/part-01.architecture.json`'s external system
+node has been updated from the "Market Data Provider" placeholder to
+CoinGecko.
