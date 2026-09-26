@@ -36,6 +36,24 @@ test.describe("landing fidelity at 1440px", () => {
     expect(order[order.length - 1]).toContain("bp-nav__cta");
   });
 
+  test("nav links scroll smoothly to their section, not an instant jump", async ({ page }) => {
+    await mockPriceRoute(page, LIVE_QUOTE);
+    await page.goto("/");
+
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe("smooth");
+
+    await page.getByRole("navigation", { name: "Page sections" }).getByRole("link", { name: "Cost" }).click();
+    await expect(page.locator("#cost")).toBeInViewport();
+  });
+
+  test("respects prefers-reduced-motion: nav links jump instead of animating the scroll", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await mockPriceRoute(page, LIVE_QUOTE);
+    await page.goto("/");
+
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe("auto");
+  });
+
   test("header and hero left edges line up (one container)", async ({ page }) => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");

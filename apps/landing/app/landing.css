@@ -20,6 +20,17 @@ body {
   font-family: var(--font-body);
 }
 
+/* The nav's section links (#series, #architecture, ...) are plain same-page
+   anchors; without this they jump instantly instead of scrolling. */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 a {
   color: inherit;
 }
