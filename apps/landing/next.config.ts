@@ -19,6 +19,19 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
+  async redirects() {
+    return [
+      {
+        // The production .vercel.app alias (see apps/web's CORS route,
+        // PRODUCTION_LANDING_ORIGIN) must never be indexed as a second
+        // copy of this site -- send it to the real custom domain.
+        source: "/:path*",
+        has: [{ type: "host", value: "bullpen-landing.vercel.app" }],
+        destination: "https://bullpen.tiarebalbi.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

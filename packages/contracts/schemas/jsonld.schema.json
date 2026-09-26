@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bullpen.dev/schemas/jsonld.schema.json",
+  "title": "Bullpen landing JSON-LD graph",
+  "description": "A minimal, intentionally narrow check on the WebSite + CreativeWorkSeries JSON-LD this landing page emits -- not a general schema.org validator.",
+  "type": "object",
+  "required": ["@context", "@graph"],
+  "properties": {
+    "@context": { "const": "https://schema.org" },
+    "@graph": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["@type"],
+        "properties": {
+          "@type": { "type": "string" }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": ["@type", "name", "url"],
+            "properties": {
+              "@type": { "const": "WebSite" },
+              "name": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "pattern": "^https://" }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["@type", "name", "author", "inLanguage"],
+            "properties": {
+              "@type": { "const": "CreativeWorkSeries" },
+              "name": { "type": "string", "minLength": 1 },
+              "inLanguage": { "type": "string", "minLength": 1 },
+              "author": {
+                "type": "object",
+                "required": ["@type", "name", "url"],
+                "properties": {
+                  "@type": { "const": "Person" },
+                  "name": { "type": "string", "minLength": 1 },
+                  "url": { "type": "string", "pattern": "^https://" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
