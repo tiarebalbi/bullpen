@@ -23,4 +23,5 @@ export { ErrorState } from "./components/ErrorState.js";
 export type { ErrorStateProps } from "./components/ErrorState.js";
 
 export { useReducedMotion } from "./lib/useReducedMotion.js";
+export { useNow } from "./lib/useNow.js";
 export { MINUS, fmt, signed, mono, badgeBg, formatTime } from "./lib/format.js";

@@ -1,8 +1,11 @@
-export default function TradingPage() {
+import type { ReactNode } from "react";
+import { PriceTicker } from "./components/PriceTicker.js";
+
+export default function TradingPage(): ReactNode {
   return (
     <main>
       <h1>Bullpen</h1>
-      <p>Live symbol pending a compliant market-data source (see issue #6).</p>
+      <PriceTicker symbol="BTC-USD" />
     </main>
   );
 }
