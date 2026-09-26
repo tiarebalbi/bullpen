@@ -3,7 +3,7 @@
 // build input. `generated/` is a build artifact (gitignored) — this script
 // is what makes it reproducible, not the committed source of truth.
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,5 +30,24 @@ execFileSync(
 );
 
 mkdirSync(destDir, { recursive: true });
-copyFileSync(source, dest);
-console.log(`Copied ${source} -> ${dest}`);
+
+// docify's SVG export needs a local Chrome/Chromium to render mermaid
+// diagrams; on a build host without one (confirmed: Vercel's build image)
+// it logs a warning and degrades to mermaid code blocks instead of failing,
+// so `source` may legitimately not exist here. That's not this script's
+// job to fix (see docify's own --browser-path option for that) -- when it
+// happens, keep whatever part-01.svg is already committed (regenerated
+// locally or in CI, where a browser is available) rather than crashing the
+// whole app build over an optional diagram refresh.
+if (existsSync(source)) {
+  copyFileSync(source, dest);
+  console.log(`Copied ${source} -> ${dest}`);
+} else if (existsSync(dest)) {
+  console.warn(
+    `WARNING: ${source} was not produced (no browser available for docify's SVG export) -- keeping the already-committed ${dest} as-is.`,
+  );
+} else {
+  throw new Error(
+    `${source} was not produced and no existing ${dest} is committed to fall back to -- the landing page has no diagram to render.`,
+  );
+}
