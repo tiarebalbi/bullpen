@@ -25,6 +25,14 @@ export interface SeriesPart {
 const VALID_STATUS = new Set<string>(["published", "next", "planned"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+// The design's series card has room for two lines of title and two lines
+// of "Introduced" text before it breaks the card layout -- these budgets
+// are measured from that card, not picked arbitrarily. Enforced here
+// (not just eyeballed at write time) so a future edit that blows the
+// budget fails loudly instead of quietly breaking the card.
+export const TITLE_MAX_LENGTH = 28;
+export const INTRODUCED_MAX_LENGTH = 60;
+
 /**
  * Parses `content/series.json` (the six-part series roadmap) from its raw
  * text content. Throws a descriptive error for anything that isn't a valid
@@ -59,6 +67,11 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
   if (typeof title !== "string" || title.trim().length === 0) {
     throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is missing a non-empty "title" string`);
   }
+  if (title.length > TITLE_MAX_LENGTH) {
+    throw new Error(
+      `${sourceLabel}: entry ${index} (part ${part}) has a "title" of ${title.length} characters, over the ${TITLE_MAX_LENGTH}-character card budget: ${JSON.stringify(title)}`,
+    );
+  }
   if (typeof status !== "string" || !VALID_STATUS.has(status)) {
     throw new Error(
       `${sourceLabel}: entry ${index} (part ${part}) has an invalid "status" (expected "published", "next" or "planned", got ${JSON.stringify(status)})`,
@@ -69,6 +82,11 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
   }
   if (typeof introduced !== "string" || introduced.trim().length === 0) {
     throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is missing a non-empty "introduced" string`);
+  }
+  if (introduced.length > INTRODUCED_MAX_LENGTH) {
+    throw new Error(
+      `${sourceLabel}: entry ${index} (part ${part}) has an "introduced" line of ${introduced.length} characters, over the ${INTRODUCED_MAX_LENGTH}-character card budget: ${JSON.stringify(introduced)}`,
+    );
   }
   if (date !== null && (typeof date !== "string" || !DATE_PATTERN.test(date))) {
     throw new Error(

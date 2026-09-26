@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseSeries } from "./series.js";
+import { INTRODUCED_MAX_LENGTH, TITLE_MAX_LENGTH, parseSeries } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 
 describe("parseSeries", () => {
-  it("parses the real content/series.json", () => {
+  it("parses the real content/series.json, within the design's card copy budget", () => {
     const content = readFileSync(join(repoRoot, "content", "series.json"), "utf8");
     const parts = parseSeries(content);
 
@@ -19,6 +19,39 @@ describe("parseSeries", () => {
       expect(part.title.length).toBeGreaterThan(0);
       expect(part.introduced.length).toBeGreaterThan(0);
     }
+    for (const part of parts) {
+      expect(part.title.length).toBeLessThanOrEqual(TITLE_MAX_LENGTH);
+      expect(part.introduced.length).toBeLessThanOrEqual(INTRODUCED_MAX_LENGTH);
+    }
+  });
+
+  it("throws when a title exceeds the card's title budget", () => {
+    const malformed = JSON.stringify([
+      {
+        part: 1,
+        title: "A title so long it will never fit the design's two-line card",
+        status: "next",
+        url: "",
+        introduced: "Y",
+        date: null,
+      },
+    ]);
+    expect(() => parseSeries(malformed)).toThrow(/over the 28-character card budget/);
+  });
+
+  it("throws when an introduced line exceeds the card's introduced budget", () => {
+    const malformed = JSON.stringify([
+      {
+        part: 1,
+        title: "X",
+        status: "next",
+        url: "",
+        introduced:
+          "An introduced line so long it will never fit inside the design's two-line budget for this card",
+        date: null,
+      },
+    ]);
+    expect(() => parseSeries(malformed)).toThrow(/over the 60-character card budget/);
   });
 
   it("throws a clear error on invalid JSON", () => {

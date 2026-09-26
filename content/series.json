@@ -5,7 +5,7 @@
     "status": "next",
     "url": "",
     "date": null,
-    "introduced": "Monorepo skeleton, architecture-as-code (ADRs, ADL, CALM), and BTC-USD live via CoinGecko."
+    "introduced": "One deployable, live BTC-USD"
   },
   {
     "part": 2,
@@ -13,15 +13,15 @@
     "status": "planned",
     "url": "",
     "date": null,
-    "introduced": "An interactive architecture explorer, reading the CALM timeline directly."
+    "introduced": "Describe, govern and remember the design"
   },
   {
     "part": 3,
-    "title": "Data ownership and the first split",
+    "title": "Who owns the data",
     "status": "planned",
     "url": "",
     "date": null,
-    "introduced": "The price-snapshot service splits into a Prices Service and a Market History Service, each with its own database."
+    "introduced": "Orders and Ledger split, and a queue"
   },
   {
     "part": 4,
@@ -29,7 +29,7 @@
     "status": "planned",
     "url": "",
     "date": null,
-    "introduced": "An Orders Service, a workflow engine orchestrating the saga, and a Ledger Service owning balances."
+    "introduced": "Fills, cancels and retries"
   },
   {
     "part": 5,
@@ -37,7 +37,7 @@
     "status": "planned",
     "url": "",
     "date": null,
-    "introduced": "A queue absorbs the market-open order burst; per-node cost starts appearing on the architecture itself."
+    "introduced": "A load test, and cost as a check"
   },
   {
     "part": 6,
@@ -45,6 +45,6 @@
     "status": "planned",
     "url": "",
     "date": null,
-    "introduced": "A Leaderboard Service, real Alpaca/Massive stock data, Stripe's role defined -- the retrospective part."
+    "introduced": "The diff and the full bill"
   }
 ]
