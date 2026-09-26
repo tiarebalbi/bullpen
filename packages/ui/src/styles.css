@@ -91,3 +91,97 @@
     transition: none;
   }
 }
+
+/* ── ArchitectureExplorer ──────────────────────────────────────
+   Ported from bullpen.js's renderDiagram() -- the design's own SVG
+   diagram engine (Bullpen Architecture.dc.html / Architecture Page.dc.html).
+   Full motion: nodes grow in / strike-through-then-fade out / ring-pulse
+   when changed. Reduced motion: opacity-only fades, a static dashed ring,
+   no strike animation -- a real cross-fade between states, never a
+   transform. ArchitectureExplorer itself decides which class to apply
+   (via useReducedMotion()), so these rules don't need their own
+   `prefers-reduced-motion` query -- unlike the loops above, whose classes
+   are applied unconditionally by other components. */
+@keyframes bp-arch-grow {
+  from { opacity: 0; transform: scale(0.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+.bp-arch-node--added {
+  animation: bp-arch-grow 560ms 260ms both cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bp-arch-node--added-reduced {
+  animation: bp-arch-fade-in 400ms both;
+}
+
+@keyframes bp-arch-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes bp-arch-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.bp-arch-node--removed {
+  animation: bp-arch-fade-out 900ms 320ms both;
+}
+.bp-arch-node--removed-reduced {
+  animation: bp-arch-fade-out 400ms both;
+}
+
+@keyframes bp-arch-strike {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.bp-arch-node__strike {
+  animation: bp-arch-strike 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  transform-origin: left center;
+}
+.bp-arch-node__strike--reduced {
+  animation: none;
+  transform: scaleX(1);
+}
+
+@keyframes bp-arch-ring {
+  from { opacity: 0.9; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.14); }
+}
+.bp-arch-node__ring {
+  animation: bp-arch-ring 900ms cubic-bezier(0.23, 1, 0.32, 1) 2;
+}
+.bp-arch-node__ring--reduced {
+  animation: none;
+  border-style: dashed !important;
+}
+
+/* Sync edges: a solid line plus this dashed overlay, sliding along the
+   path -- the design's "flowing call" cue (bp-flow in the .dc.html). */
+@keyframes bp-arch-flow {
+  to { stroke-dashoffset: -24; }
+}
+.bp-arch-edge__flow {
+  animation: bp-arch-flow 1400ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-arch-node--added,
+  .bp-arch-node--removed,
+  .bp-arch-node__ring,
+  .bp-arch-edge__flow {
+    animation: none;
+  }
+}
+
+/* Below this width (matching the 900px breakpoint the rest of the landing
+   page uses -- see apps/landing/app/landing.css) the canvas + side panel
+   two-column grid can't fit: canvas and side panel stack instead, matching
+   Architecture Page.dc.html's mobile "overview" tab (diagram on top, its
+   detail/what-changed panel below). !important overrides the component's
+   own inline desktop layout styles. */
+@media (max-width: 900px) {
+  .bp-arch-explorer__grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .bp-arch-explorer__canvas {
+    height: 360px !important;
+  }
+}

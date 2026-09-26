@@ -26,7 +26,20 @@ against the CoinGecko Demo plan's monthly call allowance by
 `architecture/fitness`'s budget check, part of `check:arch`.
 
 The route also serves apps/landing's "Live prices" strip directly
-(cross-origin, browser-side fetch), so it sets a scoped
-`Access-Control-Allow-Origin` for that one caller — `BULLPEN_LANDING_ORIGIN`
-env var, defaulting to `https://bullpen-landing.vercel.app`. Set it if
-landing is ever deployed at a different origin.
+(cross-origin, browser-side fetch), so it validates the request's `Origin`
+header against an allow-list and echoes back that exact origin (never a
+wildcard): production's `.vercel.app` alias (`BULLPEN_LANDING_ORIGIN` env
+var, defaulting to `https://bullpen-landing.vercel.app`), landing's custom
+production domain (`BULLPEN_LANDING_CUSTOM_ORIGIN` env var, defaulting to
+`https://bullpen.tiarebalbi.com`), plus a pattern matching landing's own
+Vercel preview URLs (`bullpen-landing-<branch-or-hash>-tiare-balbis-
+projects.vercel.app`). Update the relevant env var if either production
+origin ever changes, or the preview pattern in `route.ts` if the Vercel
+team slug changes.
+
+**Important:** for `NEXT_PUBLIC_BULLPEN_WEB_URL` (set on the **landing**
+project, not here) and any preview of `bullpen-web` itself to matter, this
+CORS logic has to actually be deployed — i.e. this PR needs to merge to
+`main` before a landing preview can successfully call *production*
+`bullpen-web` (previews of landing don't get their own preview of
+`bullpen-web`; they always call the production one).

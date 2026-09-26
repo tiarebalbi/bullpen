@@ -5,7 +5,7 @@
 The brief for this build proposed `GET https://api.exchange.coinbase.com/products/BTC-USD/ticker`
 (no API key, public endpoint) for the Part 1 live symbol.
 
-Before writing any code against it, we read Coinbase's
+Before writing any code against it, I read Coinbase's
 [Market Data Terms of Use](https://www.coinbase.com/legal/market_data)
 (last updated 2023-02-06). They govern all data made available via Coinbase,
 including the free/public Exchange endpoints — there is no carve-out for
@@ -23,7 +23,7 @@ unauthenticated access. Two clauses block this project's use case directly:
 
 Bullpen is a public leaderboard/trading page serving prices to visitors —
 exactly what both clauses prohibit. Per this project's own guardrail ("if
-the market-data terms forbid public display, stop"), we stopped: the live
+the market-data terms forbid public display, stop"), I stopped: the live
 BTC-USD feature (issue #6) is on hold until an alternative source is chosen
 whose terms explicitly permit public display with attribution.
 

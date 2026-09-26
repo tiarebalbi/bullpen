@@ -1,4 +1,4 @@
-# ADR-0002: Why Distribute at All
+# ADR-0002: Why distribute at all
 
 ## Status
 
@@ -7,6 +7,14 @@ Accepted
 ## Date
 
 2026-09-25
+
+## Summary
+
+Every split must earn one of five reasons
+
+## Part
+
+1
 
 ## Context
 

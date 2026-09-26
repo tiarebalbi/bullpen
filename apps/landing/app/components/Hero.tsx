@@ -22,9 +22,9 @@ export function Hero(): ReactNode {
           Architecting software in 2026, <span className="bp-accent">built in public</span>
         </h1>
         <p className="bp-hero__sub">
-          A paper-trading league: play money, real US stocks and crypto at live prices, and a live
-          leaderboard. Built in public for the blog series <em>Architecting Software in 2026</em>, one
-          part at a time.
+          A paper-trading league with play money, live crypto prices, and U.S. stocks from Part 6. It is
+          also the system I&rsquo;m designing in the open for the series{" "}
+          <em>Architecting Software in 2026</em>, one part a week.
         </p>
         <div className="bp-hero__ctas">
           <LinkButton variant="primary" href="#series">

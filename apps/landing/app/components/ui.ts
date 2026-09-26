@@ -25,6 +25,7 @@ export {
   SeriesCard,
   MarketStrip,
   ThemeToggle,
+  ArchitectureExplorer,
 } from "@bullpen/ui";
 export type {
   ButtonProps,
@@ -46,4 +47,6 @@ export type {
   MarketStripQuote,
   MarketStripStatus,
   ThemeToggleProps,
+  ArchitectureExplorerProps,
+  ArchPartData,
 } from "@bullpen/ui";

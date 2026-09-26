@@ -2,18 +2,17 @@ import { join } from "node:path";
 import type { ReactNode } from "react";
 import { loadAdl } from "../lib/adl.js";
 import { loadAdrs } from "../lib/adr.js";
+import { loadArchitectureParts } from "../lib/architecture.js";
 import { loadCheckArchResult } from "../lib/check-arch.js";
 import { loadAllowances, loadUsage } from "../lib/cost.js";
 import { loadSeries } from "../lib/series.js";
 import { Architecture } from "./components/Architecture.js";
-import { Cost } from "./components/Cost.js";
-import { Decisions } from "./components/Decisions.js";
 import { Footer } from "./components/Footer.js";
 import { Hero } from "./components/Hero.js";
 import { MarketStripSection } from "./components/MarketStripSection.js";
 import { Nav } from "./components/Nav.js";
-import { Rules } from "./components/Rules.js";
 import { SeriesRail } from "./components/SeriesRail.js";
+import { StatusBento } from "./components/StatusBento.js";
 
 // No dynamic APIs (headers/cookies/searchParams) are read below, so Next
 // already prerenders this route statically; this just makes that explicit.
@@ -26,6 +25,7 @@ const repoRoot = join(process.cwd(), "..", "..");
 export default function LandingPage(): ReactNode {
   const series = loadSeries(join(repoRoot, "content", "series.json"));
   const adrs = loadAdrs(join(repoRoot, "architecture", "adr"));
+  const architectureParts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
   const adl = loadAdl(join(repoRoot, "architecture", "adl", "structure.adl"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
   const usage = loadUsage(join(repoRoot, "cost", "usage", "2026-w40.json"));
@@ -38,10 +38,8 @@ export default function LandingPage(): ReactNode {
         <Hero />
         <MarketStripSection />
         <SeriesRail parts={series} />
-        <Architecture plannedParts={series.filter((part) => part.part > 1)} />
-        <Decisions adrs={adrs} />
-        <Rules adl={adl} checkArch={checkArch} />
-        <Cost allowances={allowances} usage={usage} />
+        <Architecture parts={architectureParts} adrs={adrs} />
+        <StatusBento adrs={adrs} adl={adl} checkArch={checkArch} allowances={allowances} usage={usage} />
       </main>
       <Footer />
     </>

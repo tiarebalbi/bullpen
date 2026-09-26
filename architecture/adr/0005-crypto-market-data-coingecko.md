@@ -1,4 +1,4 @@
-# ADR-0005: Crypto Market Data from CoinGecko Demo
+# ADR-0005: Crypto prices from CoinGecko
 
 ## Status
 
@@ -8,10 +8,18 @@ Accepted
 
 2026-09-26
 
+## Summary
+
+BTC-USD from CoinGecko, with credit
+
+## Part
+
+1
+
 ## Context
 
 Issue #6 (one live symbol) originally proposed the Coinbase Exchange public
-REST API for BTC-USD. Before writing any code against it, we read Coinbase's
+REST API for BTC-USD. Before writing any code against it, I read Coinbase's
 [Market Data Terms of Use](https://www.coinbase.com/legal/market_data),
 which forbid redistributing or displaying Market Data — including from the
 free/public Exchange endpoints — to any third party outside the operator's

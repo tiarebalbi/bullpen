@@ -1,0 +1,80 @@
+{
+  "part": 2,
+  "status": "planned",
+  "summary": "Prediction, not yet built: no new runtime nodes over Part 1 -- the landing app gains an in-browser architecture explorer reading the CALM timeline directly.",
+  "nodes": [
+    {
+      "id": "reader",
+      "label": "Reader",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A blog reader who now also explores Bullpen's own architecture timeline on the landing site.",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "player",
+      "label": "Player",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "Opens the trading app to see live prices. Paper trades arrive in Part 4.",
+      "x": 320,
+      "y": 40
+    },
+    {
+      "id": "landing-app",
+      "label": "Bullpen Landing",
+      "kind": "app",
+      "meta": "Static",
+      "purpose": "The public landing site, now rendering an in-browser architecture explorer that reads the docify-generated CALM diagrams and timeline for every part.",
+      "x": 40,
+      "y": 220,
+      "costNote": "Planned"
+    },
+    {
+      "id": "trading-app",
+      "label": "Bullpen Trading App",
+      "kind": "app",
+      "meta": "Next.js",
+      "purpose": "The trading app where players view live prices and place paper trades.",
+      "x": 320,
+      "y": 220,
+      "costNote": "Planned"
+    },
+    {
+      "id": "price-snapshot-service",
+      "label": "Price Snapshot Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Serverless function backing GET /api/price/[symbol]; fetches a point-in-time price for a symbol from the external market-data provider.",
+      "x": 320,
+      "y": 400,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-data-provider",
+      "label": "Market Data Provider",
+      "kind": "ext",
+      "meta": "TBD",
+      "purpose": "External market-data API Bullpen calls for live price snapshots. Provider still TBD pending a terms-of-use-compliant choice.",
+      "x": 320,
+      "y": 580,
+      "costNote": "Planned"
+    }
+  ],
+  "edges": [
+    { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
+    { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
+    { "id": "trading-app-to-price-snapshot", "a": "trading-app", "b": "price-snapshot-service", "type": "sync" },
+    { "id": "price-snapshot-to-market-data", "a": "price-snapshot-service", "b": "market-data-provider", "type": "sync" }
+  ],
+  "groups": [],
+  "request": {
+    "name": "a price request",
+    "steps": [
+      { "edge": "trading-app-to-price-snapshot", "caption": "Ask for a quote", "detail": "The trading app requests a live price snapshot." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the (still TBD) market-data provider." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Return the snapshot", "detail": "Bullpen's own shape, never the raw upstream payload.", "reverse": true }
+    ]
+  }
+}

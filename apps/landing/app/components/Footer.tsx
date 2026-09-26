@@ -4,11 +4,10 @@ export function Footer(): ReactNode {
   return (
     <footer className="bp-footer">
       <p>
-        Bullpen is Part 1 of <em>Architecting Software in 2026</em>, a blog series built in public by Tiarê
-        Balbi. Nothing beyond this page is published yet — the trading app, the rest of the series, and the
-        live league all open in later parts.
+        I&rsquo;m building Bullpen in public as the working example for my series{" "}
+        <em>Architecting Software in 2026</em>. Paper trading. Play money. Not investment advice.
       </p>
-      <p>Live market data: BTC-USD price via CoinGecko. Alpaca (US stocks) arrives in a later part.</p>
+      <p>Market data: crypto by CoinGecko. U.S. stocks by Alpaca, from Part 6.</p>
     </footer>
   );
 }

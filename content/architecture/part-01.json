@@ -1,0 +1,84 @@
+{
+  "part": 1,
+  "status": "built",
+  "summary": "What actually runs today: two Next.js apps and one serverless function, calling CoinGecko for BTC-USD.",
+  "nodes": [
+    {
+      "id": "reader",
+      "label": "Reader",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A blog reader who lands on the public site to learn about Bullpen.",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "player",
+      "label": "Player",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "Opens the trading app to see live prices. Paper trades arrive in Part 4.",
+      "x": 320,
+      "y": 40
+    },
+    {
+      "id": "landing-app",
+      "label": "Bullpen Landing",
+      "kind": "app",
+      "meta": "Static",
+      "purpose": "The public landing site (apps/landing) that introduces Bullpen to readers of the blog series.",
+      "x": 40,
+      "y": 220,
+      "adrs": ["ADR-0003"],
+      "costNote": "Free tier (Hobby)"
+    },
+    {
+      "id": "trading-app",
+      "label": "Bullpen Trading App",
+      "kind": "app",
+      "meta": "Next.js",
+      "purpose": "The trading app (apps/web) where players view live prices and will place paper trades.",
+      "x": 320,
+      "y": 220,
+      "adrs": ["ADR-0001", "ADR-0003"],
+      "costNote": "Free tier (Hobby)"
+    },
+    {
+      "id": "price-snapshot-service",
+      "label": "Price Snapshot Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Serverless function backing GET /api/price/[symbol] in apps/web; fetches a point-in-time price for a symbol from the external market-data provider and returns it to the trading app.",
+      "x": 320,
+      "y": 400,
+      "adrs": ["ADR-0002", "ADR-0005"],
+      "costNote": "Free tier (Hobby)"
+    },
+    {
+      "id": "market-data-provider",
+      "label": "CoinGecko",
+      "kind": "ext",
+      "meta": "Demo API",
+      "purpose": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use.",
+      "x": 320,
+      "y": 580,
+      "adrs": ["ADR-0005"],
+      "costNote": "Free tier"
+    }
+  ],
+  "edges": [
+    { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
+    { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
+    { "id": "trading-app-to-price-snapshot", "a": "trading-app", "b": "price-snapshot-service", "type": "sync" },
+    { "id": "price-snapshot-to-market-data", "a": "price-snapshot-service", "b": "market-data-provider", "type": "sync" }
+  ],
+  "groups": [],
+  "request": {
+    "name": "a price request",
+    "steps": [
+      { "edge": "trading-app-to-price-snapshot", "caption": "Ask for a quote", "detail": "The trading app requests a live BTC-USD snapshot." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to CoinGecko, Demo API key in a header, never the URL." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Return the snapshot", "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt.", "reverse": true }
+    ]
+  }
+}

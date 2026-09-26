@@ -53,22 +53,27 @@ test("landing page renders every section with no console/page errors", async ({ 
     await expect(page.locator(`#${id}`)).toBeAttached();
   }
 
-  // Architecture diagram actually loaded (real SVG, not a broken image).
-  const archImg = page.locator("#architecture img");
-  await expect(archImg).toBeVisible();
-  const naturalWidth = await archImg.evaluate((img) => (img as HTMLImageElement).naturalWidth);
-  expect(naturalWidth).toBeGreaterThan(0);
+  // Architecture explorer actually mounted (React Flow canvas, not a broken image).
+  await expect(page.locator("#architecture .react-flow")).toBeVisible();
+  await expect(page.locator("#architecture").getByRole("group", { name: "Series part" })).toBeVisible();
 
-  // Decisions: all three real ADRs rendered.
-  await expect(page.getByText("ADR-0001")).toBeVisible();
-  await expect(page.getByText("ADR-0002")).toBeVisible();
-  await expect(page.getByText("ADR-0003")).toBeVisible();
+  // Decisions: all six real ADRs rendered.
+  const decisions = page.locator("#decisions");
+  for (const id of ["ADR-0001", "ADR-0002", "ADR-0003", "ADR-0005", "ADR-0006", "ADR-0007"]) {
+    await expect(decisions.getByText(id)).toBeVisible();
+  }
 
-  // Rules: the real check:arch result is rendered (pass or fail, but present).
-  await expect(page.getByText(/PASSED|FAILED/)).toBeVisible();
+  // Rules: four real rule mini-cards, each with a real result chip (a
+  // build-time pass/fail, or an honest "runs in CI" for checks that only
+  // run there, never a fabricated pass).
+  const ruleCards = page.locator("#rules .bp-rule-card");
+  await expect(ruleCards).toHaveCount(4);
+  for (let i = 0; i < 4; i++) {
+    await expect(ruleCards.nth(i).locator(".bp-rule-card__foot")).toContainText(/pass|fail|runs in CI/);
+  }
 
-  // Cost: the honest "not yet measured" pending state, not invented numbers.
-  await expect(page.getByText("not yet measured").first()).toBeVisible();
+  // Cost: the honest "usage pending" state, not invented numbers.
+  await expect(page.locator("#cost-usage").getByText("usage pending").first()).toBeVisible();
 
   // Footer
   await expect(page.locator("footer")).toBeVisible();
