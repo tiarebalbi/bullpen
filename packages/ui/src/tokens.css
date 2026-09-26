@@ -89,14 +89,20 @@
   --radius-pill: 9999px;
 
   /* ── Spacing rhythm ──────────────────────────────────────── */
+  /* --space-N = N * 0.25rem (N * 4px at the 16px root). --space-5 and
+     --space-18 fill real gaps in this scale: 20px is the design's own
+     series-card padding (Bullpen Landing.dc.html), 72px is its desktop
+     section gutter -- both measured from the export, not picked. */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-10: 2.5rem;
   --space-14: 3.5rem;
+  --space-18: 4.5rem;
   --space-20: 5rem;
   --space-28: 7rem;
   --space-32: 8rem;
