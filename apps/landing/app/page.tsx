@@ -2,6 +2,7 @@ import { join } from "node:path";
 import type { ReactNode } from "react";
 import { loadAdl } from "../lib/adl.js";
 import { loadAdrs } from "../lib/adr.js";
+import { loadArchitectureParts } from "../lib/architecture.js";
 import { loadCheckArchResult } from "../lib/check-arch.js";
 import { loadAllowances, loadUsage } from "../lib/cost.js";
 import { loadSeries } from "../lib/series.js";
@@ -26,6 +27,7 @@ const repoRoot = join(process.cwd(), "..", "..");
 export default function LandingPage(): ReactNode {
   const series = loadSeries(join(repoRoot, "content", "series.json"));
   const adrs = loadAdrs(join(repoRoot, "architecture", "adr"));
+  const architectureParts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
   const adl = loadAdl(join(repoRoot, "architecture", "adl", "structure.adl"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
   const usage = loadUsage(join(repoRoot, "cost", "usage", "2026-w40.json"));
@@ -38,7 +40,7 @@ export default function LandingPage(): ReactNode {
         <Hero />
         <MarketStripSection />
         <SeriesRail parts={series} />
-        <Architecture plannedParts={series.filter((part) => part.part > 1)} />
+        <Architecture parts={architectureParts} adrs={adrs} />
         <Decisions adrs={adrs} />
         <Rules adl={adl} checkArch={checkArch} />
         <Cost allowances={allowances} usage={usage} />

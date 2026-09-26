@@ -1,0 +1,116 @@
+{
+  "part": 3,
+  "status": "planned",
+  "summary": "Prediction, not yet built: data ownership and the first real service split. The Prices Service and Market History Service each own their own database instead of sharing state.",
+  "nodes": [
+    {
+      "id": "reader",
+      "label": "Reader",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A blog reader exploring Bullpen's architecture timeline on the landing site.",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "player",
+      "label": "Player",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A registered player who views live and historical prices and places paper trades.",
+      "x": 400,
+      "y": 40
+    },
+    {
+      "id": "landing-app",
+      "label": "Bullpen Landing",
+      "kind": "app",
+      "meta": "Static",
+      "purpose": "The public landing site with the architecture timeline explorer.",
+      "x": 40,
+      "y": 220,
+      "costNote": "Planned"
+    },
+    {
+      "id": "trading-app",
+      "label": "Bullpen Trading App",
+      "kind": "app",
+      "meta": "Next.js",
+      "purpose": "The trading app where players view live and historical prices and place paper trades.",
+      "x": 400,
+      "y": 220,
+      "costNote": "Planned"
+    },
+    {
+      "id": "prices-service",
+      "label": "Prices Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Owns live price snapshots; supersedes Part 1's price-snapshot-service now that history has split out into its own service and database.",
+      "x": 260,
+      "y": 400,
+      "db": true,
+      "costNote": "Planned"
+    },
+    {
+      "id": "prices-db",
+      "label": "Prices Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "Neon Postgres database owned solely by the Prices Service; the first data-ownership boundary in the system.",
+      "x": 260,
+      "y": 560,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-history-service",
+      "label": "Market History Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database.",
+      "x": 540,
+      "y": 400,
+      "db": true,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-history-db",
+      "label": "Market History Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "Neon Postgres database owned solely by the Market History Service.",
+      "x": 540,
+      "y": 560,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-data-provider",
+      "label": "Market Data Provider",
+      "kind": "ext",
+      "meta": "TBD",
+      "purpose": "External market-data API. Provider still TBD pending a terms-of-use-compliant choice.",
+      "x": 260,
+      "y": 720,
+      "costNote": "Planned"
+    }
+  ],
+  "edges": [
+    { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
+    { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
+    { "id": "trading-app-to-prices", "a": "trading-app", "b": "prices-service", "type": "sync" },
+    { "id": "trading-app-to-history", "a": "trading-app", "b": "market-history-service", "type": "sync" },
+    { "id": "prices-to-market-data", "a": "prices-service", "b": "market-data-provider", "type": "sync" },
+    { "id": "prices-to-prices-db", "a": "prices-service", "b": "prices-db", "type": "sync" },
+    { "id": "history-to-history-db", "a": "market-history-service", "b": "market-history-db", "type": "sync" }
+  ],
+  "groups": [],
+  "request": {
+    "name": "A price request",
+    "steps": [
+      { "edge": "trading-app-to-prices", "caption": "Ask for a live quote", "detail": "The trading app requests a live price snapshot from the Prices Service." },
+      { "edge": "prices-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the (still TBD) market-data provider." },
+      { "edge": "prices-to-prices-db", "caption": "Cache the snapshot", "detail": "Written to the Prices Service's own database." },
+      { "edge": "trading-app-to-prices", "caption": "Return the snapshot", "detail": "Bullpen's own shape, never the raw upstream payload.", "reverse": true }
+    ]
+  }
+}

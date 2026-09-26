@@ -1,0 +1,204 @@
+import { expect, test, type Page } from "@playwright/test";
+
+// The "Live prices" strip isn't relevant to these tests but renders on the
+// same page; mock it so it never fails a request and never logs a console
+// error that would be confusing noise here.
+async function mockPriceRoute(page: Page): Promise<void> {
+  await page.route("**/api/price/BTC-USD", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        symbol: "BTC-USD",
+        price: 65432.1,
+        changePercent: 2.34,
+        time: new Date().toISOString(),
+        source: "coingecko",
+        fetchedAt: new Date().toISOString(),
+      }),
+    }),
+  );
+}
+
+test.describe("Architecture Explorer", () => {
+  test.use({ viewport: { width: 1440, height: 1200 } });
+
+  test.beforeEach(async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+  });
+
+  test("scrubbing to the next part updates the summary and status chip", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 2" }).click();
+
+    await expect(architecture.getByText("Overview · Part 2")).toBeVisible();
+    await expect(architecture.getByText("Planned", { exact: true }).first()).toBeVisible();
+  });
+
+  test("selecting a node fills the side panel with its purpose, ADRs and cost", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("button", { name: "Bullpen Trading App, App" }).click();
+
+    const panel = architecture.getByLabel("Details");
+    await expect(panel.getByText("Bullpen Trading App")).toBeVisible();
+    await expect(panel.getByText(/players view live prices/)).toBeVisible();
+    await expect(panel.getByText("ADR-0001")).toBeVisible();
+    await expect(panel.getByText("ADR-0003")).toBeVisible();
+    await expect(panel.getByText("Free tier (Hobby)")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Close details" }).click();
+    await expect(panel.getByText("Select a node for its purpose")).toBeVisible();
+  });
+
+  test("a node with no recorded ADR yet shows the pending copy", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    await architecture.getByRole("button", { name: "Prices Service, Service" }).click();
+    const panel = architecture.getByLabel("Details");
+    await expect(panel.getByText("ADR pending: written before this part ships.")).toBeVisible();
+  });
+
+  test("the sync/async toggle hides the legend's edge-type entries", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const toggle = architecture.getByRole("switch", { name: "Sync vs async" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect(architecture.getByText("Synchronous", { exact: true })).toBeVisible();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(architecture.getByText("Synchronous", { exact: true })).toBeHidden();
+  });
+
+  test("the data-ownership toggle reveals a database pill on nodes that own data", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    await expect(architecture.getByText("prices-service_db")).toBeHidden();
+    await architecture.getByRole("switch", { name: "Data ownership" }).click();
+    await expect(architecture.getByText("prices-service_db")).toBeVisible();
+  });
+
+  test("a planned part ghosts nodes and edges the built system doesn't have yet", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    // "Prices Service" is new to Part 3's prediction: ghosted, dashed, tagged PLANNED.
+    const pricesService = architecture.getByRole("button", { name: "Prices Service, Service" });
+    await expect(pricesService.getByText("PLANNED")).toBeVisible();
+
+    // "Bullpen Trading App" already exists in the real, built Part 1: never ghosted.
+    const tradingApp = architecture.getByRole("button", { name: "Bullpen Trading App, App" });
+    await expect(tradingApp.getByText("PLANNED")).toHaveCount(0);
+  });
+
+  test("the quanta toggle groups a db-owning service with the database it owns", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    const toggle = architecture.getByRole("switch", { name: "Group by quanta" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    const groupLabel = architecture.locator(".bp-arch-group__label", { hasText: "Prices Service" });
+    await expect(groupLabel).toBeVisible();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect(groupLabel).toHaveCount(0);
+  });
+
+  test("moving from part 2 to part 3 shows what was added and removed", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    const panel = architecture.getByLabel("Details");
+    await expect(panel.getByText("Prices Service")).toBeVisible();
+    await expect(panel.getByText("Price Snapshot Service")).toBeVisible();
+  });
+
+  test("Follow a request plays through steps and can be paused, stepped and exited", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("button", { name: /Follow a price request/i }).click();
+
+    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 3");
+
+    await architecture.getByRole("button", { name: "Pause" }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 3");
+
+    await architecture.getByRole("button", { name: "Next step" }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 2 OF 3");
+
+    await architecture.getByRole("button", { name: "Step 3" }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 3 OF 3");
+
+    await architecture.getByRole("button", { name: "Exit" }).click();
+    await expect(architecture.getByRole("status")).toHaveCount(0);
+  });
+
+  test("respects prefers-reduced-motion: no motion-only classes on a changed node", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    const removedNode = architecture.getByRole("button", { name: "Price Snapshot Service, Service" });
+    await expect(removedNode).toHaveClass(/bp-arch-node--removed-reduced/);
+    await expect(removedNode).not.toHaveClass(/bp-arch-node--removed(?!-reduced)/);
+  });
+
+  test("Play the series advances through parts on its own and can be paused", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("button", { name: "Play the series" }).click();
+    await expect(architecture.getByRole("button", { name: "Pause the series" })).toBeVisible();
+
+    await expect(architecture.getByText("Overview · Part 2")).toBeVisible({ timeout: 5000 });
+
+    await architecture.getByRole("button", { name: "Pause the series" }).click();
+    await expect(architecture.getByRole("button", { name: "Play the series" })).toBeVisible();
+  });
+});
+
+test.describe("Architecture Explorer at 390px", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test.beforeEach(async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+  });
+
+  test("the canvas and side panel stack instead of squeezing into two columns", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const canvasBox = await architecture.locator(".bp-arch-explorer__canvas").boundingBox();
+    const panelBox = await architecture.getByLabel("Details").boundingBox();
+    expect(canvasBox).not.toBeNull();
+    expect(panelBox).not.toBeNull();
+
+    // Stacked: the canvas is (close to) full viewport width, and the panel
+    // sits below it rather than squeezed into a narrow second column.
+    expect(canvasBox!.width).toBeGreaterThan(300);
+    expect(panelBox!.width).toBeGreaterThan(300);
+    expect(panelBox!.y).toBeGreaterThanOrEqual(canvasBox!.y + canvasBox!.height - 1);
+  });
+
+  test("selecting a node still works and doesn't cause horizontal overflow", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("button", { name: "Bullpen Trading App, App" }).click();
+
+    const panel = architecture.getByLabel("Details");
+    await expect(panel.getByText("Bullpen Trading App")).toBeVisible();
+
+    const right = await architecture.evaluate((el) => el.getBoundingClientRect().right);
+    expect(right).toBeLessThanOrEqual(391);
+  });
+});

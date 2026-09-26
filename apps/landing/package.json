@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run && playwright test",
-    "build": "node ../../architecture/calm/generate-diagrams.mjs && node scripts/run-check-arch.mjs && next build --webpack",
+    "build": "node scripts/run-check-arch.mjs && next build --webpack",
     "start": "next start"
   },
   "dependencies": {

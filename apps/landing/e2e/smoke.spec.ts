@@ -53,16 +53,15 @@ test("landing page renders every section with no console/page errors", async ({ 
     await expect(page.locator(`#${id}`)).toBeAttached();
   }
 
-  // Architecture diagram actually loaded (real SVG, not a broken image).
-  const archImg = page.locator("#architecture img");
-  await expect(archImg).toBeVisible();
-  const naturalWidth = await archImg.evaluate((img) => (img as HTMLImageElement).naturalWidth);
-  expect(naturalWidth).toBeGreaterThan(0);
+  // Architecture explorer actually mounted (React Flow canvas, not a broken image).
+  await expect(page.locator("#architecture .react-flow")).toBeVisible();
+  await expect(page.locator("#architecture").getByRole("group", { name: "Series part" })).toBeVisible();
 
   // Decisions: all three real ADRs rendered.
-  await expect(page.getByText("ADR-0001")).toBeVisible();
-  await expect(page.getByText("ADR-0002")).toBeVisible();
-  await expect(page.getByText("ADR-0003")).toBeVisible();
+  const decisions = page.locator("#decisions");
+  await expect(decisions.getByText("ADR-0001")).toBeVisible();
+  await expect(decisions.getByText("ADR-0002")).toBeVisible();
+  await expect(decisions.getByText("ADR-0003")).toBeVisible();
 
   // Rules: the real check:arch result is rendered (pass or fail, but present).
   await expect(page.getByText(/PASSED|FAILED/)).toBeVisible();

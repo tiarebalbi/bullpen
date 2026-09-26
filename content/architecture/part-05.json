@@ -1,0 +1,163 @@
+{
+  "part": 5,
+  "status": "planned",
+  "summary": "Prediction, not yet built: handling the market-open burst and making cost visible. A queue absorbs the order spike so the saga processes it at a sustainable rate.",
+  "nodes": [
+    {
+      "id": "reader",
+      "label": "Reader",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A blog reader exploring Bullpen's architecture timeline on the landing site.",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "player",
+      "label": "Player",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A registered player who places paper trade orders, including at market open.",
+      "x": 480,
+      "y": 40
+    },
+    {
+      "id": "landing-app",
+      "label": "Bullpen Landing",
+      "kind": "app",
+      "meta": "Static",
+      "purpose": "The public landing site with the architecture timeline explorer.",
+      "x": 40,
+      "y": 220,
+      "costNote": "Planned"
+    },
+    {
+      "id": "trading-app",
+      "label": "Bullpen Trading App",
+      "kind": "app",
+      "meta": "Next.js",
+      "purpose": "The trading app where players view prices and history and submit paper trade orders.",
+      "x": 480,
+      "y": 220,
+      "costNote": "Planned"
+    },
+    {
+      "id": "prices-service",
+      "label": "Prices Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Owns live price snapshots, consulted by the order saga at fill time.",
+      "x": 220,
+      "y": 400,
+      "db": true,
+      "costNote": "Planned"
+    },
+    {
+      "id": "prices-db",
+      "label": "Prices Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "Neon Postgres database owned solely by the Prices Service.",
+      "x": 220,
+      "y": 560,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-history-service",
+      "label": "Market History Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database.",
+      "x": 460,
+      "y": 400,
+      "db": true,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-history-db",
+      "label": "Market History Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "Neon Postgres database owned solely by the Market History Service.",
+      "x": 460,
+      "y": 560,
+      "costNote": "Planned"
+    },
+    {
+      "id": "orders-service",
+      "label": "Orders Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Accepts paper trade order requests and publishes them onto the market-open queue instead of starting the saga directly.",
+      "x": 700,
+      "y": 340,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-open-queue",
+      "label": "Market Open Queue",
+      "kind": "infra",
+      "meta": "Queue",
+      "purpose": "Buffers the burst of order requests at market open (Vercel Queues or equivalent) so the Order Saga consumes them at a sustainable rate rather than falling over.",
+      "x": 700,
+      "y": 480,
+      "costNote": "Planned"
+    },
+    {
+      "id": "order-saga-workflow",
+      "label": "Order Saga",
+      "kind": "infra",
+      "meta": "Workflow",
+      "purpose": "Durable workflow orchestrating each queued order: price lookup, balance check, fill, and ledger update.",
+      "x": 700,
+      "y": 620,
+      "costNote": "Planned"
+    },
+    {
+      "id": "ledger-service",
+      "label": "Ledger Service",
+      "kind": "service",
+      "meta": "Serverless",
+      "purpose": "Owns player balances and positions as an independent data boundary.",
+      "x": 700,
+      "y": 760,
+      "db": true,
+      "costNote": "Planned"
+    },
+    {
+      "id": "market-data-provider",
+      "label": "Market Data Provider",
+      "kind": "ext",
+      "meta": "TBD",
+      "purpose": "External market-data API. Provider still TBD pending a terms-of-use-compliant choice.",
+      "x": 220,
+      "y": 720,
+      "costNote": "Planned"
+    }
+  ],
+  "edges": [
+    { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
+    { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
+    { "id": "trading-app-to-prices", "a": "trading-app", "b": "prices-service", "type": "sync" },
+    { "id": "trading-app-to-history", "a": "trading-app", "b": "market-history-service", "type": "sync" },
+    { "id": "trading-app-to-orders", "a": "trading-app", "b": "orders-service", "type": "sync" },
+    { "id": "orders-to-queue", "a": "orders-service", "b": "market-open-queue", "type": "async" },
+    { "id": "queue-to-saga", "a": "market-open-queue", "b": "order-saga-workflow", "type": "async" },
+    { "id": "saga-to-prices", "a": "order-saga-workflow", "b": "prices-service", "type": "sync" },
+    { "id": "saga-to-ledger", "a": "order-saga-workflow", "b": "ledger-service", "type": "sync" },
+    { "id": "prices-to-market-data", "a": "prices-service", "b": "market-data-provider", "type": "sync" },
+    { "id": "prices-to-prices-db", "a": "prices-service", "b": "prices-db", "type": "sync" },
+    { "id": "history-to-history-db", "a": "market-history-service", "b": "market-history-db", "type": "sync" }
+  ],
+  "groups": [],
+  "request": {
+    "name": "An order, at market open",
+    "steps": [
+      { "edge": "trading-app-to-orders", "caption": "Submit", "detail": "Player submits a paper trade order from the ticket." },
+      { "edge": "orders-to-queue", "caption": "Queue it", "detail": "Orders Service publishes the request onto the market-open queue instead of starting the saga directly." },
+      { "edge": "queue-to-saga", "caption": "Consume", "detail": "The Order Saga picks up queued orders at a sustainable rate." },
+      { "edge": "saga-to-prices", "caption": "Price", "detail": "The saga asks the Prices Service for the current price." },
+      { "edge": "saga-to-ledger", "caption": "Reserve, fill and settle", "detail": "The saga updates balances and positions through the Ledger Service." }
+    ]
+  }
+}

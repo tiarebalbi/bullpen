@@ -31,6 +31,18 @@ export type { MarketStripProps, MarketStripQuote, MarketStripStatus } from "./co
 export { ThemeToggle } from "./components/ThemeToggle.js";
 export type { ThemeToggleProps } from "./components/ThemeToggle.js";
 
+export { ArchitectureExplorer } from "./components/ArchitectureExplorer.js";
+export type {
+  ArchitectureExplorerProps,
+  ArchNodeKind,
+  ArchNodeData,
+  ArchEdgeData,
+  ArchGroupData,
+  ArchPartData,
+  ArchRequestStep,
+  ArchRequestData,
+} from "./components/ArchitectureExplorer.js";
+
 export { useReducedMotion } from "./lib/useReducedMotion.js";
 export { useNow } from "./lib/useNow.js";
 export { MINUS, fmt, signed, mono, badgeBg, formatTime } from "./lib/format.js";

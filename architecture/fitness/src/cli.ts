@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { parseAdlFile } from "./parse-adl.js";
 import { checkStructure } from "./structure-check.js";
 import { checkBudget, readConfiguredRevalidateSeconds, type AllowanceEntry } from "./budget-check.js";
+import { checkAllExplorerParts } from "./explorer-consistency-check.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -19,6 +20,8 @@ const allowancesPath = join(repoRoot, "cost", "allowances.json");
 const allowances = JSON.parse(readFileSync(allowancesPath, "utf8")) as AllowanceEntry[];
 const revalidateSeconds = readConfiguredRevalidateSeconds(repoRoot);
 violations.push(...checkBudget(revalidateSeconds, allowances));
+
+violations.push(...checkAllExplorerParts(repoRoot));
 
 if (violations.length > 0) {
   for (const violation of violations) {

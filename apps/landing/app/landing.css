@@ -502,4 +502,14 @@ code {
     padding-left: var(--space-4);
     padding-right: var(--space-4);
   }
+  /* A sunken section defers its gutter to `.bp-section--sunken > *`
+     (var(--space-18), 72px) instead of its own now-16px padding above --
+     that rule has no mobile override of its own, so a sunken section's
+     content was getting double-padded at this width (16px + 72px each
+     side). Match the same 16px gutter here so #architecture and #rules
+     don't lose most of a 390px viewport to padding. */
+  .bp-section--sunken > * {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
 }
