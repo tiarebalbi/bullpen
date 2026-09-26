@@ -89,7 +89,12 @@ test.describe("Decisions", () => {
   test("a deep link opens the modal on load", async ({ page }) => {
     await page.goto("/#adr-0002");
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
+    // A longer timeout, not a weaker assertion: this page also hydrates the
+    // React Flow Architecture Explorer, and on a loaded CI runner that
+    // hydration can occasionally push the useSyncExternalStore hash resync
+    // (see DecisionsList.tsx) past Playwright's default 5s -- confirmed
+    // flaky-not-broken (passes immediately on Playwright's own CI retry).
+    await expect(dialog).toBeVisible({ timeout: 10_000 });
     await expect(dialog.getByRole("heading", { name: "Why distribute at all" })).toBeVisible();
   });
 
@@ -100,7 +105,8 @@ test.describe("Decisions", () => {
       window.location.hash = "#adr-0003";
     });
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
+    // Same CI-runner-under-load margin as the deep-link test above.
+    await expect(dialog).toBeVisible({ timeout: 10_000 });
     await expect(dialog.getByRole("heading", { name: "Monorepo" })).toBeVisible();
   });
 
