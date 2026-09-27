@@ -8,6 +8,7 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
  * planned CALM files (grep architecture/calm/planned + content/architecture
  * for the node that owns each real dependency) -- never guessed:
  *  - neon: Part 3's Prices/Market History services each get a Neon Postgres database.
+ *  - alpha-vantage-free: Part 3's proposed stock data provider (ADR-0008).
  *  - vercel-workflows: Part 4's order-saga-workflow.
  *  - vercel-queues: Part 5's market-open-queue.
  * upstash-redis, grafana-cloud and aws-lambda never appear in any real
@@ -17,14 +18,20 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
  */
 export const SERVICE_ARRIVES_IN_PART: Record<string, number | undefined> = {
   neon: 3,
+  "alpha-vantage-free": 3,
   "vercel-workflows": 4,
   "vercel-queues": 5,
 };
 
+// "alpha-vantage-free" reads as "Stock data provider", not by name --
+// ADR-0008 is Proposed, not Accepted, so no page names Alpha Vantage as
+// the resolved provider until written permission for public display
+// arrives.
 const SERVICE_LABELS: Record<string, string> = {
   "vercel-hobby": "Vercel Hobby",
   "coingecko-demo": "CoinGecko Demo",
   neon: "Neon",
+  "alpha-vantage-free": "Stock data provider",
   "upstash-redis": "Upstash Redis",
   "grafana-cloud": "Grafana Cloud",
   "aws-lambda": "AWS Lambda",
@@ -54,6 +61,7 @@ const METRIC_LABELS: Record<string, string> = {
   logs_ingest: "Log ingest",
   traces_ingest: "Trace ingest",
   requests: "Requests",
+  daily_calls: "Daily calls",
 };
 
 /** Every allowance's service/metric must have a human label -- throws rather than silently falling back to the raw id, so a new entry in cost/allowances.json can't ship unlabeled. */

@@ -85,10 +85,10 @@
     },
     {
       "id": "market-data-provider",
-      "label": "Market Data Provider",
+      "label": "Stock data provider",
       "kind": "ext",
-      "meta": "TBD",
-      "purpose": "External market-data API. Provider still TBD pending a terms-of-use-compliant choice.",
+      "meta": "Pending",
+      "purpose": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display.",
       "x": 260,
       "y": 720,
       "costNote": "Planned"
@@ -108,7 +108,7 @@
     "name": "a price request",
     "steps": [
       { "edge": "trading-app-to-prices", "caption": "Ask for a live quote", "detail": "The trading app requests a live price snapshot from the Prices Service." },
-      { "edge": "prices-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the (still TBD) market-data provider." },
+      { "edge": "prices-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the proposed stock data provider (pending permission)." },
       { "edge": "prices-to-prices-db", "caption": "Cache the snapshot", "detail": "Written to the Prices Service's own database." },
       { "edge": "trading-app-to-prices", "caption": "Return the snapshot", "detail": "Bullpen's own shape, never the raw upstream payload.", "reverse": true }
     ]
