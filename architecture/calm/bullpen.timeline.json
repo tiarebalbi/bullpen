@@ -32,7 +32,7 @@
       "unique-id": "part-03",
       "node-type": "moment",
       "name": "Part 3 (planned) — Data ownership and the first split",
-      "description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database.",
+      "description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database, and a proposed U.S. stock data provider (Alpha Vantage, pending written permission — see ADR-0008) appears as an external system.",
       "details": {
         "detailed-architecture": "planned/part-03.architecture.json",
         "required-pattern": "bullpen.pattern.json"
@@ -62,7 +62,7 @@
       "unique-id": "part-06",
       "node-type": "moment",
       "name": "Part 6 (planned) — Leaderboards, leagues, and retrospective",
-      "description": "Prediction: a Leaderboard Service and leagues, Part 1's market-data placeholder resolved to Alpaca, Massive and Stripe joining as external systems, and a retrospective comparing this prediction to what actually shipped.",
+      "description": "Prediction: a Leaderboard Service and leagues, the Part 3 stock data provider carried forward unchanged, and a retrospective comparing this prediction to what actually shipped.",
       "details": {
         "detailed-architecture": "planned/part-06.architecture.json",
         "required-pattern": "bullpen.pattern.json"

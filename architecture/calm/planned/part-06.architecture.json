@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "bullpen-part-06",
   "name": "Bullpen — Part 6 (planned)",
-  "description": "Prediction, not yet built, and the retrospective part of the series: a Leaderboard Service ranks players within leagues, Part 1's placeholder Market Data Provider is finally resolved to Alpaca and Massive for US stocks data, and Stripe appears as an external system whose exact role Part 6 will define (any real-money use would need its own ADR superseding ADR-0001's non-commercial decision). Part 6 of the actual series will compare this prediction against what really shipped.",
+  "description": "Prediction, not yet built, and the retrospective part of the series: a Leaderboard Service ranks players within leagues. The stock data provider proposed in Part 3 (Alpha Vantage, pending written permission — see ADR-0008) carries forward unchanged; no payments provider is part of this plan. Part 6 of the actual series will compare this prediction against what really shipped.",
   "metadata": {
     "status": "planned",
     "part": 6
@@ -39,7 +39,7 @@
       "unique-id": "prices-service",
       "node-type": "service",
       "name": "Prices Service",
-      "description": "Owns live price snapshots, now sourced from Alpaca and Massive instead of Part 1's placeholder provider."
+      "description": "Owns live price snapshots, sourced from the stock data provider proposed since Part 3."
     },
     {
       "unique-id": "prices-db",
@@ -90,22 +90,10 @@
       "description": "Ranks players within leagues from ledger balances and positions; leagues are groups of players competing over the same period."
     },
     {
-      "unique-id": "alpaca-provider",
+      "unique-id": "market-data-provider",
       "node-type": "external-system",
-      "name": "Alpaca",
-      "description": "US stocks broker/market-data provider; resolves Part 1's open 'Market Data Provider' placeholder for equities."
-    },
-    {
-      "unique-id": "massive-provider",
-      "node-type": "external-system",
-      "name": "Massive",
-      "description": "US market-data provider (formerly Polygon.io) offering real-time and historical equities data via REST and WebSocket; used alongside Alpaca."
-    },
-    {
-      "unique-id": "stripe-provider",
-      "node-type": "external-system",
-      "name": "Stripe",
-      "description": "Payments provider whose role in Bullpen is undecided as of this prediction. Bullpen is a non-commercial prototype with no billing (ADR-0001); any real-money integration here would require a new ADR superseding that decision, not an assumption baked into this diagram."
+      "name": "Stock data provider",
+      "description": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display — see ADR-0008. Carried forward unchanged from Part 3."
     }
   ],
   "relationships": [
@@ -260,40 +248,16 @@
       "protocol": "JDBC"
     },
     {
-      "unique-id": "prices-to-alpaca",
-      "description": "Prices Service calls Alpaca for live US stocks data.",
+      "unique-id": "prices-to-market-data",
+      "description": "Prices Service calls out to the external market-data provider for the current price.",
       "relationship-type": {
         "connects": {
           "source": { "node": "prices-service" },
-          "destination": { "node": "alpaca-provider" }
+          "destination": { "node": "market-data-provider" }
         }
       },
       "protocol": "HTTPS",
       "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "prices-to-massive",
-      "description": "Prices Service calls Massive as an additional US market-data source.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "prices-service" },
-          "destination": { "node": "massive-provider" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "ledger-to-stripe",
-      "description": "Placeholder relationship for Stripe's undecided role; not wired to any real payment flow as of this prediction.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "ledger-service" },
-          "destination": { "node": "stripe-provider" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous", "status": "hypothetical" }
     }
   ]
 }

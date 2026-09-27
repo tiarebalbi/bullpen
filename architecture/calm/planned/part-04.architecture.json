@@ -80,8 +80,8 @@
     {
       "unique-id": "market-data-provider",
       "node-type": "external-system",
-      "name": "Market Data Provider",
-      "description": "External market-data API. Provider still TBD pending a terms-of-use-compliant choice."
+      "name": "Stock data provider",
+      "description": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display — see ADR-0008."
     }
   ],
   "relationships": [
