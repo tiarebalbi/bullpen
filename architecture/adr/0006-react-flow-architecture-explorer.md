@@ -58,8 +58,9 @@ the picture and the model can't silently drift apart.
   approximated).
 - Every part's explorer content must stay real: Parts 2–6 show exactly
   what their planned CALM moments already describe (including which
-  external providers arrive in which part — e.g. Alpaca only appears in
-  Part 6, per the real planned model), not invented or design-sample
+  external providers arrive in which part — e.g. the proposed stock data
+  provider only appears from Part 3, per the real planned model, and stays
+  unnamed until ADR-0008 is Accepted), not invented or design-sample
   content.
 
 ## Alternatives

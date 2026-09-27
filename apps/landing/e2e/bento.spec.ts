@@ -89,7 +89,7 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
 
   test("Cost card shows a real allowance count and links to the full allowances table", async ({ page }) => {
     const cost = page.locator("#cost");
-    await expect(cost.getByText("22", { exact: true })).toBeVisible();
+    await expect(cost.getByText("23", { exact: true })).toBeVisible();
     await expect(cost.getByText("Part 5", { exact: true })).toBeVisible();
 
     const details = cost.locator("details.bp-bento__more");
@@ -97,10 +97,10 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
     await details.locator("summary").click();
     await expect(details.locator("table tbody tr").first()).toBeVisible();
     // Filtered to Part 1's real allowances (Vercel Hobby's 7 metrics +
-    // CoinGecko Demo's 2); the other 13 show up grouped in "Arrives in
+    // CoinGecko Demo's 2); the other 14 show up grouped in "Arrives in
     // later parts" below, not as individual rows.
     await expect(details.locator("table tbody tr")).toHaveCount(9);
-    await expect(details.locator(".bp-bento__later li")).toHaveCount(6);
+    await expect(details.locator(".bp-bento__later li")).toHaveCount(7);
   });
 
   test("Free-tier usage shows the real pending state for every real metric, with no bars", async ({ page }) => {

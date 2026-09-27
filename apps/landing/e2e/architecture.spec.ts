@@ -108,7 +108,7 @@ test.describe("Architecture Explorer", () => {
     // canvas panel, which also includes the legend and its own padding).
     const canvasBox = (await architecture.locator(".react-flow").boundingBox())!;
 
-    for (const name of ["Leaderboard Service, Service", "Alpaca, External", "Massive, External", "Stripe, External"]) {
+    for (const name of ["Leaderboard Service, Service", "Ledger Service, Service", "Stock data provider, External"]) {
       const box = await architecture.getByRole("button", { name }).boundingBox();
       expect(box, `${name} should be in the DOM`).not.toBeNull();
       expect(box!.x, `${name} left edge within canvas`).toBeGreaterThanOrEqual(canvasBox.x);

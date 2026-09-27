@@ -196,5 +196,14 @@
     "source_url": "https://www.coingecko.com/en/api/pricing",
     "checked_on": "2026-09-26",
     "note": "Demo plan rate limit. Not a concern at Bullpen's Part 1 volume (one route, cached for 300s), recorded for completeness."
+  },
+  {
+    "service": "alpha-vantage-free",
+    "metric": "daily_calls",
+    "allowance": 25,
+    "unit": "calls/day",
+    "source_url": "https://www.alphavantage.co/premium/",
+    "checked_on": "2026-09-26",
+    "note": "Free tier daily call limit, end-of-day data only. See ADR-0008 (Proposed, not Accepted): the free key's terms license 'personal, non-commercial use' and written permission for Bullpen's public display was requested from premium@alphavantage.co on 2026-09-26, still pending. Finnhub is under evaluation as a possible second source (permission requested 2026-09-25, not used until granted, not named on any public page)."
   }
 ]

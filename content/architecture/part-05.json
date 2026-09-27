@@ -126,10 +126,10 @@
     },
     {
       "id": "market-data-provider",
-      "label": "Market Data Provider",
+      "label": "Stock data provider",
       "kind": "ext",
-      "meta": "TBD",
-      "purpose": "External market-data API. Provider still TBD pending a terms-of-use-compliant choice.",
+      "meta": "Pending",
+      "purpose": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display.",
       "x": 220,
       "y": 720,
       "costNote": "Planned"
