@@ -68,9 +68,46 @@ Read 2026-09-26:
   exact-quote fetch against both the terms and pricing pages — that
   restriction does not exist in either document. Not a blocker.
 
+## Alpha Vantage — proposed, permission pending
+
+Decision: U.S. stock prices (end of day, prior close) are proposed to come
+from Alpha Vantage's free API key, starting Part 3. See ADR-0008 for the
+full record; this ADR stays Proposed, not Accepted, until Alpha Vantage
+confirms public display is permitted on the free tier.
+
+Read 2026-09-26:
+
+- **Terms:** [Terms of Service](https://www.alphavantage.co/terms_of_service/).
+- **License scope:** Section 2.a grants the free key for "personal,
+  non-commercial use" only. "Commercial use" is defined broadly, including
+  "any type of commercial activity that allows individuals or entities
+  other than User to access information directly or indirectly even if the
+  scope of such activity falls outside of the securities industry" — a
+  public Bullpen page displaying prices to visitors plausibly falls under
+  this, the same shape of restriction ADR-0005 hit with Coinbase.
+  Commercial terms exist but require contacting
+  [premium@alphavantage.co](mailto:premium@alphavantage.co).
+- **Pending request:** emailed premium@alphavantage.co on 2026-09-26 asking
+  whether this public, non-commercial, educational use (a paper-trading
+  blog series) is covered on the free tier. No written reply yet. Until one
+  arrives confirming public display is permitted, no page names Alpha
+  Vantage as the resolved provider — the explorer and footer show a
+  generic "Stock data provider, pending permission" instead.
+- **Free tier limits** (from the [premium/pricing page](https://www.alphavantage.co/premium/)):
+  **25 API requests/day**, no published per-minute cap on the free tier.
+  Delayed/end-of-day data only — real-time US market data requires a paid
+  plan plus a separate exchange-entitlement process via the Alpha X
+  Terminal portal.
+- **Second source under evaluation:** Finnhub, as a possible additional
+  U.S. equities source. Permission requested 2026-09-25; not used for
+  anything until granted, and not named on any public page until it has
+  its own ADR.
+
 ## Next step
 
-None — the CoinGecko Demo integration is implemented in `apps/web` (issue
-#6). `architecture/calm/moments/part-01.architecture.json`'s external system
+Waiting on Alpha Vantage's written reply on public display before ADR-0008
+can move from Proposed to Accepted. The CoinGecko Demo integration for
+BTC-USD remains implemented in `apps/web` (issue #6);
+`architecture/calm/moments/part-01.architecture.json`'s external system
 node has been updated from the "Market Data Provider" placeholder to
 CoinGecko.
