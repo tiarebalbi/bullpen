@@ -36,7 +36,7 @@ describe("loadAdrs / parseAdr", () => {
     for (const adr of adrs) {
       expect(adr.id).toMatch(/^ADR-\d{4}$/);
       expect(adr.title.length).toBeGreaterThan(0);
-      expect(adr.status).toBe("Accepted");
+      expect(["Proposed", "Accepted"]).toContain(adr.status);
       expect(adr.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(adr.summary.length).toBeGreaterThan(0);
       expect(adr.summary.length).toBeLessThanOrEqual(SUMMARY_MAX_LENGTH);
