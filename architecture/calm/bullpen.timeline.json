@@ -15,7 +15,10 @@
       "adrs": [
         "architecture/adr/0001-stack.md",
         "architecture/adr/0002-why-distribute-at-all.md",
-        "architecture/adr/0003-monorepo.md"
+        "architecture/adr/0003-monorepo.md",
+        "architecture/adr/0005-crypto-market-data-coingecko.md",
+        "architecture/adr/0006-react-flow-architecture-explorer.md",
+        "architecture/adr/0007-markdown-it-for-adr-rendering.md"
       ]
     },
     {
@@ -36,7 +39,10 @@
       "details": {
         "detailed-architecture": "planned/part-03.architecture.json",
         "required-pattern": "bullpen.pattern.json"
-      }
+      },
+      "adrs": [
+        "architecture/adr/0008-alpha-vantage-stock-prices.md"
+      ]
     },
     {
       "unique-id": "part-04",

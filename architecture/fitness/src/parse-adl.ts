@@ -41,6 +41,25 @@ export function parseAdl(content: string): AdlEntry[] {
   return entries;
 }
 
+export interface AdlRule {
+  /** The text inside `ASSERT(...)`, exactly as written. */
+  text: string;
+  /** 1-based line number in the `.adl` file. */
+  line: number;
+}
+
+const ASSERT_LINE = /^ASSERT\((.+)\)$/;
+
+/** Every `ASSERT(...)` rule in a `.adl` file, with its line number. */
+export function parseAdlRules(content: string): AdlRule[] {
+  const rules: AdlRule[] = [];
+  content.split("\n").forEach((rawLine, index) => {
+    const match = ASSERT_LINE.exec(rawLine.trim());
+    if (match) rules.push({ text: match[1]!.trim(), line: index + 1 });
+  });
+  return rules;
+}
+
 /** Reads a `.adl` file from disk and parses it. */
 export function parseAdlFile(filePath: string): AdlEntry[] {
   const content = readFileSync(filePath, "utf8");

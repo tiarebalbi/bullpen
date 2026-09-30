@@ -1,6 +1,6 @@
 ADL: BULLPEN STRUCTURE
 TYPE Structural
-DESCRIPTION Apps and libraries that exist in Part 1
+DESCRIPTION Apps and libraries that exist in Part 2
 DEFINE SYSTEM Bullpen AS bullpen
 DEFINE COMPONENT Landing AS apps/landing
 DEFINE COMPONENT Trading App AS apps/web
@@ -9,3 +9,8 @@ DEFINE LIBRARY Contracts AS packages/contracts
 ASSERT(every directory under apps/ and packages/ is DEFINED here)
 ASSERT(every DEFINED component and library exists as a directory)
 ASSERT(apps NEVER DEPEND ON other apps)
+ASSERT(libraries NEVER DEPEND ON apps)
+ASSERT(apps IMPORT libraries ONLY THROUGH their package entry point)
+ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)
+ASSERT(every DEFINED component and library maps to a node in the current CALM moment)
+ASSERT(every webclient and service node in the current CALM moment maps to a DEFINED entry)

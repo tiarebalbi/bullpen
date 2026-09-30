@@ -44,6 +44,14 @@ describe("tokenizeAdlRule", () => {
     expect(keywordTokens[0]!.text).toBe("NEVER DEPEND ON");
   });
 
+  it("highlights the vocabulary of the entry-point and secret rules, taking ONLY THROUGH whole", () => {
+    const entry = tokenizeAdlRule("apps IMPORT libraries ONLY THROUGH their package entry point");
+    expect(entry.filter((t) => t.keyword).map((t) => t.text)).toEqual(["IMPORT", "ONLY THROUGH"]);
+
+    const secret = tokenizeAdlRule("ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY");
+    expect(secret.filter((t) => t.keyword).map((t) => t.text)).toEqual(["ONLY", "READS"]);
+  });
+
   it("returns the rule unchanged (as one non-keyword token) when it has no known keyword", () => {
     const tokens = tokenizeAdlRule("nothing special here");
     expect(tokens).toEqual([{ text: "nothing special here", keyword: false }]);

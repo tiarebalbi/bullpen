@@ -1,13 +1,11 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { AdlEntry } from "./parse-adl.js";
+import { ADL_RULE, citeAdl, findAdlFile } from "./rules.js";
+import type { Violation } from "./violation.js";
 
 const WATCHED_ROOTS = ["apps", "packages"] as const;
-
-const RULE_UNDECLARED_DIR =
-  "every directory under apps/ and packages/ is DEFINED here";
-const RULE_MISSING_DIR =
-  "every DEFINED component and library exists as a directory";
+const CHECK = "structure";
 
 function normalize(path: string): string {
   return path.replace(/\\/g, "/").replace(/\/+$/, "");
@@ -23,18 +21,17 @@ function normalize(path: string): string {
  *   2. every COMPONENT/LIBRARY DEFINED in the ADL must exist as a real
  *      directory.
  *
- * The third ASSERT ("apps NEVER DEPEND ON other apps") is enforced
- * separately by `turbo boundaries`, not by this check.
+ * The dependency rules ("apps NEVER DEPEND ON other apps" and the rest) are
+ * enforced by `turbo boundaries` through boundaries-check.ts, not here.
  *
- * Returns a list of human-readable violation messages, empty when the repo
- * is compliant.
+ * Returns one violation per broken rule, empty when the repo is compliant.
  */
-export function checkStructure(entries: AdlEntry[], repoRoot: string): string[] {
-  const violations: string[] = [];
+export function checkStructure(entries: AdlEntry[], repoRoot: string): Violation[] {
+  const violations: Violation[] = [];
+  const adlFile = findAdlFile(repoRoot) ?? "architecture/adl/structure.adl";
 
   const defined = entries.filter(
-    (entry): entry is AdlEntry & { kind: "COMPONENT" | "LIBRARY" } =>
-      entry.kind === "COMPONENT" || entry.kind === "LIBRARY",
+    (entry): entry is AdlEntry & { kind: "COMPONENT" | "LIBRARY" } => entry.kind === "COMPONENT" || entry.kind === "LIBRARY",
   );
 
   // Rule 1: every real directory under apps/ and packages/ must be DEFINED.
@@ -42,33 +39,34 @@ export function checkStructure(entries: AdlEntry[], repoRoot: string): string[] 
     const fullRootDir = join(repoRoot, rootDir);
     if (!existsSync(fullRootDir)) continue;
 
-    const dirents = readdirSync(fullRootDir, { withFileTypes: true });
-    for (const dirent of dirents) {
+    for (const dirent of readdirSync(fullRootDir, { withFileTypes: true })) {
       if (!dirent.isDirectory()) continue;
 
       const relPath = `${rootDir}/${dirent.name}`;
-      const isDefined = defined.some(
-        (entry) => normalize(entry.path) === normalize(relPath),
-      );
+      if (defined.some((entry) => normalize(entry.path) === normalize(relPath))) continue;
 
-      if (!isDefined) {
-        violations.push(
-          `"${relPath}" exists under ${rootDir}/ but is not DEFINED in structure.adl (rule: ${RULE_UNDECLARED_DIR})`,
-        );
-      }
+      violations.push({
+        check: CHECK,
+        rule: ADL_RULE.defined,
+        where: relPath,
+        why: `${relPath} exists but ${adlFile} does not DEFINE it, so nothing says what it is or what may depend on it (${citeAdl(repoRoot, ADL_RULE.defined)}).`,
+        fix: `Add \`DEFINE ${rootDir === "apps" ? "COMPONENT" : "LIBRARY"} <Name> AS ${relPath}\` to ${adlFile}, or remove the directory.`,
+      });
     }
   }
 
   // Rule 2: every DEFINED component/library must exist as a real directory.
   for (const entry of defined) {
     const fullPath = join(repoRoot, entry.path);
-    const exists = existsSync(fullPath) && statSync(fullPath).isDirectory();
+    if (existsSync(fullPath) && statSync(fullPath).isDirectory()) continue;
 
-    if (!exists) {
-      violations.push(
-        `"${entry.path}" is DEFINED in structure.adl as ${entry.kind} "${entry.name}" but does not exist as a directory (rule: ${RULE_MISSING_DIR})`,
-      );
-    }
+    violations.push({
+      check: CHECK,
+      rule: ADL_RULE.exists,
+      where: entry.path,
+      why: `${adlFile} DEFINEs ${entry.kind} "${entry.name}" at ${entry.path}, but no such directory exists (${citeAdl(repoRoot, ADL_RULE.exists)}).`,
+      fix: `Create ${entry.path}, or remove its DEFINE line from ${adlFile}.`,
+    });
   }
 
   return violations;

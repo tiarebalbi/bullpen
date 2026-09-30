@@ -1,0 +1,7 @@
+ADL: FIXTURE
+TYPE Structural
+DESCRIPTION Secret containment fixture
+DEFINE SYSTEM Fixture AS fixture
+DEFINE COMPONENT Landing AS apps/landing
+DEFINE COMPONENT Web AS apps/web
+ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)

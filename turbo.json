@@ -24,6 +24,9 @@
     "tags": {
       "app": {
         "dependencies": { "deny": ["app"] }
+      },
+      "library": {
+        "dependencies": { "deny": ["app"] }
       }
     }
   }

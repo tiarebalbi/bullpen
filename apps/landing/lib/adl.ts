@@ -89,8 +89,9 @@ export function loadAdl(filePath: string): Adl {
 export type AdlRuleToken = { text: string; keyword: boolean };
 
 // Longest first, so "NEVER DEPEND ON" matches whole rather than leaving a
-// stray "DEPEND ON" unmatched by a shorter, earlier alternative.
-const ADL_KEYWORDS = ["NEVER DEPEND ON", "DEFINED", "ASSERT"] as const;
+// stray "DEPEND ON" unmatched by a shorter, earlier alternative, and
+// "ONLY THROUGH" is taken before the bare "ONLY".
+const ADL_KEYWORDS = ["NEVER DEPEND ON", "ONLY THROUGH", "DEFINED", "IMPORT", "READS", "ONLY", "ASSERT"] as const;
 const KEYWORD_PATTERN = new RegExp(`(${ADL_KEYWORDS.join("|")})`, "g");
 
 /**

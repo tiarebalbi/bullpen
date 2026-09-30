@@ -1,0 +1,13 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "tasks": {
+    "build": {}
+  },
+  "boundaries": {
+    "tags": {
+      "app": {
+        "dependencies": { "deny": ["app"] }
+      }
+    }
+  }
+}
