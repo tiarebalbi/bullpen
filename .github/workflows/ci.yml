@@ -28,7 +28,19 @@ jobs:
         run: pnpm --filter @bullpen/landing exec playwright install --with-deps chromium
 
       - name: turbo (affected)
-        run: pnpm exec turbo run lint typecheck test build check:arch --affected
+        run: pnpm exec turbo run lint typecheck test build --affected
+
+      # Not under --affected on purpose. check:arch is defined only in
+      # @bullpen/fitness-checks, which an app-only change never marks as
+      # affected, so turbo would skip the check that reads the whole repo
+      # exactly when an app breaks a rule.
+      - name: check:arch (always)
+        run: pnpm check:arch
+
+      # The git hook and commit-policy tests live in the same package and
+      # cover files outside any workspace (.claude/), so they run every time.
+      - name: guardrail tests (always)
+        run: pnpm --filter @bullpen/fitness-checks test
 
       - name: Upload Playwright report (on failure)
         if: failure()
@@ -64,3 +76,33 @@ jobs:
           path: |
             calm-result.xml
             calm-timeline-result.xml
+
+  # Every commit in the PR must carry the repo identity and no Co-Authored-By
+  # line (ADR-0009). Its own job so it can be required by name in branch
+  # protection, and so a failure here never hides behind the build.
+  commit-policy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 12.6.0
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22.23.3
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The PR's own range, by SHA. On a pull_request event HEAD is GitHub's
+      # synthetic merge commit, which is not one of the PR's commits.
+      - name: commit-policy
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm --filter @bullpen/fitness-checks run commit-policy

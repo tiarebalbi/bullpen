@@ -1,0 +1,15 @@
+commit 5d1f0c2a9b7e4c3d8a6f1e0b2c4d5a7988776655
+Merge: 1a2b3c4 9f8e7d6
+Author: Repo Owner <owner@example.test>
+Date:   Sat Sep 26 12:00:00 2026 -0700
+
+    Merge branch 'main' into post-02-architecture-as-code
+
+commit 1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d
+Author: Repo Owner <owner@example.test>
+Date:   Sat Sep 26 11:00:00 2026 -0700
+
+    feat(fitness): add the commit-policy check
+
+    Explains the rule. A line that merely talks about Co-Authored-By
+    mid-sentence is not a trailer.

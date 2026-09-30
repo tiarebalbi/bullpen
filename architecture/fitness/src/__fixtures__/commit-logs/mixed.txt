@@ -1,0 +1,27 @@
+commit aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Author: Repo Owner <owner@example.test>
+Date:   Sat Sep 26 13:00:00 2026 -0700
+
+    fix: a clean commit
+
+commit bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+Author: R. Owner <owner@users.noreply.example.test>
+Date:   Sat Sep 26 12:00:00 2026 -0700
+
+    Squash merge from the UI
+
+commit cccccccccccccccccccccccccccccccccccccccc
+Author: Repo Owner <owner@example.test>
+Date:   Sat Sep 26 11:00:00 2026 -0700
+
+    feat: a commit with a trailer
+
+    co-authored-by: Helper <helper@example.com>
+
+commit dddddddddddddddddddddddddddddddddddddddd
+Author: R. Owner <owner@users.noreply.example.test>
+Date:   Sat Sep 26 10:00:00 2026 -0700
+
+    Both problems at once
+
+    Co-Authored-By: Helper <helper@example.com>
