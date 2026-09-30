@@ -48,7 +48,7 @@ describe("tokenizeAdlRule", () => {
     const entry = tokenizeAdlRule("apps IMPORT libraries ONLY THROUGH their package entry point");
     expect(entry.filter((t) => t.keyword).map((t) => t.text)).toEqual(["IMPORT", "ONLY THROUGH"]);
 
-    const secret = tokenizeAdlRule("ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY");
+    const secret = tokenizeAdlRule("ONLY apps/web/app/api/price READS SOME_API_KEY");
     expect(secret.filter((t) => t.keyword).map((t) => t.text)).toEqual(["ONLY", "READS"]);
   });
 
