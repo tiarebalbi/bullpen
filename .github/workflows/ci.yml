@@ -62,6 +62,13 @@ jobs:
           -p architecture/calm/bullpen.pattern.json
           --strict -f junit -o calm-result.xml
 
+      - name: calm validate (Part 2 model)
+        run: >
+          npx --yes @finos/calm-cli@1.60.1 validate
+          -a architecture/calm/moments/part-02.architecture.json
+          -p architecture/calm/bullpen.pattern.json
+          --strict -f junit -o calm-part-02-result.xml
+
       - name: calm validate (timeline)
         run: >
           npx --yes @finos/calm-cli@1.60.1 validate
@@ -75,6 +82,7 @@ jobs:
           name: calm-reports
           path: |
             calm-result.xml
+            calm-part-02-result.xml
             calm-timeline-result.xml
 
   # Every commit in the PR must carry the repo identity and no Co-Authored-By

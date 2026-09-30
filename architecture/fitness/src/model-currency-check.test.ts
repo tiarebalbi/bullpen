@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseAdlFile } from "./parse-adl.js";
-import { ADR_LINKED_RULE, EXTERNAL_SYSTEM_RULE, checkModelCurrency } from "./model-currency-check.js";
+import { ADR_LINKED_RULE, CONTROL_POINTER_RULE, EXTERNAL_SYSTEM_RULE, checkModelCurrency } from "./model-currency-check.js";
 import { ADL_RULE } from "./rules.js";
 import { copyFixture, expectFailureFormat, fixturesRoot, readJsonFile, realRepoRoot, writeJsonFile } from "./test-helpers.js";
 
@@ -218,8 +218,49 @@ describe("model currency: the ADL and the current moment describe the same compo
   });
 });
 
+describe("model currency: a control points at the check that enforces it", () => {
+  function withControl(path: string): string {
+    const root = copyFixture("model-currency-good");
+    const doc = readJsonFile<Doc>(root, MOMENT);
+    (doc.nodes[1] as Record<string, unknown>).controls = {
+      "secret-containment": { requirements: [{ config: { "control-id": "CR-X", "enforced-by": path } }] },
+    };
+    writeJsonFile(root, MOMENT, doc);
+    return root;
+  }
+
+  it("passes when the named check exists", () => {
+    const root = withControl("docs/data-sources.md");
+    expect(checkModelCurrency(root, entriesOf(root))).toEqual([]);
+  });
+
+  it("fails a control whose check is gone, naming the control, the node and the file", () => {
+    const root = withControl("architecture/fitness/src/secret-check.ts");
+    const [violation] = checkModelCurrency(root, entriesOf(root));
+
+    expect(violation!.rule).toBe(CONTROL_POINTER_RULE);
+    expect(violation!.where).toBe(MOMENT);
+    expect(violation!.why).toContain('Control "secret-containment" on "api"');
+    expect(violation!.why).toContain("architecture/fitness/src/secret-check.ts");
+    expectFailureFormat(violation!, "model currency");
+  });
+});
+
 describe("model currency: the real repo", () => {
   it("has no undecided external system, no unlinked ADR, and every component mapped", () => {
     expect(checkModelCurrency(realRepoRoot, parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl")))).toEqual([]);
+  });
+
+  it("still holds with Part 2 as the current moment, so the flip on publish day is safe", () => {
+    const entries = parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl"));
+    expect(checkModelCurrency(realRepoRoot, entries, { currentMoment: "part-02" })).toEqual([]);
+  });
+
+  it("keeps Part 1 as the current moment on this branch, and the Part 2 prediction untouched", () => {
+    const timeline = readJsonFile<Timeline>(realRepoRoot, TIMELINE);
+    expect(timeline["current-moment"]).toBe("part-01");
+    const part2 = timeline.moments.find((m) => m["unique-id"] === "part-02");
+    expect(part2?.details?.["detailed-architecture"]).toBe("moments/part-02.architecture.json");
+    expect(JSON.stringify(part2)).toContain("planned/part-02.architecture.json");
   });
 });

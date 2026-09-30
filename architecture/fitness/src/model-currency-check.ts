@@ -12,15 +12,20 @@ const DATA_SOURCES = "docs/data-sources.md";
 export const EXTERNAL_SYSTEM_RULE =
   "every external system in a CALM moment is decided in an ADR Decision or listed as in use or proposed in docs/data-sources.md";
 export const ADR_LINKED_RULE = "every ADR is linked from the timeline moment of its part";
+export const CONTROL_POINTER_RULE = "every CALM control that names the check enforcing it points at a file that exists";
 
-interface CalmNode {
-  "unique-id": string;
+interface CalmNode extends CalmControlled {
   "node-type": string;
   name?: string;
   metadata?: unknown;
 }
+interface CalmControlled {
+  "unique-id": string;
+  controls?: Record<string, { requirements?: Array<{ config?: Record<string, unknown> }> }>;
+}
 interface CalmDoc {
   nodes?: CalmNode[];
+  relationships?: CalmControlled[];
 }
 interface TimelineMoment {
   "unique-id": string;
@@ -211,6 +216,30 @@ function checkExternalSystems(repoRoot: string, decisions: Decisions): Violation
   return violations;
 }
 
+/** A control that says which check enforces it must name a check that is still there. */
+function checkControlPointers(repoRoot: string): Violation[] {
+  const violations: Violation[] = [];
+  for (const file of calmFiles(repoRoot)) {
+    const doc = readJson<CalmDoc>(repoRoot, file);
+    for (const owner of [...(doc?.nodes ?? []), ...(doc?.relationships ?? [])]) {
+      for (const [controlName, control] of Object.entries(owner.controls ?? {})) {
+        for (const requirement of control.requirements ?? []) {
+          const path = requirement.config?.["enforced-by"];
+          if (typeof path !== "string" || existsSync(join(repoRoot, path))) continue;
+          violations.push({
+            check: CHECK,
+            rule: CONTROL_POINTER_RULE,
+            where: file,
+            why: `Control "${controlName}" on "${owner["unique-id"]}" says ${path} enforces it, but that file does not exist (ADR-0009).`,
+            fix: `Point "enforced-by" at the check that enforces the control, or restore ${path}.`,
+          });
+        }
+      }
+    }
+  }
+  return violations;
+}
+
 function checkAdrLinks(repoRoot: string, decisions: Decisions, timeline: Timeline | undefined): Violation[] {
   if (!timeline) {
     return [
@@ -357,6 +386,7 @@ export function checkModelCurrency(repoRoot: string, entries: AdlEntry[], option
   const timeline = readJson<Timeline>(repoRoot, TIMELINE);
   return [
     ...checkExternalSystems(repoRoot, decisions),
+    ...checkControlPointers(repoRoot),
     ...checkAdrLinks(repoRoot, decisions, timeline),
     ...checkAdlMapping(repoRoot, entries, timeline, options.currentMoment),
   ];

@@ -36,7 +36,13 @@ test.describe("Architecture Explorer", () => {
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 2" }).click();
 
+    // Part 2 is built: same runtime nodes, the rules now fail a build.
     await expect(architecture.getByText("Overview · Part 2")).toBeVisible();
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    await expect(architecture.getByText("Overview · Part 3")).toBeVisible();
     await expect(architecture.getByText("Planned", { exact: true }).first()).toBeVisible();
   });
 

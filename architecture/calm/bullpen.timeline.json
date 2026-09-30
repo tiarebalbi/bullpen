@@ -24,15 +24,20 @@
     {
       "unique-id": "part-02",
       "node-type": "moment",
-      "name": "Part 2 (planned) — Architecture becomes visible",
-      "description": "Prediction: the landing app gains an in-browser architecture explorer over this same timeline, with no new runtime nodes.",
+      "name": "Part 2 — Architecture as code",
+      "description": "The same two Next.js apps and one serverless function as Part 1, with no new runtime node. The rules I had only stated in prompts now fail a build, and the architecture page reads the repo's own records.",
       "details": {
-        "detailed-architecture": "planned/part-02.architecture.json",
+        "detailed-architecture": "moments/part-02.architecture.json",
         "required-pattern": "bullpen.pattern.json"
       },
       "adrs": [
         "architecture/adr/0009-guardrails-enforced-not-requested.md"
-      ]
+      ],
+      "metadata": {
+        "planned-architecture": "planned/part-02.architecture.json",
+        "planned-name": "Part 2 (planned) — Architecture becomes visible",
+        "planned-description": "Prediction: the landing app gains an in-browser architecture explorer over this same timeline, with no new runtime nodes."
+      }
     },
     {
       "unique-id": "part-03",
