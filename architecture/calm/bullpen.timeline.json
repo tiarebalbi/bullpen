@@ -29,7 +29,10 @@
       "details": {
         "detailed-architecture": "planned/part-02.architecture.json",
         "required-pattern": "bullpen.pattern.json"
-      }
+      },
+      "adrs": [
+        "architecture/adr/0009-guardrails-enforced-not-requested.md"
+      ]
     },
     {
       "unique-id": "part-03",
