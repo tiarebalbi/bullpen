@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { carryForward, partOfMomentId, plannedNamesOf, type CarryPart } from "@bullpen/contracts/architecture";
 
@@ -173,22 +173,43 @@ function loadMoments(repoRoot: string, timeline: CalmTimeline, calmDir: string, 
   return loaded;
 }
 
+/** Every CALM document in architecture/calm/planned/: the predictions, which stay when a part is built. */
+function loadPlannedDocs(calmDir: string): CalmDocument[] {
+  const plannedDir = join(calmDir, "planned");
+  if (!existsSync(plannedDir)) return [];
+  return readdirSync(plannedDir)
+    .filter((file) => file.endsWith(".architecture.json"))
+    .sort()
+    .map((file) => readJson<CalmDocument>(join(plannedDir, file)));
+}
+
+export interface ResolvedExplorer {
+  /** The explorer parts as the page renders them: what is built carried into the planned parts. */
+  parts: Array<ExplorerPartData & CarryPart>;
+  builtMoments: BuiltMoment[];
+  calmByPart: Map<number, CalmDocument>;
+  violations: string[];
+}
+
 /**
- * Runs the consistency check over every moment the timeline lists. Each
- * moment's CALM document is the one the timeline names (`detailed-architecture`),
- * and the moments up to `current-moment` are the built ones. The explorer
- * parts are checked as the page renders them: with what is built carried
- * forward by the same function the landing's loader uses (ADR-0011).
+ * Loads every moment the timeline lists and resolves the explorer parts with
+ * the same carry function, and the same planned ids (every file in
+ * `planned/`, as the landing's loader reads them), as the page. A part's
+ * planned file stays after the part is built, so it keeps naming its ids.
  */
-export function checkAllExplorerParts(repoRoot: string): string[] {
+export function resolveExplorerParts(repoRoot: string): ResolvedExplorer {
+  const violations: string[] = [];
+  const empty = { parts: [], builtMoments: [], calmByPart: new Map<number, CalmDocument>(), violations };
   const timelinePath = join(repoRoot, "architecture", "calm", "bullpen.timeline.json");
-  if (!existsSync(timelinePath)) return [`architecture/calm/bullpen.timeline.json: not found`];
+  if (!existsSync(timelinePath)) return { ...empty, violations: [`architecture/calm/bullpen.timeline.json: not found`] };
   const timeline = readJson<CalmTimeline>(timelinePath);
   const currentPart = partOfMomentId(timeline["current-moment"]);
-  if (currentPart === null) return [`bullpen.timeline.json: current-moment "${timeline["current-moment"]}" is not a moment id`];
+  if (currentPart === null) {
+    return { ...empty, violations: [`bullpen.timeline.json: current-moment "${timeline["current-moment"]}" is not a moment id`] };
+  }
 
-  const violations: string[] = [];
-  const loaded = loadMoments(repoRoot, timeline, dirname(timelinePath), violations);
+  const calmDir = dirname(timelinePath);
+  const loaded = loadMoments(repoRoot, timeline, calmDir, violations);
 
   // The carry rule reads each explorer part's status; the timeline decides what is built.
   for (const l of loaded) {
@@ -200,17 +221,25 @@ export function checkAllExplorerParts(repoRoot: string): string[] {
     }
   }
 
-  const builtMoments: BuiltMoment[] = loaded.filter((l) => l.part <= currentPart).map((l) => ({ momentId: l.momentId, part: l.part, doc: l.calm }));
-  const plannedNames = plannedNamesOf(loaded.filter((l) => l.part > currentPart).map((l) => l.calm));
-  const resolved = carryForward(
-    loaded.map((l) => l.explorer),
-    plannedNames,
-  );
+  return {
+    parts: carryForward(loaded.map((l) => l.explorer), plannedNamesOf(loadPlannedDocs(calmDir))),
+    builtMoments: loaded.filter((l) => l.part <= currentPart).map((l) => ({ momentId: l.momentId, part: l.part, doc: l.calm })),
+    calmByPart: new Map(loaded.map((l) => [l.part, l.calm])),
+    violations,
+  };
+}
 
-  for (const l of loaded) {
-    const explorer = resolved.find((p) => p.part === l.part)!;
-    violations.push(...checkExplorerConsistency(explorer, l.calm, builtMoments));
+/**
+ * Runs the consistency check over every moment the timeline lists. Each
+ * moment's CALM document is the one the timeline names (`detailed-architecture`),
+ * and the moments up to `current-moment` are the built ones. The explorer
+ * parts are checked as the page renders them: with what is built carried
+ * forward by the same function the landing's loader uses (ADR-0011).
+ */
+export function checkAllExplorerParts(repoRoot: string): string[] {
+  const { parts, builtMoments, calmByPart, violations } = resolveExplorerParts(repoRoot);
+  for (const explorer of parts) {
+    violations.push(...checkExplorerConsistency(explorer, calmByPart.get(explorer.part)!, builtMoments));
   }
-
   return violations;
 }

@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { checkAllExplorerParts, checkExplorerConsistency, type BuiltMoment, type CalmDocument, type ExplorerPartData } from "./explorer-consistency-check.js";
+import { checkAllExplorerParts, checkExplorerConsistency, resolveExplorerParts, type BuiltMoment, type CalmDocument, type ExplorerPartData } from "./explorer-consistency-check.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..", "..", "..");
@@ -132,5 +132,14 @@ describe("checkAllExplorerParts on fixtures", () => {
   it("fails a hand-written carried node that is in no built moment", () => {
     const violations = checkAllExplorerParts(join(fixtures, "explorer-carry-invented"));
     expect(violations.some((v) => v.includes('"invented-tool"') && v.includes("does not exist in the built moment"))).toBe(true);
+  });
+
+  it("leaves a predicted replacement alone once its part is built: planned/part-02 still names what Part 3 replaces", () => {
+    const root = join(fixtures, "explorer-carry-built-part2");
+    expect(checkAllExplorerParts(root)).toEqual([]);
+    const part3 = resolveExplorerParts(root).parts.find((p) => p.part === 3)!;
+    // The built Part 2 has old-service and tool. Only tool carries: planned/part-02
+    // names old-service, so the prediction for Part 3 (which omits it) stands.
+    expect(part3.nodes.filter((n) => n.carried).map((n) => [n.id, n.builtIn])).toEqual([["tool", "part-02"]]);
   });
 });
