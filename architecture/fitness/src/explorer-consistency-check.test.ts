@@ -69,12 +69,17 @@ describe("calmPathForPart", () => {
 });
 
 describe("preferring the built moment over the prediction", () => {
-  it("changes no rule: Part 2's content passes against the planned prediction as well as the real moment", () => {
-    const read = (relative: string) => JSON.parse(readFileSync(join(realRepoRoot, relative), "utf8"));
-    const content = read("content/architecture/part-02.json") as ExplorerPartData;
+  const read = (relative: string) => JSON.parse(readFileSync(join(realRepoRoot, relative), "utf8"));
+  const content = read("content/architecture/part-02.json") as ExplorerPartData;
 
-    expect(checkExplorerConsistency(content, read("architecture/calm/planned/part-02.architecture.json") as CalmDocument)).toEqual([]);
+  it("holds Part 2's content to what was built", () => {
     expect(checkExplorerConsistency(content, read("architecture/calm/moments/part-02.architecture.json") as CalmDocument)).toEqual([]);
+  });
+
+  it("would not hold it to the prediction: it differs from it only by the analytics ADR-0010 added after the prediction was written", () => {
+    const violations = checkExplorerConsistency(content, read("architecture/calm/planned/part-02.architecture.json") as CalmDocument);
+    expect(violations.length).toBeGreaterThan(0);
+    for (const violation of violations) expect(violation.why).toMatch(/google-analytics|microsoft-clarity/);
   });
 });
 
