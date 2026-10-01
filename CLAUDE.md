@@ -7,7 +7,8 @@ Software in 2026*, one part a week.
 ## Where each record lives
 
 - `architecture/adr/` — decisions, with context, consequences and alternatives.
-- `architecture/adl/structure.adl` — the structural rules the codebase must hold to.
+- `architecture/adl/structure.adl` — the structural rules the codebase must hold to. One parser
+  (`architecture/fitness/src/adl.ts`) reads it; the landing app reads the JSON `adl:emit` writes.
 - `architecture/calm/` — the system's shape over time. `architecture/calm/moments/` is what
   was built; `architecture/calm/planned/` is each part's prediction (never edit it: Part 6
   compares it with reality); `architecture/calm/bullpen.timeline.json` links each moment to
