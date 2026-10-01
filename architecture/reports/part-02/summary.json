@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "part": 2,
+  "generatedAt": "2026-10-01T00:19:28.475Z",
+  "commit": "c6e4439d7dc34bdc1666a39cedc346ebd63c73e6",
+  "dirty": false,
+  "ref": "post-02-architecture-as-code",
+  "source": "local",
+  "passed": true,
+  "checks": [
+    {
+      "id": "check-arch",
+      "name": "check:arch",
+      "command": "pnpm check:arch",
+      "passed": true,
+      "summary": "check:arch passed: 9 checks held, 15 rules enforced",
+      "raw": "check-arch.txt",
+      "rules": [
+        {
+          "rule": "every directory under apps/ and packages/ is DEFINED here",
+          "check": "structure",
+          "passed": true
+        },
+        {
+          "rule": "every DEFINED component and library exists as a directory",
+          "check": "structure",
+          "passed": true
+        },
+        {
+          "rule": "apps NEVER DEPEND ON other apps",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "rule": "libraries NEVER DEPEND ON apps",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "rule": "apps IMPORT libraries ONLY THROUGH their package entry point",
+          "check": "entry-point imports",
+          "passed": true
+        },
+        {
+          "rule": "ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "rule": "every DEFINED component and library maps to a node in the current CALM moment",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "rule": "every webclient and service node in the current CALM moment maps to a DEFINED entry",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "rule": "every external system in a CALM moment is decided in an ADR Decision or listed as in use or proposed in docs/data-sources.md",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "rule": "every ADR is linked from the timeline moment of its part",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "rule": "every CALM control that names the check enforcing it points at a file that exists",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "rule": "modeled monthly CoinGecko calls stay within 90% of the Demo plan's monthly allowance",
+          "check": "budget",
+          "passed": true
+        },
+        {
+          "rule": "every explorer node and edge exists in its CALM document, and every CALM node appears in the explorer",
+          "check": "explorer consistency",
+          "passed": true
+        },
+        {
+          "rule": "no file in the repo contains the repo author's email address",
+          "check": "email in files",
+          "passed": true
+        },
+        {
+          "rule": "every ADL ASSERT is enforced by a check, and every enforced rule is still in the ADL",
+          "check": "rule coverage",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "turbo-boundaries",
+      "name": "turbo boundaries",
+      "command": "pnpm exec turbo boundaries",
+      "passed": true,
+      "summary": "Checked 171 files in 5 packages, no issues found",
+      "raw": "turbo-boundaries.txt",
+      "rules": []
+    },
+    {
+      "id": "calm-part-01",
+      "name": "calm validate (part-01)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/part-01.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-part-01.json",
+      "rules": []
+    },
+    {
+      "id": "calm-part-02",
+      "name": "calm validate (part-02)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/part-02.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-part-02.json",
+      "rules": []
+    },
+    {
+      "id": "calm-timeline",
+      "name": "calm validate (timeline)",
+      "command": "npx @finos/calm-cli@1.60.1 validate --timeline architecture/calm/bullpen.timeline.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-timeline.json",
+      "rules": []
+    }
+  ]
+}
