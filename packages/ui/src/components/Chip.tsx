@@ -11,7 +11,7 @@ import type { CSSProperties, ReactNode } from "react";
  * Passing `onClick` renders a real <button aria-pressed>; omitting it
  * renders a <span>, since a status chip isn't a control.
  */
-export type ChipTone = "neutral" | "gain" | "loss" | "accent" | "outline";
+export type ChipTone = "neutral" | "gain" | "loss" | "accent" | "outline" | "published";
 
 export interface ChipProps {
   children: ReactNode;
@@ -27,6 +27,8 @@ const TONE_STYLE: Record<ChipTone, CSSProperties> = {
   loss: { background: "color-mix(in oklch, var(--destructive) 14%, transparent)", color: "var(--destructive)" },
   accent: { background: "color-mix(in oklch, var(--ember) 18%, transparent)", color: "var(--bp-accent-text)" },
   outline: { background: "transparent", color: "var(--foreground-muted)", border: "1px dashed var(--foreground-muted)" },
+  // The design's Published chip (STATUS in Bullpen Landing.dc.html): lime, not grey.
+  published: { background: "var(--lime-glow)", color: "var(--lime-glow-foreground)" },
 };
 
 const BASE_STYLE: CSSProperties = {

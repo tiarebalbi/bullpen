@@ -1,12 +1,6 @@
 import type { ReactNode } from "react";
-import type { SeriesPart } from "../../lib/series.js";
+import { formatPublishDate, type SeriesPart } from "../../lib/series.js";
 import { SeriesCard } from "./ui.js";
-
-function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
-    new Date(`${iso}T00:00:00Z`),
-  );
-}
 
 export function SeriesRail({ parts }: { parts: SeriesPart[] }): ReactNode {
   return (
@@ -30,7 +24,7 @@ export function SeriesRail({ parts }: { parts: SeriesPart[] }): ReactNode {
               status={part.status}
               introduced={part.introduced}
               date={part.date}
-              dateLabel={part.date ? formatDate(part.date) : undefined}
+              dateLabel={part.date ? formatPublishDate(part.date) : undefined}
               href={part.url || undefined}
             />
           </li>
