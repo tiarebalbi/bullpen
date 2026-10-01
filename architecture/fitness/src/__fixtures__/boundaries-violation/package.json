@@ -1,5 +1,5 @@
 {
-  "name": "boundaries-violation-fixture",
+  "name": "fixture-root",
   "private": true,
   "packageManager": "pnpm@9.15.4"
 }

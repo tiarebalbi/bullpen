@@ -5,11 +5,43 @@
   },
   "boundaries": {
     "tags": {
-      "app": {
-        "dependencies": { "deny": ["app"] }
+      "landing": {
+        "dependencies": {
+          "allow": [
+            "ui",
+            "contracts"
+          ],
+          "deny": [
+            "trading-app"
+          ]
+        }
       },
-      "library": {
-        "dependencies": { "deny": ["app"] }
+      "trading-app": {
+        "dependencies": {
+          "allow": [
+            "ui",
+            "contracts"
+          ],
+          "deny": [
+            "landing"
+          ]
+        }
+      },
+      "ui": {
+        "dependencies": {
+          "deny": [
+            "landing",
+            "trading-app"
+          ]
+        }
+      },
+      "contracts": {
+        "dependencies": {
+          "deny": [
+            "landing",
+            "trading-app"
+          ]
+        }
       }
     }
   }

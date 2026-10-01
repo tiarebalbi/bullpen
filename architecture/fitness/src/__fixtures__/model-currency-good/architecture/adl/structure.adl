@@ -1,8 +1,9 @@
-ADL: FIXTURE STRUCTURE
-TYPE Structural
 DESCRIPTION Model currency fixture
+CATEGORY Structural
 DEFINE SYSTEM Fixture AS fixture
-DEFINE COMPONENT Web AS apps/web
-DEFINE LIBRARY Kit AS packages/kit
-ASSERT(every DEFINED component and library maps to a node in the current CALM moment)
+  DEFINE COMPONENT Web AS apps/web
+  DEFINE LIBRARY Kit AS packages/kit
+
+# Model currency
+ASSERT(every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment)
 ASSERT(every webclient and service node in the current CALM moment maps to a DEFINED entry)

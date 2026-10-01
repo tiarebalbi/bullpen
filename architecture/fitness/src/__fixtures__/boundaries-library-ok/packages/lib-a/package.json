@@ -1,8 +1,0 @@
-{
-  "name": "lib-a",
-  "private": true,
-  "version": "0.1.0",
-  "dependencies": {
-    "lib-b": "workspace:*"
-  }
-}
