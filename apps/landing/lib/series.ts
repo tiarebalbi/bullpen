@@ -50,7 +50,12 @@ export function parseSeries(content: string, sourceLabel = "content/series.json"
     throw new Error(`${sourceLabel}: expected a JSON array of series parts`);
   }
 
-  return data.map((entry, index) => validateSeriesEntry(entry, index, sourceLabel));
+  const parts = data.map((entry, index) => validateSeriesEntry(entry, index, sourceLabel));
+  const next = parts.filter((part) => part.status === "next");
+  if (next.length > 1) {
+    throw new Error(`${sourceLabel}: parts ${next.map((part) => part.part).join(" and ")} are all "next" -- only one part is next`);
+  }
+  return parts;
 }
 
 function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string): SeriesPart {
@@ -99,8 +104,24 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
   if (url !== "" && date === null) {
     throw new Error(`${sourceLabel}: entry ${index} (part ${part}) has a "url" but no "date" -- published parts must record when`);
   }
+  if (status === "published" && url === "") {
+    throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is "published" but has no "url" and "date" -- a published part links its post and says when`);
+  }
+  if (status !== "published" && url !== "") {
+    throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is "${status}" but has a "url" and "date" -- only a published part has them`);
+  }
 
   return { part, title, status: status as SeriesStatus, url, introduced, date: date as string | null };
+}
+
+/**
+ * "2026-10-04" as "Oct 4, 2026", the card's date format. The date is a calendar
+ * date, not a moment: it is read as midnight UTC and shown in UTC, so it is
+ * the same day wherever the page is built or read. Formatted in the machine's
+ * own time zone, it would show Oct 3 anywhere west of UTC.
+ */
+export function formatPublishDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 }
 
 export function loadSeries(filePath: string): SeriesPart[] {

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTRODUCED_MAX_LENGTH, TITLE_MAX_LENGTH, parseSeries } from "./series.js";
+import { INTRODUCED_MAX_LENGTH, TITLE_MAX_LENGTH, formatPublishDate, parseSeries } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 
@@ -11,11 +11,19 @@ describe("parseSeries", () => {
     const parts = parseSeries(content);
 
     expect(parts).toHaveLength(6);
-    expect(parts[0]).toMatchObject({ part: 1, status: "next", url: "", date: null });
-    for (const part of parts.slice(1)) {
+    expect(parts[0]).toMatchObject({
+      part: 1,
+      status: "published",
+      url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
+      date: "2026-10-04",
+    });
+    expect(parts[1]).toMatchObject({ part: 2, status: "next", url: "", date: null });
+    for (const part of parts.slice(2)) {
       expect(part.status).toBe("planned");
       expect(part.url).toBe("");
       expect(part.date).toBeNull();
+    }
+    for (const part of parts) {
       expect(part.title.length).toBeGreaterThan(0);
       expect(part.introduced.length).toBeGreaterThan(0);
     }
@@ -105,5 +113,54 @@ describe("parseSeries", () => {
       { part: 1, title: "X", status: "published", url: "https://x.test", introduced: "Y", date: null },
     ]);
     expect(() => parseSeries(malformed)).toThrow(/has a "url" but no "date"/);
+  });
+
+  it("throws when a published part has neither a url nor a date: it has to link its post and say when", () => {
+    const malformed = JSON.stringify([{ part: 1, title: "X", status: "published", url: "", introduced: "Y", date: null }]);
+    expect(() => parseSeries(malformed)).toThrow(/is "published" but has no "url" and "date"/);
+  });
+
+  it("throws when a part that is not published has a url and a date", () => {
+    for (const status of ["next", "planned"]) {
+      const malformed = JSON.stringify([{ part: 1, title: "X", status, url: "https://x.test", introduced: "Y", date: "2026-10-04" }]);
+      expect(() => parseSeries(malformed), status).toThrow(new RegExp(`is "${status}" but has a "url" and "date" -- only a published part has them`));
+    }
+  });
+
+  it("throws when more than one part is next", () => {
+    const malformed = JSON.stringify([
+      { part: 1, title: "X", status: "next", url: "", introduced: "Y", date: null },
+      { part: 2, title: "X", status: "next", url: "", introduced: "Y", date: null },
+    ]);
+    expect(() => parseSeries(malformed)).toThrow(/parts 1 and 2 are all "next" -- only one part is next/);
+  });
+
+  it("accepts a published part followed by the next one and then the planned ones", () => {
+    const valid = JSON.stringify([
+      { part: 1, title: "A", status: "published", url: "https://x.test/a", introduced: "Y", date: "2026-10-04" },
+      { part: 2, title: "B", status: "next", url: "", introduced: "Y", date: null },
+      { part: 3, title: "C", status: "planned", url: "", introduced: "Y", date: null },
+    ]);
+    expect(parseSeries(valid).map((part) => part.status)).toEqual(["published", "next", "planned"]);
+  });
+});
+
+describe("formatPublishDate", () => {
+  it("writes a calendar date as the card shows it", () => {
+    expect(formatPublishDate("2026-10-04")).toBe("Oct 4, 2026");
+    expect(formatPublishDate("2026-10-11")).toBe("Oct 11, 2026");
+  });
+
+  it("is the same day in every time zone, west of UTC and east of it", () => {
+    const original = process.env.TZ;
+    try {
+      for (const zone of ["UTC", "America/Los_Angeles", "America/Sao_Paulo", "Pacific/Honolulu", "Asia/Tokyo", "Pacific/Kiritimati"]) {
+        process.env.TZ = zone;
+        expect(formatPublishDate("2026-10-04"), zone).toBe("Oct 4, 2026");
+      }
+    } finally {
+      if (original === undefined) delete process.env.TZ;
+      else process.env.TZ = original;
+    }
   });
 });
