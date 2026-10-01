@@ -267,3 +267,73 @@ test.describe("Architecture Explorer at 390px", () => {
     expect(right).toBeLessThanOrEqual(391);
   });
 });
+
+// Built nodes carry forward into the planned parts (ADR-0011): the Part 1
+// analytics cards and their four edges stay on the map after Part 1, marked
+// as built, so scrubbing forward never shows analytics removed.
+const ANALYTICS_CARDS = ["Google Analytics 4, External", "Microsoft Clarity, External"] as const;
+const ANALYTICS_EDGES = [
+  "landing-to-google-analytics",
+  "landing-to-microsoft-clarity",
+  "trading-app-to-google-analytics",
+  "trading-app-to-microsoft-clarity",
+] as const;
+
+for (const viewport of [
+  { width: 1440, height: 1200 },
+  { width: 390, height: 844 },
+]) {
+  test.describe(`Carried nodes at ${viewport.width}px`, () => {
+    test.use({ viewport });
+
+    test.beforeEach(async ({ page }) => {
+      await mockPriceRoute(page);
+      await page.goto("/");
+    });
+
+    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built from Part 2 on", async ({ page }) => {
+      const architecture = page.locator("#architecture");
+      const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+      for (let part = 1; part <= 6; part++) {
+        if (part > 1) await scrubber.getByRole("button", { name: `PART ${part}` }).click();
+        await expect(architecture.getByText(`Overview · Part ${part}`)).toBeVisible();
+
+        for (const name of ANALYTICS_CARDS) {
+          const card = architecture.getByRole("button", { name: new RegExp(`^${name}`) });
+          await expect(card, `${name} in Part ${part}`).toHaveCount(1);
+          await expect(card.getByText("Built in Part 1")).toHaveCount(part === 1 ? 0 : 1);
+          // Built, not predicted: never ghosted.
+          await expect(card.getByText("PLANNED")).toHaveCount(0);
+        }
+        for (const edge of ANALYTICS_EDGES) {
+          await expect(architecture.getByTestId(`rf__edge-${edge}`), `${edge} in Part ${part}`).toHaveCount(1);
+        }
+      }
+    });
+
+    test("what changed in Part 2 lists neither analytics node", async ({ page }) => {
+      const architecture = page.locator("#architecture");
+      const scrubber = architecture.getByRole("group", { name: "Series part" });
+      await scrubber.getByRole("button", { name: "PART 2" }).click();
+
+      const panel = architecture.getByLabel("Details");
+      await expect(panel.getByText("What changed in Part 2")).toBeVisible();
+      await expect(panel.getByText("Google Analytics 4")).toHaveCount(0);
+      await expect(panel.getByText("Microsoft Clarity")).toHaveCount(0);
+    });
+
+    test("selecting a carried node shows its Part 1 text and ADR-0010", async ({ page }) => {
+      const architecture = page.locator("#architecture");
+      const scrubber = architecture.getByRole("group", { name: "Series part" });
+      await scrubber.getByRole("button", { name: "PART 4" }).click();
+
+      await architecture.getByRole("button", { name: /^Google Analytics 4, External/ }).click();
+      const panel = architecture.getByLabel("Details");
+      await expect(panel.getByText("Built in Part 1; still running in this prediction.")).toBeVisible();
+      await expect(panel.getByText(/Page views and a few events from both apps/)).toBeVisible();
+      await expect(panel.getByText("ADR-0010")).toBeVisible();
+      await expect(panel.getByText("ADR pending: written before this part ships.")).toHaveCount(0);
+    });
+  });
+}
