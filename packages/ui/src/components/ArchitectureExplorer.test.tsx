@@ -84,20 +84,20 @@ describe("ArchitectureExplorer", () => {
 
   it("reports each move between parts once, as from and to", () => {
     installMatchMedia();
-    const onPartChange = vi.fn();
+    const onPartMoved = vi.fn();
     render(
-      <ArchitectureExplorer parts={[PART_1, PART_2]} adrTitles={{}} adrHrefs={{}} onPartChange={onPartChange} />,
+      <ArchitectureExplorer parts={[PART_1, PART_2]} adrTitles={{}} adrHrefs={{}} onPartMoved={onPartMoved} />,
     );
-    expect(onPartChange).not.toHaveBeenCalled();
+    expect(onPartMoved).not.toHaveBeenCalled();
 
     const scrubber = screen.getByRole("group", { name: "Series part" });
     fireEvent.keyDown(scrubber, { key: "ArrowRight" });
-    expect(onPartChange).toHaveBeenCalledTimes(1);
-    expect(onPartChange).toHaveBeenCalledWith(1, 2);
+    expect(onPartMoved).toHaveBeenCalledTimes(1);
+    expect(onPartMoved).toHaveBeenCalledWith(1, 2);
 
     fireEvent.keyDown(scrubber, { key: "ArrowLeft" });
-    expect(onPartChange).toHaveBeenLastCalledWith(2, 1);
-    expect(onPartChange).toHaveBeenCalledTimes(2);
+    expect(onPartMoved).toHaveBeenLastCalledWith(2, 1);
+    expect(onPartMoved).toHaveBeenCalledTimes(2);
   });
 
   it("shows the default 'what changed' panel with no node selected", () => {

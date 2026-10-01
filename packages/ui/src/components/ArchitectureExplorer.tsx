@@ -26,8 +26,8 @@ export interface ArchitectureExplorerProps {
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
   adrHrefs: Record<string, string>;
-  /** Called after the visitor (or the scrubber's autoplay) moves from one part to another. */
-  onPartChange?: (from: number, to: number) => void;
+  /** Called after the explorer has moved from one part to another (click, arrow key or autoplay). */
+  onPartMoved?: (from: number, to: number) => void;
   className?: string;
 }
 
@@ -74,7 +74,7 @@ function ArchitectureExplorerInner({
   initialPart = 1,
   adrTitles,
   adrHrefs,
-  onPartChange,
+  onPartMoved,
   className,
 }: ArchitectureExplorerProps): ReactNode {
   const reduced = useReducedMotion();
@@ -111,9 +111,9 @@ function ArchitectureExplorerInner({
   const reportedPart = useRef(initialPart);
   useEffect(() => {
     if (reportedPart.current === part) return;
-    onPartChange?.(reportedPart.current, part);
+    onPartMoved?.(reportedPart.current, part);
     reportedPart.current = part;
-  }, [part, onPartChange]);
+  }, [part, onPartMoved]);
 
   const goToPart = useCallback(
     (next: number) => {
