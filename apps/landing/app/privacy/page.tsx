@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Footer } from "../components/Footer.js";
 
@@ -47,17 +48,17 @@ export default function PrivacyPage(): ReactNode {
     <>
       <header className="bp-nav">
         <div className="bp-nav__brand">
-          <a href="/" className="bp-nav__wordmark bp-nav__wordmark--link">
+          <Link href="/" className="bp-nav__wordmark bp-nav__wordmark--link">
             Bullpen
-          </a>
+          </Link>
           <a href="https://tiarebalbi.com" className="bp-nav__byline">
             by Tiarê Balbi
           </a>
         </div>
         <div className="bp-nav__spacer" />
-        <a href="/" className="bp-nav__series-link bp-privacy__back">
+        <Link href="/" className="bp-nav__series-link bp-privacy__back">
           Back to Bullpen
-        </a>
+        </Link>
       </header>
 
       <main className="bp-section bp-privacy">

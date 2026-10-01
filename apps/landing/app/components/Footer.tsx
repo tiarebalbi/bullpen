@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { CookieSettingsButton } from "./ui.js";
 
@@ -10,7 +11,7 @@ export function Footer(): ReactNode {
       </p>
       <p>Market data: crypto by CoinGecko. U.S. stocks arrive in Part 3.</p>
       <p className="bp-footer__legal">
-        <a href="/privacy">Privacy</a>
+        <Link href="/privacy">Privacy</Link>
         <span aria-hidden="true"> · </span>
         <CookieSettingsButton />
       </p>
