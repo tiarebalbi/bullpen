@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@bullpen/contracts": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "22.20.4",
     "tsx": "4.23.15",

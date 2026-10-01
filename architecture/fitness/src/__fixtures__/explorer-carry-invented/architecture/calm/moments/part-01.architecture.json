@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {
+      "unique-id": "app"
+    },
+    {
+      "unique-id": "tool"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "app-to-tool"
+    }
+  ]
+}
