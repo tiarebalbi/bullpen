@@ -46,3 +46,33 @@ describe("validateJsonLd", () => {
     expect(result.valid).toBe(false);
   });
 });
+
+describe("validateJsonLd: the published parts of the series", () => {
+  const post = { "@type": "BlogPosting", headline: "Why distribute at all", url: "https://tiarebalbi.com/en/blog/a-post", datePublished: "2026-10-04" };
+  const withParts = (hasPart: unknown) => ({
+    "@context": "https://schema.org",
+    "@graph": [VALID["@graph"][0], { ...VALID["@graph"][1], hasPart }],
+  });
+
+  it("accepts a series with its published parts", () => {
+    expect(validateJsonLd(withParts([post, { ...post, headline: "Architecture as code", datePublished: "2026-10-11" }])).valid).toBe(true);
+  });
+
+  it("still accepts a series with none published, as long as it says nothing about parts", () => {
+    expect(validateJsonLd(VALID).valid).toBe(true);
+  });
+
+  it("rejects an empty hasPart: a series with no parts leaves the property out", () => {
+    expect(validateJsonLd(withParts([])).valid).toBe(false);
+  });
+
+  it("rejects a part with no headline, no url, a non-https url or a date that is not a date", () => {
+    for (const broken of [{ ...post, headline: "" }, { ...post, url: undefined }, { ...post, url: "http://tiarebalbi.com/x" }, { ...post, datePublished: "October 4" }, { ...post, datePublished: undefined }]) {
+      expect(validateJsonLd(withParts([broken])).valid, JSON.stringify(broken)).toBe(false);
+    }
+  });
+
+  it("rejects a part that is not a BlogPosting", () => {
+    expect(validateJsonLd(withParts([{ ...post, "@type": "Thing" }])).valid).toBe(false);
+  });
+});

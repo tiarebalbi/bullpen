@@ -1,8 +1,10 @@
+import { join } from "node:path";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@bullpen/ui/styles.css";
 import "./landing.css";
 import { JsonLd } from "./components/JsonLd.js";
+import { loadSeries } from "../lib/series.js";
 import { PRODUCTION_HOST } from "./lib/productionHost.js";
 
 const TITLE = "Bullpen: Architecting Software in 2026, Built in Public";
@@ -47,6 +49,10 @@ try {
 } catch (e) {}
 `;
 
+// `next build`/`next dev` run with this package's directory as cwd (true under
+// both pnpm --filter and turbo), so the repo root is two levels up.
+const series = loadSeries(join(process.cwd(), "..", "..", "content", "series.json"));
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // suppressHydrationWarning: the theme class below is applied by an
@@ -56,7 +62,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <JsonLd />
+        <JsonLd parts={series} />
       </head>
       <body>{children}</body>
     </html>
