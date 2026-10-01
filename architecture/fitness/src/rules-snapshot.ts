@@ -72,12 +72,95 @@ function calmArgs(kind: "moment" | "timeline", file: string, outFile: string): s
     : ["validate", "--timeline", file, "--strict", "-f", "json", "-o", outFile];
 }
 
+const lastLine = (text: string): string => text.trim().split("\n").filter(Boolean).pop() ?? "";
+
+/** check:arch, in process: the result of each check, with its rules, and the text that backs it. */
+function archCheck(results: CheckResult[], repoRoot: string): { check: SnapshotCheck; file: string } {
+  const violations = results.flatMap((result) => result.violations);
+  const passed = violations.length === 0;
+  const text = passed
+    ? `check:arch passed: ${results.length} checks held, ${results.reduce((n, r) => n + r.rules.length, 0)} rules enforced\n`
+    : `${formatViolations(violations)}\n`;
+  return {
+    file: scrub(text, repoRoot),
+    check: {
+      id: "check-arch",
+      name: "check:arch",
+      command: "pnpm check:arch",
+      passed,
+      summary: lastLine(text),
+      raw: "check-arch.txt",
+      rules: results.flatMap((result) => result.rules.map((rule) => ({ rule, check: result.name, passed: result.violations.length === 0 }))),
+    },
+  };
+}
+
+/** `turbo boundaries` as a command of its own. */
+function turboCheck(run: BoundariesRun, fallbackText: string, repoRoot: string): { check: SnapshotCheck; file: string } {
+  const text = scrub(`${run.stdout}${run.stderr}` || fallbackText, repoRoot);
+  return {
+    file: text,
+    check: {
+      id: "turbo-boundaries",
+      name: "turbo boundaries",
+      command: "pnpm exec turbo boundaries",
+      passed: run.status === 0,
+      summary: lastLine(text) || (run.error ?? ""),
+      raw: "turbo-boundaries.txt",
+      rules: [],
+    },
+  };
+}
+
+interface CalmTarget {
+  id: string;
+  label: string;
+  kind: "moment" | "timeline";
+  file: string;
+}
+
+/** Every built moment, then the timeline. */
+function calmTargets(repoRoot: string): CalmTarget[] {
+  const momentsDir = join(repoRoot, "architecture", "calm", "moments");
+  const names = existsSync(momentsDir) ? readdirSync(momentsDir).filter((name) => name.endsWith(".architecture.json")).sort() : [];
+  const moments = names.map((name): CalmTarget => {
+    const id = name.replace(".architecture.json", "");
+    return { id: `calm-${id}`, label: `calm validate (${id})`, kind: "moment", file: `architecture/calm/moments/${name}` };
+  });
+  return [...moments, { id: "calm-timeline", label: "calm validate (timeline)", kind: "timeline", file: "architecture/calm/bullpen.timeline.json" }];
+}
+
+/** `calm validate --strict` on one target. Unreadable output counts as a failure. */
+function calmCheck(target: CalmTarget, repoRoot: string, runCalm: SnapshotDeps["runCalm"]): { check: SnapshotCheck; file: string } {
+  const scratch = mkdtempSync(join(tmpdir(), "calm-snapshot-"));
+  const outFile = join(scratch, "result.json");
+  const run = runCalm(repoRoot, calmArgs(target.kind, target.file, outFile));
+  const output = existsSync(outFile) ? readFileSync(outFile, "utf8") : run.output;
+
+  let result: { hasErrors?: boolean; hasWarnings?: boolean } = {};
+  try {
+    result = JSON.parse(output) as typeof result;
+  } catch {
+    /* stays empty, so `passed` below is false */
+  }
+  const passed = run.status === 0 && result.hasErrors === false && result.hasWarnings === false;
+  return {
+    file: `${scrub(output.trim() || JSON.stringify({ error: "no output" }), repoRoot)}\n`,
+    check: {
+      id: target.id,
+      name: target.label,
+      command: `npx ${CALM_CLI} ${calmArgs(target.kind, target.file, "<out>").join(" ")}`,
+      passed,
+      summary: passed ? "no errors, no warnings" : `hasErrors=${String(result.hasErrors)} hasWarnings=${String(result.hasWarnings)} exit=${String(run.status)}`,
+      raw: `${target.id}.json`,
+      rules: [],
+    },
+  };
+}
+
 /** Runs every rule check once and returns the snapshot plus the raw files that back it. */
 export function buildSnapshot(repoRoot: string, part: number, deps: SnapshotDeps): { snapshot: RulesSnapshot; files: Record<string, string> } {
-  const files: Record<string, string> = {};
-  const checks: SnapshotCheck[] = [];
-
-  // check:arch, in process, with turbo's raw output captured on the way.
+  // turbo's raw output is captured on the way through check:arch, as a fallback for its own command.
   let boundariesRaw = "";
   const results = deps.runChecks(repoRoot, {
     runner: (root) => {
@@ -86,76 +169,29 @@ export function buildSnapshot(repoRoot: string, part: number, deps: SnapshotDeps
       return run;
     },
   });
-  const violations = results.flatMap((result) => result.violations);
-  const archText = violations.length === 0 ? `check:arch passed: ${results.length} checks held, ${results.reduce((n, r) => n + r.rules.length, 0)} rules enforced\n` : `${formatViolations(violations)}\n`;
-  files["check-arch.txt"] = scrub(archText, repoRoot);
-  checks.push({
-    id: "check-arch",
-    name: "check:arch",
-    command: "pnpm check:arch",
-    passed: violations.length === 0,
-    summary: archText.trim().split("\n").filter(Boolean).pop() ?? "",
-    raw: "check-arch.txt",
-    rules: results.flatMap((result) => result.rules.map((rule) => ({ rule, check: result.name, passed: result.violations.length === 0 }))),
-  });
 
-  // turbo boundaries, as a command of its own.
-  const turbo = deps.runBoundaries(repoRoot);
-  const turboText = scrub(`${turbo.stdout}${turbo.stderr}` || boundariesRaw, repoRoot);
-  files["turbo-boundaries.txt"] = turboText;
-  checks.push({
-    id: "turbo-boundaries",
-    name: "turbo boundaries",
-    command: "pnpm exec turbo boundaries",
-    passed: turbo.status === 0,
-    summary: turboText.trim().split("\n").filter(Boolean).pop() ?? (turbo.error ?? ""),
-    raw: "turbo-boundaries.txt",
-    rules: [],
-  });
-
-  // calm validate --strict: every built moment, then the timeline.
-  const momentsDir = join(repoRoot, "architecture", "calm", "moments");
-  const moments = existsSync(momentsDir) ? readdirSync(momentsDir).filter((name) => name.endsWith(".architecture.json")).sort() : [];
-  const targets = [
-    ...moments.map((name) => ({ id: `calm-${name.replace(".architecture.json", "")}`, label: `calm validate (${name.replace(".architecture.json", "")})`, kind: "moment" as const, file: `architecture/calm/moments/${name}` })),
-    { id: "calm-timeline", label: "calm validate (timeline)", kind: "timeline" as const, file: "architecture/calm/bullpen.timeline.json" },
+  const parts = [
+    archCheck(results, repoRoot),
+    turboCheck(deps.runBoundaries(repoRoot), boundariesRaw, repoRoot),
+    ...calmTargets(repoRoot).map((target) => calmCheck(target, repoRoot, deps.runCalm)),
   ];
-  for (const target of targets) {
-    const scratch = mkdtempSync(join(tmpdir(), "calm-snapshot-"));
-    const outFile = join(scratch, "result.json");
-    const run = deps.runCalm(repoRoot, calmArgs(target.kind, target.file, outFile));
-    const output = existsSync(outFile) ? readFileSync(outFile, "utf8") : run.output;
-    let result: { hasErrors?: boolean; hasWarnings?: boolean } = {};
-    try {
-      result = JSON.parse(output) as typeof result;
-    } catch {
-      /* unreadable output counts as a failure below */
-    }
-    const passed = run.status === 0 && result.hasErrors === false && result.hasWarnings === false;
-    files[`${target.id}.json`] = `${scrub(output.trim() || JSON.stringify({ error: "no output" }), repoRoot)}\n`;
-    checks.push({
-      id: target.id,
-      name: target.label,
-      command: `npx ${CALM_CLI} ${calmArgs(target.kind, target.file, "<out>").join(" ")}`,
-      passed,
-      summary: passed ? "no errors, no warnings" : `hasErrors=${String(result.hasErrors)} hasWarnings=${String(result.hasWarnings)} exit=${String(run.status)}`,
-      raw: `${target.id}.json`,
-      rules: [],
-    });
-  }
+  const checks = parts.map((entry) => entry.check);
+  const files = Object.fromEntries(parts.map((entry) => [entry.check.raw, entry.file]));
 
-  const snapshot: RulesSnapshot = {
-    schema: 1,
-    part,
-    generatedAt: deps.now().toISOString(),
-    commit: deps.commit(repoRoot),
-    dirty: deps.dirty(repoRoot),
-    ref: deps.ref(repoRoot),
-    source: deps.source,
-    passed: checks.every((check) => check.passed),
-    checks,
+  return {
+    files,
+    snapshot: {
+      schema: 1,
+      part,
+      generatedAt: deps.now().toISOString(),
+      commit: deps.commit(repoRoot),
+      dirty: deps.dirty(repoRoot),
+      ref: deps.ref(repoRoot),
+      source: deps.source,
+      passed: checks.every((check) => check.passed),
+      checks,
+    },
   };
-  return { snapshot, files };
 }
 
 /** Writes summary.json and every raw file into `<reportsRoot>/part-0N/`. Returns that directory. */
@@ -167,23 +203,27 @@ export function writeSnapshot(reportsRoot: string, snapshot: RulesSnapshot, file
   return dir;
 }
 
+const isCheck = (check: Partial<SnapshotCheck> | undefined): boolean =>
+  typeof check?.id === "string" && typeof check.name === "string" && typeof check.passed === "boolean" && typeof check.raw === "string" && Array.isArray(check.rules);
+
+/** The first field of `data` that is not what a snapshot needs, or null if all are. */
+function firstProblem(data: Partial<RulesSnapshot>): string | null {
+  if (data.schema !== 1) return `unknown schema ${JSON.stringify(data.schema)}`;
+  if (typeof data.part !== "number" || !Number.isInteger(data.part)) return "missing integer part";
+  const missingText = (["generatedAt", "commit", "ref"] as const).find((key) => typeof data[key] !== "string" || data[key] === "");
+  if (missingText) return `missing ${missingText}`;
+  const missingFlag = (["passed", "dirty"] as const).find((key) => typeof data[key] !== "boolean");
+  if (missingFlag) return `missing ${missingFlag}`;
+  if (!Array.isArray(data.checks) || data.checks.length === 0) return "missing checks";
+  const malformed = data.checks.find((check) => !isCheck(check));
+  return malformed ? `malformed check ${JSON.stringify((malformed as Partial<SnapshotCheck>).id)}` : null;
+}
+
 /** Validates a parsed summary.json; throws with the field that is wrong. */
 export function parseSnapshot(content: string, label: string): RulesSnapshot {
   const data = JSON.parse(content) as Partial<RulesSnapshot>;
-  const fail = (what: string): never => {
-    throw new Error(`${label}: ${what}`);
-  };
-  if (data.schema !== 1) fail(`unknown schema ${JSON.stringify(data.schema)}`);
-  if (typeof data.part !== "number" || !Number.isInteger(data.part)) fail("missing integer part");
-  for (const key of ["generatedAt", "commit", "ref"] as const) if (typeof data[key] !== "string" || data[key] === "") fail(`missing ${key}`);
-  if (typeof data.passed !== "boolean") fail("missing passed");
-  if (typeof data.dirty !== "boolean") fail("missing dirty");
-  if (!Array.isArray(data.checks) || data.checks.length === 0) fail("missing checks");
-  for (const check of data.checks ?? []) {
-    if (typeof check.id !== "string" || typeof check.name !== "string" || typeof check.passed !== "boolean" || typeof check.raw !== "string" || !Array.isArray(check.rules)) {
-      fail(`malformed check ${JSON.stringify(check?.id)}`);
-    }
-  }
+  const problem = firstProblem(data);
+  if (problem) throw new Error(`${label}: ${problem}`);
   return data as RulesSnapshot;
 }
 

@@ -37,6 +37,7 @@ export function listCodeFiles(directory: string): string[] {
  * `"not an import: from 'y'"`. Not a parser: regex literals and nested
  * template expressions are not special-cased.
  */
+// metrics-gate: ignore[cyclomatic] -- a lexer for strings and comments: one branch per lexical state, and splitting it would scatter the state it carries from one character to the next
 export function analyzeSource(source: string): { code: string; inString: boolean[] } {
   const out: string[] = [];
   const inString: boolean[] = [];

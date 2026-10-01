@@ -97,7 +97,8 @@ describe("model currency: external systems nobody decided", () => {
     expect(text).toContain("(ADR-0009)");
 
     const rejected = withExternalSystem("Initech");
-    expectFailureFormat(checkModelCurrency(rejected, entriesOf(rejected))[0]!, "model currency");
+    const rejectedText = expectFailureFormat(checkModelCurrency(rejected, entriesOf(rejected))[0]!, "model currency");
+    expect(rejectedText).toContain("only as turned down");
   });
 });
 
@@ -138,7 +139,8 @@ describe("model currency: every ADR is linked from its part's moment", () => {
     const timeline = readJsonFile<Timeline>(root, TIMELINE);
     timeline.moments[0]!.adrs = [];
     writeJsonFile(root, TIMELINE, timeline);
-    expectFailureFormat(checkModelCurrency(root, entriesOf(root))[0]!, "model currency");
+    const text = expectFailureFormat(checkModelCurrency(root, entriesOf(root))[0]!, "model currency");
+    expect(text).toContain(`✗ model currency: ${ADR_LINKED_RULE}`);
   });
 });
 
@@ -246,6 +248,29 @@ describe("model currency: a control points at the check that enforces it", () =>
   });
 });
 
+describe("model currency: the planned Part 2 moment, which must stay exactly as written", () => {
+  // planned/part-02 still names its provider "Market Data Provider", from before CoinGecko was
+  // decided. Part 6 compares predictions with what shipped, so that file is never edited. It passes
+  // the drift check because docs/data-sources.md defines that label in a quoted sentence. This test
+  // names that dependency, so an edit to the doc fails here with the reason, not in the check.
+  it("is decided only through the quoted label in docs/data-sources.md", () => {
+    const sources = readFileSync(join(realRepoRoot, "docs", "data-sources.md"), "utf8");
+    expect(sources, 'docs/data-sources.md must keep a sentence that quotes "Market Data Provider": planned/part-02 (never edited, Part 6 compares it with reality) depends on it').toContain('"Market Data Provider"');
+
+    const entries = parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl"));
+    expect(checkModelCurrency(realRepoRoot, entries).filter((v) => v.where.endsWith("planned/part-02.architecture.json"))).toEqual([]);
+  });
+
+  it("would fail, naming the planned file, if that sentence were edited away", () => {
+    const root = copyFixture("model-currency-good");
+    const doc = readJsonFile<Doc>(root, PLANNED);
+    doc.nodes.push({ "unique-id": "old-provider", "node-type": "external-system", name: "Unmentioned Placeholder" });
+    writeJsonFile(root, PLANNED, doc);
+    const [violation] = checkModelCurrency(root, entriesOf(root));
+    expect(violation!.where).toBe(PLANNED);
+  });
+});
+
 describe("model currency: the real repo", () => {
   it("has no undecided external system, no unlinked ADR, and every component mapped", () => {
     expect(checkModelCurrency(realRepoRoot, parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl")))).toEqual([]);
@@ -256,9 +281,8 @@ describe("model currency: the real repo", () => {
     expect(checkModelCurrency(realRepoRoot, entries, { currentMoment: "part-02" })).toEqual([]);
   });
 
-  it("keeps Part 1 as the current moment on this branch, and the Part 2 prediction untouched", () => {
+  it("points the Part 2 entry at the built moment, and keeps the prediction it replaced readable", () => {
     const timeline = readJsonFile<Timeline>(realRepoRoot, TIMELINE);
-    expect(timeline["current-moment"]).toBe("part-01");
     const part2 = timeline.moments.find((m) => m["unique-id"] === "part-02");
     expect(part2?.details?.["detailed-architecture"]).toBe("moments/part-02.architecture.json");
     expect(JSON.stringify(part2)).toContain("planned/part-02.architecture.json");

@@ -44,6 +44,7 @@ The same principle covers the architecture record. Every check in `architecture/
 - The hook only runs inside Claude Code, only for commands that go through its Bash tool, and only where it is installed. It does not see a script that calls git, another tool, or the GitHub API. Claude Code reads hooks when a session starts, so a change to it applies from the next session.
 - The hook is not in the repo, so CI cannot run its tests. The two layers that live in the repo are `commit-policy` and branch protection, and until I apply those settings nothing on GitHub stops a direct push to `main`.
 - `commit-policy` fails a PR that contains a commit made in the GitHub UI (a squash merge, or "Update branch"), because it carries the noreply identity. I merge `main` into the branch locally instead.
+- Merging with merge commits keeps the author of every commit in the PR, but the merge commit that GitHub makes in the UI still carries my GitHub identity. `commit-policy` only reads the PR's own commits, so it cannot see that one, and nothing here stops it.
 - A pushed commit with the wrong identity cannot be fixed in place, because pushed history is never rewritten. The fix is a fresh branch and a new pull request, which is how #10 became #12, and the message now says so.
 - The fingerprint of an address that is already in commit metadata can be guessed. It keeps the address out of file contents, where it gets harvested, not out of reach of someone determined.
 - A `model currency` failure is settled by recording a decision first, not by editing the check.

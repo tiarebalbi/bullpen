@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { join } from "node:path";
 import {
   BOUNDARIES_RULE,
@@ -20,18 +20,19 @@ describe("turbo boundaries, through the wrapper (real mechanism, no mocking)", (
   const results = new Map<string, Violation[]>();
   const run = (name: string): Violation[] => results.get(name)!;
 
-  it(
-    "runs turbo against every fixture",
-    () => {
-      for (const name of ["boundaries-good", "boundaries-violation", "boundaries-library-violation", "boundaries-relative-import"]) {
-        results.set(name, checkBoundaries(fixture(name)));
-      }
-    },
-    TIMEOUT_MS,
-  );
+  // One real turbo run per fixture, shared by the tests below.
+  beforeAll(() => {
+    for (const name of ["boundaries-good", "boundaries-library-ok", "boundaries-violation", "boundaries-library-violation", "boundaries-relative-import"]) {
+      results.set(name, checkBoundaries(fixture(name)));
+    }
+  }, TIMEOUT_MS);
 
   it("passes when app-a does not depend on / import app-b", () => {
     expect(run("boundaries-good")).toEqual([]);
+  });
+
+  it("passes libraries that depend on each other, and an app that depends on a library", () => {
+    expect(run("boundaries-library-ok")).toEqual([]);
   });
 
   it("fails an app that depends on another app, with the ADL rule and the package.json to edit", () => {

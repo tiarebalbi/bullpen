@@ -5,6 +5,9 @@ import { realRepoRoot } from "./test-helpers.js";
 
 const read = (relative: string): string => readFileSync(join(realRepoRoot, relative), "utf8");
 
+// A path in backticks, like `docs/data-sources.md`.
+const BACKTICKED = new RegExp("`([^`]+)`", "g");
+
 describe("CLAUDE.md", () => {
   const text = read("CLAUDE.md");
 
@@ -24,9 +27,10 @@ describe("CLAUDE.md", () => {
 
   it("names only records that exist (part-specific ones by their pattern)", () => {
     const section = text.slice(text.indexOf("## Where each record lives"), text.indexOf("Read the current part's ADRs"));
-    const paths = [...section.matchAll(/`([^`]+)`/g)].map((match) => match[1]!).filter((path) => path.includes("/") && !path.includes("0N"));
+    const paths = [...section.matchAll(BACKTICKED)].map((match) => match[1]!).filter((path) => path.includes("/") && !path.includes("0N"));
     expect(paths.length).toBeGreaterThan(5);
-    for (const path of paths) expect(existsSync(join(realRepoRoot, path)), `CLAUDE.md names ${path}, which does not exist`).toBe(true);
+    const missing = paths.filter((path) => !existsSync(join(realRepoRoot, path)));
+    expect(missing, `CLAUDE.md names paths that do not exist`).toEqual([]);
   });
 
   it("does not contain an email address", () => {

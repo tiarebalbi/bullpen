@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -65,6 +65,16 @@ describe("calmPathForPart", () => {
     writeFileSync(join(root, "architecture/calm/moments/part-02.architecture.json"), "{}");
     expect(calmPathForPart(root, 2)).toBe("architecture/calm/moments/part-02.architecture.json");
     expect(calmPathForPart(root, 3)).toBeUndefined();
+  });
+});
+
+describe("preferring the built moment over the prediction", () => {
+  it("changes no rule: Part 2's content passes against the planned prediction as well as the real moment", () => {
+    const read = (relative: string) => JSON.parse(readFileSync(join(realRepoRoot, relative), "utf8"));
+    const content = read("content/architecture/part-02.json") as ExplorerPartData;
+
+    expect(checkExplorerConsistency(content, read("architecture/calm/planned/part-02.architecture.json") as CalmDocument)).toEqual([]);
+    expect(checkExplorerConsistency(content, read("architecture/calm/moments/part-02.architecture.json") as CalmDocument)).toEqual([]);
   });
 });
 

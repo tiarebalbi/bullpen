@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { ADL_RULE, citeAdl } from "./rules.js";
-import { lineAt, scanFiles } from "./source-scan.js";
+import { lineAt, scanFiles, type ScannedFile } from "./source-scan.js";
 import { toRepoPath, type Violation } from "./violation.js";
 
 const CHECK = "entry-point imports";
@@ -51,6 +51,55 @@ const IMPORT_SPECIFIER = [
   /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g, // require("...")
 ];
 
+interface ImportSite {
+  specifier: string;
+  where: string;
+}
+
+/** Every import specifier in a file's code (strings and comments excluded), with `file:line`. */
+function importSites(file: ScannedFile): ImportSite[] {
+  const sites: ImportSite[] = [];
+  for (const pattern of IMPORT_SPECIFIER) {
+    for (const match of file.code.matchAll(pattern)) {
+      // The keyword sits inside a string, so this is text, not an import.
+      if (file.inString[match.index ?? 0]) continue;
+      sites.push({ specifier: match[1]!, where: `${file.path}:${lineAt(file.code, match.index ?? 0)}` });
+    }
+  }
+  return sites;
+}
+
+/** The violation for one import, or null if it goes through an entry point. */
+function violationFor(site: ImportSite, file: ScannedFile, repoRoot: string, libraries: Library[]): Violation | null {
+  const { specifier, where } = site;
+  const rule = ADL_RULE.entryPoint;
+  const appDir = file.path.split("/").slice(0, 2).join("/");
+  const cite = citeAdl(repoRoot, rule);
+
+  if (specifier.startsWith(".")) {
+    const target = toRepoPath(repoRoot, resolve(dirname(join(repoRoot, file.path)), specifier));
+    const library = libraries.find((lib) => target === lib.dir || target.startsWith(`${lib.dir}/`));
+    if (!library) return null;
+    return {
+      check: CHECK,
+      rule,
+      where,
+      why: `${appDir} reaches into ${library.dir} with the relative path ${specifier}, instead of importing ${library.name} (${cite}).`,
+      fix: `Import from "${library.name}". If what you need is not exported, export it from ${library.dir}'s entry point.`,
+    };
+  }
+
+  const library = libraries.find((lib) => specifier === lib.name || specifier.startsWith(`${lib.name}/`));
+  if (!library || specifier === library.name || isPublished(library, `.${specifier.slice(library.name.length)}`)) return null;
+  return {
+    check: CHECK,
+    rule,
+    where,
+    why: `${appDir} imports ${specifier}, a deep path that ${library.name} does not publish in its exports (${cite}).`,
+    fix: `Import from "${library.name}" instead. If what you need is not exported, export it from ${library.dir}'s entry point (or add the subpath to its package.json exports).`,
+  };
+}
+
 /**
  * "apps IMPORT libraries ONLY THROUGH their package entry point": an app
  * may import `@bullpen/ui` and whatever subpaths that package publishes in
@@ -61,45 +110,9 @@ const IMPORT_SPECIFIER = [
  */
 export function checkEntryPointImports(repoRoot: string): Violation[] {
   const libraries = loadLibraries(repoRoot);
-  const violations: Violation[] = [];
-  const rule = ADL_RULE.entryPoint;
-
-  for (const file of scanFiles(repoRoot, ["apps"])) {
-    const appDir = file.path.split("/").slice(0, 2).join("/");
-    for (const pattern of IMPORT_SPECIFIER) {
-      for (const match of file.code.matchAll(pattern)) {
-        if (file.inString[match.index ?? 0]) continue; // the keyword sits inside a string, so this is text, not an import
-        const specifier = match[1]!;
-        const where = `${file.path}:${lineAt(file.code, match.index ?? 0)}`;
-
-        if (specifier.startsWith(".")) {
-          const target = toRepoPath(repoRoot, resolve(dirname(join(repoRoot, file.path)), specifier));
-          const library = libraries.find((lib) => target === lib.dir || target.startsWith(`${lib.dir}/`));
-          if (library) {
-            violations.push({
-              check: CHECK,
-              rule,
-              where,
-              why: `${appDir} reaches into ${library.dir} with the relative path ${specifier}, instead of importing ${library.name} (${citeAdl(repoRoot, rule)}).`,
-              fix: `Import from "${library.name}". If what you need is not exported, export it from ${library.dir}'s entry point.`,
-            });
-          }
-          continue;
-        }
-
-        const library = libraries.find((lib) => specifier === lib.name || specifier.startsWith(`${lib.name}/`));
-        if (!library || specifier === library.name) continue;
-        const subpath = `.${specifier.slice(library.name.length)}`;
-        if (isPublished(library, subpath)) continue;
-        violations.push({
-          check: CHECK,
-          rule,
-          where,
-          why: `${appDir} imports ${specifier}, a deep path that ${library.name} does not publish in its exports (${citeAdl(repoRoot, rule)}).`,
-          fix: `Import from "${library.name}" instead. If what you need is not exported, export it from ${library.dir}'s entry point (or add the subpath to its package.json exports).`,
-        });
-      }
-    }
-  }
-  return violations;
+  return scanFiles(repoRoot, ["apps"]).flatMap((file) =>
+    importSites(file)
+      .map((site) => violationFor(site, file, repoRoot, libraries))
+      .filter((violation): violation is Violation => violation !== null),
+  );
 }
