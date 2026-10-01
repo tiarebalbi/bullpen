@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { Adr } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import type { ArchPartData } from "./ui.js";
-import { ArchitectureExplorer } from "./ui.js";
+import { TrackedArchitectureExplorer } from "./TrackedArchitectureExplorer.js";
 
 /**
  * Replaces the static, docify-generated SVG with the interactive explorer
@@ -27,7 +27,7 @@ export function Architecture({ parts, adrs }: { parts: ArchPartData[]; adrs: Adr
         </p>
       </div>
 
-      <ArchitectureExplorer parts={parts} adrTitles={adrTitles} adrHrefs={adrHrefs} />
+      <TrackedArchitectureExplorer parts={parts} adrTitles={adrTitles} adrHrefs={adrHrefs} />
     </section>
   );
 }
