@@ -53,13 +53,10 @@ export interface CalmIds {
 
 /** Collects the ids named by the planned moments (a CALM document each). */
 export function plannedNamesOf(plannedDocs: ReadonlyArray<CalmIds>): PlannedNames {
-  const nodes = new Set<string>();
-  const edges = new Set<string>();
-  for (const doc of plannedDocs) {
-    for (const n of doc.nodes ?? []) nodes.add(n["unique-id"]);
-    for (const r of doc.relationships ?? []) edges.add(r["unique-id"]);
-  }
-  return { nodes, edges };
+  return {
+    nodes: new Set(plannedDocs.flatMap((doc) => (doc.nodes ?? []).map((n) => n["unique-id"]))),
+    edges: new Set(plannedDocs.flatMap((doc) => (doc.relationships ?? []).map((r) => r["unique-id"]))),
+  };
 }
 
 /** "part-01" for part 1: the id the timeline gives the moment. */

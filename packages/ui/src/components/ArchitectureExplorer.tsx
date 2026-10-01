@@ -10,9 +10,9 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { builtInLabel } from "../lib/builtIn.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
+import { CarriedNote } from "./ArchitectureExplorerCarried.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
@@ -774,11 +774,7 @@ function SidePanel({
             Changed this part
           </span>
         ) : null}
-        {node.carried && node.builtIn ? (
-          <span style={{ marginTop: 8, alignSelf: "flex-start", font: "600 9.5px/1 var(--font-body)", letterSpacing: "0.04em", padding: "5px 8px", borderRadius: 9999, background: "color-mix(in oklch, var(--bp-gain) 16%, transparent)", color: "var(--bp-gain)" }}>
-            Built in {builtInLabel(node.builtIn)}; still running in this prediction.
-          </span>
-        ) : null}
+        <CarriedNote node={node} />
         <div style={{ marginTop: 10, font: "400 13.5px/1.55 var(--font-body)" }}>{node.purpose}</div>
         <div style={{ marginTop: 18, ...smallEyebrow }}>Decisions</div>
         <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
