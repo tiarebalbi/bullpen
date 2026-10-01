@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
 import type { Adl } from "../../lib/adl.js";
 import type { AllowanceEntry } from "../../lib/cost.js";
-import { buildRuleCards, ruleCardChip, ruleCardOutcome } from "../../lib/ruleCards.js";
+import { buildRuleCards } from "../../lib/ruleCards.js";
 import type { RulesSnapshot } from "../../lib/rulesSnapshot.js";
+import { AdlFileModal } from "./AdlFileModal.js";
 import { RuleCardGrid } from "./RuleCardGrid.js";
+
+/** How many of the snapshot's rules held, and how many it ran. */
+function ruleCounts(snapshot: RulesSnapshot): { passing: number; total: number } {
+  const rules = snapshot.checks.flatMap((check) => check.rules);
+  return { passing: rules.filter((rule) => rule.passed).length, total: rules.length };
+}
 
 export function RulesCard({
   adl,
@@ -14,9 +21,8 @@ export function RulesCard({
   allowances: AllowanceEntry[];
   snapshot: RulesSnapshot | null;
 }): ReactNode {
-  const cards = buildRuleCards(adl, allowances).map((card) => ({ card, chip: ruleCardChip(card, snapshot) }));
-  const knownCount = cards.filter(({ card }) => ruleCardOutcome(card, snapshot) !== null).length;
-  const passingCount = cards.filter(({ card }) => ruleCardOutcome(card, snapshot) === true).length;
+  const cards = buildRuleCards(adl, allowances, snapshot);
+  const counts = snapshot ? ruleCounts(snapshot) : null;
 
   return (
     <section id="rules" className="bp-bento__card" aria-labelledby="rules-heading">
@@ -26,15 +32,16 @@ export function RulesCard({
           <h2 id="rules-heading">Checked, not hoped for</h2>
         </div>
         <span className="bp-bento__meta">
-          {snapshot ? `${passingCount} of ${knownCount} passing in the last snapshot` : "No snapshot yet"}
+          {counts ? `${counts.passing} of ${counts.total} rules passing in the last snapshot` : "No snapshot yet"}
         </span>
       </div>
       <p className="bp-bento__note">
-        CI runs these checks on every pull request. The results below are from the last snapshot I committed, with the
-        date and commit it ran for.
+        CI runs these checks on every pull request. Each rule below is the line from structure.adl as I wrote it, with the
+        result from the last snapshot I committed, and the date and commit it ran for.
       </p>
 
       <RuleCardGrid cards={cards} />
+      <AdlFileModal source={adl.source} lines={adl.lines} />
 
       <details className="bp-bento__more">
         <summary>What&rsquo;s defined ({adl.entries.length})</summary>

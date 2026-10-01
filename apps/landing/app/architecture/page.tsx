@@ -9,7 +9,7 @@ import { loadArchitectureParts } from "../../lib/architecture.js";
 import { loadCalmDocs } from "../../lib/calm.js";
 import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
-import { buildRuleCards, ruleCardChip } from "../../lib/ruleCards.js";
+import { buildRuleCards } from "../../lib/ruleCards.js";
 import { loadLatestRulesSnapshot } from "../../lib/rulesSnapshot.js";
 import { buildRulesTabData } from "../../lib/rulesView.js";
 import { loadSeries } from "../../lib/series.js";
@@ -40,7 +40,8 @@ export default function ArchitecturePage(): ReactNode {
   const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
   const series = loadSeries(join(repoRoot, "content", "series.json"));
   const adrs = loadAdrs(join(repoRoot, "architecture", "adr"));
-  const adl = loadAdl(join(repoRoot, "architecture", "adl", "structure.adl"));
+  // Parsed from architecture/adl/structure.adl by the one ADL parser, which `adl:emit` runs before the build.
+  const adl = loadAdl(join(process.cwd(), ".generated", "adl.json"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
   const snapshot = loadLatestRulesSnapshot(join(repoRoot, "architecture", "reports"));
 
@@ -48,7 +49,7 @@ export default function ArchitecturePage(): ReactNode {
     parts,
     series: series.map(({ part, title }) => ({ part, title })),
     calm: loadCalmDocs(repoRoot),
-    adlRules: adl.rules,
+    adlRules: adl.rules.map((rule) => rule.text),
     snapshot,
     cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
@@ -64,11 +65,12 @@ export default function ArchitecturePage(): ReactNode {
           parts={parts}
           data={data}
           adrs={adrs}
-          ruleCards={buildRuleCards(adl, allowances).map((card) => ({ card, chip: ruleCardChip(card, snapshot) }))}
-          rules={buildRulesTabData(snapshot)}
+          ruleCards={buildRuleCards(adl, allowances, snapshot)}
+          rules={buildRulesTabData(snapshot, adl)}
           adrTitles={Object.fromEntries(adrs.map((a) => [a.id, a.title]))}
           adrHrefs={Object.fromEntries(adrs.map((a) => [a.id, `#${adrHashId(a.id)}`]))}
           since={since}
+          adl={{ source: adl.source, lines: adl.lines }}
         />
       </main>
       <Footer />

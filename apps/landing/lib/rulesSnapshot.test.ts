@@ -2,10 +2,10 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkOutcome, loadLatestRulesSnapshot, parseRulesSnapshot, ruleOutcome, type RulesSnapshot } from "./rulesSnapshot.js";
+import { checkOutcome, loadLatestRulesSnapshot, parseRulesSnapshot, resultForRule, ruleOutcome, type RulesSnapshot } from "./rulesSnapshot.js";
 
 const snapshot = (part: number, overrides: Partial<RulesSnapshot> = {}): RulesSnapshot => ({
-  schema: 1,
+  schema: 2,
   part,
   generatedAt: "2026-10-01T12:00:00.000Z",
   commit: "a".repeat(40),
@@ -22,9 +22,9 @@ const snapshot = (part: number, overrides: Partial<RulesSnapshot> = {}): RulesSn
       summary: "",
       raw: "check-arch.txt",
       rules: [
-        { rule: "r1", check: "structure", passed: true },
-        { rule: "r2", check: "structure", passed: false },
-        { rule: "r3", check: "budget", passed: true },
+        { id: "r1", rule: "r1", check: "structure", passed: true },
+        { id: "r2", rule: "r2", check: "structure", passed: false },
+        { id: "r3", rule: "r3", check: "budget", passed: true },
       ],
     },
     { id: "calm-part-01", name: "calm 1", command: "x", passed: true, summary: "", raw: "c1", rules: [] },
@@ -50,6 +50,7 @@ describe("parseRulesSnapshot", () => {
   it("refuses anything that is not a snapshot, rather than render a pass nobody recorded", () => {
     expect(() => parseRulesSnapshot("nope", "x")).toThrow(/x: invalid JSON/);
     expect(() => parseRulesSnapshot("{}", "x")).toThrow(/unknown schema/);
+    expect(() => parseRulesSnapshot(JSON.stringify({ ...snapshot(2), schema: 1 }), "x")).toThrow(/unknown schema 1/);
     expect(() => parseRulesSnapshot(JSON.stringify({ ...snapshot(2), dirty: undefined }), "x")).toThrow(/missing dirty/);
     expect(() => parseRulesSnapshot(JSON.stringify({ ...snapshot(2), checks: [] }), "x")).toThrow(/missing checks/);
   });
@@ -87,5 +88,14 @@ describe("outcomes", () => {
     expect(checkOutcome(snapshot(2), "calm-part-01")).toBe(true);
     expect(checkOutcome(snapshot(2), "nothing-")).toBeNull();
     expect(checkOutcome(null, "calm-")).toBeNull();
+  });
+});
+
+describe("resultForRule", () => {
+  it("finds a rule's result by its id, wherever the check keeps it, and nothing for an id it does not have", () => {
+    expect(resultForRule(snapshot(2), "r2")).toMatchObject({ rule: "r2", passed: false });
+    expect(resultForRule(snapshot(2), "r3")).toMatchObject({ check: "budget", passed: true });
+    expect(resultForRule(snapshot(2), "nope")).toBeNull();
+    expect(resultForRule(null, "r1")).toBeNull();
   });
 });

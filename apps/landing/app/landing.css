@@ -662,7 +662,7 @@ code {
 .bp-rule-grid {
   margin-top: var(--space-4);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
   gap: var(--space-3);
   flex: 1;
 }
@@ -680,14 +680,88 @@ code {
   background: color-mix(in oklch, var(--foreground) 4%, transparent);
   font: 500 11px/1.3 var(--font-mono);
   color: var(--foreground-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+.bp-rule-card__view {
+  font: 500 11px/1.3 var(--font-body);
+  color: var(--bp-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .bp-rule-card__body {
   padding: var(--space-3);
   font: 400 12.5px/1.6 var(--font-mono);
 }
-.bp-rule-kw {
+/* structure.adl, highlighted: the parser says what each token is, these only colour it. Design tokens only. */
+.bp-adl {
+  font: 400 12.5px/1.6 var(--font-mono);
+  color: var(--foreground);
+}
+.bp-adl__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--space-2);
+}
+/* A long line wraps under its own text: the indent it was written with, plus four columns. */
+.bp-adl__line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-left: calc((var(--indent, 0) + 4) * 1ch);
+  text-indent: calc((var(--indent, 0) + 4) * -1ch);
+}
+.bp-adl__line:empty {
+  min-height: 1.6em;
+}
+.bp-adl__keyword {
   color: var(--bp-accent-text);
   font-weight: 600;
+}
+.bp-adl__name {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.bp-adl__path {
+  color: var(--foreground-muted);
+  font-family: var(--font-mono);
+}
+.bp-adl__comment {
+  color: var(--foreground-muted);
+  font-style: italic;
+}
+.bp-adl__text {
+  color: var(--foreground);
+}
+.bp-adl__result {
+  padding-top: 1px;
+}
+@media (max-width: 560px) {
+  .bp-adl__row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+  .bp-adl__result {
+    padding-left: 4ch;
+  }
+}
+.bp-adl-modal {
+  width: min(880px, calc(100vw - var(--space-8)));
+}
+.bp-adl-modal__file {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  background: var(--bp-panel-2);
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-lg);
+  overflow-x: hidden;
+}
+.bp-adl-modal__file .bp-adl__row {
+  display: block;
 }
 .bp-rule-card__footnote {
   margin-top: var(--space-2);

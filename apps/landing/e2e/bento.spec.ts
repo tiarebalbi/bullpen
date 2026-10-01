@@ -53,15 +53,17 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
     await expect(page.locator(".bp-check-arch")).toHaveCount(0);
   });
 
-  test("Rules shows exactly four real rule mini-cards with real ADL/check text, not invented pseudocode", async ({
+  test("Rules shows one card per # heading of structure.adl, then the CALM and budget cards, with real ADL/check text, not invented pseudocode", async ({
     page,
   }) => {
     const ruleCards = page.locator("#rules .bp-rule-card");
-    await expect(ruleCards).toHaveCount(4);
+    await expect(ruleCards).toHaveCount(7);
 
     const text = await page.locator("#rules").innerText();
     expect(text).toContain("DEFINED");
-    expect(text).toMatch(/NEVER DEPEND ON/);
+    expect(text).toMatch(/HAS NO DEPENDENCY ON/);
+    expect(text).toMatch(/IS DEPENDENT ON/);
+    expect(text).not.toMatch(/NEVER DEPEND ON/);
     expect(text).toContain("architecture/adl/structure.adl");
     expect(text).toContain("architecture/fitness/src/budget-check.ts");
 

@@ -2,6 +2,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 export interface SnapshotRule {
+  /** Made from the rule's text by the parser, so it does not move when the ADL is reordered. */
+  id: string;
   rule: string;
   check: string;
   passed: boolean;
@@ -19,7 +21,7 @@ export interface SnapshotCheck {
 
 /** One committed run of every rule check: architecture/reports/part-0N/summary.json. */
 export interface RulesSnapshot {
-  schema: 1;
+  schema: 2;
   part: number;
   generatedAt: string;
   commit: string;
@@ -40,7 +42,7 @@ function readJson(content: string, label: string): Partial<RulesSnapshot> {
 
 /** The first field of `data` that is not what a snapshot needs, or null if all are. */
 function firstProblem(data: Partial<RulesSnapshot>): string | null {
-  if (data.schema !== 1) return `unknown schema ${JSON.stringify(data.schema)}`;
+  if (data.schema !== 2) return `unknown schema ${JSON.stringify(data.schema)}`;
   if (typeof data.part !== "number") return "missing part";
   const missingText = (["generatedAt", "commit", "ref"] as const).find((key) => typeof data[key] !== "string" || data[key] === "");
   if (missingText) return `missing ${missingText}`;
@@ -70,6 +72,11 @@ export function loadLatestRulesSnapshot(reportsDir: string): RulesSnapshot | nul
   const latest = parts[parts.length - 1];
   if (!latest) return null;
   return parseRulesSnapshot(readFileSync(join(reportsDir, latest, "summary.json"), "utf8"), `architecture/reports/${latest}/summary.json`);
+}
+
+/** The result of one rule, by its id, or null if the snapshot has none for it. */
+export function resultForRule(snapshot: RulesSnapshot | null, id: string): SnapshotRule | null {
+  return snapshot?.checks.flatMap((check) => check.rules).find((rule) => rule.id === id) ?? null;
 }
 
 /**

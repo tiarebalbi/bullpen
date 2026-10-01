@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseAdl } from "./adl.js";
+import { loadAdl } from "./adl.js";
 import { loadArchitectureParts } from "./architecture.js";
 import { buildArchitecturePage, CHECK_NAME_BY_FILE, type ArchitecturePageData } from "./architecturePage.js";
 import { loadCalmDocs } from "./calm.js";
@@ -10,10 +9,10 @@ import type { RulesSnapshot } from "./rulesSnapshot.js";
 import { loadSeries } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
-const adl = parseAdl(readFileSync(join(repoRoot, "architecture", "adl", "structure.adl"), "utf8"));
+const adl = loadAdl(join(import.meta.dirname, "..", ".generated", "adl.json"));
 
 const snapshot = (passing: boolean): RulesSnapshot => ({
-  schema: 1,
+  schema: 2,
   part: 2,
   generatedAt: "2026-10-01T12:00:00.000Z",
   commit: "0".repeat(40),
@@ -29,7 +28,7 @@ const snapshot = (passing: boolean): RulesSnapshot => ({
       passed: passing,
       summary: "",
       raw: "check-arch.txt",
-      rules: Object.values(CHECK_NAME_BY_FILE).map((check) => ({ rule: `rule of ${check}`, check, passed: passing })),
+      rules: Object.values(CHECK_NAME_BY_FILE).map((check) => ({ id: `rule-of-${check}`, rule: `rule of ${check}`, check, passed: passing })),
     },
   ],
 });
@@ -39,7 +38,7 @@ function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
     parts: loadArchitectureParts(join(repoRoot, "content", "architecture")),
     series: loadSeries(join(repoRoot, "content", "series.json")),
     calm: loadCalmDocs(repoRoot),
-    adlRules: adl.rules,
+    adlRules: adl.rules.map((rule) => rule.text),
     snapshot: withSnapshot,
     cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
@@ -68,7 +67,7 @@ describe("buildArchitecturePage, from the real repo", () => {
       expect(landing!.owns).toEqual(["The code in apps/landing", "Ships packages/ui and packages/contracts"]);
       expect(route).toMatchObject({ kind: "service", runtime: "Serverless", path: "apps/web/app/api/price" });
       // The secret's name comes from the ADL rule, so this file never has to spell it.
-      const secret = /^ONLY \S+ READS (\S+)$/.exec(adl.rules.find((rule) => rule.includes(" READS "))!)![1];
+      const secret = /^ONLY \S+ READS (\S+)$/.exec(adl.rules.find((rule) => rule.text.includes(" READS "))!.text)![1];
       expect(route!.owns).toContain(`The only code that reads ${secret}`);
       expect(route!.adrs).toEqual(["ADR-0002", "ADR-0005"]);
     });
@@ -146,7 +145,7 @@ describe("buildArchitecturePage, from the real repo", () => {
         parts: loadArchitectureParts(join(repoRoot, "content", "architecture")),
         series: loadSeries(join(repoRoot, "content", "series.json")),
         calm: loadCalmDocs(repoRoot),
-        adlRules: adl.rules,
+        adlRules: adl.rules.map((rule) => rule.text),
         snapshot: null,
         cacheSeconds: null,
       });

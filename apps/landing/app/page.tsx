@@ -26,7 +26,8 @@ export default function LandingPage(): ReactNode {
   const series = loadSeries(join(repoRoot, "content", "series.json"));
   const adrs = loadAdrs(join(repoRoot, "architecture", "adr"));
   const architectureParts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
-  const adl = loadAdl(join(repoRoot, "architecture", "adl", "structure.adl"));
+  // Parsed from architecture/adl/structure.adl by the one ADL parser, which `adl:emit` runs before the build.
+  const adl = loadAdl(join(process.cwd(), ".generated", "adl.json"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
   const usage = loadUsage(join(repoRoot, "cost", "usage", "2026-w40.json"));
   const snapshot = loadLatestRulesSnapshot(join(repoRoot, "architecture", "reports"));

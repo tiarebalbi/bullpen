@@ -1,9 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { AdlLine } from "../../lib/adl.js";
 import type { RulesTabData } from "../../lib/rulesView.js";
-import { Chip } from "../components/ui.js";
+import { AdlFileModal } from "../components/AdlFileModal.js";
+import { AdlLineText } from "../components/AdlSource.js";
 import { RuleCardGrid, type RuleCardView } from "../components/RuleCardGrid.js";
+import { Chip } from "../components/ui.js";
 
 function shortDate(iso: string): string {
   return iso.slice(0, 10);
@@ -14,7 +17,7 @@ function shortDate(iso: string): string {
  * ran with its check and result. A rule that only started failing builds in
  * a later part than the selected one is shown as arriving, not as passing.
  */
-export function RulesTab({ part, cards, data }: { part: number; cards: RuleCardView[]; data: RulesTabData }): ReactNode {
+export function RulesTab({ part, cards, data, adl }: { part: number; cards: RuleCardView[]; data: RulesTabData; adl: { source: string; lines: AdlLine[] } }): ReactNode {
   const inForce = data.rows.filter((row) => row.since <= part);
   const passing = inForce.filter((row) => row.passed).length;
   const snapshot = data.snapshot;
@@ -39,7 +42,8 @@ export function RulesTab({ part, cards, data }: { part: number; cards: RuleCardV
         </p>
       ) : null}
 
-      <RuleCardGrid cards={cards} />
+      <RuleCardGrid cards={cards} part={part} />
+      <AdlFileModal source={adl.source} lines={adl.lines} closeHash="#rules" />
 
       {data.rows.length > 0 ? (
         <>
@@ -55,9 +59,15 @@ export function RulesTab({ part, cards, data }: { part: number; cards: RuleCardV
               </thead>
               <tbody>
                 {data.rows.map((row) => (
-                  <tr key={`${row.check}:${row.rule}`} data-later={row.since > part}>
+                  <tr key={row.id} data-rule={row.id} data-later={row.since > part}>
                     <td>
-                      <code>{row.rule}</code>
+                      {row.line ? (
+                        <div className="bp-adl">
+                          <AdlLineText line={row.line} />
+                        </div>
+                      ) : (
+                        <code>{row.rule}</code>
+                      )}
                     </td>
                     <td>{row.check}</td>
                     <td>

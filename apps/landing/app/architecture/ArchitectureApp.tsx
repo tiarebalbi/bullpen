@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import type { AdlLine } from "../../lib/adl.js";
 import type { Adr } from "../../lib/adr.js";
 import type { ArchitecturePageData } from "../../lib/architecturePage.js";
 import type { RulesTabData } from "../../lib/rulesView.js";
@@ -33,10 +34,15 @@ function subscribeToHash(onChange: () => void): () => void {
 const getHash = (): string => window.location.hash;
 const getServerHash = (): string => "";
 
-/** `#services` is the Services tab; `#adr-0003` is a decision, so it opens the Decisions tab; anything else is the Overview. */
+/**
+ * `#services` is the Services tab; `#adr-0003` is a decision, so it opens the
+ * Decisions tab; `#structure-adl` is the ADL file, which the Rules tab opens;
+ * anything else is the Overview.
+ */
 export function tabFromHash(hash: string): TabId {
   const id = hash.replace(/^#/, "");
   if (/^adr-\d+$/.test(id)) return "decisions";
+  if (id === "structure-adl") return "rules";
   return TABS.find((tab) => tab.id === id)?.id ?? "overview";
 }
 
@@ -50,9 +56,11 @@ export interface ArchitectureAppProps {
   adrHrefs: Record<string, string>;
   /** The first part each node id appears in, for "Since Part N". */
   since: Record<string, number>;
+  /** structure.adl, as the parser read it, for the Rules tab's modal and rows. */
+  adl: { source: string; lines: AdlLine[] };
 }
 
-export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since }: ArchitectureAppProps): ReactNode {
+export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since, adl }: ArchitectureAppProps): ReactNode {
   const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
   const tab = tabFromHash(hash);
   const last = parts.length;
@@ -155,7 +163,7 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
         {tab === "flows" ? <FlowsTab key={part} part={part} flow={data.flows[part]!} /> : null}
         {tab === "data" ? <DataTab part={part} data={data.data[part]!} preview={data.data[3]!} onJump={select} /> : null}
         {tab === "decisions" ? <DecisionsTab part={part} adrs={adrs} /> : null}
-        {tab === "rules" ? <RulesTab part={part} cards={ruleCards} data={rules} /> : null}
+        {tab === "rules" ? <RulesTab part={part} cards={ruleCards} data={rules} adl={adl} /> : null}
       </div>
     </div>
   );
