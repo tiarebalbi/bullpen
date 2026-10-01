@@ -6,7 +6,7 @@
       "unique-id": "part-01",
       "node-type": "moment",
       "name": "Part 1 — Stack, split-refusal, and one price call",
-      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider. The current, built state of Bullpen.",
+      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider, plus two analytics tools that load in the browser only after consent. The current, built state of Bullpen.",
       "valid-from": "2026-09-25",
       "details": {
         "detailed-architecture": "moments/part-01.architecture.json",
@@ -15,7 +15,8 @@
       "adrs": [
         "architecture/adr/0001-stack.md",
         "architecture/adr/0002-why-distribute-at-all.md",
-        "architecture/adr/0003-monorepo.md"
+        "architecture/adr/0003-monorepo.md",
+        "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md"
       ]
     },
     {
