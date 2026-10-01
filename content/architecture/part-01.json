@@ -1,7 +1,7 @@
 {
   "part": 1,
   "status": "built",
-  "summary": "What actually runs today: two Next.js apps and one serverless function, calling CoinGecko for BTC-USD.",
+  "summary": "What actually runs today: two Next.js apps and one serverless function, calling CoinGecko for BTC-USD, and two analytics tools that load only after consent.",
   "nodes": [
     {
       "id": "reader",
@@ -64,13 +64,39 @@
       "y": 580,
       "adrs": ["ADR-0005"],
       "costNote": "Free tier"
+    },
+    {
+      "id": "google-analytics",
+      "label": "Google Analytics 4",
+      "kind": "ext",
+      "meta": "Analytics",
+      "purpose": "Page views and a few events from both apps, loaded in the browser only after a visitor accepts. Advertising signals stay denied.",
+      "x": 40,
+      "y": 400,
+      "adrs": ["ADR-0010"],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "microsoft-clarity",
+      "label": "Microsoft Clarity",
+      "kind": "ext",
+      "meta": "Recordings",
+      "purpose": "Heatmaps and session recordings from both apps, loaded only after a visitor accepts, with form fields masked. Advertising storage stays denied.",
+      "x": 600,
+      "y": 400,
+      "adrs": ["ADR-0010"],
+      "costNote": "Free tier"
     }
   ],
   "edges": [
     { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
     { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
     { "id": "trading-app-to-price-snapshot", "a": "trading-app", "b": "price-snapshot-service", "type": "sync" },
-    { "id": "price-snapshot-to-market-data", "a": "price-snapshot-service", "b": "market-data-provider", "type": "sync" }
+    { "id": "price-snapshot-to-market-data", "a": "price-snapshot-service", "b": "market-data-provider", "type": "sync" },
+    { "id": "landing-to-google-analytics", "a": "landing-app", "b": "google-analytics", "type": "async" },
+    { "id": "landing-to-microsoft-clarity", "a": "landing-app", "b": "microsoft-clarity", "type": "async" },
+    { "id": "trading-app-to-google-analytics", "a": "trading-app", "b": "google-analytics", "type": "async" },
+    { "id": "trading-app-to-microsoft-clarity", "a": "trading-app", "b": "microsoft-clarity", "type": "async" }
   ],
   "groups": [],
   "request": {

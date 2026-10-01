@@ -13,6 +13,7 @@ import "@xyflow/react/dist/style.css";
 import { latestBuiltPart } from "../lib/latestBuiltPart.js";
 import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
+import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
@@ -40,6 +41,8 @@ export interface ArchitectureExplorerProps {
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
   adrHrefs: Record<string, string>;
+  /** Called after the explorer has moved from one part to another (click, arrow key or autoplay). */
+  onPartMoved?: (from: number, to: number) => void;
   className?: string;
 }
 
@@ -82,7 +85,7 @@ export function ArchitectureExplorer(props: ArchitectureExplorerProps): ReactNod
 }
 
 function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode {
-  const { parts, initialPart = latestBuiltPart(parts), part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, className } = props;
+  const { parts, initialPart = latestBuiltPart(parts), part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, onPartMoved, className } = props;
   const reduced = useReducedMotion();
   const { fitView } = useReactFlow();
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);
@@ -121,6 +124,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   useEffect(() => {
     partRef.current = part;
   }, [part]);
+  useReportPartMoves(part, initialPart, onPartMoved);
 
   const goToPart = useCallback(
     (next: number) => {

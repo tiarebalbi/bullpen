@@ -27,6 +27,11 @@ export {
   ThemeToggle,
   ArchitectureExplorer,
   latestBuiltPart,
+  Analytics,
+  ConsentBanner,
+  CookieSettingsButton,
+  track,
+  useOutboundClickTracking,
 } from "@bullpen/ui";
 export type {
   ButtonProps,
@@ -50,4 +55,5 @@ export type {
   ThemeToggleProps,
   ArchitectureExplorerProps,
   ArchPartData,
+  AnalyticsConfig,
 } from "@bullpen/ui";
