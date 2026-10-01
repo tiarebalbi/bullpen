@@ -6,7 +6,7 @@ import { loadAdrs } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import { buildArchitecturePage } from "../../lib/architecturePage.js";
 import { loadArchitectureParts } from "../../lib/architecture.js";
-import { currentPart, loadCalmDocs } from "../../lib/calm.js";
+import { loadCalmDocs } from "../../lib/calm.js";
 import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
 import { buildRuleCards, ruleCardChip } from "../../lib/ruleCards.js";
@@ -50,7 +50,6 @@ export default function ArchitecturePage(): ReactNode {
     calm: loadCalmDocs(repoRoot),
     adlRules: adl.rules,
     snapshot,
-    currentPart: currentPart(repoRoot),
     cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
 

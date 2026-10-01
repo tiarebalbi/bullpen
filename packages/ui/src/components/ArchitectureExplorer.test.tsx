@@ -150,6 +150,44 @@ describe("ArchitectureExplorer", () => {
     });
   });
 
+  describe("which part it opens on", () => {
+    const BUILT_2: ArchPartData = { ...PART_2, status: "built", summary: "Built: the guardrails." };
+    const PLANNED_3: ArchPartData = { ...PART_1, part: 3, status: "planned", summary: "Prediction: the first split." };
+    const overview = (part: number) => screen.getByText((_, el) => el?.textContent === `Overview · Part ${part}`);
+
+    it("opens on the latest built part, whatever its number", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(2)).toBeInTheDocument();
+      expect(screen.getByText("Built: the guardrails.")).toBeInTheDocument();
+    });
+
+    it("opens on Part 1 when only Part 1 is built", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, PART_2, PLANNED_3]} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(1)).toBeInTheDocument();
+    });
+
+    it("lets an explicit initialPart win over the default", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} initialPart={1} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(1)).toBeInTheDocument();
+    });
+
+    it("lets a controlled part win over the default", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} part={3} onPartChange={() => {}} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(3)).toBeInTheDocument();
+    });
+
+    it("keeps a part the reader scrubbed to instead of snapping back to the default", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} adrTitles={{}} adrHrefs={{}} />);
+      fireEvent.keyDown(screen.getByRole("group", { name: "Series part" }), { key: "ArrowLeft" });
+      expect(overview(1)).toBeInTheDocument();
+    });
+  });
+
   it("hides its own scrubber when the page provides one", () => {
     installMatchMedia();
     render(<ArchitectureExplorer parts={[PART_1, PART_2]} hideScrubber adrTitles={{}} adrHrefs={{}} />);

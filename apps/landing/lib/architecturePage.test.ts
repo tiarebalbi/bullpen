@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseAdl } from "./adl.js";
 import { loadArchitectureParts } from "./architecture.js";
 import { buildArchitecturePage, CHECK_NAME_BY_FILE, type ArchitecturePageData } from "./architecturePage.js";
-import { currentPart, loadCalmDocs } from "./calm.js";
+import { loadCalmDocs } from "./calm.js";
 import { readPriceCacheSeconds } from "./priceCache.js";
 import type { RulesSnapshot } from "./rulesSnapshot.js";
 import { loadSeries } from "./series.js";
@@ -41,7 +41,6 @@ function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
     calm: loadCalmDocs(repoRoot),
     adlRules: adl.rules,
     snapshot: withSnapshot,
-    currentPart: currentPart(repoRoot),
     cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
 }
@@ -49,8 +48,7 @@ function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
 describe("buildArchitecturePage, from the real repo", () => {
   const page = build(snapshot(true));
 
-  it("starts on the timeline's current part and labels the scrubber with the series' real titles", () => {
-    expect(page.initialPart).toBe(currentPart(repoRoot));
+  it("labels the scrubber with the series' real titles and each part's status from its explorer content", () => {
     expect(page.scrubber).toHaveLength(6);
     expect(page.scrubber[1]).toEqual({ part: 2, title: "Architecture as code", status: "built" });
     expect(page.scrubber[2]!.status).toBe("planned");
@@ -150,7 +148,6 @@ describe("buildArchitecturePage, from the real repo", () => {
         calm: loadCalmDocs(repoRoot),
         adlRules: adl.rules,
         snapshot: null,
-        currentPart: 1,
         cacheSeconds: null,
       });
       expect(unread.flows[2]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);

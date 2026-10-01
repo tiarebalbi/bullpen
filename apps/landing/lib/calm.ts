@@ -139,14 +139,3 @@ export function loadCalmDocs(repoRoot: string): Map<number, CalmDocView> {
   }
   return docs;
 }
-
-/** The timeline's current moment as a part number (`part-01` -> 1), or 1 if it cannot be read. */
-export function currentPart(repoRoot: string): number {
-  try {
-    const timeline = JSON.parse(readFileSync(join(repoRoot, "architecture", "calm", "bullpen.timeline.json"), "utf8")) as { "current-moment"?: string };
-    const match = /^part-0?(\d)$/.exec(timeline["current-moment"] ?? "");
-    return match ? Number(match[1]) : 1;
-  } catch {
-    return 1;
-  }
-}

@@ -10,6 +10,7 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { latestBuiltPart } from "../lib/latestBuiltPart.js";
 import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
@@ -22,6 +23,7 @@ export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartD
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
   parts: ArchPartData[];
+  /** Opens on this part. Without it, the explorer opens on the latest part whose status is "built". */
   initialPart?: number;
   /**
    * Controlled part. When set, the explorer follows it instead of its own
@@ -80,7 +82,7 @@ export function ArchitectureExplorer(props: ArchitectureExplorerProps): ReactNod
 }
 
 function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode {
-  const { parts, initialPart = 1, part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, className } = props;
+  const { parts, initialPart = latestBuiltPart(parts), part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, className } = props;
   const reduced = useReducedMotion();
   const { fitView } = useReactFlow();
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);

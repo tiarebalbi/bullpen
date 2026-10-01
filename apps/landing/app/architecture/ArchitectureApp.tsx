@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore, type KeyboardEvent, type Rea
 import type { Adr } from "../../lib/adr.js";
 import type { ArchitecturePageData } from "../../lib/architecturePage.js";
 import type { RulesTabData } from "../../lib/rulesView.js";
-import { ArchitectureExplorer, type ArchPartData } from "../components/ui.js";
+import { ArchitectureExplorer, latestBuiltPart, type ArchPartData } from "../components/ui.js";
 import type { RuleCardView } from "../components/RuleCardGrid.js";
 import { DataTab } from "./DataTab.js";
 import { DecisionsTab } from "./DecisionsTab.js";
@@ -57,7 +57,8 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
   const tab = tabFromHash(hash);
   const last = parts.length;
 
-  const [part, setPart] = useState(data.initialPart);
+  // Opens on the latest built part, read from the explorer content, so a part that ships needs no pointer moved.
+  const [part, setPart] = useState(latestBuiltPart(parts));
   const [playing, setPlaying] = useState(false);
   // Playback stops by itself at the last part without an effect that sets state.
   const running = playing && part < last;

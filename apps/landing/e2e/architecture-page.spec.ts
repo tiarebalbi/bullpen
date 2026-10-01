@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectedOpeningPart } from "./builtParts.js";
 
 // /architecture: six tabs, one moment scrubber shared by all of them, a deep
 // link per tab (/architecture#services), and no sample text from the design.
@@ -46,7 +47,7 @@ const panel = (page: Page) => page.getByRole("tabpanel");
 const scrubber = (page: Page) => page.getByRole("group", { name: "Series part" });
 const toPart = (page: Page, n: number) => scrubber(page).getByRole("button", { name: `PART ${n}` }).click();
 
-// The page opens on the timeline's current part, which changes on publish day. Every test picks
+// The page opens on the latest built part (see the opening-part tests below). Every other test picks
 // its part explicitly, so none of them depends on which one that is.
 async function atPart(page: Page, n: number): Promise<void> {
   await toPart(page, n);
@@ -74,6 +75,31 @@ for (const viewport of [
         await expect(panel(page)).toContainText(OPENING[t.id]);
       });
     }
+
+    test("opens on the latest built part, read from the explorer content", async ({ page }) => {
+      const opening = expectedOpeningPart();
+      await page.goto("/architecture");
+      await expect(scrubber(page).getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
+      await expect(panel(page)).toContainText(`Overview · Part ${opening}`);
+    });
+
+    test("a tab deep link picks the tab and leaves the part on the latest built one", async ({ page }) => {
+      const opening = expectedOpeningPart();
+      await page.goto("/architecture#rules");
+      await expect(tab(page, "Rules")).toHaveAttribute("aria-selected", "true");
+      await expect(scrubber(page).getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
+      await expect(panel(page)).toContainText(`Rules · Part ${opening}`);
+    });
+
+    test("a part the reader picks stays picked when they switch tabs", async ({ page }) => {
+      await page.goto("/architecture");
+      await atPart(page, 1);
+      await tab(page, "Services").click();
+      await expect(tab(page, "Services")).toHaveAttribute("aria-selected", "true");
+      await expect(scrubber(page).getByRole("button", { name: "PART 1" })).toHaveAttribute("aria-current", "step");
+      await tab(page, "Rules").click();
+      await expect(panel(page)).toContainText("Rules · Part 1");
+    });
 
     test("clicking a tab opens it and puts it in the URL", async ({ page }) => {
       await page.goto("/architecture");

@@ -26,6 +26,7 @@ export {
   MarketStrip,
   ThemeToggle,
   ArchitectureExplorer,
+  latestBuiltPart,
 } from "@bullpen/ui";
 export type {
   ButtonProps,

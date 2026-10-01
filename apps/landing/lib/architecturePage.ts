@@ -99,7 +99,6 @@ export interface ScrubberPart {
 }
 
 export interface ArchitecturePageData {
-  initialPart: number;
   scrubber: ScrubberPart[];
   services: Record<number, ServicesView>;
   flows: Record<number, FlowView>;
@@ -112,7 +111,6 @@ export interface ArchitecturePageInput {
   calm: Map<number, CalmDocView>;
   adlRules: string[];
   snapshot: RulesSnapshot | null;
-  currentPart: number;
   /** The price route's cache interval, from its own code: shown on the fetch step of a built part's flow. */
   cacheSeconds: number | null;
 }
@@ -300,7 +298,6 @@ export function buildArchitecturePage(input: ArchitecturePageInput): Architectur
     data[content.part] = buildData(content);
   }
   return {
-    initialPart: input.currentPart,
     scrubber: input.parts.map((p) => ({ part: p.part, title: input.series.find((s) => s.part === p.part)?.title ?? `Part ${p.part}`, status: p.status })),
     services,
     flows,
