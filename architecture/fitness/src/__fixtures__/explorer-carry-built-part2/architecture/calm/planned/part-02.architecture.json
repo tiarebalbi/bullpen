@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "unique-id": "app"
+    },
+    {
+      "unique-id": "old-service"
+    }
+  ],
+  "relationships": []
+}

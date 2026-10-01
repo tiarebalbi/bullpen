@@ -25,7 +25,7 @@ const repoRoot = join(process.cwd(), "..", "..");
 export default function LandingPage(): ReactNode {
   const series = loadSeries(join(repoRoot, "content", "series.json"));
   const adrs = loadAdrs(join(repoRoot, "architecture", "adr"));
-  const architectureParts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
+  const architectureParts = loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned"));
   const adl = loadAdl(join(repoRoot, "architecture", "adl", "structure.adl"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
   const usage = loadUsage(join(repoRoot, "cost", "usage", "2026-w40.json"));

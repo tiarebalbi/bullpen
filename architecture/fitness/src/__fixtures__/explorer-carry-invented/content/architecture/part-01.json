@@ -1,0 +1,23 @@
+{
+  "part": 1,
+  "status": "built",
+  "nodes": [
+    {
+      "id": "app",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "tool",
+      "x": 40,
+      "y": 400
+    }
+  ],
+  "edges": [
+    {
+      "id": "app-to-tool",
+      "a": "app",
+      "b": "tool"
+    }
+  ]
+}

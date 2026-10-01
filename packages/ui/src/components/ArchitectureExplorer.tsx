@@ -12,6 +12,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
+import { CarriedNote } from "./ArchitectureExplorerCarried.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
@@ -773,6 +774,7 @@ function SidePanel({
             Changed this part
           </span>
         ) : null}
+        <CarriedNote node={node} />
         <div style={{ marginTop: 10, font: "400 13.5px/1.55 var(--font-body)" }}>{node.purpose}</div>
         <div style={{ marginTop: 18, ...smallEyebrow }}>Decisions</div>
         <div style={{ marginTop: 8, display: "grid", gap: 4 }}>

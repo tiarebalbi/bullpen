@@ -81,8 +81,9 @@ behind the visitor's consent, in production only. The rules:
 - Ids live in Vercel's environment variables, for Production only. An id
   that is missing means that tool simply never loads.
 - Part 1's explorer shows the two systems. The planned moments for Parts 2
-  to 6 predate this decision and do not, so scrubbing forward drops them
-  until each part's own built moment carries them on.
+  to 6 predate this decision and do not name them, so the explorer carries
+  them forward into those parts, marked as built in Part 1, until a built
+  moment says otherwise (ADR-0011).
 
 ## Alternatives
 

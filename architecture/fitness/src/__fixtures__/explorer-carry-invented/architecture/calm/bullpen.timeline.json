@@ -1,0 +1,17 @@
+{
+  "current-moment": "part-01",
+  "moments": [
+    {
+      "unique-id": "part-01",
+      "details": {
+        "detailed-architecture": "moments/part-01.architecture.json"
+      }
+    },
+    {
+      "unique-id": "part-02",
+      "details": {
+        "detailed-architecture": "planned/part-02.architecture.json"
+      }
+    }
+  ]
+}
