@@ -26,6 +26,8 @@ export interface ArchitectureExplorerProps {
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
   adrHrefs: Record<string, string>;
+  /** Called after the visitor (or the scrubber's autoplay) moves from one part to another. */
+  onPartChange?: (from: number, to: number) => void;
   className?: string;
 }
 
@@ -72,6 +74,7 @@ function ArchitectureExplorerInner({
   initialPart = 1,
   adrTitles,
   adrHrefs,
+  onPartChange,
   className,
 }: ArchitectureExplorerProps): ReactNode {
   const reduced = useReducedMotion();
@@ -103,6 +106,14 @@ function ArchitectureExplorerInner({
   useEffect(() => {
     partRef.current = part;
   }, [part]);
+
+  // One call per move, whichever control caused it (click, arrow key, autoplay).
+  const reportedPart = useRef(initialPart);
+  useEffect(() => {
+    if (reportedPart.current === part) return;
+    onPartChange?.(reportedPart.current, part);
+    reportedPart.current = part;
+  }, [part, onPartChange]);
 
   const goToPart = useCallback(
     (next: number) => {

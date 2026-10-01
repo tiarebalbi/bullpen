@@ -32,3 +32,18 @@ export function resolveAnalyticsConfig(env: AnalyticsEnv): AnalyticsConfig | nul
   if (!googleId && !clarityId) return null;
   return { googleId, clarityId };
 }
+
+/**
+ * The part of the series the timeline calls current ("part-02" -> 2), for the
+ * Clarity `part` tag. Takes the timeline's text, so each app reads the file
+ * itself and this stays free of node:fs.
+ */
+export function currentPartFromTimeline(timelineJson: string): number | null {
+  try {
+    const moment = (JSON.parse(timelineJson) as { "current-moment"?: unknown })["current-moment"];
+    const match = typeof moment === "string" ? /^part-(\d{2})$/.exec(moment) : null;
+    return match ? Number(match[1]) : null;
+  } catch {
+    return null;
+  }
+}

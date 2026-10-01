@@ -82,6 +82,24 @@ describe("ArchitectureExplorer", () => {
     expect(screen.getByText("Prediction: an architecture explorer, no new runtime nodes.")).toBeInTheDocument();
   });
 
+  it("reports each move between parts once, as from and to", () => {
+    installMatchMedia();
+    const onPartChange = vi.fn();
+    render(
+      <ArchitectureExplorer parts={[PART_1, PART_2]} adrTitles={{}} adrHrefs={{}} onPartChange={onPartChange} />,
+    );
+    expect(onPartChange).not.toHaveBeenCalled();
+
+    const scrubber = screen.getByRole("group", { name: "Series part" });
+    fireEvent.keyDown(scrubber, { key: "ArrowRight" });
+    expect(onPartChange).toHaveBeenCalledTimes(1);
+    expect(onPartChange).toHaveBeenCalledWith(1, 2);
+
+    fireEvent.keyDown(scrubber, { key: "ArrowLeft" });
+    expect(onPartChange).toHaveBeenLastCalledWith(2, 1);
+    expect(onPartChange).toHaveBeenCalledTimes(2);
+  });
+
   it("shows the default 'what changed' panel with no node selected", () => {
     installMatchMedia();
     render(

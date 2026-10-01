@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveAnalyticsConfig } from "./config.js";
+import { currentPartFromTimeline, resolveAnalyticsConfig } from "./config.js";
 
 const IDS = { NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000", NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest" };
 
@@ -32,5 +32,17 @@ describe("when a tag may load at all", () => {
     expect(
       resolveAnalyticsConfig({ VERCEL_ENV: "production", NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest" }),
     ).toEqual({ googleId: null, clarityId: "clar1tytest" });
+  });
+});
+
+describe("the part sent to Clarity", () => {
+  it("is the timeline's current moment", () => {
+    expect(currentPartFromTimeline('{"current-moment":"part-01"}')).toBe(1);
+    expect(currentPartFromTimeline('{"current-moment":"part-02"}')).toBe(2);
+  });
+  it("is null when the timeline does not say", () => {
+    expect(currentPartFromTimeline("{}")).toBeNull();
+    expect(currentPartFromTimeline("not json")).toBeNull();
+    expect(currentPartFromTimeline('{"current-moment":"later"}')).toBeNull();
   });
 });
