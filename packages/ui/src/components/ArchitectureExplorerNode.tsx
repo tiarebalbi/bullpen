@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { builtInLabel } from "../lib/builtIn.js";
 import type { ArchNodeData, ArchNodeKind } from "./ArchitectureExplorer.types.js";
 
 export type ArchNodeVisualState = "same" | "added" | "removed" | "changed";
@@ -77,7 +78,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     <div
       role="button"
       tabIndex={removed ? -1 : 0}
-      aria-label={`${node.label}, ${KIND_LABEL[node.kind]}`}
+      aria-label={`${node.label}, ${KIND_LABEL[node.kind]}${node.builtIn ? `, built in ${builtInLabel(node.builtIn)}` : ""}`}
       aria-pressed={selected}
       onClick={() => !removed && onSelect(node.id)}
       onKeyDown={(e) => {
@@ -105,6 +106,23 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
             }}
           >
             PLANNED
+          </span>
+        ) : null}
+        {node.carried && node.builtIn ? (
+          <span
+            style={{
+              position: "absolute",
+              top: -8,
+              right: 8,
+              font: "700 8.5px/1 var(--font-body)",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "var(--bp-gain)",
+              background: "var(--background)",
+              padding: "0 4px",
+            }}
+          >
+            Built in {builtInLabel(node.builtIn)}
           </span>
         ) : null}
         <span

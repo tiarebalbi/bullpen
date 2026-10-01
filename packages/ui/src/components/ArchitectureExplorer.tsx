@@ -10,6 +10,7 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { builtInLabel } from "../lib/builtIn.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
@@ -771,6 +772,11 @@ function SidePanel({
         {nodeState === "changed" ? (
           <span style={{ marginTop: 8, alignSelf: "flex-start", font: "600 9.5px/1 var(--font-body)", letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 8px", borderRadius: 9999, background: "color-mix(in oklch, var(--ember) 16%, transparent)", color: "var(--bp-accent-text)" }}>
             Changed this part
+          </span>
+        ) : null}
+        {node.carried && node.builtIn ? (
+          <span style={{ marginTop: 8, alignSelf: "flex-start", font: "600 9.5px/1 var(--font-body)", letterSpacing: "0.04em", padding: "5px 8px", borderRadius: 9999, background: "color-mix(in oklch, var(--bp-gain) 16%, transparent)", color: "var(--bp-gain)" }}>
+            Built in {builtInLabel(node.builtIn)}; still running in this prediction.
           </span>
         ) : null}
         <div style={{ marginTop: 10, font: "400 13.5px/1.55 var(--font-body)" }}>{node.purpose}</div>

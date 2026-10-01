@@ -4,10 +4,11 @@ import { loadArchitectureParts, parseArchitecturePart } from "./architecture.js"
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const architectureDir = join(repoRoot, "content", "architecture");
+const plannedDir = join(repoRoot, "architecture", "calm", "planned");
 
 describe("parseArchitecturePart / loadArchitectureParts", () => {
   it("parses all six real content/architecture/part-0N.json files", () => {
-    const parts = loadArchitectureParts(architectureDir);
+    const parts = loadArchitectureParts(architectureDir, plannedDir);
     expect(parts).toHaveLength(6);
     expect(parts.map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(parts[0]!.status).toBe("built");
@@ -56,7 +57,7 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
   });
 
   it("derives ownership groups from db-owning services and their connected data nodes", () => {
-    const parts = loadArchitectureParts(architectureDir);
+    const parts = loadArchitectureParts(architectureDir, plannedDir);
     const part1 = parts.find((p) => p.part === 1)!;
     expect(part1.groups).toEqual([]);
 
@@ -86,5 +87,36 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
       request: { name: "R", steps: [] },
     });
     expect(() => parseArchitecturePart(malformed, "test.json")).toThrow(/invalid "kind"/);
+  });
+
+  it("carries the built analytics nodes and edges into every planned part, and nothing else", () => {
+    const parts = loadArchitectureParts(architectureDir, plannedDir);
+    expect(parts[0]!.nodes.some((n) => n.carried)).toBe(false);
+    for (const part of parts.slice(1)) {
+      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["google-analytics", "microsoft-clarity"]);
+      expect(part.edges.filter((e) => e.carried).map((e) => e.id).sort()).toEqual([
+        "landing-to-google-analytics",
+        "landing-to-microsoft-clarity",
+        "trading-app-to-google-analytics",
+        "trading-app-to-microsoft-clarity",
+      ]);
+      for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried)) {
+        expect(item.builtIn).toBe("part-01");
+      }
+    }
+  });
+
+  it("leaves a predicted replacement alone: the Part 1 price snapshot service is not carried past Part 2", () => {
+    const parts = loadArchitectureParts(architectureDir, plannedDir);
+    for (const part of parts.filter((p) => p.part >= 3)) {
+      expect(part.nodes.some((n) => n.id === "price-snapshot-service")).toBe(false);
+    }
+  });
+
+  it("keeps the carried copy of a node equal to what Part 1 built", () => {
+    const parts = loadArchitectureParts(architectureDir, plannedDir);
+    const built = parts[0]!.nodes.find((n) => n.id === "google-analytics")!;
+    const carried = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
+    expect({ ...carried, x: 0, y: 0 }).toEqual({ ...built, x: 0, y: 0, carried: true, builtIn: "part-01" });
   });
 });
