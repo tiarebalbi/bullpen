@@ -1,8 +1,8 @@
 {
-  "schema": 1,
+  "schema": 2,
   "part": 2,
-  "generatedAt": "2026-10-01T00:19:28.475Z",
-  "commit": "c6e4439d7dc34bdc1666a39cedc346ebd63c73e6",
+  "generatedAt": "2026-10-01T01:34:10.216Z",
+  "commit": "b4256bb30fc8ff461e2fa4e53fd23180b528a3cf",
   "dirty": false,
   "ref": "post-02-architecture-as-code",
   "source": "local",
@@ -13,80 +13,119 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 9 checks held, 15 rules enforced",
+      "summary": "check:arch passed: 9 checks held, 19 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
-          "rule": "every directory under apps/ and packages/ is DEFINED here",
+          "id": "every-directory-under-apps-and-packages-is-defined",
+          "rule": "every directory under apps and packages is DEFINED",
           "check": "structure",
           "passed": true
         },
         {
-          "rule": "every DEFINED component and library exists as a directory",
+          "id": "every-defined-component-and-library-exists-as-a-directory",
+          "rule": "every DEFINED COMPONENT and LIBRARY exists as a directory",
           "check": "structure",
           "passed": true
         },
         {
-          "rule": "apps NEVER DEPEND ON other apps",
+          "id": "landing-is-dependent-on-ui-contracts",
+          "rule": "Landing IS DEPENDENT ON UI, Contracts",
           "check": "turbo boundaries",
           "passed": true
         },
         {
-          "rule": "libraries NEVER DEPEND ON apps",
+          "id": "trading-app-is-dependent-on-ui-contracts",
+          "rule": "Trading App IS DEPENDENT ON UI, Contracts",
           "check": "turbo boundaries",
           "passed": true
         },
         {
-          "rule": "apps IMPORT libraries ONLY THROUGH their package entry point",
+          "id": "landing-has-no-dependency-on-trading-app",
+          "rule": "Landing HAS NO DEPENDENCY ON Trading App",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-app-has-no-dependency-on-landing",
+          "rule": "Trading App HAS NO DEPENDENCY ON Landing",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "ui-has-no-dependency-on-landing-trading-app",
+          "rule": "UI HAS NO DEPENDENCY ON Landing, Trading App",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "contracts-has-no-dependency-on-landing-trading-app",
+          "rule": "Contracts HAS NO DEPENDENCY ON Landing, Trading App",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "components-use-libraries-only-through-their-package-entry-point",
+          "rule": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point",
           "check": "entry-point imports",
           "passed": true
         },
         {
+          "id": "only-apps-web-app-api-price-reads-coingecko-demo-api-key",
           "rule": "ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY",
           "check": "secret containment",
           "passed": true
         },
         {
-          "rule": "every DEFINED component and library maps to a node in the current CALM moment",
+          "id": "every-defined-component-and-library-maps-to-a-node-in-the-current-calm-moment",
+          "rule": "every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment",
           "check": "model currency",
           "passed": true
         },
         {
+          "id": "every-webclient-and-service-node-in-the-current-calm-moment-maps-to-a-defined-entry",
           "rule": "every webclient and service node in the current CALM moment maps to a DEFINED entry",
           "check": "model currency",
           "passed": true
         },
         {
+          "id": "every-external-system-in-a-calm-moment-is-decided-in-an-adr-decision-or-listed-as-in-use-or-proposed-in-docs-data-sources-md",
           "rule": "every external system in a CALM moment is decided in an ADR Decision or listed as in use or proposed in docs/data-sources.md",
           "check": "model currency",
           "passed": true
         },
         {
+          "id": "every-adr-is-linked-from-the-timeline-moment-of-its-part",
           "rule": "every ADR is linked from the timeline moment of its part",
           "check": "model currency",
           "passed": true
         },
         {
+          "id": "every-calm-control-that-names-the-check-enforcing-it-points-at-a-file-that-exists",
           "rule": "every CALM control that names the check enforcing it points at a file that exists",
           "check": "model currency",
           "passed": true
         },
         {
+          "id": "modeled-monthly-coingecko-calls-stay-within-90-of-the-demo-plan-s-monthly-allowance",
           "rule": "modeled monthly CoinGecko calls stay within 90% of the Demo plan's monthly allowance",
           "check": "budget",
           "passed": true
         },
         {
+          "id": "every-explorer-node-and-edge-exists-in-its-calm-document-and-every-calm-node-appears-in-the-explorer",
           "rule": "every explorer node and edge exists in its CALM document, and every CALM node appears in the explorer",
           "check": "explorer consistency",
           "passed": true
         },
         {
+          "id": "no-file-in-the-repo-contains-the-repo-author-s-email-address",
           "rule": "no file in the repo contains the repo author's email address",
           "check": "email in files",
           "passed": true
         },
         {
+          "id": "every-adl-assert-is-enforced-by-a-check-and-every-enforced-rule-is-still-in-the-adl",
           "rule": "every ADL ASSERT is enforced by a check, and every enforced rule is still in the ADL",
           "check": "rule coverage",
           "passed": true
@@ -98,7 +137,7 @@
       "name": "turbo boundaries",
       "command": "pnpm exec turbo boundaries",
       "passed": true,
-      "summary": "Checked 171 files in 5 packages, no issues found",
+      "summary": "Checked 184 files in 5 packages, no issues found",
       "raw": "turbo-boundaries.txt",
       "rules": []
     },

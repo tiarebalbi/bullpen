@@ -1,1 +1,1 @@
-check:arch passed: 9 checks held, 15 rules enforced
+check:arch passed: 9 checks held, 19 rules enforced
