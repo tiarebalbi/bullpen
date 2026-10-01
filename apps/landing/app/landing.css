@@ -1159,6 +1159,11 @@ code {
   align-items: flex-start;
   gap: var(--space-2);
 }
+.bp-ap-rules .bp-chip,
+.bp-ap-ifaces .bp-chip {
+  flex: none;
+  white-space: nowrap;
+}
 .bp-ap-card__foot {
   margin-top: auto;
   padding-top: var(--space-4);
