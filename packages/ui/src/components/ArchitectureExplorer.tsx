@@ -11,6 +11,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
+import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
@@ -106,14 +107,7 @@ function ArchitectureExplorerInner({
   useEffect(() => {
     partRef.current = part;
   }, [part]);
-
-  // One call per move, whichever control caused it (click, arrow key, autoplay).
-  const reportedPart = useRef(initialPart);
-  useEffect(() => {
-    if (reportedPart.current === part) return;
-    onPartMoved?.(reportedPart.current, part);
-    reportedPart.current = part;
-  }, [part, onPartMoved]);
+  useReportPartMoves(part, initialPart, onPartMoved);
 
   const goToPart = useCallback(
     (next: number) => {

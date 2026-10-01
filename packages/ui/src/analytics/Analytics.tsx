@@ -20,11 +20,35 @@ export interface AnalyticsProps {
   reload?: () => void;
 }
 
+function reloadPage(): void {
+  window.location.reload();
+}
+
+function startTags(config: { googleId: string | null; clarityId: string | null }, part: number | null): void {
+  if (config.googleId) {
+    loadGoogleTag(config.googleId, window.location.hostname);
+    setTrackTransport(sendGoogleEvent);
+  }
+  if (config.clarityId) loadClarity(config.clarityId, part);
+}
+
+/** Withdrawal: stop sending, tell both tools, delete their cookies, and restart the page if a tag was running in it. */
+function stopTags(reload: () => void): void {
+  const hadTags = googleTagLoaded() || clarityLoaded();
+  setTrackTransport(null);
+  denyGoogleConsent();
+  eraseClarity();
+  clearAnalyticsCookies(document, window.location.hostname);
+  // The tags are already running in this page; a reload is what stops them.
+  if (hadTags) reload();
+}
+
 /**
  * Loads GA4 and Clarity, and only when all three hold: the deployment is
  * production with the tool's id set (`config`), and the visitor accepted.
  * Renders nothing.
  */
+// metrics-gate: ignore[nesting] -- the measuring engine without tree-sitter adds up three sibling useEffect callbacks; the real depth is 2
 export function Analytics({ config, part, pathname, reload }: AnalyticsProps): ReactNode {
   const consent = useSyncExternalStore(subscribeConsent, getConsentSnapshot, getServerConsentSnapshot);
   const allowed = consent.ready && allowsAnalytics(consent.state);
@@ -32,12 +56,7 @@ export function Analytics({ config, part, pathname, reload }: AnalyticsProps): R
   const clarityId = config?.clarityId ?? null;
 
   useEffect(() => {
-    if (!allowed) return;
-    if (googleId) {
-      loadGoogleTag(googleId, window.location.hostname);
-      setTrackTransport(sendGoogleEvent);
-    }
-    if (clarityId) loadClarity(clarityId, part);
+    if (allowed) startTags({ googleId, clarityId }, part);
   }, [allowed, googleId, clarityId, part]);
 
   useEffect(() => {
@@ -45,14 +64,7 @@ export function Analytics({ config, part, pathname, reload }: AnalyticsProps): R
   }, [allowed, googleId, pathname]);
 
   useEffect(() => {
-    if (consent.state !== "withdrawn") return;
-    const hadTags = googleTagLoaded() || clarityLoaded();
-    setTrackTransport(null);
-    denyGoogleConsent();
-    eraseClarity();
-    clearAnalyticsCookies(document, window.location.hostname);
-    // The tags are already running in this page; a reload is what stops them.
-    if (hadTags) (reload ?? (() => window.location.reload()))();
+    if (consent.state === "withdrawn") stopTags(reload ?? reloadPage);
   }, [consent.state, reload]);
 
   return null;

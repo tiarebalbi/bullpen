@@ -19,14 +19,9 @@ export const CONSENT_COOKIE = "bullpen_consent";
 export const CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 183;
 
 export function consentReducer(state: ConsentState, action: ConsentAction): ConsentState {
-  switch (action) {
-    case "accept":
-      return "accepted";
-    case "reject":
-    case "withdraw":
-      if (state === "accepted" || state === "withdrawn") return "withdrawn";
-      return action === "reject" ? "rejected" : state;
-  }
+  if (action === "accept") return "accepted";
+  if (state === "accepted" || state === "withdrawn") return "withdrawn";
+  return action === "reject" ? "rejected" : state;
 }
 
 /** The only state in which a tag may load or an event may be sent. */
