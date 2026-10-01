@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main, post-01-use-case]
+    # experiment/** so a throwaway branch (the agent-boundary experiment) gets CI
+    # on every push, without a pull request: GitHub will not open one for a
+    # branch that has no commits yet.
+    branches: [main, post-01-use-case, "experiment/**"]
   pull_request:
 
 jobs:

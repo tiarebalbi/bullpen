@@ -52,6 +52,11 @@ describe("ci workflow", () => {
     expect(text).toMatch(/- name: guardrail tests \(always\)\n\s+run: pnpm --filter @bullpen\/fitness-checks test/);
   });
 
+  it("runs on pushes to experiment branches too, so an experiment gets CI without a pull request", () => {
+    expect(text).toMatch(/push:[\s\S]*?branches: \[[^\]]*"experiment\/\*\*"[^\]]*\]/);
+    expect(text).toMatch(/\n  pull_request:/);
+  });
+
   it("has a commit-policy job on pull requests, over the PR's own SHAs", () => {
     expect(text).toMatch(/\n  commit-policy:\n\s+if: github\.event_name == 'pull_request'/);
     expect(text).toContain("BASE_SHA: ${{ github.event.pull_request.base.sha }}");
