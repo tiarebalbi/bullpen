@@ -22,6 +22,17 @@ export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
   parts: ArchPartData[];
   initialPart?: number;
+  /**
+   * Controlled part. When set, the explorer follows it instead of its own
+   * state and reports every change through `onPartChange`, so a page can
+   * share one moment scrubber across several views.
+   */
+  part?: number;
+  onPartChange?: (part: number) => void;
+  /** Hide the explorer's own moment scrubber, for a page that renders one of its own. */
+  hideScrubber?: boolean;
+  /** Start with this node selected (for a link that arrives from another view). */
+  initialSelectedId?: string;
   /** Real ADR titles keyed by id (e.g. { "ADR-0001": "Stack" }), for the side panel. */
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
@@ -70,6 +81,10 @@ export function ArchitectureExplorer(props: ArchitectureExplorerProps): ReactNod
 function ArchitectureExplorerInner({
   parts,
   initialPart = 1,
+  part: controlledPart,
+  onPartChange,
+  hideScrubber = false,
+  initialSelectedId,
   adrTitles,
   adrHrefs,
   className,
@@ -79,9 +94,10 @@ function ArchitectureExplorerInner({
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);
   const maxPart = parts.length;
 
-  const [part, setPart] = useState(initialPart);
-  const [prevPart, setPrevPart] = useState(initialPart);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const controlled = controlledPart !== undefined;
+  const [internalPart, setInternalPart] = useState(initialPart);
+  const part = controlledPart ?? internalPart;
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
@@ -91,12 +107,25 @@ function ArchitectureExplorerInner({
     idx: 0,
     playing: false,
   });
-  const [settling, setSettling] = useState(false);
+
+  // Which part we came from, and whether the exit animation is still running.
+  // Both are derived from `part`, so they work the same whether the part is
+  // the explorer's own state or comes from a parent. The render-time update
+  // is the documented way to derive state from a changing value: React
+  // re-renders straight away, before anything is painted.
+  const [seen, setSeen] = useState({ part, prev: part });
+  if (seen.part !== part) {
+    setSeen({ part, prev: seen.part });
+    setRequest({ on: false, idx: 0, playing: false });
+    setSelectedId((id) => (id && partsById.get(part)?.nodes.some((n) => n.id === id) ? id : null));
+  }
+  const prevPart = seen.prev;
+  const [settledPart, setSettledPart] = useState(part);
+  const settling = settledPart !== part;
 
   const current = partsById.get(part) ?? parts[0]!;
   const previous = partsById.get(prevPart) ?? current;
 
-  const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrubTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const requestTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const partRef = useRef(part);
@@ -104,28 +133,33 @@ function ArchitectureExplorerInner({
     partRef.current = part;
   }, [part]);
 
+  // Ask for another part: through the parent when controlled, else ourselves.
+  const requestPart = useCallback(
+    (next: number) => {
+      if (controlled) onPartChange?.(next);
+      else setInternalPart(next);
+    },
+    [controlled, onPartChange],
+  );
+
   const goToPart = useCallback(
     (next: number) => {
       const clamped = Math.max(1, Math.min(maxPart, next));
-      if (clamped === part) return;
-      setPrevPart(part);
-      setPart(clamped);
-      setSelectedId((id) => {
-        const stillExists = id ? partsById.get(clamped)?.nodes.some((n) => n.id === id) : false;
-        return stillExists ? id : null;
-      });
-      setRequest({ on: false, idx: 0, playing: false });
-      if (requestTimer.current) clearInterval(requestTimer.current);
-      setSettling(true);
-      if (removeTimer.current) clearTimeout(removeTimer.current);
-      removeTimer.current = setTimeout(() => setSettling(false), reduced ? 420 : REMOVE_ANIM_MS);
+      if (clamped !== part) requestPart(clamped);
     },
-    [maxPart, part, partsById, reduced],
+    [maxPart, part, requestPart],
   );
+
+  // The removed nodes get REMOVE_ANIM_MS to play their exit before the
+  // diagram settles on the new part. A new part restarts the wait.
+  useEffect(() => {
+    if (settledPart === part) return;
+    const timer = setTimeout(() => setSettledPart(part), reduced ? 420 : REMOVE_ANIM_MS);
+    return () => clearTimeout(timer);
+  }, [part, settledPart, reduced]);
 
   useEffect(() => {
     return () => {
-      if (removeTimer.current) clearTimeout(removeTimer.current);
       if (scrubTimer.current) clearInterval(scrubTimer.current);
       if (requestTimer.current) clearInterval(requestTimer.current);
     };
@@ -146,13 +180,9 @@ function ArchitectureExplorerInner({
         setScrubPlaying(false);
         return;
       }
-      setPrevPart(p);
-      setSettling(true);
-      if (removeTimer.current) clearTimeout(removeTimer.current);
-      removeTimer.current = setTimeout(() => setSettling(false), reduced ? 420 : REMOVE_ANIM_MS);
-      setPart(p + 1);
+      requestPart(p + 1);
     }, SCRUB_PLAY_MS);
-  }, [scrubPlaying, part, maxPart, goToPart, reduced]);
+  }, [scrubPlaying, part, maxPart, goToPart, requestPart]);
 
   const startRequest = useCallback(() => {
     setSelectedId(null);
@@ -375,14 +405,16 @@ function ArchitectureExplorerInner({
         />
       </div>
 
-      <MomentScrubber
-        part={part}
-        maxPart={maxPart}
-        parts={parts}
-        playing={scrubPlaying}
-        onTogglePlay={toggleScrubPlay}
-        onGoTo={goToPart}
-      />
+      {hideScrubber ? null : (
+        <MomentScrubber
+          part={part}
+          maxPart={maxPart}
+          parts={parts}
+          playing={scrubPlaying}
+          onTogglePlay={toggleScrubPlay}
+          onGoTo={goToPart}
+        />
+      )}
 
       <div
         className="bp-arch-explorer__grid"
