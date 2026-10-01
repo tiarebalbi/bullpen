@@ -1,22 +1,22 @@
 import type { ReactNode } from "react";
 import type { Adl } from "../../lib/adl.js";
-import type { CheckArchResult } from "../../lib/check-arch.js";
 import type { AllowanceEntry } from "../../lib/cost.js";
-import { buildRuleCards, ruleCardChip } from "../../lib/ruleCards.js";
-import { Chip } from "./ui.js";
+import { buildRuleCards, ruleCardChip, ruleCardOutcome } from "../../lib/ruleCards.js";
+import type { RulesSnapshot } from "../../lib/rulesSnapshot.js";
+import { RuleCardGrid } from "./RuleCardGrid.js";
 
 export function RulesCard({
   adl,
   allowances,
-  checkArch,
+  snapshot,
 }: {
   adl: Adl;
   allowances: AllowanceEntry[];
-  checkArch: CheckArchResult;
+  snapshot: RulesSnapshot | null;
 }): ReactNode {
-  const cards = buildRuleCards(adl, allowances);
-  const knownCount = cards.filter((c) => c.resultSource === "check-arch").length;
-  const passingCount = cards.filter((c) => c.resultSource === "check-arch" && checkArch.passed).length;
+  const cards = buildRuleCards(adl, allowances).map((card) => ({ card, chip: ruleCardChip(card, snapshot) }));
+  const knownCount = cards.filter(({ card }) => ruleCardOutcome(card, snapshot) !== null).length;
+  const passingCount = cards.filter(({ card }) => ruleCardOutcome(card, snapshot) === true).length;
 
   return (
     <section id="rules" className="bp-bento__card" aria-labelledby="rules-heading">
@@ -26,41 +26,15 @@ export function RulesCard({
           <h2 id="rules-heading">Checked, not hoped for</h2>
         </div>
         <span className="bp-bento__meta">
-          {passingCount} of {knownCount} passing at build time
+          {snapshot ? `${passingCount} of ${knownCount} passing in the last snapshot` : "No snapshot yet"}
         </span>
       </div>
-      <p className="bp-bento__note">I run these checks in CI on every push, and check them again at build time.</p>
+      <p className="bp-bento__note">
+        CI runs these checks on every pull request. The results below are from the last snapshot I committed, with the
+        date and commit it ran for.
+      </p>
 
-      <div className="bp-rule-grid">
-        {cards.map((card) => {
-          const chip = ruleCardChip(card, checkArch);
-          return (
-            <article key={card.id} className="bp-rule-card">
-              <div className="bp-rule-card__file">{card.sourceFile}</div>
-              <div className="bp-rule-card__body">
-                {card.ruleLines.map((line, i) => (
-                  <div key={i}>
-                    {line.map((token, j) =>
-                      token.keyword ? (
-                        <span key={j} className="bp-rule-kw">
-                          {token.text}
-                        </span>
-                      ) : (
-                        <span key={j}>{token.text}</span>
-                      ),
-                    )}
-                  </div>
-                ))}
-                {card.footnote ? <div className="bp-rule-card__footnote">{card.footnote}</div> : null}
-              </div>
-              <div className="bp-rule-card__foot">
-                <span>{card.cadence}</span>
-                <Chip tone={chip.tone}>{chip.label}</Chip>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <RuleCardGrid cards={cards} />
 
       <details className="bp-bento__more">
         <summary>What&rsquo;s defined ({adl.entries.length})</summary>

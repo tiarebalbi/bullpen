@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { loadAdl } from "../lib/adl.js";
 import { loadAdrs } from "../lib/adr.js";
 import { loadArchitectureParts } from "../lib/architecture.js";
-import { loadCheckArchResult } from "../lib/check-arch.js";
 import { loadAllowances, loadUsage } from "../lib/cost.js";
+import { loadLatestRulesSnapshot } from "../lib/rulesSnapshot.js";
 import { loadSeries } from "../lib/series.js";
 import { Architecture } from "./components/Architecture.js";
 import { Footer } from "./components/Footer.js";
@@ -29,7 +29,7 @@ export default function LandingPage(): ReactNode {
   const adl = loadAdl(join(repoRoot, "architecture", "adl", "structure.adl"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
   const usage = loadUsage(join(repoRoot, "cost", "usage", "2026-w40.json"));
-  const checkArch = loadCheckArchResult(join(process.cwd(), ".generated", "check-arch-result.json"));
+  const snapshot = loadLatestRulesSnapshot(join(repoRoot, "architecture", "reports"));
 
   return (
     <>
@@ -39,7 +39,7 @@ export default function LandingPage(): ReactNode {
         <MarketStripSection />
         <SeriesRail parts={series} />
         <Architecture parts={architectureParts} adrs={adrs} />
-        <StatusBento adrs={adrs} adl={adl} checkArch={checkArch} allowances={allowances} usage={usage} />
+        <StatusBento adrs={adrs} adl={adl} snapshot={snapshot} allowances={allowances} usage={usage} />
       </main>
       <Footer />
     </>

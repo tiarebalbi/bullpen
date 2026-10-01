@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run && playwright test",
-    "build": "node scripts/run-check-arch.mjs && next build --webpack",
+    "build": "next build --webpack",
     "start": "next start"
   },
   "dependencies": {

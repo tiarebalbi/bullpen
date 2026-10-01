@@ -10,8 +10,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     const parts = loadArchitectureParts(architectureDir);
     expect(parts).toHaveLength(6);
     expect(parts.map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(parts[0]!.status).toBe("built");
-    for (const part of parts.slice(1)) {
+    // Parts 1 and 2 are built; 3 to 6 are predictions.
+    expect(parts.slice(0, 2).map((p) => p.status)).toEqual(["built", "built"]);
+    for (const part of parts.slice(2)) {
       expect(part.status).toBe("planned");
     }
     for (const part of parts) {

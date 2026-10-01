@@ -55,7 +55,17 @@ function trapTabKey(e: KeyboardEvent<HTMLDialogElement>): void {
  * a native focus trap and Escape-to-close for free (see ADR-0006/0007 for
  * the sibling "why a real platform primitive over hand-rolled" precedent).
  */
-export function DecisionsList({ adrs }: { adrs: Adr[] }): ReactNode {
+export function DecisionsList({
+  adrs,
+  closeHash = "",
+  rowFilter,
+}: {
+  adrs: Adr[];
+  /** Where closing the modal leaves the URL's hash: nothing on the home page, "#decisions" on the architecture page, where the hash is also the tab. */
+  closeHash?: string;
+  /** Lists only the decisions this accepts. A decision it hides can still be opened by its link. */
+  rowFilter?: (adr: Adr) => boolean;
+}): ReactNode {
   const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
   const openAdr = adrs.find((a) => hash === `#${adrHashId(a.id)}`) ?? null;
 
@@ -74,8 +84,8 @@ export function DecisionsList({ adrs }: { adrs: Adr[] }): ReactNode {
   }, [openAdr]);
 
   const closeToHome = (): void => {
-    if (window.location.hash) {
-      history.replaceState(null, "", window.location.pathname + window.location.search);
+    if (window.location.hash !== closeHash) {
+      history.replaceState(null, "", window.location.pathname + window.location.search + closeHash);
     }
     lastFocusedRef.current?.focus();
   };
@@ -83,7 +93,7 @@ export function DecisionsList({ adrs }: { adrs: Adr[] }): ReactNode {
   return (
     <>
       <div className="bp-decisions-list">
-        {adrs.map((adr) => (
+        {adrs.filter((adr) => rowFilter?.(adr) ?? true).map((adr) => (
           <a key={adr.id} href={`#${adrHashId(adr.id)}`} className="bp-decisions-row" data-superseded={isSuperseded(adr.status)}>
             <span className="bp-decisions-row__id">{adr.id}</span>
             <span className="bp-decisions-row__body">

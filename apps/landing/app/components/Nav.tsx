@@ -13,6 +13,15 @@ const LINKS: Array<{ href: string; label: string }> = [
   { href: "#cost", label: "Cost" },
 ];
 
+/** On /architecture the section links point back at the home page, and Architecture is the page itself. */
+function linksFor(onArchitecturePage: boolean): Array<{ href: string; label: string; current: boolean }> {
+  return LINKS.map((link) => {
+    if (!onArchitecturePage) return { ...link, current: false };
+    if (link.label === "Architecture") return { href: "/architecture", label: link.label, current: true };
+    return { href: `/${link.href}`, label: link.label, current: false };
+  });
+}
+
 // Bullpen Landing.dc.html collapses these links (and drops the header CTA
 // entirely) behind a menu button below desktop width -- confirmed against
 // the final design export at 390px. The export has no coded breakpoint of
@@ -27,7 +36,7 @@ const LINKS: Array<{ href: string; label: string }> = [
 // left to right with no CSS `order` needed at desktop -- the design's own
 // live-player-count pill is omitted entirely (no real league yet, see
 // content/series.json/Hero), not just visually hidden.
-export function Nav(): ReactNode {
+export function Nav({ onArchitecturePage = false }: { onArchitecturePage?: boolean } = {}): ReactNode {
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const [theme, toggleTheme] = useTheme();
@@ -61,8 +70,8 @@ export function Nav(): ReactNode {
         className="bp-nav__links"
         data-open={open ? "true" : "false"}
       >
-        {LINKS.map((link) => (
-          <a key={link.href} href={link.href} onClick={() => setOpen(false)}>
+        {linksFor(onArchitecturePage).map((link) => (
+          <a key={link.href} href={link.href} aria-current={link.current ? "page" : undefined} onClick={() => setOpen(false)}>
             {link.label}
           </a>
         ))}
@@ -80,7 +89,7 @@ export function Nav(): ReactNode {
       >
         <span aria-hidden="true" className="bp-nav__toggle-icon" />
       </button>
-      <LinkButton href="#series" className="bp-nav__cta">
+      <LinkButton href={onArchitecturePage ? "/#series" : "#series"} className="bp-nav__cta">
         League opens in Part 3
       </LinkButton>
     </header>

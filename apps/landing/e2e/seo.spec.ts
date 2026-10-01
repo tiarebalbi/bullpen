@@ -80,9 +80,11 @@ test.describe("SEO metadata", () => {
     expect(res.headers()["content-type"]).toContain("xml");
     const body = await res.text();
     expect(body).toContain(`<loc>https://${PRODUCTION_HOST}/</loc>`);
-    // Fragments aren't URLs -- only "/" belongs here.
+    expect(body).toContain(`<loc>https://${PRODUCTION_HOST}/architecture</loc>`);
+    // Fragments aren't URLs -- only "/" and "/architecture" belong here.
     expect(body).not.toContain("#decisions");
     expect(body).not.toContain("#architecture");
+    expect(body).not.toContain("#services");
   });
 
   test("JSON-LD parses and validates", async ({ page }) => {

@@ -63,13 +63,12 @@ test("landing page renders every section with no console/page errors", async ({ 
     await expect(decisions.getByText(id)).toBeVisible();
   }
 
-  // Rules: four real rule mini-cards, each with a real result chip (a
-  // build-time pass/fail, or an honest "runs in CI" for checks that only
-  // run there, never a fabricated pass).
+  // Rules: four real rule mini-cards, each with a real result chip: the pass
+  // or fail the last committed rules snapshot recorded, never a fabricated pass.
   const ruleCards = page.locator("#rules .bp-rule-card");
   await expect(ruleCards).toHaveCount(4);
   for (let i = 0; i < 4; i++) {
-    await expect(ruleCards.nth(i).locator(".bp-rule-card__foot")).toContainText(/pass|fail|runs in CI/);
+    await expect(ruleCards.nth(i).locator(".bp-rule-card__foot")).toContainText(/pass|fail/);
   }
 
   // Cost: the honest "usage pending" state, not invented numbers.

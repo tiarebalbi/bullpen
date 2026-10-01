@@ -3,6 +3,7 @@ import type { Adr } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import type { ArchPartData } from "./ui.js";
 import { ArchitectureExplorer } from "./ui.js";
+import { LinkButton } from "./LinkButton.js";
 
 /**
  * Replaces the static, docify-generated SVG with the interactive explorer
@@ -24,6 +25,11 @@ export function Architecture({ parts, adrs }: { parts: ArchPartData[]; adrs: Adr
         <p className="bp-section__lede">
           Scrub through the series to watch the architecture change. Select any part of the system to see
           what it does and which decision put it there.
+        </p>
+        <p className="bp-section__more">
+          <LinkButton variant="secondary" href="/architecture">
+            Open the full architecture page
+          </LinkButton>
         </p>
       </div>
 
