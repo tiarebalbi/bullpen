@@ -10,6 +10,7 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
@@ -78,25 +79,13 @@ export function ArchitectureExplorer(props: ArchitectureExplorerProps): ReactNod
   );
 }
 
-function ArchitectureExplorerInner({
-  parts,
-  initialPart = 1,
-  part: controlledPart,
-  onPartChange,
-  hideScrubber = false,
-  initialSelectedId,
-  adrTitles,
-  adrHrefs,
-  className,
-}: ArchitectureExplorerProps): ReactNode {
+function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode {
+  const { parts, initialPart = 1, part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, className } = props;
   const reduced = useReducedMotion();
   const { fitView } = useReactFlow();
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);
   const maxPart = parts.length;
 
-  const controlled = controlledPart !== undefined;
-  const [internalPart, setInternalPart] = useState(initialPart);
-  const part = controlledPart ?? internalPart;
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
@@ -108,20 +97,18 @@ function ArchitectureExplorerInner({
     playing: false,
   });
 
-  // Which part we came from, and whether the exit animation is still running.
-  // Both are derived from `part`, so they work the same whether the part is
-  // the explorer's own state or comes from a parent. The render-time update
-  // is the documented way to derive state from a changing value: React
-  // re-renders straight away, before anything is painted.
-  const [seen, setSeen] = useState({ part, prev: part });
-  if (seen.part !== part) {
-    setSeen({ part, prev: seen.part });
-    setRequest({ on: false, idx: 0, playing: false });
-    setSelectedId((id) => (id && partsById.get(part)?.nodes.some((n) => n.id === id) ? id : null));
-  }
-  const prevPart = seen.prev;
-  const [settledPart, setSettledPart] = useState(part);
-  const settling = settledPart !== part;
+  const { part, prevPart, settling, requestPart } = useControllablePart({
+    controlledPart,
+    onPartChange,
+    initialPart,
+    reduced,
+    exitMs: REMOVE_ANIM_MS,
+    // Leaving a part ends its playback, and drops a selection that part does not have.
+    onArrive: (next) => {
+      setRequest({ on: false, idx: 0, playing: false });
+      setSelectedId((id) => (id && partsById.get(next)?.nodes.some((n) => n.id === id) ? id : null));
+    },
+  });
 
   const current = partsById.get(part) ?? parts[0]!;
   const previous = partsById.get(prevPart) ?? current;
@@ -133,15 +120,6 @@ function ArchitectureExplorerInner({
     partRef.current = part;
   }, [part]);
 
-  // Ask for another part: through the parent when controlled, else ourselves.
-  const requestPart = useCallback(
-    (next: number) => {
-      if (controlled) onPartChange?.(next);
-      else setInternalPart(next);
-    },
-    [controlled, onPartChange],
-  );
-
   const goToPart = useCallback(
     (next: number) => {
       const clamped = Math.max(1, Math.min(maxPart, next));
@@ -149,14 +127,6 @@ function ArchitectureExplorerInner({
     },
     [maxPart, part, requestPart],
   );
-
-  // The removed nodes get REMOVE_ANIM_MS to play their exit before the
-  // diagram settles on the new part. A new part restarts the wait.
-  useEffect(() => {
-    if (settledPart === part) return;
-    const timer = setTimeout(() => setSettledPart(part), reduced ? 420 : REMOVE_ANIM_MS);
-    return () => clearTimeout(timer);
-  }, [part, settledPart, reduced]);
 
   useEffect(() => {
     return () => {
