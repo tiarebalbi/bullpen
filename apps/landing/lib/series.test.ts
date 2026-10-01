@@ -17,8 +17,14 @@ describe("parseSeries", () => {
       url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
       date: "2026-10-04",
     });
-    expect(parts[1]).toMatchObject({ part: 2, status: "next", url: "", date: null });
-    for (const part of parts.slice(2)) {
+    expect(parts[1]).toMatchObject({
+      part: 2,
+      status: "published",
+      url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
+      date: "2026-10-11",
+    });
+    expect(parts[2]).toMatchObject({ part: 3, status: "next", url: "", date: null });
+    for (const part of parts.slice(3)) {
       expect(part.status).toBe("planned");
       expect(part.url).toBe("");
       expect(part.date).toBeNull();

@@ -10,15 +10,15 @@
   {
     "part": 2,
     "title": "Architecture as code",
-    "status": "next",
-    "url": "",
-    "date": null,
+    "status": "published",
+    "url": "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
+    "date": "2026-10-11",
     "introduced": "Describe, govern and remember the design"
   },
   {
     "part": 3,
     "title": "Who owns the data",
-    "status": "planned",
+    "status": "next",
     "url": "",
     "date": null,
     "introduced": "Orders and Ledger split, and a queue"

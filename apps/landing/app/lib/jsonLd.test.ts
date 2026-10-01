@@ -21,7 +21,7 @@ const part = (n: number, status: SeriesPart["status"]): SeriesPart => ({
 });
 
 describe("buildJsonLd", () => {
-  it("lists exactly one part, Part 1, for the series as it is published today, and validates", () => {
+  it("lists exactly two parts, Parts 1 and 2, for the series as it is published today, and validates", () => {
     const graph = buildJsonLd(real);
     expect(validateJsonLd(graph).valid).toBe(true);
     expect(seriesNode(real).hasPart).toEqual([
@@ -30,6 +30,12 @@ describe("buildJsonLd", () => {
         headline: "Why distribute at all",
         url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
         datePublished: "2026-10-04",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Architecture as code",
+        url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
+        datePublished: "2026-10-11",
       },
     ]);
   });

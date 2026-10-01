@@ -98,7 +98,7 @@ test.describe("SEO metadata", () => {
     expect(result.valid).toBe(true);
   });
 
-  test("JSON-LD lists exactly one part of the series, Part 1, with its headline, URL and date", async ({ page }) => {
+  test("JSON-LD lists exactly two parts of the series, Parts 1 and 2, each with its headline, URL and date", async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
     const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { "@graph": Array<Record<string, unknown>> };
@@ -109,6 +109,12 @@ test.describe("SEO metadata", () => {
         headline: "Why distribute at all",
         url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
         datePublished: "2026-10-04",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Architecture as code",
+        url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
+        datePublished: "2026-10-11",
       },
     ]);
   });
