@@ -28,7 +28,7 @@ export interface SeriesCardProps {
 }
 
 const STATUS_TONE: Record<SeriesCardStatus, ChipTone> = {
-  published: "neutral",
+  published: "published",
   next: "accent",
   planned: "outline",
 };
