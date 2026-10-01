@@ -1,12 +1,12 @@
 {
   "$schema": "https://calm.finos.org/release/1.2/meta/calm-timeline.json",
-  "current-moment": "part-01",
+  "current-moment": "part-02",
   "moments": [
     {
       "unique-id": "part-01",
       "node-type": "moment",
       "name": "Part 1 — Stack, split-refusal, and one price call",
-      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider. The current, built state of Bullpen.",
+      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider. Bullpen as Part 1 left it.",
       "valid-from": "2026-09-25",
       "details": {
         "detailed-architecture": "moments/part-01.architecture.json",
@@ -26,6 +26,7 @@
       "node-type": "moment",
       "name": "Part 2 — Architecture as code",
       "description": "The same two Next.js apps and one serverless function as Part 1, with no new runtime node. The rules I had only stated in prompts now fail a build, and the architecture page reads the repo's own records.",
+      "valid-from": "2026-10-11",
       "details": {
         "detailed-architecture": "moments/part-02.architecture.json",
         "required-pattern": "bullpen.pattern.json"
