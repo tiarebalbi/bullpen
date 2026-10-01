@@ -13,23 +13,29 @@ const LINKS: Array<{ href: string; label: string }> = [
   { href: "#cost", label: "Cost" },
 ];
 
-/** On /architecture the section links point back at the home page, and Architecture is the page itself. */
+/**
+ * Home first, then the sections. On /architecture the section links point back
+ * at the home page and Architecture is the page itself; on the home page, Home
+ * is the page you are on.
+ */
 function linksFor(onArchitecturePage: boolean): Array<{ href: string; label: string; current: boolean }> {
-  return LINKS.map((link) => {
+  const sections = LINKS.map((link) => {
     if (!onArchitecturePage) return { ...link, current: false };
     if (link.label === "Architecture") return { href: "/architecture", label: link.label, current: true };
     return { href: `/${link.href}`, label: link.label, current: false };
   });
+  return [{ href: "/", label: "Home", current: !onArchitecturePage }, ...sections];
 }
 
 // Bullpen Landing.dc.html collapses these links (and drops the header CTA
 // entirely) behind a menu button below desktop width -- confirmed against
 // the final design export at 390px. The export has no coded breakpoint of
 // its own (no @media rules, no documented breakpoint token anywhere in it),
-// so the 900px cutover here is measured from this component's own content:
-// brand + links + CTA naturally need ~854px (694px of non-flex content +
-// 4 * 24px gaps + 2 * 32px padding) before they'd wrap on one line; 900px
-// gives a small safety margin above that measured minimum.
+// so the cutover here is measured from this component's own content, in a
+// real browser: with Home, the header (72px of padding each side) fits on one
+// row from 1160px up and wraps onto two below it. 1180px gives a 20px margin
+// above that measured minimum. (The 900px this replaced was computed with 32px
+// of padding, and left the header wrapped from 900px to about 1090px.)
 //
 // DOM order here (brand, links, spacer, theme toggle, mobile menu button,
 // CTA) is the design's real desktop order (~line 47-60 of the export) read
@@ -56,7 +62,9 @@ export function Nav({ onArchitecturePage = false }: { onArchitecturePage?: boole
   return (
     <header className="bp-nav">
       <div className="bp-nav__brand">
-        <span className="bp-nav__wordmark">Bullpen</span>
+        <a href="/" className="bp-nav__wordmark">
+          Bullpen
+        </a>
         <a href="https://tiarebalbi.com" className="bp-nav__byline">
           by Tiarê Balbi
         </a>

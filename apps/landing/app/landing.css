@@ -90,6 +90,8 @@ code {
 .bp-nav__wordmark {
   font: 600 24px/1 var(--font-display);
   letter-spacing: -0.03em;
+  color: inherit;
+  text-decoration: none;
 }
 .bp-nav__byline {
   font: 500 12.5px/1 var(--font-body);
@@ -155,11 +157,11 @@ code {
 
 /* Below this width the design collapses the links into a menu button and
    drops the CTA from the header entirely (confirmed against Bullpen
-   Landing.dc.html's 390px frame; the CTA stays in the hero). 900px is
+   Landing.dc.html's 390px frame; the CTA stays in the hero). 1180px is
    measured from this header's own content -- see the comment above the
    Nav component -- not a value taken from the export, which has no coded
    breakpoint of its own. */
-@media (max-width: 900px) {
+@media (max-width: 1180px) {
   .bp-nav__links {
     display: none;
     order: 5;

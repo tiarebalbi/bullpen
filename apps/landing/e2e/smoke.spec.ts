@@ -46,8 +46,11 @@ test("landing page renders every section with no console/page errors", async ({ 
   const hrefs = await navLinks.evaluateAll((anchors) =>
     anchors.map((a) => (a as HTMLAnchorElement).getAttribute("href")),
   );
-  expect(hrefs.length).toBe(SECTION_IDS.length);
-  for (const href of hrefs) {
+  // Home comes first and goes to the page itself; every other link goes to a section.
+  expect(hrefs[0]).toBe("/");
+  const sectionHrefs = hrefs.slice(1);
+  expect(sectionHrefs.length).toBe(SECTION_IDS.length);
+  for (const href of sectionHrefs) {
     expect(href).not.toBeNull();
     const id = (href as string).replace("#", "");
     await expect(page.locator(`#${id}`)).toBeAttached();
