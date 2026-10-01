@@ -1,8 +1,8 @@
 {
   "schema": 2,
   "part": 2,
-  "generatedAt": "2026-10-01T02:04:04.442Z",
-  "commit": "ba4a8804ddae641ad2bc7d9744af7503ad3d164f",
+  "generatedAt": "2026-10-01T15:12:09.235Z",
+  "commit": "562b0ebd526f2fa7d50711f83602673d86687607",
   "dirty": false,
   "ref": "post-02-architecture-as-code",
   "source": "local",
@@ -137,7 +137,7 @@
       "name": "turbo boundaries",
       "command": "pnpm exec turbo boundaries",
       "passed": true,
-      "summary": "Checked 187 files in 5 packages, no issues found",
+      "summary": "Checked 218 files in 5 packages, no issues found",
       "raw": "turbo-boundaries.txt",
       "rules": []
     },
