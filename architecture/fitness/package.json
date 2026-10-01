@@ -6,6 +6,7 @@
   "scripts": {
     "check:arch": "tsx src/cli.ts",
     "commit-policy": "tsx src/commit-policy-cli.ts",
+    "rules-snapshot": "tsx src/rules-snapshot-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
