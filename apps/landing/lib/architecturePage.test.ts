@@ -5,6 +5,7 @@ import { parseAdl } from "./adl.js";
 import { loadArchitectureParts } from "./architecture.js";
 import { buildArchitecturePage, CHECK_NAME_BY_FILE, type ArchitecturePageData } from "./architecturePage.js";
 import { currentPart, loadCalmDocs } from "./calm.js";
+import { readPriceCacheSeconds } from "./priceCache.js";
 import type { RulesSnapshot } from "./rulesSnapshot.js";
 import { loadSeries } from "./series.js";
 
@@ -41,6 +42,7 @@ function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
     adlRules: adl.rules,
     snapshot: withSnapshot,
     currentPart: currentPart(repoRoot),
+    cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
 }
 
@@ -48,7 +50,7 @@ describe("buildArchitecturePage, from the real repo", () => {
   const page = build(snapshot(true));
 
   it("starts on the timeline's current part and labels the scrubber with the series' real titles", () => {
-    expect(page.initialPart).toBe(1);
+    expect(page.initialPart).toBe(currentPart(repoRoot));
     expect(page.scrubber).toHaveLength(6);
     expect(page.scrubber[1]).toEqual({ part: 2, title: "Architecture as code", status: "built" });
     expect(page.scrubber[2]!.status).toBe("planned");
@@ -130,8 +132,28 @@ describe("buildArchitecturePage, from the real repo", () => {
       }
     });
 
-    it("carries the 300 second cache in the Part 2 fetch step, from the explorer content", () => {
-      expect(page.flows[2]!.steps[2]!.detail).toContain("cached for 300 seconds");
+    it("says the answer is cached for the route's own interval, on the fetch step of both built parts", () => {
+      expect(readPriceCacheSeconds(repoRoot)).toBe(300);
+      for (const part of [1, 2]) {
+        const fetch = page.flows[part]!.steps[2]!;
+        expect(fetch.caption).toBe("Fetch upstream");
+        expect(fetch.detail).toContain("Cached for 300 seconds.");
+        expect(page.flows[part]!.steps[1]!.detail).not.toContain("Cached");
+      }
+    });
+
+    it("makes no cache claim for a planned part, and none at all if the route cannot be read", () => {
+      expect(page.flows[3]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
+      const unread = buildArchitecturePage({
+        parts: loadArchitectureParts(join(repoRoot, "content", "architecture")),
+        series: loadSeries(join(repoRoot, "content", "series.json")),
+        calm: loadCalmDocs(repoRoot),
+        adlRules: adl.rules,
+        snapshot: null,
+        currentPart: 1,
+        cacheSeconds: null,
+      });
+      expect(unread.flows[2]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
     });
 
     it("marks a predicted flow as planned", () => {

@@ -30,26 +30,34 @@ export interface RulesSnapshot {
   checks: SnapshotCheck[];
 }
 
+function readJson(content: string, label: string): Partial<RulesSnapshot> {
+  try {
+    return JSON.parse(content) as Partial<RulesSnapshot>;
+  } catch (cause) {
+    throw new Error(`${label}: invalid JSON (${(cause as Error).message})`, { cause });
+  }
+}
+
+/** The first field of `data` that is not what a snapshot needs, or null if all are. */
+function firstProblem(data: Partial<RulesSnapshot>): string | null {
+  if (data.schema !== 1) return `unknown schema ${JSON.stringify(data.schema)}`;
+  if (typeof data.part !== "number") return "missing part";
+  const missingText = (["generatedAt", "commit", "ref"] as const).find((key) => typeof data[key] !== "string" || data[key] === "");
+  if (missingText) return `missing ${missingText}`;
+  const missingFlag = (["passed", "dirty"] as const).find((key) => typeof data[key] !== "boolean");
+  if (missingFlag) return `missing ${missingFlag}`;
+  if (!Array.isArray(data.checks) || data.checks.length === 0) return "missing checks";
+  return null;
+}
+
 /**
  * Parses a summary.json. Throws on anything that is not a snapshot rather
  * than rendering a pass that was never recorded.
  */
 export function parseRulesSnapshot(content: string, label: string): RulesSnapshot {
-  let data: Partial<RulesSnapshot>;
-  try {
-    data = JSON.parse(content) as Partial<RulesSnapshot>;
-  } catch (cause) {
-    throw new Error(`${label}: invalid JSON (${(cause as Error).message})`, { cause });
-  }
-  const fail = (what: string): never => {
-    throw new Error(`${label}: ${what}`);
-  };
-  if (data.schema !== 1) fail(`unknown schema ${JSON.stringify(data.schema)}`);
-  if (typeof data.part !== "number") fail("missing part");
-  for (const key of ["generatedAt", "commit", "ref"] as const) if (typeof data[key] !== "string" || data[key] === "") fail(`missing ${key}`);
-  if (typeof data.passed !== "boolean") fail("missing passed");
-  if (typeof data.dirty !== "boolean") fail("missing dirty");
-  if (!Array.isArray(data.checks) || data.checks.length === 0) fail("missing checks");
+  const data = readJson(content, label);
+  const problem = firstProblem(data);
+  if (problem) throw new Error(`${label}: ${problem}`);
   return data as RulesSnapshot;
 }
 

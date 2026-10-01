@@ -109,6 +109,11 @@ export function ServicesTab({
               <Rules rules={service.rules} part={part} />
             </div>
 
+            <div>
+              <div className="bp-ap-label">Cost</div>
+              <p className="bp-ap-muted">Estimate arrives in Part 5</p>
+            </div>
+
             <footer className="bp-ap-card__foot">
               <span>
                 {service.adrs.length > 0 ? (
@@ -124,7 +129,6 @@ export function ServicesTab({
                   <span className="bp-ap-muted">ADR pending</span>
                 )}
               </span>
-              <span className="bp-ap-muted">Cost: estimate arrives in Part 5</span>
               <button type="button" className="bp-ap-link" onClick={() => onOpenNode(service.id)}>
                 See it in the overview →
               </button>

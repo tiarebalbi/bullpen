@@ -7,6 +7,7 @@ import { adrHashId } from "../../lib/adrHashId.js";
 import { buildArchitecturePage } from "../../lib/architecturePage.js";
 import { loadArchitectureParts } from "../../lib/architecture.js";
 import { currentPart, loadCalmDocs } from "../../lib/calm.js";
+import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
 import { buildRuleCards, ruleCardChip } from "../../lib/ruleCards.js";
 import { loadLatestRulesSnapshot } from "../../lib/rulesSnapshot.js";
@@ -50,6 +51,7 @@ export default function ArchitecturePage(): ReactNode {
     adlRules: adl.rules,
     snapshot,
     currentPart: currentPart(repoRoot),
+    cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
 
   const since: Record<string, number> = {};

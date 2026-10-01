@@ -77,7 +77,7 @@
     "name": "a price request",
     "steps": [
       { "edge": "trading-app-to-price-snapshot", "caption": "Ask for a quote", "detail": "The trading app requests a live BTC-USD snapshot." },
-      { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to CoinGecko, Demo API key in a header, never the URL. The answer is cached for 300 seconds." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to CoinGecko, Demo API key in a header, never the URL." },
       { "edge": "price-snapshot-to-market-data", "caption": "Return the snapshot", "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt.", "reverse": true }
     ]
   }

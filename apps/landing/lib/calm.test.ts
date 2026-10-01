@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { currentPart, loadCalmDocs, parseCalmDoc } from "./calm.js";
@@ -56,8 +57,9 @@ describe("the real repo", () => {
     expect(enforcedBy).toEqual(expect.arrayContaining(["architecture/fitness/src/boundaries-check.ts", "architecture/fitness/src/secret-check.ts", "architecture/fitness/src/budget-check.ts"]));
   });
 
-  it("reads the timeline's current moment as a part number", () => {
-    expect(currentPart(repoRoot)).toBe(1);
+  it("reads the timeline's current moment as a part number, and falls back to 1 if it cannot", () => {
+    const timeline = JSON.parse(readFileSync(join(repoRoot, "architecture", "calm", "bullpen.timeline.json"), "utf8")) as { "current-moment": string };
+    expect(currentPart(repoRoot)).toBe(Number(/^part-0?(\d)$/.exec(timeline["current-moment"])![1]));
     expect(currentPart(join(repoRoot, "nowhere"))).toBe(1);
   });
 });

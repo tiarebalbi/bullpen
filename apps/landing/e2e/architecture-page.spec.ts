@@ -46,6 +46,19 @@ const panel = (page: Page) => page.getByRole("tabpanel");
 const scrubber = (page: Page) => page.getByRole("group", { name: "Series part" });
 const toPart = (page: Page, n: number) => scrubber(page).getByRole("button", { name: `PART ${n}` }).click();
 
+// The page opens on the timeline's current part, which changes on publish day. Every test picks
+// its part explicitly, so none of them depends on which one that is.
+async function atPart(page: Page, n: number): Promise<void> {
+  await toPart(page, n);
+  await expect(scrubber(page).getByRole("button", { name: `PART ${n}` })).toHaveAttribute("aria-current", "step");
+}
+
+async function open(page: Page, id: (typeof TABS)[number]["id"], part = 1): Promise<void> {
+  await page.goto(`/architecture#${id}`);
+  await expect(tab(page, TABS.find((t) => t.id === id)!.name)).toHaveAttribute("aria-selected", "true");
+  await atPart(page, part);
+}
+
 for (const viewport of [
   { label: "1440px", width: 1440, height: 1000 },
   { label: "390px", width: 390, height: 844 },
@@ -57,6 +70,7 @@ for (const viewport of [
       test(`${t.name} renders, and /architecture#${t.id} deep-links to it`, async ({ page }) => {
         await page.goto(`/architecture#${t.id}`);
         await expect(tab(page, t.name)).toHaveAttribute("aria-selected", "true");
+        await atPart(page, 1);
         await expect(panel(page)).toContainText(OPENING[t.id]);
       });
     }
@@ -64,6 +78,7 @@ for (const viewport of [
     test("clicking a tab opens it and puts it in the URL", async ({ page }) => {
       await page.goto("/architecture");
       await expect(tab(page, "Overview")).toHaveAttribute("aria-selected", "true");
+      await atPart(page, 1);
 
       for (const t of TABS.slice(1)) {
         await tab(page, t.name).click();
@@ -83,7 +98,7 @@ for (const viewport of [
     });
 
     test("the Data tab shows the empty state at Part 1 and Part 2, never invented data", async ({ page }) => {
-      await page.goto("/architecture#data");
+      await open(page, "data", 1);
       await expect(panel(page).getByText("Not reached at Part 1")).toBeVisible();
       await expect(panel(page).getByRole("heading", { name: "Data ownership arrives in Part 3" })).toBeVisible();
       await expect(panel(page).getByRole("button", { name: "Jump to Part 3" })).toBeVisible();
@@ -93,8 +108,51 @@ for (const viewport of [
       await expect(panel(page).getByRole("heading", { name: "Data ownership arrives in Part 3" })).toBeVisible();
     });
 
+    test("the scrubber changes every tab", async ({ page }) => {
+      await open(page, "overview", 1);
+      await expect(panel(page)).toContainText("Overview · Part 1");
+
+      // Overview
+      await toPart(page, 3);
+      await expect(panel(page)).toContainText("Overview · Part 3");
+      await expect(panel(page).getByText("Planned", { exact: true }).first()).toBeVisible();
+
+      // Services: the planned services appear beside what runs today
+      await tab(page, "Services").click();
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 3" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "Prices Service" })).toBeVisible();
+
+      // Flows: the same request, marked as a prediction
+      await tab(page, "Flows").click();
+      await expect(panel(page).getByText("Preview · planned")).toBeVisible();
+
+      // Data: reached from Part 3
+      await tab(page, "Data").click();
+      await expect(panel(page).getByRole("heading", { name: "One owner per database" })).toBeVisible();
+
+      // Decisions: Part 3's ADR is in the list now
+      await tab(page, "Decisions").click();
+      await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(1);
+
+      // Rules: every rule is in force
+      await tab(page, "Rules").click();
+      await expect(panel(page)).toContainText("Rules · Part 3");
+      await expect(panel(page).getByText(/Arrives in Part/)).toHaveCount(0);
+
+      // And back to Part 1, where each of those is different again.
+      await toPart(page, 1);
+      await expect(panel(page)).toContainText("Rules · Part 1");
+      await expect(panel(page).getByText(/Arrives in Part 2/).first()).toBeVisible();
+      await tab(page, "Decisions").click();
+      await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(0);
+      await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0009" })).toHaveCount(0);
+      await tab(page, "Services").click();
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 3" })).toHaveCount(0);
+    });
+
+
     test("Jump to Part 3 moves the scrubber and the Data tab shows the planned databases", async ({ page }) => {
-      await page.goto("/architecture#data");
+      await open(page, "data", 1);
       await panel(page).getByRole("button", { name: "Jump to Part 3" }).click();
 
       await expect(scrubber(page).getByRole("button", { name: "PART 3" })).toHaveAttribute("aria-current", "step");
@@ -108,50 +166,8 @@ for (const viewport of [
 test.describe("Architecture page, desktop", () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
 
-  test("the scrubber changes every tab", async ({ page }) => {
-    await page.goto("/architecture#overview");
-    await expect(panel(page)).toContainText("Overview · Part 1");
-
-    // Overview
-    await toPart(page, 3);
-    await expect(panel(page)).toContainText("Overview · Part 3");
-    await expect(panel(page).getByText("Planned", { exact: true }).first()).toBeVisible();
-
-    // Services: the planned services appear beside what runs today
-    await tab(page, "Services").click();
-    await expect(panel(page).getByRole("heading", { name: "Planned for Part 3" })).toBeVisible();
-    await expect(panel(page).getByRole("heading", { name: "Prices Service" })).toBeVisible();
-
-    // Flows: the same request, marked as a prediction
-    await tab(page, "Flows").click();
-    await expect(panel(page).getByText("Preview · planned")).toBeVisible();
-
-    // Data: reached from Part 3
-    await tab(page, "Data").click();
-    await expect(panel(page).getByRole("heading", { name: "One owner per database" })).toBeVisible();
-
-    // Decisions: Part 3's ADR is in the list now
-    await tab(page, "Decisions").click();
-    await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(1);
-
-    // Rules: every rule is in force
-    await tab(page, "Rules").click();
-    await expect(panel(page)).toContainText("Rules · Part 3");
-    await expect(panel(page).getByText(/Arrives in Part/)).toHaveCount(0);
-
-    // And back to Part 1, where each of those is different again.
-    await toPart(page, 1);
-    await expect(panel(page)).toContainText("Rules · Part 1");
-    await expect(panel(page).getByText(/Arrives in Part 2/).first()).toBeVisible();
-    await tab(page, "Decisions").click();
-    await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(0);
-    await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0009" })).toHaveCount(0);
-    await tab(page, "Services").click();
-    await expect(panel(page).getByRole("heading", { name: "Planned for Part 3" })).toHaveCount(0);
-  });
-
   test("Services: no rule is checked at Part 1, and Part 2 shows the snapshot's real results", async ({ page }) => {
-    await page.goto("/architecture#services");
+    await open(page, "services", 1);
     await expect(panel(page).getByText("No rule is checked against it at Part 1.")).toHaveCount(3);
 
     await toPart(page, 2);
@@ -160,11 +176,11 @@ test.describe("Architecture page, desktop", () => {
     await expect(panel(page).getByText("The API key is read in one place")).toHaveCount(1);
     // Each rule carries a result from the snapshot, never a blank or invented pass.
     await expect(panel(page).locator(".bp-ap-rules .bp-chip").first()).toContainText(/pass|fail|no result/);
-    await expect(panel(page).getByText("Cost: estimate arrives in Part 5")).toHaveCount(3);
+    await expect(panel(page).getByText("Estimate arrives in Part 5", { exact: true })).toHaveCount(3);
   });
 
   test("Services: only what exists at Part 1 and 2, with what each owns and its interfaces", async ({ page }) => {
-    await page.goto("/architecture#services");
+    await open(page, "services", 1);
     for (const name of ["Bullpen Landing", "Bullpen Trading App", "Price Snapshot Service"]) {
       await expect(panel(page).getByRole("heading", { name })).toBeVisible();
     }
@@ -186,15 +202,19 @@ test.describe("Architecture page, desktop", () => {
   });
 
   test("Flows: one real price request, player to trading app to price route to CoinGecko, cached 300 s", async ({ page }) => {
-    await page.goto("/architecture#flows");
-    await toPart(page, 2);
+    await open(page, "flows", 2);
 
     const lanes = panel(page).locator(".bp-ap-seq__lane");
     await expect(lanes).toHaveText([/Player/, /Bullpen Trading App/, /Price Snapshot Service/, /CoinGecko/]);
     const steps = panel(page).getByRole("list", { name: "Steps" }).getByRole("listitem");
     await expect(steps).toHaveCount(4);
-    await expect(steps.nth(2)).toContainText("cached for 300 seconds");
+    await expect(steps.nth(2)).toContainText("Cached for 300 seconds");
     await expect(panel(page).getByText("Preview · planned")).toHaveCount(0);
+
+    // Part 1 runs the same route with the same cache, and says so too.
+    await atPart(page, 1);
+    await expect(steps.nth(2)).toContainText("Cached for 300 seconds");
+    await expect(steps.nth(1)).not.toContainText("Cached");
   });
 
   test("Flows: playback steps forward and back", async ({ page }) => {
@@ -211,8 +231,7 @@ test.describe("Architecture page, desktop", () => {
   });
 
   test("Rules: every rule with the snapshot's result, and the commit it ran for", async ({ page }) => {
-    await page.goto("/architecture#rules");
-    await toPart(page, 2);
+    await open(page, "rules", 2);
 
     await expect(panel(page)).toContainText(/Snapshot for Part \d, commit [0-9a-f]{7}/);
     await expect(panel(page).locator(".bp-rule-card")).toHaveCount(4);
@@ -259,7 +278,7 @@ test.describe("Architecture page, desktop", () => {
   });
 
   test("the scrubber's arrow keys and Play move through the parts", async ({ page }) => {
-    await page.goto("/architecture#services");
+    await open(page, "services", 1);
     await scrubber(page).getByRole("button", { name: "PART 1" }).focus();
 
     await page.keyboard.press("ArrowRight");
