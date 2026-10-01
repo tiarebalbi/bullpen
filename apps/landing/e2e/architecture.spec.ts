@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectedOpeningPart } from "./builtParts.js";
 
 // The "Live prices" strip isn't relevant to these tests but renders on the
 // same page; mock it so it never fails a request and never logs a console
@@ -28,15 +29,44 @@ test.describe("Architecture Explorer", () => {
     await page.goto("/");
   });
 
-  test("scrubbing to the next part updates the summary and status chip", async ({ page }) => {
+  test("opens on the latest built part, read from the explorer content, and shows it as built", async ({ page }) => {
     const architecture = page.locator("#architecture");
+    const opening = expectedOpeningPart();
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    await expect(architecture.getByText(`Overview · Part ${opening}`)).toBeVisible();
+    await expect(scrubber.getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+  });
+
+  test("a part the reader picks stays picked, instead of snapping back to the default", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    await scrubber.getByRole("button", { name: "PART 1" }).click();
+    await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(scrubber.getByRole("button", { name: "PART 1" })).toHaveAttribute("aria-current", "step");
+    await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
+  });
+
+  test("scrubbing from part to part updates the summary and status chip", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    await scrubber.getByRole("button", { name: "PART 1" }).click();
     await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
     await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
 
-    const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 2" }).click();
 
+    // Part 2 is built: same runtime nodes, the rules now fail a build.
     await expect(architecture.getByText("Overview · Part 2")).toBeVisible();
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    await expect(architecture.getByText("Overview · Part 3")).toBeVisible();
     await expect(architecture.getByText("Planned", { exact: true }).first()).toBeVisible();
   });
 
@@ -90,12 +120,12 @@ test.describe("Architecture Explorer", () => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
 
-    // Part 1 (the initial, smallest part) mounts and fits the viewport
-    // first. Part 6 has far more nodes spread further out; without a
-    // refit on part change, React Flow's `fitView` only ever fires once
-    // on mount, so Part 6's outer nodes render outside that stale,
-    // Part-1-sized viewport -- present in the DOM, but not actually
-    // visible on screen.
+    // The opening part (a built one, with only its few real nodes) mounts
+    // and fits the viewport first. Part 6 has far more nodes spread
+    // further out; without a refit on part change, React Flow's `fitView`
+    // only ever fires once on mount, so Part 6's outer nodes render
+    // outside that stale, smaller viewport -- present in the DOM, but not
+    // actually visible on screen.
     await scrubber.getByRole("button", { name: "PART 6" }).click();
     // Let both the node-settling animation and fitView's own pan/zoom
     // transition finish before measuring -- otherwise this reads

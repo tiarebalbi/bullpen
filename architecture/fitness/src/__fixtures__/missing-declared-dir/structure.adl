@@ -1,8 +1,9 @@
-ADL: MISSING DECLARED DIR FIXTURE
-TYPE Structural
 DESCRIPTION Fixture used for structure-check tests: packages/ghost is DEFINED but does not exist
+CATEGORY Structural
 DEFINE SYSTEM Fixture AS fixture
-DEFINE COMPONENT One AS apps/one
-DEFINE LIBRARY Ghost AS packages/ghost
-ASSERT(every directory under apps/ and packages/ is DEFINED here)
-ASSERT(every DEFINED component and library exists as a directory)
+  DEFINE COMPONENT One AS apps/one
+  DEFINE LIBRARY Ghost AS packages/ghost
+
+# Structural assertions
+ASSERT(every directory under apps and packages is DEFINED)
+ASSERT(every DEFINED COMPONENT and LIBRARY exists as a directory)

@@ -1,0 +1,8 @@
+{
+  "unique-id": "fixture-part-02",
+  "nodes": [
+    { "unique-id": "web", "node-type": "webclient", "name": "Web" },
+    { "unique-id": "api", "node-type": "service", "name": "Quote API" },
+    { "unique-id": "quotes", "node-type": "external-system", "name": "Price provider" }
+  ]
+}

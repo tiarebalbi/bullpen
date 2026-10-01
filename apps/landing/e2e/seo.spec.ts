@@ -80,9 +80,11 @@ test.describe("SEO metadata", () => {
     expect(res.headers()["content-type"]).toContain("xml");
     const body = await res.text();
     expect(body).toContain(`<loc>https://${PRODUCTION_HOST}/</loc>`);
-    // Fragments aren't URLs -- only "/" belongs here.
+    expect(body).toContain(`<loc>https://${PRODUCTION_HOST}/architecture</loc>`);
+    // Fragments aren't URLs -- only "/" and "/architecture" belong here.
     expect(body).not.toContain("#decisions");
     expect(body).not.toContain("#architecture");
+    expect(body).not.toContain("#services");
   });
 
   test("JSON-LD parses and validates", async ({ page }) => {
@@ -94,6 +96,27 @@ test.describe("SEO metadata", () => {
     const result = validateJsonLd(parsed);
     expect(result.errors).toBeNull();
     expect(result.valid).toBe(true);
+  });
+
+  test("JSON-LD lists exactly two parts of the series, Parts 1 and 2, each with its headline, URL and date", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { "@graph": Array<Record<string, unknown>> };
+    const series = graph["@graph"].find((node) => node["@type"] === "CreativeWorkSeries")!;
+    expect(series.hasPart).toEqual([
+      {
+        "@type": "BlogPosting",
+        headline: "Why distribute at all",
+        url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
+        datePublished: "2026-10-04",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Architecture as code",
+        url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
+        datePublished: "2026-10-11",
+      },
+    ]);
   });
 
   test("no absolute local/CI file path appears in the rendered HTML", async ({ request }) => {

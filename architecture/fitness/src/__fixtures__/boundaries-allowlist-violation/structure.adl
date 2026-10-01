@@ -1,0 +1,18 @@
+DESCRIPTION Dependency fixture: Landing depends on a library its allowed list leaves out
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Landing AS apps/landing
+  DEFINE COMPONENT Trading App AS apps/trading-app
+  DEFINE LIBRARY UI AS packages/ui
+  DEFINE LIBRARY Contracts AS packages/contracts
+  DEFINE LIBRARY Extras AS packages/extras
+
+# Allowed dependencies
+ASSERT(Landing IS DEPENDENT ON UI, Contracts)
+ASSERT(Trading App IS DEPENDENT ON UI, Contracts)
+
+# Disallowed dependencies (direct and transitive)
+ASSERT(Landing HAS NO DEPENDENCY ON Trading App)
+ASSERT(Trading App HAS NO DEPENDENCY ON Landing)
+ASSERT(UI HAS NO DEPENDENCY ON Landing, Trading App)
+ASSERT(Contracts HAS NO DEPENDENCY ON Landing, Trading App)

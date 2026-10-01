@@ -1,12 +1,12 @@
 {
   "$schema": "https://calm.finos.org/release/1.2/meta/calm-timeline.json",
-  "current-moment": "part-01",
+  "current-moment": "part-02",
   "moments": [
     {
       "unique-id": "part-01",
       "node-type": "moment",
       "name": "Part 1 — Stack, split-refusal, and one price call",
-      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider, plus two analytics tools that load in the browser only after consent. The current, built state of Bullpen.",
+      "description": "Two Next.js apps on Vercel Hobby and a single serverless price-snapshot function calling an external market-data provider, plus two analytics tools that load in the browser only after consent. Bullpen as Part 1 left it.",
       "valid-from": "2026-09-25",
       "details": {
         "detailed-architecture": "moments/part-01.architecture.json",
@@ -16,17 +16,29 @@
         "architecture/adr/0001-stack.md",
         "architecture/adr/0002-why-distribute-at-all.md",
         "architecture/adr/0003-monorepo.md",
+        "architecture/adr/0005-crypto-market-data-coingecko.md",
+        "architecture/adr/0006-react-flow-architecture-explorer.md",
+        "architecture/adr/0007-markdown-it-for-adr-rendering.md",
         "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md"
       ]
     },
     {
       "unique-id": "part-02",
       "node-type": "moment",
-      "name": "Part 2 (planned) — Architecture becomes visible",
-      "description": "Prediction: the landing app gains an in-browser architecture explorer over this same timeline, with no new runtime nodes.",
+      "name": "Part 2 — Architecture as code",
+      "description": "The same two Next.js apps and one serverless function as Part 1, with no new runtime node. The rules I had only stated in prompts now fail a build, and the architecture page reads the repo's own records.",
+      "valid-from": "2026-10-11",
       "details": {
-        "detailed-architecture": "planned/part-02.architecture.json",
+        "detailed-architecture": "moments/part-02.architecture.json",
         "required-pattern": "bullpen.pattern.json"
+      },
+      "adrs": [
+        "architecture/adr/0009-guardrails-enforced-not-requested.md"
+      ],
+      "metadata": {
+        "planned-architecture": "planned/part-02.architecture.json",
+        "planned-name": "Part 2 (planned) — Architecture becomes visible",
+        "planned-description": "Prediction: the landing app gains an in-browser architecture explorer over this same timeline, with no new runtime nodes."
       }
     },
     {
@@ -37,7 +49,10 @@
       "details": {
         "detailed-architecture": "planned/part-03.architecture.json",
         "required-pattern": "bullpen.pattern.json"
-      }
+      },
+      "adrs": [
+        "architecture/adr/0008-alpha-vantage-stock-prices.md"
+      ]
     },
     {
       "unique-id": "part-04",

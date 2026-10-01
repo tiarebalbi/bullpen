@@ -1,51 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { Adr } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import { isSuperseded, statusTone } from "../../lib/decisionStatus.js";
 import { Chip } from "./ui.js";
-
-function subscribeToHash(onChange: () => void): () => void {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-}
-
-function getHash(): string {
-  return window.location.hash;
-}
-
-function getServerHash(): string {
-  return "";
-}
-
-const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-/**
- * Chromium's own dialog focus trap only holds reliably with several
- * focusable descendants; with just one (the close button, on an ADR whose
- * body happens to have no links), Tab escapes to `document.body` instead
- * of wrapping -- confirmed by instrumenting a real browser, not assumed.
- * This keydown handler traps Tab/Shift+Tab explicitly, regardless of how
- * many focusable elements an ADR's body happens to render.
- */
-function trapTabKey(e: KeyboardEvent<HTMLDialogElement>): void {
-  if (e.key !== "Tab") return;
-  const focusable = Array.from(e.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (el) => !el.hasAttribute("disabled"),
-  );
-  if (focusable.length === 0) return;
-  const first = focusable[0]!;
-  const last = focusable[focusable.length - 1]!;
-  const active = document.activeElement;
-  if (e.shiftKey && active === first) {
-    e.preventDefault();
-    last.focus();
-  } else if (!e.shiftKey && active === last) {
-    e.preventDefault();
-    first.focus();
-  }
-}
+import { useHashDialog, useLocationHash } from "./useHashDialog.js";
 
 /**
  * The row list is a real anchor per row (`href="#adr-0002"`), so the browser's
@@ -55,35 +15,25 @@ function trapTabKey(e: KeyboardEvent<HTMLDialogElement>): void {
  * a native focus trap and Escape-to-close for free (see ADR-0006/0007 for
  * the sibling "why a real platform primitive over hand-rolled" precedent).
  */
-export function DecisionsList({ adrs }: { adrs: Adr[] }): ReactNode {
-  const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
+export function DecisionsList({
+  adrs,
+  closeHash = "",
+  rowFilter,
+}: {
+  adrs: Adr[];
+  /** Where closing the modal leaves the URL's hash: nothing on the home page, "#decisions" on the architecture page, where the hash is also the tab. */
+  closeHash?: string;
+  /** Lists only the decisions this accepts. A decision it hides can still be opened by its link. */
+  rowFilter?: (adr: Adr) => boolean;
+}): ReactNode {
+  const hash = useLocationHash();
   const openAdr = adrs.find((a) => hash === `#${adrHashId(a.id)}`) ?? null;
-
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (openAdr && !dialog.open) {
-      lastFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      dialog.showModal();
-    } else if (!openAdr && dialog.open) {
-      dialog.close();
-    }
-  }, [openAdr]);
-
-  const closeToHome = (): void => {
-    if (window.location.hash) {
-      history.replaceState(null, "", window.location.pathname + window.location.search);
-    }
-    lastFocusedRef.current?.focus();
-  };
+  const { dialogRef, dialogProps } = useHashDialog(openAdr !== null, closeHash);
 
   return (
     <>
       <div className="bp-decisions-list">
-        {adrs.map((adr) => (
+        {adrs.filter((adr) => rowFilter?.(adr) ?? true).map((adr) => (
           <a key={adr.id} href={`#${adrHashId(adr.id)}`} className="bp-decisions-row" data-superseded={isSuperseded(adr.status)}>
             <span className="bp-decisions-row__id">{adr.id}</span>
             <span className="bp-decisions-row__body">
@@ -99,20 +49,9 @@ export function DecisionsList({ adrs }: { adrs: Adr[] }): ReactNode {
       </div>
 
       <dialog
-        ref={dialogRef}
+        {...dialogProps}
         className="bp-decision-modal"
         aria-labelledby={openAdr ? `${adrHashId(openAdr.id)}-title` : undefined}
-        onClose={closeToHome}
-        onClick={(e) => {
-          if (e.target === dialogRef.current) dialogRef.current?.close();
-        }}
-        onKeyDown={trapTabKey}
-        onCancel={(e) => {
-          // Let the native "cancel" -> "close" sequence run (closeToHome
-          // handles the hash + focus cleanup); prevented only if we ever
-          // need to block Escape, which we don't.
-          void e;
-        }}
       >
         {openAdr ? (
           <div className="bp-decision-modal__inner">

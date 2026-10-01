@@ -1,11 +1,29 @@
-ADL: BULLPEN STRUCTURE
-TYPE Structural
-DESCRIPTION Apps and libraries that exist in Part 1
+DESCRIPTION Bullpen's apps and libraries, and what may depend on what
+CATEGORY Structural
 DEFINE SYSTEM Bullpen AS bullpen
-DEFINE COMPONENT Landing AS apps/landing
-DEFINE COMPONENT Trading App AS apps/web
-DEFINE LIBRARY UI AS packages/ui
-DEFINE LIBRARY Contracts AS packages/contracts
-ASSERT(every directory under apps/ and packages/ is DEFINED here)
-ASSERT(every DEFINED component and library exists as a directory)
-ASSERT(apps NEVER DEPEND ON other apps)
+  DEFINE COMPONENT Landing AS apps/landing
+  DEFINE COMPONENT Trading App AS apps/web
+  DEFINE LIBRARY UI AS packages/ui
+  DEFINE LIBRARY Contracts AS packages/contracts
+
+# Structural assertions
+ASSERT(every directory under apps and packages is DEFINED)
+ASSERT(every DEFINED COMPONENT and LIBRARY exists as a directory)
+
+# Allowed dependencies
+ASSERT(Landing IS DEPENDENT ON UI, Contracts)
+ASSERT(Trading App IS DEPENDENT ON UI, Contracts)
+
+# Disallowed dependencies (direct and transitive)
+ASSERT(Landing HAS NO DEPENDENCY ON Trading App)
+ASSERT(Trading App HAS NO DEPENDENCY ON Landing)
+ASSERT(UI HAS NO DEPENDENCY ON Landing, Trading App)
+ASSERT(Contracts HAS NO DEPENDENCY ON Landing, Trading App)
+
+# Entry points and secrets
+ASSERT(COMPONENTS use LIBRARIES ONLY THROUGH their package entry point)
+ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)
+
+# Model currency
+ASSERT(every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment)
+ASSERT(every webclient and service node in the current CALM moment maps to a DEFINED entry)

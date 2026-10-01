@@ -43,6 +43,7 @@ export type {
   ArchRequestData,
 } from "./components/ArchitectureExplorer.js";
 
+export { latestBuiltPart } from "./lib/latestBuiltPart.js";
 export { useReducedMotion } from "./lib/useReducedMotion.js";
 export { useNow } from "./lib/useNow.js";
 export { MINUS, fmt, signed, mono, badgeBg, formatTime } from "./lib/format.js";

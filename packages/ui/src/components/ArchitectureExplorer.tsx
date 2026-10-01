@@ -10,6 +10,8 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { latestBuiltPart } from "../lib/latestBuiltPart.js";
+import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
@@ -22,7 +24,19 @@ export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartD
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
   parts: ArchPartData[];
+  /** Opens on this part. Without it, the explorer opens on the latest part whose status is "built". */
   initialPart?: number;
+  /**
+   * Controlled part. When set, the explorer follows it instead of its own
+   * state and reports every change through `onPartChange`, so a page can
+   * share one moment scrubber across several views.
+   */
+  part?: number;
+  onPartChange?: (part: number) => void;
+  /** Hide the explorer's own moment scrubber, for a page that renders one of its own. */
+  hideScrubber?: boolean;
+  /** Start with this node selected (for a link that arrives from another view). */
+  initialSelectedId?: string;
   /** Real ADR titles keyed by id (e.g. { "ADR-0001": "Stack" }), for the side panel. */
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
@@ -70,22 +84,14 @@ export function ArchitectureExplorer(props: ArchitectureExplorerProps): ReactNod
   );
 }
 
-function ArchitectureExplorerInner({
-  parts,
-  initialPart = 1,
-  adrTitles,
-  adrHrefs,
-  onPartMoved,
-  className,
-}: ArchitectureExplorerProps): ReactNode {
+function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode {
+  const { parts, initialPart = latestBuiltPart(parts), part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, onPartMoved, className } = props;
   const reduced = useReducedMotion();
   const { fitView } = useReactFlow();
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);
   const maxPart = parts.length;
 
-  const [part, setPart] = useState(initialPart);
-  const [prevPart, setPrevPart] = useState(initialPart);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
@@ -95,12 +101,23 @@ function ArchitectureExplorerInner({
     idx: 0,
     playing: false,
   });
-  const [settling, setSettling] = useState(false);
+
+  const { part, prevPart, settling, requestPart } = useControllablePart({
+    controlledPart,
+    onPartChange,
+    initialPart,
+    reduced,
+    exitMs: REMOVE_ANIM_MS,
+    // Leaving a part ends its playback, and drops a selection that part does not have.
+    onArrive: (next) => {
+      setRequest({ on: false, idx: 0, playing: false });
+      setSelectedId((id) => (id && partsById.get(next)?.nodes.some((n) => n.id === id) ? id : null));
+    },
+  });
 
   const current = partsById.get(part) ?? parts[0]!;
   const previous = partsById.get(prevPart) ?? current;
 
-  const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrubTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const requestTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const partRef = useRef(part);
@@ -112,25 +129,13 @@ function ArchitectureExplorerInner({
   const goToPart = useCallback(
     (next: number) => {
       const clamped = Math.max(1, Math.min(maxPart, next));
-      if (clamped === part) return;
-      setPrevPart(part);
-      setPart(clamped);
-      setSelectedId((id) => {
-        const stillExists = id ? partsById.get(clamped)?.nodes.some((n) => n.id === id) : false;
-        return stillExists ? id : null;
-      });
-      setRequest({ on: false, idx: 0, playing: false });
-      if (requestTimer.current) clearInterval(requestTimer.current);
-      setSettling(true);
-      if (removeTimer.current) clearTimeout(removeTimer.current);
-      removeTimer.current = setTimeout(() => setSettling(false), reduced ? 420 : REMOVE_ANIM_MS);
+      if (clamped !== part) requestPart(clamped);
     },
-    [maxPart, part, partsById, reduced],
+    [maxPart, part, requestPart],
   );
 
   useEffect(() => {
     return () => {
-      if (removeTimer.current) clearTimeout(removeTimer.current);
       if (scrubTimer.current) clearInterval(scrubTimer.current);
       if (requestTimer.current) clearInterval(requestTimer.current);
     };
@@ -151,13 +156,9 @@ function ArchitectureExplorerInner({
         setScrubPlaying(false);
         return;
       }
-      setPrevPart(p);
-      setSettling(true);
-      if (removeTimer.current) clearTimeout(removeTimer.current);
-      removeTimer.current = setTimeout(() => setSettling(false), reduced ? 420 : REMOVE_ANIM_MS);
-      setPart(p + 1);
+      requestPart(p + 1);
     }, SCRUB_PLAY_MS);
-  }, [scrubPlaying, part, maxPart, goToPart, reduced]);
+  }, [scrubPlaying, part, maxPart, goToPart, requestPart]);
 
   const startRequest = useCallback(() => {
     setSelectedId(null);
@@ -380,14 +381,16 @@ function ArchitectureExplorerInner({
         />
       </div>
 
-      <MomentScrubber
-        part={part}
-        maxPart={maxPart}
-        parts={parts}
-        playing={scrubPlaying}
-        onTogglePlay={toggleScrubPlay}
-        onGoTo={goToPart}
-      />
+      {hideScrubber ? null : (
+        <MomentScrubber
+          part={part}
+          maxPart={maxPart}
+          parts={parts}
+          playing={scrubPlaying}
+          onTogglePlay={toggleScrubPlay}
+          onGoTo={goToPart}
+        />
+      )}
 
       <div
         className="bp-arch-explorer__grid"

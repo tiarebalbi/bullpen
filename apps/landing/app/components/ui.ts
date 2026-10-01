@@ -26,6 +26,7 @@ export {
   MarketStrip,
   ThemeToggle,
   ArchitectureExplorer,
+  latestBuiltPart,
   Analytics,
   ConsentBanner,
   CookieSettingsButton,

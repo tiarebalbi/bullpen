@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --webpack",
+    "adl": "pnpm --filter @bullpen/fitness-checks run adl:emit",
+    "dev": "pnpm run adl && next dev --webpack",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run && playwright test",
-    "build": "node scripts/run-check-arch.mjs && next build --webpack",
+    "typecheck": "pnpm run adl && tsc --noEmit",
+    "test": "pnpm run adl && vitest run && playwright test",
+    "build": "pnpm run adl && next build --webpack",
     "start": "next start"
   },
   "dependencies": {

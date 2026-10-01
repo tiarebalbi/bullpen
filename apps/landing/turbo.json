@@ -1,1 +1,9 @@
-{ "extends": ["//"], "tags": ["app"] }
+{
+  "extends": ["//"],
+  "tags": ["landing"],
+  "tasks": {
+    "build": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/architecture/adl/**", "$TURBO_ROOT$/architecture/fitness/src/adl*.ts"] },
+    "typecheck": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/architecture/adl/**", "$TURBO_ROOT$/architecture/fitness/src/adl*.ts"] },
+    "test": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/architecture/adl/**", "$TURBO_ROOT$/architecture/fitness/src/adl*.ts"] }
+  }
+}

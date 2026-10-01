@@ -128,6 +128,91 @@ describe("ArchitectureExplorer", () => {
     expect(dataToggle).toHaveAttribute("aria-checked", "true");
   });
 
+  describe("controlled part", () => {
+    const PART_3: ArchPartData = { ...PART_1, part: 3, status: "planned", summary: "Prediction: the first split." };
+    const parts = [PART_1, PART_2, PART_3];
+
+    it("shows the part it is given, not its own initial part", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={parts} part={2} adrTitles={{}} adrHrefs={{}} />);
+      expect(screen.getByText((_, el) => el?.textContent === "Overview · Part 2")).toBeInTheDocument();
+    });
+
+    it("asks the parent for the next part instead of moving on its own", () => {
+      installMatchMedia();
+      const onPartChange = vi.fn();
+      render(<ArchitectureExplorer parts={parts} part={2} onPartChange={onPartChange} adrTitles={{}} adrHrefs={{}} />);
+
+      fireEvent.keyDown(screen.getByRole("group", { name: "Series part" }), { key: "ArrowRight" });
+
+      expect(onPartChange).toHaveBeenCalledWith(3);
+      expect(screen.getByText((_, el) => el?.textContent === "Overview · Part 2")).toBeInTheDocument();
+    });
+
+    it("follows the parent when the part prop changes", () => {
+      installMatchMedia();
+      const { rerender } = render(<ArchitectureExplorer parts={parts} part={1} onPartChange={() => {}} adrTitles={{}} adrHrefs={{}} />);
+      expect(screen.getByText("Two apps and one service, calling CoinGecko.")).toBeInTheDocument();
+
+      rerender(<ArchitectureExplorer parts={parts} part={3} onPartChange={() => {}} adrTitles={{}} adrHrefs={{}} />);
+
+      expect(screen.getByText((_, el) => el?.textContent === "Overview · Part 3")).toBeInTheDocument();
+      expect(screen.getByText("Prediction: the first split.")).toBeInTheDocument();
+    });
+
+    it("leaves the uncontrolled explorer exactly as it was: it moves on its own when no part is given", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={parts} adrTitles={{}} adrHrefs={{}} />);
+      fireEvent.keyDown(screen.getByRole("group", { name: "Series part" }), { key: "ArrowRight" });
+      expect(screen.getByText((_, el) => el?.textContent === "Overview · Part 2")).toBeInTheDocument();
+    });
+  });
+
+  describe("which part it opens on", () => {
+    const BUILT_2: ArchPartData = { ...PART_2, status: "built", summary: "Built: the guardrails." };
+    const PLANNED_3: ArchPartData = { ...PART_1, part: 3, status: "planned", summary: "Prediction: the first split." };
+    const overview = (part: number) => screen.getByText((_, el) => el?.textContent === `Overview · Part ${part}`);
+
+    it("opens on the latest built part, whatever its number", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(2)).toBeInTheDocument();
+      expect(screen.getByText("Built: the guardrails.")).toBeInTheDocument();
+    });
+
+    it("opens on Part 1 when only Part 1 is built", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, PART_2, PLANNED_3]} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(1)).toBeInTheDocument();
+    });
+
+    it("lets an explicit initialPart win over the default", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} initialPart={1} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(1)).toBeInTheDocument();
+    });
+
+    it("lets a controlled part win over the default", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} part={3} onPartChange={() => {}} adrTitles={{}} adrHrefs={{}} />);
+      expect(overview(3)).toBeInTheDocument();
+    });
+
+    it("keeps a part the reader scrubbed to instead of snapping back to the default", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, BUILT_2, PLANNED_3]} adrTitles={{}} adrHrefs={{}} />);
+      fireEvent.keyDown(screen.getByRole("group", { name: "Series part" }), { key: "ArrowLeft" });
+      expect(overview(1)).toBeInTheDocument();
+    });
+  });
+
+  it("hides its own scrubber when the page provides one", () => {
+    installMatchMedia();
+    render(<ArchitectureExplorer parts={[PART_1, PART_2]} hideScrubber adrTitles={{}} adrHrefs={{}} />);
+    expect(screen.queryByRole("group", { name: "Series part" })).not.toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.textContent === "Overview · Part 1")).toBeInTheDocument();
+  });
+
   // Node selection itself (clicking a React Flow node, opening the side
   // panel with its real purpose/ADR link) isn't exercised here: React
   // Flow measures its canvas via ResizeObserver and ties node mounting to
