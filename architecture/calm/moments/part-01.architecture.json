@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "bullpen-part-01",
   "name": "Bullpen — Part 1",
-  "description": "What actually runs at the end of Part 1: two Next.js apps (a public landing site and the trading app) on Vercel Hobby, and a single serverless function backing the trading app's price snapshot endpoint, which in turn calls out to an external market-data provider. No split, no queue, no workflow engine yet — see ADR-0002 for why distribution is deferred until it earns its place.",
+  "description": "What actually runs at the end of Part 1: two Next.js apps (a public landing site and the trading app) on Vercel Hobby, and a single serverless function backing the trading app's price snapshot endpoint, which in turn calls out to an external market-data provider. Both apps also load Google Analytics 4 and Microsoft Clarity in the visitor's browser, only after consent (ADR-0010). No split, no queue, no workflow engine yet — see ADR-0002 for why distribution is deferred until it earns its place.",
   "metadata": {
     "status": "current",
     "part": 1
@@ -11,7 +11,8 @@
     "architecture/adr/0001-stack.md",
     "architecture/adr/0002-why-distribute-at-all.md",
     "architecture/adr/0003-monorepo.md",
-    "architecture/adr/0005-crypto-market-data-coingecko.md"
+    "architecture/adr/0005-crypto-market-data-coingecko.md",
+    "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md"
   ],
   "nodes": [
     {
@@ -49,6 +50,48 @@
       "node-type": "external-system",
       "name": "CoinGecko",
       "description": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use, which forbid public display of their data (see issue #6, ADR-0005, docs/data-sources.md)."
+    },
+    {
+      "unique-id": "google-analytics",
+      "node-type": "external-system",
+      "name": "Google Analytics 4",
+      "description": "Google's product analytics (gtag.js from www.googletagmanager.com), loaded in the visitor's browser by both apps only after they accept and only in production. Receives page views and four custom events with no personal data. Consent Mode starts denied for all four signals; only analytics_storage is ever granted, and the advertising signals never are (see ADR-0010).",
+      "controls": {
+        "analytics-consent": {
+          "description": "Nothing loads and no cookie is set until the visitor accepts; advertising signals are always denied.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-ANALYTICS-CONSENT",
+                "name": "Analytics only after consent",
+                "description": "packages/ui's Analytics loads the Google tag only after Accept, with the Consent Mode default (all four denied) queued first and ad_storage, ad_user_data and ad_personalization never granted."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "microsoft-clarity",
+      "node-type": "external-system",
+      "name": "Microsoft Clarity",
+      "description": "Microsoft's heatmaps and session recordings (www.clarity.ms), loaded in the visitor's browser by both apps only after they accept and only in production. Receives the Consent API v2 signal with advertising storage denied, and a part tag. Form fields are masked (see ADR-0010).",
+      "controls": {
+        "analytics-consent": {
+          "description": "Nothing loads and no cookie is set until the visitor accepts; advertising storage is always denied.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-ANALYTICS-CONSENT",
+                "name": "Analytics only after consent",
+                "description": "packages/ui's Analytics loads the Clarity tag only after Accept, with Consent API v2 queued first: ad_Storage denied, analytics_Storage granted."
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "relationships": [
@@ -113,6 +156,62 @@
             }
           ]
         }
+      }
+    },
+    {
+      "unique-id": "landing-to-google-analytics",
+      "description": "The landing site sends page views and custom events to Google Analytics 4 from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "landing-app" },
+          "destination": { "node": "google-analytics" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "landing-to-microsoft-clarity",
+      "description": "The landing site sends interaction data to Microsoft Clarity from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "landing-app" },
+          "destination": { "node": "microsoft-clarity" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-google-analytics",
+      "description": "The trading app sends page views to Google Analytics 4 from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "google-analytics" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-microsoft-clarity",
+      "description": "The trading app sends interaction data to Microsoft Clarity from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "microsoft-clarity" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
       }
     }
   ]

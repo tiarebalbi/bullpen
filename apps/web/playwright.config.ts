@@ -15,6 +15,14 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "on-first-retry",
+    // Every spec but analytics.spec.ts starts as a visitor who already chose
+    // (rejected), so the consent banner is not in the way of what they test.
+    storageState: {
+      cookies: [
+        { name: "bullpen_consent", value: "rejected", domain: "127.0.0.1", path: "/", expires: -1, httpOnly: false, secure: false, sameSite: "Lax" },
+      ],
+      origins: [],
+    },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
@@ -25,5 +33,13 @@ export default defineConfig({
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // Built as production, with dummy ids, so the tags are allowed to load.
+    // analytics.spec.ts answers every request to Google and Clarity itself,
+    // so nothing is ever sent to them.
+    env: {
+      VERCEL_ENV: "production",
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000",
+      NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest",
+    },
   },
 });
