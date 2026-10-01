@@ -198,7 +198,7 @@ test.describe("Architecture page, desktop", () => {
 
     await toPart(page, 2);
     await expect(panel(page).getByText("No rule is checked against it at Part")).toHaveCount(0);
-    await expect(panel(page).getByText("Apps never depend on other apps").first()).toBeVisible();
+    await expect(panel(page).getByText("Components depend only on what they may").first()).toBeVisible();
     await expect(panel(page).getByText("The API key is read in one place")).toHaveCount(1);
     // Each rule carries a result from the snapshot, never a blank or invented pass.
     await expect(panel(page).locator(".bp-ap-rules .bp-chip").first()).toContainText(/pass|fail|no result/);

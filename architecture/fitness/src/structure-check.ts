@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { AdlEntry } from "./parse-adl.js";
-import { ADL_RULE, citeAdl, findAdlFile } from "./rules.js";
+import { findAdlFile, type AdlEntry } from "./adl.js";
+import { ADL_RULE, citeAdl } from "./rules.js";
 import type { Violation } from "./violation.js";
 
 const WATCHED_ROOTS = ["apps", "packages"] as const;
@@ -12,8 +12,8 @@ function normalize(path: string): string {
 }
 
 /**
- * Enforces the first two structural ASSERTs of structure.adl against a real
- * repo (or fixture repo) rooted at `repoRoot`:
+ * Enforces the two structural ASSERTs of structure.adl against a real repo
+ * (or fixture repo) rooted at `repoRoot`:
  *
  *   1. every directory that actually exists directly under apps/ and
  *      packages/ must be DEFINED in the ADL (as a COMPONENT or LIBRARY with
@@ -21,8 +21,8 @@ function normalize(path: string): string {
  *   2. every COMPONENT/LIBRARY DEFINED in the ADL must exist as a real
  *      directory.
  *
- * The dependency rules ("apps NEVER DEPEND ON other apps" and the rest) are
- * enforced by `turbo boundaries` through boundaries-check.ts, not here.
+ * The dependency rules (IS DEPENDENT ON, HAS NO DEPENDENCY ON) are enforced
+ * by `turbo boundaries` through boundaries-check.ts, not here.
  *
  * Returns one violation per broken rule, empty when the repo is compliant.
  */

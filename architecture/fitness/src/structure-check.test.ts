@@ -1,14 +1,13 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseAdlFile } from "./parse-adl.js";
+import { loadAdlDocument } from "./adl.js";
 import { ADL_RULE } from "./rules.js";
 import { checkStructure } from "./structure-check.js";
 import { expectFailureFormat, fixturesRoot } from "./test-helpers.js";
 
 function runFixture(name: string) {
   const fixtureRoot = join(fixturesRoot, name);
-  const entries = parseAdlFile(join(fixtureRoot, "structure.adl"));
-  return checkStructure(entries, fixtureRoot);
+  return checkStructure(loadAdlDocument(fixtureRoot).entries, fixtureRoot);
 }
 
 describe("checkStructure", () => {
@@ -42,6 +41,6 @@ describe("checkStructure", () => {
   it("fails in the shared format, with a repo-relative path", () => {
     expectFailureFormat(runFixture("undeclared-dir")[0]!, "structure");
     const text = expectFailureFormat(runFixture("missing-declared-dir")[0]!, "structure");
-    expect(text).toContain("✗ structure: every DEFINED component and library exists as a directory");
+    expect(text).toContain(`✗ structure: ${ADL_RULE.exists}`);
   });
 });

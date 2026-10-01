@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ADL_RULE, SECRET_RULE_PATTERN } from "./rules.js";
+import { parseAdlDocument } from "./adl.js";
+import { ADL_RULE } from "./rules.js";
 import { checkSecretContainment } from "./secret-check.js";
 import { expectFailureFormat, fixturesRoot, realRepoRoot } from "./test-helpers.js";
 
@@ -32,12 +33,15 @@ describe("checkSecretContainment", () => {
     const [violation] = checkSecretContainment(join(fixturesRoot, "secret-violation"));
     const text = expectFailureFormat(violation!, "secret containment");
     expect(text).toContain(`✗ secret containment: ${RULE}`);
-    expect(text).toMatch(/\(structure\.adl:7\)\.$/m);
+    expect(text).toMatch(/\(structure\.adl:8\)\.$/m);
   });
 
   it("recognises the rule by its shape, so a second secret is one more ADL line", () => {
-    expect(SECRET_RULE_PATTERN.exec("ONLY apps/x READS OTHER_KEY")?.slice(1)).toEqual(["apps/x", "OTHER_KEY"]);
-    expect(SECRET_RULE_PATTERN.test(ADL_RULE.entryPoint)).toBe(false);
+    const header = "DESCRIPTION d\nCATEGORY c\nDEFINE SYSTEM S AS s\n\n# Secrets\n";
+    const [secret] = parseAdlDocument(`${header}ASSERT(ONLY apps/x READS OTHER_KEY)`).rules;
+    expect(secret!.form).toEqual({ form: "secret", directory: "apps/x", secret: "OTHER_KEY" });
+    const [entryPoint] = parseAdlDocument(`${header}ASSERT(${ADL_RULE.entryPoint})`).rules;
+    expect(entryPoint!.form.form).toBe("free");
   });
 
   it("passes the real repo: the key is read in apps/web/app/api/price and nowhere else", () => {

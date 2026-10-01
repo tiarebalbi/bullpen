@@ -45,7 +45,7 @@ describe("buildSnapshot", () => {
     const root = repoWithMoments(["part-01", "part-02"]);
     const { snapshot } = buildSnapshot(root, 2, deps());
 
-    expect(snapshot).toMatchObject({ schema: 1, part: 2, commit: "0123456789abcdef0123456789abcdef01234567", ref: "post-02-architecture-as-code", generatedAt: "2026-10-01T12:00:00.000Z", source: "local", dirty: false, passed: true });
+    expect(snapshot).toMatchObject({ schema: 2, part: 2, commit: "0123456789abcdef0123456789abcdef01234567", ref: "post-02-architecture-as-code", generatedAt: "2026-10-01T12:00:00.000Z", source: "local", dirty: false, passed: true });
     expect(snapshot.checks.map((c) => c.id)).toEqual(["check-arch", "turbo-boundaries", "calm-part-01", "calm-part-02", "calm-timeline"]);
   });
 
@@ -54,9 +54,19 @@ describe("buildSnapshot", () => {
     const archRules = snapshot.checks[0]!.rules;
 
     expect(archRules).toEqual([
-      { rule: "rule one", check: "structure", passed: false },
-      { rule: "rule three", check: "budget", passed: true },
+      { id: "rule-one", rule: "rule one", check: "structure", passed: false },
+      { id: "rule-three", rule: "rule three", check: "budget", passed: true },
     ]);
+  });
+
+  it("fails only the rule a violation names, and every rule of a check when a violation names none of them", () => {
+    const two = (rule: string): CheckResult[] => [
+      { name: "structure", rules: ["rule one", "rule two"], violations: [{ check: "structure", rule, where: "apps/x", why: "because (ADR-0003).", fix: "fix it" }] },
+    ];
+    const held = (checks: CheckResult[]) => buildSnapshot(repoWithMoments(["part-01"]), 2, deps({ runChecks: () => checks })).snapshot.checks[0]!.rules.map((r) => [r.id, r.passed]);
+
+    expect(held(two("rule two"))).toEqual([["rule-one", true], ["rule-two", false]]);
+    expect(held(two("a catch-all no rule lists"))).toEqual([["rule-one", false], ["rule-two", false]]);
   });
 
   it("is not a pass when any check failed, and still says which", () => {
@@ -109,7 +119,8 @@ describe("writeSnapshot and parseSnapshot", () => {
 
   it("rejects a summary that is not a snapshot", () => {
     expect(() => parseSnapshot("{}", "x")).toThrow(/unknown schema/);
-    expect(() => parseSnapshot(JSON.stringify({ schema: 1, part: 2, generatedAt: "t", commit: "c", dirty: false, ref: "r", passed: true, checks: [] }), "x")).toThrow(/missing checks/);
+    expect(() => parseSnapshot(JSON.stringify({ schema: 1, part: 2, generatedAt: "t", commit: "c", dirty: false, ref: "r", passed: true, checks: [{ id: "a", name: "a", passed: true, raw: "a", rules: [] }] }), "x")).toThrow(/unknown schema 1/);
+    expect(() => parseSnapshot(JSON.stringify({ schema: 2, part: 2, generatedAt: "t", commit: "c", dirty: false, ref: "r", passed: true, checks: [] }), "x")).toThrow(/missing checks/);
   });
 });
 

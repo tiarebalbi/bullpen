@@ -1,43 +1,43 @@
-import { existsSync, readFileSync } from "node:fs";
+import { findAdlFile, loadAdlDocument, parseAdlDocument, type AdlRule } from "./adl.js";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseAdlRules, type AdlRule } from "./parse-adl.js";
 import type { Violation } from "./violation.js";
 
 /**
- * Rules worded exactly as they are written in architecture/adl/structure.adl.
- * A failure quotes these, so an agent sees the rule the way it was written.
- * `checkAdlEnforced` fails if the ADL stops stating one of them, and if the
- * ADL states a rule that nothing here enforces.
+ * The ASSERTs whose wording is fixed, worded exactly as they are written in
+ * architecture/adl/structure.adl. A failure quotes these, so an agent sees
+ * the rule the way it was written. `checkAdlEnforced` fails if the ADL stops
+ * stating one of them, and if the ADL states a rule nothing enforces.
+ *
+ * The dependency rules (`A IS DEPENDENT ON B`, `A HAS NO DEPENDENCY ON B`) and
+ * the secret rules (`ONLY <directory> READS <NAME>`) are not listed here: they
+ * are read from the ADL by form, so a new component or secret is a new ASSERT
+ * and not an edit to this file.
  */
 export const ADL_RULE = {
-  defined: "every directory under apps/ and packages/ is DEFINED here",
-  exists: "every DEFINED component and library exists as a directory",
-  appsNeverDependOnApps: "apps NEVER DEPEND ON other apps",
-  librariesNeverDependOnApps: "libraries NEVER DEPEND ON apps",
-  entryPoint: "apps IMPORT libraries ONLY THROUGH their package entry point",
-  componentsMapped: "every DEFINED component and library maps to a node in the current CALM moment",
+  defined: "every directory under apps and packages is DEFINED",
+  exists: "every DEFINED COMPONENT and LIBRARY exists as a directory",
+  entryPoint: "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point",
+  componentsMapped: "every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment",
   nodesMapped: "every webclient and service node in the current CALM moment maps to a DEFINED entry",
 } as const;
 
-/** `ONLY <directory> READS <NAME>`: one secret, readable from one place. */
-export const SECRET_RULE_PATTERN = /^ONLY (\S+) READS (\S+)$/;
+const KNOWN_ADL_RULES: readonly string[] = Object.values(ADL_RULE);
 
-const ADL_LOCATIONS = [join("architecture", "adl", "structure.adl"), "structure.adl"];
+/** The forms a check enforces by reading the rule itself, whatever it names. */
+const ENFORCED_FORMS = new Set<AdlRule["form"]["form"]>(["dependent-on", "no-dependency-on", "secret"]);
 
-/** The ADL file under `repoRoot` (the real one, or a fixture's), as a repo-relative path, if any. */
-export function findAdlFile(repoRoot: string): string | undefined {
-  return ADL_LOCATIONS.find((relative) => existsSync(join(repoRoot, relative)));
-}
-
-/** `structure.adl:<line>` for the ASSERT that states `ruleText`, or plain `structure.adl` if it is not stated. */
+/** `structure.adl:<line>` for the ASSERT that states `ruleText`, or plain `structure.adl` if it is not stated or the file cannot be read. */
 export function citeAdl(repoRoot: string, ruleText: string): string {
   const adlFile = findAdlFile(repoRoot);
   if (!adlFile) return "structure.adl";
-  const found = parseAdlRules(readFileSync(join(repoRoot, adlFile), "utf8")).find((rule) => rule.text === ruleText);
-  return found ? `structure.adl:${found.line}` : "structure.adl";
+  try {
+    const found = parseAdlDocument(readFileSync(join(repoRoot, adlFile), "utf8"), adlFile).rules.find((rule) => rule.text === ruleText);
+    return found ? `structure.adl:${found.line}` : "structure.adl";
+  } catch {
+    return "structure.adl";
+  }
 }
-
-const KNOWN_ADL_RULES: readonly string[] = Object.values(ADL_RULE);
 
 /**
  * "A rule that cannot fail a build is documentation": every ASSERT in the ADL
@@ -47,11 +47,11 @@ const KNOWN_ADL_RULES: readonly string[] = Object.values(ADL_RULE);
 export function checkAdlEnforced(repoRoot: string): Violation[] {
   const adlFile = findAdlFile(repoRoot);
   if (!adlFile) return [];
-  const asserted: AdlRule[] = parseAdlRules(readFileSync(join(repoRoot, adlFile), "utf8"));
+  const asserted = loadAdlDocument(repoRoot).rules;
   const violations: Violation[] = [];
 
   for (const rule of asserted) {
-    if (KNOWN_ADL_RULES.includes(rule.text) || SECRET_RULE_PATTERN.test(rule.text)) continue;
+    if (KNOWN_ADL_RULES.includes(rule.text) || ENFORCED_FORMS.has(rule.form.form)) continue;
     violations.push({
       check: "rule coverage",
       rule: rule.text,

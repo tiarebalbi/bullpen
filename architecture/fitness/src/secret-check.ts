@@ -1,11 +1,13 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { parseAdlRules } from "./parse-adl.js";
-import { SECRET_RULE_PATTERN, citeAdl, findAdlFile } from "./rules.js";
+import { findAdlFile, loadAdlDocument, type AdlRule } from "./adl.js";
+import { citeAdl } from "./rules.js";
 import { lineAt, scanFiles } from "./source-scan.js";
 import type { Violation } from "./violation.js";
 
 const CHECK = "secret containment";
+
+type SecretRule = AdlRule & { form: { form: "secret"; directory: string; secret: string } };
+
+const isSecretRule = (rule: AdlRule): rule is SecretRule => rule.form.form === "secret";
 
 /**
  * "ONLY <directory> READS <NAME>": the secret named in an ADL rule appears in
@@ -18,20 +20,17 @@ const CHECK = "secret containment";
  * (process.env[`COINGECKO_${x}`]) is not something a text scan can see.
  */
 export function checkSecretContainment(repoRoot: string): Violation[] {
-  const adlFile = findAdlFile(repoRoot);
-  if (!adlFile) return [];
+  if (!findAdlFile(repoRoot)) return [];
 
-  const rules = parseAdlRules(readFileSync(join(repoRoot, adlFile), "utf8"))
-    .map((rule) => ({ rule, match: SECRET_RULE_PATTERN.exec(rule.text) }))
-    .filter((entry): entry is { rule: (typeof entry)["rule"]; match: RegExpExecArray } => entry.match !== null);
+  const rules = loadAdlDocument(repoRoot).rules.filter(isSecretRule);
   if (rules.length === 0) return [];
 
   const files = scanFiles(repoRoot, ["apps", "packages"]);
   const violations: Violation[] = [];
 
-  for (const { rule, match } of rules) {
-    const directory = match[1]!.replace(/\/+$/, "");
-    const secret = match[2]!;
+  for (const rule of rules) {
+    const directory = rule.form.directory.replace(/\/+$/, "");
+    const secret = rule.form.secret;
     const reading = new RegExp(`(?<![A-Za-z0-9_])${secret}(?![A-Za-z0-9_])`, "g");
 
     for (const file of files) {

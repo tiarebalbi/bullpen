@@ -1,13 +1,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseAdlFile } from "./parse-adl.js";
+import { loadAdlDocument } from "./adl.js";
 import { ADR_LINKED_RULE, CONTROL_POINTER_RULE, EXTERNAL_SYSTEM_RULE, checkModelCurrency } from "./model-currency-check.js";
 import { ADL_RULE } from "./rules.js";
 import { copyFixture, expectFailureFormat, fixturesRoot, readJsonFile, realRepoRoot, writeJsonFile } from "./test-helpers.js";
 
 const GOOD = join(fixturesRoot, "model-currency-good");
-const entriesOf = (root: string) => parseAdlFile(join(root, "architecture", "adl", "structure.adl"));
+const entriesOf = (root: string) => loadAdlDocument(root).entries;
 
 interface Doc {
   nodes: Array<Record<string, unknown>>;
@@ -257,7 +257,7 @@ describe("model currency: the planned Part 2 moment, which must stay exactly as 
     const sources = readFileSync(join(realRepoRoot, "docs", "data-sources.md"), "utf8");
     expect(sources, 'docs/data-sources.md must keep a sentence that quotes "Market Data Provider": planned/part-02 (never edited, Part 6 compares it with reality) depends on it').toContain('"Market Data Provider"');
 
-    const entries = parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl"));
+    const entries = loadAdlDocument(realRepoRoot).entries;
     expect(checkModelCurrency(realRepoRoot, entries).filter((v) => v.where.endsWith("planned/part-02.architecture.json"))).toEqual([]);
   });
 
@@ -273,11 +273,11 @@ describe("model currency: the planned Part 2 moment, which must stay exactly as 
 
 describe("model currency: the real repo", () => {
   it("has no undecided external system, no unlinked ADR, and every component mapped", () => {
-    expect(checkModelCurrency(realRepoRoot, parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl")))).toEqual([]);
+    expect(checkModelCurrency(realRepoRoot, loadAdlDocument(realRepoRoot).entries)).toEqual([]);
   });
 
   it("still holds with Part 2 as the current moment, so the flip on publish day is safe", () => {
-    const entries = parseAdlFile(join(realRepoRoot, "architecture", "adl", "structure.adl"));
+    const entries = loadAdlDocument(realRepoRoot).entries;
     expect(checkModelCurrency(realRepoRoot, entries, { currentMoment: "part-02" })).toEqual([]);
   });
 

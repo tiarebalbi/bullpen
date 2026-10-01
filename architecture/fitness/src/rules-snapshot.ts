@@ -4,12 +4,15 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BoundariesRun } from "./boundaries-check.js";
 import { defaultBoundariesRunner } from "./boundaries-check.js";
+import { ruleId } from "./adl.js";
 import { runChecks, type CheckResult } from "./run-checks.js";
 import { formatViolations } from "./violation.js";
 
 export const CALM_CLI = "@finos/calm-cli@1.60.1";
 
 export interface SnapshotRule {
+  /** Derived from the rule's text (never its position), so it survives reordering the ADL. */
+  id: string;
   /** The rule as worded in the ADL, or in the ADR that records it. */
   rule: string;
   /** The check that enforces it. */
@@ -34,7 +37,7 @@ export interface SnapshotCheck {
  * result and the commit it was for, instead of a claim.
  */
 export interface RulesSnapshot {
-  schema: 1;
+  schema: 2;
   part: number;
   generatedAt: string;
   commit: string;
@@ -74,6 +77,16 @@ function calmArgs(kind: "moment" | "timeline", file: string, outFile: string): s
 
 const lastLine = (text: string): string => text.trim().split("\n").filter(Boolean).pop() ?? "";
 
+/**
+ * Whether `rule` held in `result`: no violation names it, and no violation
+ * names a rule the check does not list (a catch-all), which could be breaking
+ * any of them.
+ */
+function ruleHeld(result: CheckResult, rule: string): boolean {
+  const listed = new Set(result.rules);
+  return result.violations.every((violation) => violation.rule !== rule && listed.has(violation.rule));
+}
+
 /** check:arch, in process: the result of each check, with its rules, and the text that backs it. */
 function archCheck(results: CheckResult[], repoRoot: string): { check: SnapshotCheck; file: string } {
   const violations = results.flatMap((result) => result.violations);
@@ -90,7 +103,7 @@ function archCheck(results: CheckResult[], repoRoot: string): { check: SnapshotC
       passed,
       summary: lastLine(text),
       raw: "check-arch.txt",
-      rules: results.flatMap((result) => result.rules.map((rule) => ({ rule, check: result.name, passed: result.violations.length === 0 }))),
+      rules: results.flatMap((result) => result.rules.map((rule) => ({ id: ruleId(rule), rule, check: result.name, passed: ruleHeld(result, rule) }))),
     },
   };
 }
@@ -181,7 +194,7 @@ export function buildSnapshot(repoRoot: string, part: number, deps: SnapshotDeps
   return {
     files,
     snapshot: {
-      schema: 1,
+      schema: 2,
       part,
       generatedAt: deps.now().toISOString(),
       commit: deps.commit(repoRoot),
@@ -208,7 +221,7 @@ const isCheck = (check: Partial<SnapshotCheck> | undefined): boolean =>
 
 /** The first field of `data` that is not what a snapshot needs, or null if all are. */
 function firstProblem(data: Partial<RulesSnapshot>): string | null {
-  if (data.schema !== 1) return `unknown schema ${JSON.stringify(data.schema)}`;
+  if (data.schema !== 2) return `unknown schema ${JSON.stringify(data.schema)}`;
   if (typeof data.part !== "number" || !Number.isInteger(data.part)) return "missing integer part";
   const missingText = (["generatedAt", "commit", "ref"] as const).find((key) => typeof data[key] !== "string" || data[key] === "");
   if (missingText) return `missing ${missingText}`;

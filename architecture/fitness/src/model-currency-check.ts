@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AdlEntry } from "./parse-adl.js";
+import type { AdlEntry } from "./adl.js";
 import { ADL_RULE, citeAdl } from "./rules.js";
 import type { Violation } from "./violation.js";
 
