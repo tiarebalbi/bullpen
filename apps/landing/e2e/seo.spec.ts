@@ -96,6 +96,21 @@ test.describe("SEO metadata", () => {
     expect(result.valid).toBe(true);
   });
 
+  test("JSON-LD lists exactly one part of the series, Part 1, with its headline, URL and date", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { "@graph": Array<Record<string, unknown>> };
+    const series = graph["@graph"].find((node) => node["@type"] === "CreativeWorkSeries")!;
+    expect(series.hasPart).toEqual([
+      {
+        "@type": "BlogPosting",
+        headline: "Why distribute at all",
+        url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
+        datePublished: "2026-10-04",
+      },
+    ]);
+  });
+
   test("no absolute local/CI file path appears in the rendered HTML", async ({ request }) => {
     const res = await request.get("/", { headers: { Host: PRODUCTION_HOST } });
     const html = await res.text();
