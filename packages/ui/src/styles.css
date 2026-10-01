@@ -185,3 +185,101 @@
     height: 360px !important;
   }
 }
+
+/* ── Analytics consent banner ─────────────────────────────────
+   A bar fixed to the bottom of the viewport. While it is open,
+   ConsentBanner sets data-consent-open and --bp-consent-height on
+   <html>, and the body reserves that much room at the bottom, so
+   the end of the page is never hidden behind it. */
+html[data-consent-open] body {
+  padding-bottom: var(--bp-consent-height, 0px);
+}
+
+.bp-consent {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  box-sizing: border-box;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--bp-hair);
+  border-bottom: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--bp-panel);
+  color: var(--foreground);
+  box-shadow: var(--shadow-ambient);
+  font: 400 14px/1.45 var(--font-body);
+}
+.bp-consent:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: -2px;
+}
+.bp-consent__text {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+.bp-consent__text p {
+  margin: 0;
+}
+.bp-consent__current {
+  margin-top: var(--space-1) !important;
+  color: var(--foreground-muted);
+}
+.bp-consent a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.bp-consent a:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.bp-consent__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+@media (max-width: 600px) {
+  .bp-consent {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
+    border-radius: 0;
+    font-size: 13px;
+  }
+  .bp-consent__actions {
+    flex: 1 1 100%;
+  }
+  .bp-consent__actions .bp-btn {
+    flex: 1 1 0;
+    padding-block: 11px;
+  }
+  .bp-consent__actions .bp-btn--ghost {
+    flex: 0 0 auto;
+  }
+}
+
+/* A control that looks like a footer link. */
+.bp-link-button {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.bp-link-button:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

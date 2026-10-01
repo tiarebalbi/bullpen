@@ -1,0 +1,5 @@
+commit 4afacbcf10c9d8e7b6a5948372615f4e3d2c1b0a
+Author: R. Owner <owner@users.noreply.example.test>
+Date:   Sat Sep 26 12:14:00 2026 -0700
+
+    Bullpen: interactive architecture explorer (#15)

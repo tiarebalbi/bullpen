@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check:arch": "tsx src/cli.ts",
+    "commit-policy": "tsx src/commit-policy-cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

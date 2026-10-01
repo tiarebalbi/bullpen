@@ -11,6 +11,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
+import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
@@ -26,6 +27,8 @@ export interface ArchitectureExplorerProps {
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
   adrHrefs: Record<string, string>;
+  /** Called after the explorer has moved from one part to another (click, arrow key or autoplay). */
+  onPartMoved?: (from: number, to: number) => void;
   className?: string;
 }
 
@@ -72,6 +75,7 @@ function ArchitectureExplorerInner({
   initialPart = 1,
   adrTitles,
   adrHrefs,
+  onPartMoved,
   className,
 }: ArchitectureExplorerProps): ReactNode {
   const reduced = useReducedMotion();
@@ -103,6 +107,7 @@ function ArchitectureExplorerInner({
   useEffect(() => {
     partRef.current = part;
   }, [part]);
+  useReportPartMoves(part, initialPart, onPartMoved);
 
   const goToPart = useCallback(
     (next: number) => {

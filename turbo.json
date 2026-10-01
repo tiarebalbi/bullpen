@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["VERCEL_ENV", "NEXT_PUBLIC_GA_MEASUREMENT_ID", "NEXT_PUBLIC_CLARITY_PROJECT_ID"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", ".generated/**"]
     },
     "lint": {},
