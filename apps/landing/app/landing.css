@@ -863,6 +863,36 @@ code {
   overflow-x: auto;
   margin: var(--space-4) 0;
 }
+/* On a phone the four columns do not fit, and "Lasts" is the one that gets
+   clipped: stack each cookie as its own block, labelled from data-label. */
+@media (max-width: 640px) {
+  .bp-privacy__table .bp-table,
+  .bp-privacy__table .bp-table tbody,
+  .bp-privacy__table .bp-table tr,
+  .bp-privacy__table .bp-table td {
+    display: block;
+  }
+  .bp-privacy__table .bp-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .bp-privacy__table .bp-table tr {
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--bp-hair);
+  }
+  .bp-privacy__table .bp-table td {
+    padding: var(--space-1) 0;
+    border: 0;
+  }
+  .bp-privacy__table .bp-table td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: var(--foreground-muted);
+  }
+}
 
 @media (max-width: 640px) {
   .bp-section,

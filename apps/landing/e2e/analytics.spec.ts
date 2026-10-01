@@ -292,7 +292,15 @@ for (const viewport of [
       await expect(page.getByRole("link", { name: "my site" })).toHaveAttribute("href", "https://tiarebalbi.com");
       await expect(page.getByRole("button", { name: "Cookie settings" })).toBeVisible();
       for (const cookie of ["bullpen_consent", "_ga", "_clck", "_clsk"]) {
-        await expect(page.getByRole("cell", { name: cookie, exact: true })).toBeVisible();
+        await expect(page.locator("td code", { hasText: new RegExp(`^${cookie}$`) })).toBeVisible();
+      }
+      // How long each lasts is on screen too, not clipped off the side of a phone.
+      for (const lasts of ["6 months", "2 years", "1 year", "1 day"]) {
+        const cell = page.locator("td", { hasText: lasts }).first();
+        await cell.scrollIntoViewIfNeeded();
+        const box = (await cell.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
       }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow).toBeLessThanOrEqual(0);

@@ -131,9 +131,9 @@ export default function PrivacyPage(): ReactNode {
                       <td>
                         <code>{cookie.name}</code>
                       </td>
-                      <td>{cookie.setBy}</td>
-                      <td>{cookie.purpose}</td>
-                      <td>{cookie.lasts}</td>
+                      <td data-label="Set by">{cookie.setBy}</td>
+                      <td data-label="What for">{cookie.purpose}</td>
+                      <td data-label="Lasts">{cookie.lasts}</td>
                     </tr>
                   ))}
                 </tbody>
