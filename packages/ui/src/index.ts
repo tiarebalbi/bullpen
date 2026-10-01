@@ -46,3 +46,13 @@ export type {
 export { useReducedMotion } from "./lib/useReducedMotion.js";
 export { useNow } from "./lib/useNow.js";
 export { MINUS, fmt, signed, mono, badgeBg, formatTime } from "./lib/format.js";
+
+export { Analytics } from "./analytics/Analytics.js";
+export type { AnalyticsProps } from "./analytics/Analytics.js";
+export { ConsentBanner } from "./analytics/ConsentBanner.js";
+export type { ConsentBannerProps } from "./analytics/ConsentBanner.js";
+export { CookieSettingsButton } from "./analytics/CookieSettingsButton.js";
+export { resolveAnalyticsConfig } from "./analytics/config.js";
+export type { AnalyticsConfig, AnalyticsEnv } from "./analytics/config.js";
+export { track } from "./analytics/track.js";
+export type { AnalyticsEvents } from "./analytics/track.js";
