@@ -2,15 +2,15 @@
   {
     "part": 1,
     "title": "Why distribute at all",
-    "status": "next",
-    "url": "",
-    "date": null,
+    "status": "published",
+    "url": "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
+    "date": "2026-10-04",
     "introduced": "One deployable, live BTC-USD"
   },
   {
     "part": 2,
     "title": "Architecture as code",
-    "status": "planned",
+    "status": "next",
     "url": "",
     "date": null,
     "introduced": "Describe, govern and remember the design"

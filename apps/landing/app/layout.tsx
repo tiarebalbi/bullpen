@@ -7,6 +7,7 @@ import { resolveAnalyticsConfig } from "@bullpen/ui/analytics-config";
 import { loadCurrentPart } from "../lib/currentPart.js";
 import { AnalyticsHost } from "./components/AnalyticsHost.js";
 import { JsonLd } from "./components/JsonLd.js";
+import { loadSeries } from "../lib/series.js";
 import { PRODUCTION_HOST } from "./lib/productionHost.js";
 
 const TITLE = "Bullpen: Architecting Software in 2026, Built in Public";
@@ -51,6 +52,10 @@ try {
 } catch (e) {}
 `;
 
+// `next build`/`next dev` run with this package's directory as cwd (true under
+// both pnpm --filter and turbo), so the repo root is two levels up.
+const series = loadSeries(join(process.cwd(), "..", "..", "content", "series.json"));
+
 // Whether a tag may ever load is decided here, on the server, from the
 // deployment: production, with the tool's id set. The browser then also
 // needs the visitor's consent (see @bullpen/ui's Analytics).
@@ -70,7 +75,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <JsonLd />
+        <JsonLd parts={series} />
       </head>
       <body>
         {children}
