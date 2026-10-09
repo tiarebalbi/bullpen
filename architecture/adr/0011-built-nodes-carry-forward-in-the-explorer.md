@@ -4,6 +4,8 @@
 
 Proposed
 
+Clarified 2026-10-09: `builtIn` is where the item was first built, not the moment it is copied from.
+
 ## Date
 
 2026-10-01
@@ -37,8 +39,8 @@ moments describe, plus what is already built and still running. ADR-0006's own
 text stays as written. The rule:
 
 - A node or relationship of the latest built moment carries into every later
-  planned part, marked `carried: true` with `builtIn` naming the moment that
-  built it (`part-01`).
+  planned part, marked `carried: true` with `builtIn` naming the earliest
+  built moment that contains the item (`part-01`).
 - The prediction wins: a planned part that already has a node with the same
   id keeps its own.
 - The predictions own every id they name. An id that any planned moment names
