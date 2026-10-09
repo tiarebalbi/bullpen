@@ -45,7 +45,7 @@ describe("first-person voice, swept over every source field (not just what's ren
   });
 
   it("content/architecture/*.json node and request text, for every part (not just the initially-selected one)", () => {
-    const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
+    const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned"));
     for (const part of parts) {
       assertFirstPerson(`Part ${part.part} summary`, part.summary);
       for (const node of part.nodes) {

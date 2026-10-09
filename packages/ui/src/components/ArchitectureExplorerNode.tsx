@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { ArchNodeData, ArchNodeKind } from "./ArchitectureExplorer.types.js";
+import { CarriedBadge, carriedNameSuffix } from "./ArchitectureExplorerCarried.js";
 
 export type ArchNodeVisualState = "same" | "added" | "removed" | "changed";
 
@@ -77,7 +78,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     <div
       role="button"
       tabIndex={removed ? -1 : 0}
-      aria-label={`${node.label}, ${KIND_LABEL[node.kind]}`}
+      aria-label={`${node.label}, ${KIND_LABEL[node.kind]}${carriedNameSuffix(node)}`}
       aria-pressed={selected}
       onClick={() => !removed && onSelect(node.id)}
       onKeyDown={(e) => {
@@ -107,6 +108,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
             PLANNED
           </span>
         ) : null}
+        <CarriedBadge node={node} />
         <span
           style={{
             font: "600 9px/1 var(--font-body)",

@@ -12,6 +12,10 @@ export interface ArchNodeData {
   db?: boolean;
   adrs?: string[];
   costNote?: string;
+  /** Not this part's prediction but a built part's: it carried forward, still running (ADR-0011). */
+  carried?: true;
+  /** The moment that built a carried item, e.g. "part-01". */
+  builtIn?: string;
 }
 
 export type ArchEdgeType = "sync" | "async";
@@ -21,6 +25,8 @@ export interface ArchEdgeData {
   a: string;
   b: string;
   type: ArchEdgeType;
+  carried?: true;
+  builtIn?: string;
 }
 
 export interface ArchGroupData {

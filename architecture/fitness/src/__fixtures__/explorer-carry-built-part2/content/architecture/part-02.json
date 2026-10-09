@@ -1,0 +1,22 @@
+{
+  "part": 2,
+  "status": "built",
+  "nodes": [
+    {
+      "id": "app",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "old-service",
+      "x": 40,
+      "y": 220
+    },
+    {
+      "id": "tool",
+      "x": 40,
+      "y": 400
+    }
+  ],
+  "edges": []
+}

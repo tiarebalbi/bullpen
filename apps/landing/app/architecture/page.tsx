@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 const repoRoot = join(process.cwd(), "..", "..");
 
 export default function ArchitecturePage(): ReactNode {
-  const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
+  const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned"));
   const series = loadSeries(join(repoRoot, "content", "series.json"));
   const adrs = loadAdrs(join(repoRoot, "architecture", "adr"));
   // Parsed from architecture/adl/structure.adl by the one ADL parser, which `adl:emit` runs before the build.

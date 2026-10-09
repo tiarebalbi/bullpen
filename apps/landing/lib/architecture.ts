@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { carryForward, plannedNamesOf, type CalmIds } from "@bullpen/contracts/architecture";
 import type { ArchGroupData, ArchNodeData, ArchPartData } from "@bullpen/ui";
 
 const VALID_KIND = new Set(["actor", "app", "service", "data", "infra", "ext"]);
@@ -144,13 +145,28 @@ function deriveOwnershipGroups(nodes: ArchNodeData[], edges: ArchPartData["edges
   return groups;
 }
 
-/** Loads and parses all six content/architecture/part-0N.json files, sorted by part number. */
-export function loadArchitectureParts(dirPath: string): ArchPartData[] {
+/** Reads every planned CALM moment (architecture/calm/planned/*.architecture.json) for the ids they name. */
+function loadPlannedCalmDocs(plannedDir: string): CalmIds[] {
+  return readdirSync(plannedDir)
+    .filter((file) => file.endsWith(".architecture.json"))
+    .sort()
+    .map((file) => JSON.parse(readFileSync(join(plannedDir, file), "utf8")) as CalmIds);
+}
+
+/**
+ * Loads and parses all six content/architecture/part-0N.json files, sorted by
+ * part number, then carries what is built into the planned parts that follow
+ * (ADR-0011). The part files stay what they are, the week-one predictions; the
+ * carry is derived here, from the built part and the ids the planned CALM
+ * moments in `plannedDir` name, so nothing derived is ever committed.
+ */
+export function loadArchitectureParts(dirPath: string, plannedDir: string): ArchPartData[] {
   const parts: ArchPartData[] = [];
   for (let part = 1; part <= PART_COUNT; part++) {
     const filePath = join(dirPath, `part-${String(part).padStart(2, "0")}.json`);
     const content = readFileSync(filePath, "utf8");
     parts.push(parseArchitecturePart(content, `content/architecture/part-${String(part).padStart(2, "0")}.json`));
   }
-  return parts.sort((a, b) => a.part - b.part);
+  parts.sort((a, b) => a.part - b.part);
+  return carryForward(parts, plannedNamesOf(loadPlannedCalmDocs(plannedDir)));
 }

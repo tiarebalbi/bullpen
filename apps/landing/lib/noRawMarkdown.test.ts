@@ -34,7 +34,7 @@ describe("no raw markdown in plain-text display fields", () => {
   });
 
   it("content/architecture/*.json node and request text", () => {
-    const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"));
+    const parts = loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned"));
     for (const part of parts) {
       assertNoRawMarkdown(`Part ${part.part} summary`, part.summary);
       for (const node of part.nodes) {

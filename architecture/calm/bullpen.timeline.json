@@ -19,7 +19,8 @@
         "architecture/adr/0005-crypto-market-data-coingecko.md",
         "architecture/adr/0006-react-flow-architecture-explorer.md",
         "architecture/adr/0007-markdown-it-for-adr-rendering.md",
-        "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md"
+        "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md",
+        "architecture/adr/0011-built-nodes-carry-forward-in-the-explorer.md"
       ]
     },
     {

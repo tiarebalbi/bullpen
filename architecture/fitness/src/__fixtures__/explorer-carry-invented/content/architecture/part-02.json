@@ -1,0 +1,19 @@
+{
+  "part": 2,
+  "status": "planned",
+  "nodes": [
+    {
+      "id": "app",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "invented-tool",
+      "x": 40,
+      "y": 400,
+      "carried": true,
+      "builtIn": "part-01"
+    }
+  ],
+  "edges": []
+}
