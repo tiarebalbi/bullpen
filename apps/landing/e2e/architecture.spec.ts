@@ -309,6 +309,36 @@ const ANALYTICS_EDGES = [
   "trading-app-to-microsoft-clarity",
 ] as const;
 
+// Part 2 added and removed no node: its panel says so and lists the rules that were added (ADR-0009), never Part 1's fallback.
+test.describe("What changed in Part 2 at 1440px", () => {
+  test.use({ viewport: { width: 1440, height: 1200 } });
+
+  test("says no services or connections were added or removed, lists the controls with their model descriptions, and ADR-0009", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 2" }).click();
+
+    const panel = architecture.getByLabel("Details");
+    await expect(panel.getByText("What changed in Part 2")).toBeVisible();
+    await expect(panel.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeVisible();
+    await expect(panel.getByText(/starting point/)).toHaveCount(0);
+    for (const target of ["Bullpen Landing", "Bullpen Trading App", "Price Snapshot Service", "Price Snapshot Service → CoinGecko"]) {
+      await expect(panel.getByText(target, { exact: true }).first()).toBeVisible();
+    }
+    await expect(panel.getByText("app-boundaries", { exact: true }).first()).toBeVisible();
+    await expect(panel.getByRole("link", { name: /^ADR-0009 — / })).toBeVisible();
+  });
+
+  test("keeps the starting-point text for Part 1", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 1" }).click();
+    await expect(architecture.getByLabel("Details").getByText(/Part 1 is the starting point/)).toBeVisible();
+  });
+});
+
 for (const viewport of [
   { width: 1440, height: 1200 },
   { width: 390, height: 844 },

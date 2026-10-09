@@ -48,6 +48,17 @@ export interface ArchRequestData {
   steps: ArchRequestStep[];
 }
 
+/** A control the part's moment added to something the previous moment already had, as the CALM model words it. */
+export interface ArchControlChange {
+  key: string;
+  description?: string;
+}
+
+/** What a built part added that the node diff cannot show: controls on existing nodes and connections, and its ADRs. */
+export type ArchChange =
+  | { kind: "controls"; target: string; controls: ArchControlChange[] }
+  | { kind: "adr"; adr: string };
+
 export interface ArchPartData {
   part: number;
   status: "built" | "planned";
@@ -56,6 +67,8 @@ export interface ArchPartData {
   edges: ArchEdgeData[];
   groups: ArchGroupData[];
   request: ArchRequestData;
+  /** Derived by the loader from the part's moment and the previous built one; absent for Part 1 and planned parts. */
+  changes?: ArchChange[];
 }
 
 export interface ArchWhatChanged {

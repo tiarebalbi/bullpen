@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { ArchitectureExplorer, type ArchPartData } from "./ArchitectureExplorer.js";
 
@@ -107,6 +107,108 @@ describe("ArchitectureExplorer", () => {
     );
     expect(screen.getByText("What changed in Part 1")).toBeInTheDocument();
     expect(screen.getByText(/Part 1 is the starting point/)).toBeInTheDocument();
+  });
+
+  describe("the 'what changed' panel of a built part whose nodes did not change", () => {
+    const PART_2_BUILT: ArchPartData = {
+      ...PART_2,
+      status: "built",
+      summary: "The same apps, with the rules now failing a build.",
+      changes: [
+        { kind: "controls", target: "Bullpen Landing", controls: [{ key: "app-boundaries", description: "An app never depends on another app." }, { key: "bare-control" }] },
+        { kind: "controls", target: "Price Snapshot Service → CoinGecko", controls: [{ key: "call-budget", description: "Calls stay in the allowance." }] },
+        { kind: "adr", adr: "ADR-0009" },
+      ],
+    };
+    const adrTitles = { "ADR-0009": "Guardrails enforced, not requested" };
+    const adrHrefs = { "ADR-0009": "#adr-0009" };
+
+    it("never shows Part 1's starting-point text, and says plainly that no service or connection was added or removed", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      expect(screen.getByText("What changed in Part 2")).toBeInTheDocument();
+      expect(screen.queryByText(/starting point/)).not.toBeInTheDocument();
+      expect(screen.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeInTheDocument();
+    });
+
+    it("lists each control's description from the model with its key beneath, or the key alone when it has none", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      const panel = within(screen.getByLabelText("Details"));
+      expect(panel.getByText("Bullpen Landing")).toBeInTheDocument();
+      expect(panel.getByText("An app never depends on another app.")).toBeInTheDocument();
+      expect(panel.getByText("app-boundaries")).toBeInTheDocument();
+      expect(panel.getByText("Price Snapshot Service → CoinGecko")).toBeInTheDocument();
+      expect(panel.getByText("Calls stay in the allowance.")).toBeInTheDocument();
+      // No description: the key is the text, shown once, with no second line.
+      expect(panel.getAllByText("bare-control")).toHaveLength(1);
+    });
+
+    it("reads an ADR row as 'ADR-0009 — its title' and links it like the other ADR rows", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      const row = screen.getByRole("link", { name: "ADR-0009 — Guardrails enforced, not requested" });
+      expect(row).toHaveAttribute("href", "#adr-0009");
+    });
+
+    it("says only that nothing was added or removed when the moment added no controls or ADRs", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, { ...PART_2_BUILT, changes: undefined }]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      expect(screen.getByText("No services or connections were added or removed in Part 2.")).toBeInTheDocument();
+      expect(screen.queryByText(/starting point/)).not.toBeInTheDocument();
+    });
+
+    it("compares with the part before, not the part the visitor came from: Part 2 reads the same after Part 3, and Part 1 after Part 2", () => {
+      installMatchMedia();
+      const PART_3: ArchPartData = {
+        ...PART_2_BUILT,
+        part: 3,
+        status: "planned",
+        changes: undefined,
+        nodes: [...PART_1.nodes.map((n) => ({ ...n, purpose: "Changed in a later part." })), { id: "extra", label: "Extra", kind: "service", meta: "New", purpose: "Only in Part 3.", x: 0, y: 320 }],
+      };
+      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT, PART_3]} initialPart={3} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+      const scrubber = screen.getByRole("group", { name: "Series part" });
+
+      fireEvent.keyDown(scrubber, { key: "ArrowLeft" });
+      const panel = within(screen.getByLabelText("Details"));
+      expect(panel.getByText("What changed in Part 2")).toBeInTheDocument();
+      expect(panel.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeInTheDocument();
+      expect(panel.queryByText("Extra")).not.toBeInTheDocument();
+
+      fireEvent.keyDown(scrubber, { key: "ArrowLeft" });
+      expect(within(screen.getByLabelText("Details")).getByText(/Part 1 is the starting point/)).toBeInTheDocument();
+    });
+
+    it("still shows the cards whose description changed, then the intro, since none was added or removed", () => {
+      installMatchMedia();
+      const reworded: ArchPartData = { ...PART_2_BUILT, nodes: PART_1.nodes.map((n) => ({ ...n, purpose: "Reworded in Part 2." })) };
+      render(<ArchitectureExplorer parts={[PART_1, reworded]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      const panel = within(screen.getByLabelText("Details"));
+      expect(panel.getByText("Reader")).toBeInTheDocument();
+      expect(panel.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeInTheDocument();
+    });
+
+    it("leaves the intro out when a service was added, since the node diff says it", () => {
+      installMatchMedia();
+      const added: ArchPartData = { ...PART_2_BUILT, nodes: [...PART_1.nodes, { id: "extra", label: "Extra", kind: "service", meta: "New", purpose: "New in Part 2.", x: 0, y: 320 }] };
+      render(<ArchitectureExplorer parts={[PART_1, added]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      expect(within(screen.getByLabelText("Details")).queryByText(/No services or connections/)).not.toBeInTheDocument();
+    });
+
+    it("keeps the starting-point text for Part 1 only", () => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} initialPart={1} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+
+      expect(screen.getByText("What changed in Part 1")).toBeInTheDocument();
+      expect(screen.getByText(/Part 1 is the starting point/)).toBeInTheDocument();
+    });
   });
 
   it("shows the 'Follow' button for the part's real request name", () => {

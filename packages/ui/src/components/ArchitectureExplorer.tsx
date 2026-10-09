@@ -15,12 +15,13 @@ import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
+import { PartChanges, partBefore } from "./ArchitectureExplorerChanges.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
 import type { ArchGroupData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
-export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData } from "./ArchitectureExplorer.types.js";
+export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange } from "./ArchitectureExplorer.types.js";
 
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
@@ -470,7 +471,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           adrTitles={adrTitles}
           adrHrefs={adrHrefs}
           part={current}
-          prevPart={previous}
+          before={partBefore(partsById, current)}
         />
       </div>
 
@@ -736,7 +737,7 @@ function SidePanel({
   adrTitles,
   adrHrefs,
   part,
-  prevPart,
+  before,
 }: {
   node: ArchNodeData | null;
   nodeState: ArchNodeVisualState;
@@ -744,7 +745,8 @@ function SidePanel({
   adrTitles: Record<string, string>;
   adrHrefs: Record<string, string>;
   part: ArchPartData;
-  prevPart: ArchPartData;
+  /** The part before `part`, or `part` itself for the first. */
+  before: ArchPartData;
 }): ReactNode {
   const panelStyle: CSSProperties = {
     background: "var(--bp-panel)",
@@ -802,7 +804,7 @@ function SidePanel({
     );
   }
 
-  const whatChanged = diffWhatChanged(prevPart, part);
+  const whatChanged = diffWhatChanged(before, part);
   return (
     <aside aria-label="Details" style={panelStyle}>
       <div style={smallEyebrow}>What changed in Part {part.part}</div>
@@ -827,11 +829,8 @@ function SidePanel({
               {c.label}
             </div>
           ))
-        ) : (
-          <span style={{ font: "400 13.5px/1.55 var(--font-body)", color: "var(--foreground-muted)" }}>
-            Part 1 is the starting point: one deployable, one live symbol.
-          </span>
-        )}
+        ) : null}
+        <PartChanges part={part} nodeChanges={whatChanged} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       </div>
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.

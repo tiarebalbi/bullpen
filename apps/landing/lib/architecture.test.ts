@@ -1,10 +1,12 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadArchitectureParts, parseArchitecturePart } from "./architecture.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const architectureDir = join(repoRoot, "content", "architecture");
-const plannedDir = join(repoRoot, "architecture", "calm", "planned");
+const calmDir = join(repoRoot, "architecture", "calm");
+const plannedDir = join(calmDir, "planned");
 
 describe("parseArchitecturePart / loadArchitectureParts", () => {
   it("parses all six real content/architecture/part-0N.json files", () => {
@@ -120,5 +122,41 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     const built = parts[1]!.nodes.find((n) => n.id === "google-analytics")!;
     const carried = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
     expect({ ...carried, x: 0, y: 0 }).toEqual({ ...built, x: 0, y: 0, carried: true, builtIn: "part-01" });
+  });
+
+  describe("what each built part changed, derived from its moment and the previous built one", () => {
+    it("gives Part 2 the controls it added to existing nodes and connections, and ADR-0009, and nothing else", () => {
+      const part2 = loadArchitectureParts(architectureDir, plannedDir, calmDir)[1]!;
+      expect(part2.changes?.map((c) => (c.kind === "adr" ? c.adr : `${c.target}: ${c.controls.map((k) => k.key).join(", ")}`))).toEqual([
+        "Bullpen Landing: app-boundaries, explorer-matches-model",
+        "Bullpen Trading App: app-boundaries",
+        "Price Snapshot Service: secret-containment",
+        "Price Snapshot Service → CoinGecko: call-budget, secret-containment",
+        "ADR-0009",
+      ]);
+    });
+
+    it("uses each control's own description from the CALM model, never one written in the loader", () => {
+      const part2 = loadArchitectureParts(architectureDir, plannedDir, calmDir)[1]!;
+      const model = JSON.parse(readFileSync(join(calmDir, "moments", "part-02.architecture.json"), "utf8")) as {
+        nodes: Array<{ "unique-id": string; controls?: Record<string, { description?: string }> }>;
+      };
+      const landing = part2.changes!.find((c) => c.kind === "controls" && c.target === "Bullpen Landing");
+      expect(landing).toBeDefined();
+      for (const control of landing!.kind === "controls" ? landing!.controls : []) {
+        expect(control.description).toBe(model.nodes.find((n) => n["unique-id"] === "landing-app")!.controls![control.key]!.description);
+      }
+    });
+
+    it("does not list the analytics controls, which Part 1 already had", () => {
+      const part2 = loadArchitectureParts(architectureDir, plannedDir, calmDir)[1]!;
+      expect(JSON.stringify(part2.changes)).not.toContain("analytics-consent");
+    });
+
+    it("gives Part 1 and every planned part no changes, and nothing at all without the calm directory", () => {
+      const withCalm = loadArchitectureParts(architectureDir, plannedDir, calmDir);
+      for (const part of withCalm.filter((p) => p.part !== 2)) expect(part.changes).toBeUndefined();
+      for (const part of loadArchitectureParts(architectureDir, plannedDir)) expect(part.changes).toBeUndefined();
+    });
   });
 });

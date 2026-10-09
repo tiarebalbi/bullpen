@@ -41,6 +41,8 @@ export type {
   ArchPartData,
   ArchRequestStep,
   ArchRequestData,
+  ArchChange,
+  ArchControlChange,
 } from "./components/ArchitectureExplorer.js";
 
 export { latestBuiltPart } from "./lib/latestBuiltPart.js";
