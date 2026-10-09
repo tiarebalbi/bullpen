@@ -321,18 +321,20 @@ for (const viewport of [
       await page.goto("/");
     });
 
-    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built from Part 2 on", async ({ page }) => {
+    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 3 on", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
 
       for (let part = 1; part <= 6; part++) {
-        if (part > 1) await scrubber.getByRole("button", { name: `PART ${part}` }).click();
+        await scrubber.getByRole("button", { name: `PART ${part}` }).click();
         await expect(architecture.getByText(`Overview · Part ${part}`)).toBeVisible();
 
         for (const name of ANALYTICS_CARDS) {
           const card = architecture.getByRole("button", { name: new RegExp(`^${name}`) });
           await expect(card, `${name} in Part ${part}`).toHaveCount(1);
-          await expect(card.getByText("Built in Part 1")).toHaveCount(part === 1 ? 0 : 1);
+          // Part 2 is built and has the cards itself; Parts 3 to 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
+          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 3 ? 1 : 0);
+          await expect(card.getByText("Built in Part 2")).toHaveCount(0);
           // Built, not predicted: never ghosted.
           await expect(card.getByText("PLANNED")).toHaveCount(0);
         }
@@ -340,6 +342,19 @@ for (const viewport of [
           await expect(architecture.getByTestId(`rf__edge-${edge}`), `${edge} in Part ${part}`).toHaveCount(1);
         }
       }
+    });
+
+    test("Part 3's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
+      const architecture = page.locator("#architecture");
+      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 3" }).click();
+
+      const card = architecture.getByRole("button", { name: /^Google Analytics 4, External/ });
+      await expect(card.getByText("Built in Part 1")).toBeVisible();
+      await expect(card).toHaveAccessibleName(/built in Part 1/i);
+
+      await card.click();
+      const panel = architecture.getByLabel("Details");
+      await expect(panel.getByText("Built in Part 1; still running in this prediction.")).toBeVisible();
     });
 
     test("what changed in Part 2 lists neither analytics node", async ({ page }) => {
@@ -361,6 +376,7 @@ for (const viewport of [
       await architecture.getByRole("button", { name: /^Google Analytics 4, External/ }).click();
       const panel = architecture.getByLabel("Details");
       await expect(panel.getByText("Built in Part 1; still running in this prediction.")).toBeVisible();
+      await expect(panel.getByText(/Built in Part 2/)).toHaveCount(0);
       await expect(panel.getByText(/Page views and a few events from both apps/)).toBeVisible();
       await expect(panel.getByText("ADR-0010")).toBeVisible();
       await expect(panel.getByText("ADR pending: written before this part ships.")).toHaveCount(0);
