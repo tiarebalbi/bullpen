@@ -99,7 +99,8 @@ export function parseAdr(content: string, filename: string): Adr {
   return {
     id: id!,
     title: title!.trim(),
-    status: sections.get("status")!,
+    // The first line is the status; a later line may clarify the record (ADR-0011) and is not part of it.
+    status: sections.get("status")!.split("\n")[0]!.trim(),
     date: sections.get("date")!,
     summary,
     part,
