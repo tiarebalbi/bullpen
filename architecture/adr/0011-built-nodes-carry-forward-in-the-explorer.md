@@ -4,7 +4,7 @@
 
 Proposed
 
-Clarified 2026-10-09: `builtIn` is where the item was first built, not the moment it is copied from.
+Clarified 2026-10-09: `builtIn` is where the item was first built, and the check enforces both rules.
 
 ## Date
 
@@ -55,8 +55,9 @@ text stays as written. The rule:
   fitness check both use, so no derived data is committed and nothing needs
   regenerating when a part is built.
 - The explorer consistency check, run by `check:arch`, enforces the rule. It
-  accepts a carried item only if it is marked `carried`, names the latest
-  built moment before that part, and exists in that moment's CALM document.
+  accepts a carried item only if it is marked `carried`, exists in the latest
+  built moment before that part, and its `builtIn` is the earliest built
+  moment containing that id.
   Any other node missing from its own moment still fails. It reads each moment
   from the timeline rather than assuming which part is built.
 - A carried card renders as it does in Part 1, with a "Built in Part 1" label,
