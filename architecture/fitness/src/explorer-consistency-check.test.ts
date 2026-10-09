@@ -132,9 +132,42 @@ describe("carried items (ADR-0011)", () => {
     ]);
   });
 
-  it("flags a carried node whose builtIn is not the latest built moment", () => {
+  it("flags a carried node whose builtIn is not the earliest built moment that contains it", () => {
     const explorer: ExplorerPartData = { part: 2, nodes: [{ id: "a" }, { id: "tool", carried: true, builtIn: "part-00" }], edges: [] };
-    expect(whys(checkExplorerConsistency(explorer, PLANNED, BUILT)).some((v) => v.includes("latest built moment"))).toBe(true);
+    expect(whys(checkExplorerConsistency(explorer, PLANNED, BUILT)).some((v) => v.includes('the earliest built moment that contains it is "part-01"'))).toBe(true);
+  });
+
+  describe("with two built moments", () => {
+    const TWO: BuiltMoment[] = [
+      ...BUILT,
+      { momentId: "part-02", part: 2, doc: { nodes: [{ "unique-id": "a" }, { "unique-id": "tool" }, { "unique-id": "later" }], relationships: [{ "unique-id": "a-to-tool" }] } },
+    ];
+    const PART3: CalmDocument = { nodes: [{ "unique-id": "a" }], relationships: [] };
+
+    it("accepts an item carried with the moment that first built it, though it is copied from the latest", () => {
+      const explorer: ExplorerPartData = {
+        part: 3,
+        nodes: [{ id: "a" }, { id: "tool", carried: true, builtIn: "part-01" }, { id: "later", carried: true, builtIn: "part-02" }],
+        edges: [{ id: "a-to-tool", a: "a", b: "tool", carried: true, builtIn: "part-01" }],
+      };
+      expect(checkExplorerConsistency(explorer, PART3, TWO)).toEqual([]);
+    });
+
+    it("flags an item Part 1 already has when it is marked builtIn part-02, and names part-01", () => {
+      const explorer: ExplorerPartData = { part: 3, nodes: [{ id: "a" }, { id: "tool", carried: true, builtIn: "part-02" }], edges: [] };
+      expect(whys(checkExplorerConsistency(explorer, PART3, TWO))).toEqual([
+        'node "tool" is carried with builtIn "part-02", but the earliest built moment that contains it is "part-01" (ADR-0011).',
+      ]);
+    });
+
+    it("flags a carried edge marked with the latest moment when an earlier one built it", () => {
+      const explorer: ExplorerPartData = {
+        part: 3,
+        nodes: [{ id: "a" }, { id: "tool", carried: true, builtIn: "part-01" }],
+        edges: [{ id: "a-to-tool", a: "a", b: "tool", carried: true, builtIn: "part-02" }],
+      };
+      expect(whys(checkExplorerConsistency(explorer, PART3, TWO)).some((v) => v.includes('edge "a-to-tool"') && v.includes('is "part-01"'))).toBe(true);
+    });
   });
 
   it("flags a carried node that this part's own moment names, since the prediction wins", () => {
@@ -166,12 +199,22 @@ describe("checkAllExplorerParts on fixtures", () => {
     expect(violations.some((v) => v.includes('"invented-tool"') && v.includes("does not exist in the built moment"))).toBe(true);
   });
 
+  it("fails a hand-written carried node marked with the moment it was copied from, when an earlier moment first built it", () => {
+    const violations = checkAllExplorerParts(join(fixtures, "explorer-carry-first-built-elsewhere"));
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({ where: "content/architecture/part-03.json" });
+    expect(violations[0]!.why).toBe(
+      'node "tool" is carried with builtIn "part-02", but the earliest built moment that contains it is "part-01" (ADR-0011).',
+    );
+    expectFailureFormat(violations[0]!, "explorer consistency");
+  });
+
   it("leaves a predicted replacement alone once its part is built: planned/part-02 still names what Part 3 replaces", () => {
     const root = join(fixtures, "explorer-carry-built-part2");
     expect(checkAllExplorerParts(root)).toEqual([]);
     const part3 = resolveExplorerParts(root).parts.find((p) => p.part === 3)!;
     // The built Part 2 has old-service and tool. Only tool carries: planned/part-02
     // names old-service, so the prediction for Part 3 (which omits it) stands.
-    expect(part3.nodes.filter((n) => n.carried).map((n) => [n.id, n.builtIn])).toEqual([["tool", "part-02"]]);
+    expect(part3.nodes.filter((n) => n.carried).map((n) => [n.id, n.builtIn])).toEqual([["tool", "part-02"]]); // first built in Part 2
   });
 });

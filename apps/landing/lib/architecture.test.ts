@@ -90,10 +90,10 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     expect(() => parseArchitecturePart(malformed, "test.json")).toThrow(/invalid "kind"/);
   });
 
-  it("carries the built analytics nodes and edges into every planned part, and nothing else", () => {
+  it("carries the built analytics nodes and edges into every planned part (3 to 6), and nothing else", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    expect(parts[0]!.nodes.some((n) => n.carried)).toBe(false);
-    for (const part of parts.slice(1)) {
+    for (const built of parts.slice(0, 2)) expect(built.nodes.some((n) => n.carried)).toBe(false);
+    for (const part of parts.slice(2)) {
       expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["google-analytics", "microsoft-clarity"]);
       expect(part.edges.filter((e) => e.carried).map((e) => e.id).sort()).toEqual([
         "landing-to-google-analytics",
@@ -101,6 +101,7 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
         "trading-app-to-google-analytics",
         "trading-app-to-microsoft-clarity",
       ]);
+      // Copied from Part 2, the latest built moment, but first built in Part 1 (ADR-0010, ADR-0011).
       for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried)) {
         expect(item.builtIn).toBe("part-01");
       }
@@ -114,9 +115,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     }
   });
 
-  it("keeps the carried copy of a node equal to what Part 1 built", () => {
+  it("keeps the carried copy of a node equal to what the latest built moment, Part 2, has, labelled as first built in Part 1", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    const built = parts[0]!.nodes.find((n) => n.id === "google-analytics")!;
+    const built = parts[1]!.nodes.find((n) => n.id === "google-analytics")!;
     const carried = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
     expect({ ...carried, x: 0, y: 0 }).toEqual({ ...built, x: 0, y: 0, carried: true, builtIn: "part-01" });
   });

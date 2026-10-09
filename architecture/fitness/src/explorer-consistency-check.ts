@@ -82,8 +82,9 @@ export interface CalmTimeline {
  *
  * The one exception to "must exist in its own CALM document" is a carried
  * item (ADR-0011): a built item still running in a later, planned part. It is
- * accepted only if it is marked `carried`, names the latest built moment
- * before this part as `builtIn`, exists in that moment's CALM document and is
+ * accepted only if it is marked `carried`, exists in the latest built moment
+ * before this part, names the earliest built moment that contains it as
+ * `builtIn` (where it was first built), and is
  * not itself named by this part's own moment (a prediction would win). A
  * carried relationship also needs both of its ends in this part.
  */
@@ -122,7 +123,7 @@ export function checkExplorerConsistency(
 /** What the per-item checks need to know about the part being checked. */
 interface PartContext {
   part: number;
-  /** The latest built moment before this part: where its carried items come from. */
+  /** The latest built moment before this part: where its carried items are copied from. */
   source: BuiltMoment | undefined;
   builtMoments: readonly BuiltMoment[];
   ownNodeIds: Set<string>;
@@ -130,7 +131,19 @@ interface PartContext {
   explorerNodeIds: Set<string>;
 }
 
-/** Why a carried item is not acceptable, or null when it is. */
+/** The earliest built moment, before this part, whose CALM document contains the item. */
+function firstBuilt(item: ExplorerNode | ExplorerEdge, kind: "node" | "edge", ctx: PartContext): BuiltMoment | undefined {
+  return [...ctx.builtMoments]
+    .filter((m) => m.part < ctx.part && (kind === "node" ? m.doc.nodes : m.doc.relationships).some((x) => x["unique-id"] === item.id))
+    .sort((a, b) => a.part - b.part)[0];
+}
+
+/**
+ * Why a carried item is not acceptable, or null when it is. Both rules hold:
+ * the item exists in the latest built moment before this part (where the
+ * card is copied from), and its `builtIn` is the earliest built moment that
+ * contains it (where it was first built, which the label says).
+ */
 function carriedProblem(
   item: ExplorerNode | ExplorerEdge,
   kind: "node" | "edge",
@@ -139,11 +152,12 @@ function carriedProblem(
   const what = `${kind} "${item.id}"`;
   const { source } = ctx;
   if (!source) return `${what} is carried but there is no built moment before part ${ctx.part} to carry it from`;
-  if (item.builtIn !== source.momentId) {
-    return `${what} is carried with builtIn ${JSON.stringify(item.builtIn)}, but the latest built moment before this part is "${source.momentId}"`;
-  }
   const inSource = (kind === "node" ? source.doc.nodes : source.doc.relationships).some((x) => x["unique-id"] === item.id);
   if (!inSource) return `${what} is carried but does not exist in the built moment "${source.momentId}"`;
+  const first = firstBuilt(item, kind, ctx)!;
+  if (item.builtIn !== first.momentId) {
+    return `${what} is carried with builtIn ${JSON.stringify(item.builtIn)}, but the earliest built moment that contains it is "${first.momentId}"`;
+  }
   const named = kind === "node" ? ctx.ownNodeIds : ctx.ownRelIds;
   if (named.has(item.id)) return `${what} is carried but this part's own CALM document names it (a prediction wins, so it is not carried)`;
   return null;
@@ -151,7 +165,7 @@ function carriedProblem(
 
 const carriedFinding = (problem: string, id: string, where: string): Finding => ({
   why: problem,
-  fix: `Remove "${id}" from ${where}, or make its carried marking match the latest built moment (ADR-0011).`,
+  fix: `Remove "${id}" from ${where}, or make its carried marking match the built moments (ADR-0011).`,
   adr: "ADR-0011",
 });
 

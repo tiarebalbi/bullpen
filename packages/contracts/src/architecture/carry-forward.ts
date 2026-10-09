@@ -5,18 +5,21 @@
  *
  * What was built keeps running unless a prediction says otherwise. A node or
  * relationship of the latest built part carries into each later planned part,
- * marked `carried: true` and `builtIn: "part-0N"`, except where
+ * marked `carried: true`, except where
  *   - that part already has the same id (the prediction wins), or
  *   - any planned moment names the id (the predictions own every id they
  *     name, so a predicted removal or replacement stays one).
  * A carried relationship also needs both of its ends present in that part.
+ * Two ideas stay apart: the item is copied from the latest built part, so the
+ * card shows its current version, while `builtIn` names the earliest built
+ * part that contains the same id, so the label says where it was first built.
  * Nothing is ever written into the planned CALM files.
  */
 
 /** Marks an item that is not part of its own part's prediction but of a built one. */
 export interface CarriedMark {
   carried?: true;
-  /** The moment that built it, as the timeline names it, e.g. "part-01". */
+  /** The earliest built moment that contains the item, as the timeline names it, e.g. "part-01". */
   builtIn?: string;
 }
 
@@ -109,6 +112,14 @@ function place<N extends CarryNode>(carried: N[], own: CarryNode[]): N[] {
   return carried.map((n) => ({ ...n, ...placed.get(n.id)! }));
 }
 
+/** The moment that first built `id`: the earliest built part before `target` whose items include it. */
+function firstBuiltIn(parts: readonly CarryPart[], target: number, kind: "nodes" | "edges", id: string): string {
+  const first = parts
+    .filter((p) => p.status === "built" && p.part < target && p[kind].some((item) => item.id === id))
+    .sort((a, b) => a.part - b.part)[0];
+  return momentIdOfPart(first!.part); // the source part has the id, so there is always one
+}
+
 /**
  * Returns the parts with built items carried into every later planned part.
  * The latest built part before a planned one is its source, so once a later
@@ -126,15 +137,14 @@ export function carryForward<P extends CarryPart>(parts: readonly P[], planned: 
 
     const ownNodeIds = new Set(target.nodes.map((n) => n.id));
     const ownEdgeIds = new Set(target.edges.map((e) => e.id));
-    const builtIn = momentIdOfPart(source.part);
 
     const carriedNodes = source.nodes
       .filter((n) => !ownNodeIds.has(n.id) && !planned.nodes.has(n.id))
-      .map((n) => ({ ...n, carried: true as const, builtIn }));
+      .map((n) => ({ ...n, carried: true as const, builtIn: firstBuiltIn(parts, target.part, "nodes", n.id) }));
     const present = new Set([...ownNodeIds, ...carriedNodes.map((n) => n.id)]);
     const carriedEdges = source.edges
       .filter((e) => !ownEdgeIds.has(e.id) && !planned.edges.has(e.id) && present.has(e.a) && present.has(e.b))
-      .map((e) => ({ ...e, carried: true as const, builtIn }));
+      .map((e) => ({ ...e, carried: true as const, builtIn: firstBuiltIn(parts, target.part, "edges", e.id) }));
 
     if (carriedNodes.length === 0 && carriedEdges.length === 0) return target;
 

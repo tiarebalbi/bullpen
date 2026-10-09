@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {
+      "unique-id": "app"
+    },
+    {
+      "unique-id": "old-service"
+    },
+    {
+      "unique-id": "tool"
+    }
+  ],
+  "relationships": []
+}
