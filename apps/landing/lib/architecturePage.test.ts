@@ -35,7 +35,7 @@ const snapshot = (passing: boolean): RulesSnapshot => ({
 
 function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
   return buildArchitecturePage({
-    parts: loadArchitectureParts(join(repoRoot, "content", "architecture")),
+    parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
     series: loadSeries(join(repoRoot, "content", "series.json")),
     calm: loadCalmDocs(repoRoot),
     adlRules: adl.rules.map((rule) => rule.text),
@@ -142,7 +142,7 @@ describe("buildArchitecturePage, from the real repo", () => {
     it("makes no cache claim for a planned part, and none at all if the route cannot be read", () => {
       expect(page.flows[3]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
       const unread = buildArchitecturePage({
-        parts: loadArchitectureParts(join(repoRoot, "content", "architecture")),
+        parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
         series: loadSeries(join(repoRoot, "content", "series.json")),
         calm: loadCalmDocs(repoRoot),
         adlRules: adl.rules.map((rule) => rule.text),
