@@ -13,7 +13,8 @@ export interface ControlChange {
 }
 
 export type MomentChange =
-  | { kind: "controls"; target: string; controls: ControlChange[] }
+  /** `nodeId` is set for a node and absent for a relationship, so a node's row can be joined with its change in the explorer. */
+  | { kind: "controls"; target: string; nodeId?: string; controls: ControlChange[] }
   | { kind: "adr"; adr: string };
 
 interface Controlled {
@@ -42,13 +43,16 @@ function addedControls(before: Controlled | undefined, after: Controlled): Contr
   return added.map(([key, control]) => (control.description ? { key, description: control.description } : { key }));
 }
 
-function controlChange(target: string, controls: ControlChange[]): MomentChange[] {
-  return controls.length > 0 ? [{ kind: "controls", target, controls }] : [];
+function controlChange(target: string, controls: ControlChange[], nodeId?: string): MomentChange[] {
+  if (controls.length === 0) return [];
+  return [nodeId === undefined ? { kind: "controls", target, controls } : { kind: "controls", target, nodeId, controls }];
 }
 
 function nodeControlChanges(prev: CalmChangeDoc, curr: CalmChangeDoc): MomentChange[] {
   const before = new Map((prev.nodes ?? []).map((n) => [n["unique-id"], n]));
-  return (curr.nodes ?? []).flatMap((node) => controlChange(node.name ?? node["unique-id"], addedControls(before.get(node["unique-id"]), node)));
+  return (curr.nodes ?? []).flatMap((node) =>
+    controlChange(node.name ?? node["unique-id"], addedControls(before.get(node["unique-id"]), node), node["unique-id"]),
+  );
 }
 
 function relationshipControlChanges(prev: CalmChangeDoc, curr: CalmChangeDoc): MomentChange[] {

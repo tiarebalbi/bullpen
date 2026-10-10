@@ -30,8 +30,8 @@ const PART_2: CalmChangeDoc = {
 describe("momentChanges", () => {
   it("lists only the controls a moment added to nodes and relationships that were already there, then its ADRs", () => {
     expect(momentChanges(PART_1, PART_2, ["architecture/adr/0001-stack.md"], ["architecture/adr/0009-guardrails.md"])).toEqual([
-      { kind: "controls", target: "The App", controls: [{ key: "boundaries", description: "Apps never import apps." }] },
-      { kind: "controls", target: "The Service", controls: [{ key: "secrets" }] },
+      { kind: "controls", target: "The App", nodeId: "app", controls: [{ key: "boundaries", description: "Apps never import apps." }] },
+      { kind: "controls", target: "The Service", nodeId: "svc", controls: [{ key: "secrets" }] },
       {
         kind: "controls",
         target: "The Service → The Provider",
@@ -60,7 +60,7 @@ describe("momentChanges", () => {
 
   it("reads a control's key as its name when the model gives no description", () => {
     expect(momentChanges({ nodes: [{ "unique-id": "n" }] }, { nodes: [{ "unique-id": "n", controls: { k: {} } }] }, [], [])).toEqual([
-      { kind: "controls", target: "n", controls: [{ key: "k" }] },
+      { kind: "controls", target: "n", nodeId: "n", controls: [{ key: "k" }] },
     ]);
   });
 });
