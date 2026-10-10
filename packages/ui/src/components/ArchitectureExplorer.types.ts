@@ -56,7 +56,7 @@ export interface ArchControlChange {
 
 /** What a built part added that the node diff cannot show: controls on existing nodes and connections, and its ADRs. */
 export type ArchChange =
-  | { kind: "controls"; target: string; controls: ArchControlChange[] }
+  | { kind: "controls"; target: string; nodeId?: string; controls: ArchControlChange[] }
   | { kind: "adr"; adr: string };
 
 export interface ArchPartData {

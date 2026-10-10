@@ -804,33 +804,11 @@ function SidePanel({
     );
   }
 
-  const whatChanged = diffWhatChanged(before, part);
   return (
     <aside aria-label="Details" style={panelStyle}>
       <div style={smallEyebrow}>What changed in Part {part.part}</div>
       <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
-        {whatChanged.length > 0 ? (
-          whatChanged.map((c) => (
-            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, font: "500 13.5px/1.3 var(--font-body)" }}>
-              <span
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 6,
-                  display: "grid",
-                  placeItems: "center",
-                  background: c.tone === "add" ? "color-mix(in oklch, var(--bp-gain) 16%, transparent)" : c.tone === "remove" ? "color-mix(in oklch, var(--destructive) 12%, transparent)" : "color-mix(in oklch, var(--ember) 16%, transparent)",
-                  color: c.tone === "add" ? "var(--bp-gain)" : c.tone === "remove" ? "var(--destructive)" : "var(--bp-accent-text)",
-                  font: "700 12px/1 var(--font-mono)",
-                }}
-              >
-                {c.tone === "add" ? "+" : c.tone === "remove" ? "−" : "~"}
-              </span>
-              {c.label}
-            </div>
-          ))
-        ) : null}
-        <PartChanges part={part} nodeChanges={whatChanged} adrTitles={adrTitles} adrHrefs={adrHrefs} />
+        <PartChanges part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       </div>
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
@@ -845,24 +823,6 @@ const smallEyebrow: CSSProperties = {
   textTransform: "uppercase",
   color: "var(--foreground-muted)",
 };
-
-function diffWhatChanged(prev: ArchPartData, curr: ArchPartData): Array<{ id: string; label: string; tone: "add" | "remove" | "change" }> {
-  if (prev.part === curr.part) return [];
-  const prevIds = new Map(prev.nodes.map((n) => [n.id, n]));
-  const currIds = new Set(curr.nodes.map((n) => n.id));
-  const out: Array<{ id: string; label: string; tone: "add" | "remove" | "change" }> = [];
-  for (const n of curr.nodes) {
-    if (!prevIds.has(n.id)) out.push({ id: n.id, label: n.label, tone: "add" });
-    else {
-      const p = prevIds.get(n.id)!;
-      if (p.purpose !== n.purpose || p.meta !== n.meta) out.push({ id: n.id, label: n.label, tone: "change" });
-    }
-  }
-  for (const n of prev.nodes) {
-    if (!currIds.has(n.id)) out.push({ id: n.id, label: n.label, tone: "remove" });
-  }
-  return out;
-}
 
 function FollowRequestBar({
   requestName,

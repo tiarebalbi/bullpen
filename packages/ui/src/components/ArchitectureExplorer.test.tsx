@@ -109,57 +109,151 @@ describe("ArchitectureExplorer", () => {
     expect(screen.getByText(/Part 1 is the starting point/)).toBeInTheDocument();
   });
 
-  describe("the 'what changed' panel of a built part whose nodes did not change", () => {
+  describe("the 'what changed' panel of a built part whose nodes were not added or removed", () => {
+    const REWORDED_NODES = PART_1.nodes.map((n) => (n.id === "landing-app" ? { ...n, purpose: "The public site, now with an architecture page." } : n));
     const PART_2_BUILT: ArchPartData = {
       ...PART_2,
       status: "built",
       summary: "The same apps, with the rules now failing a build.",
+      nodes: REWORDED_NODES,
       changes: [
-        { kind: "controls", target: "Bullpen Landing", controls: [{ key: "app-boundaries", description: "An app never depends on another app." }, { key: "bare-control" }] },
+        { kind: "controls", target: "Bullpen Landing", nodeId: "landing-app", controls: [{ key: "app-boundaries", description: "An app never depends on another app." }, { key: "bare-control" }] },
+        { kind: "controls", target: "Reader", nodeId: "reader", controls: [{ key: "reader-rule", description: "Only a reader's rule." }] },
         { kind: "controls", target: "Price Snapshot Service → CoinGecko", controls: [{ key: "call-budget", description: "Calls stay in the allowance." }] },
         { kind: "adr", adr: "ADR-0009" },
       ],
     };
     const adrTitles = { "ADR-0009": "Guardrails enforced, not requested" };
     const adrHrefs = { "ADR-0009": "#adr-0009" };
+    const renderPart2 = (part: ArchPartData = PART_2_BUILT) => {
+      installMatchMedia();
+      render(<ArchitectureExplorer parts={[PART_1, part]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+      return within(screen.getByLabelText("Details"));
+    };
 
     it("never shows Part 1's starting-point text, and says plainly that no service or connection was added or removed", () => {
-      installMatchMedia();
-      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
-
-      expect(screen.getByText("What changed in Part 2")).toBeInTheDocument();
-      expect(screen.queryByText(/starting point/)).not.toBeInTheDocument();
-      expect(screen.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeInTheDocument();
+      const panel = renderPart2();
+      expect(panel.getByText("What changed in Part 2")).toBeInTheDocument();
+      expect(panel.queryByText(/starting point/)).not.toBeInTheDocument();
+      expect(panel.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeInTheDocument();
     });
 
-    it("lists each control's description from the model with its key beneath, or the key alone when it has none", () => {
+    it("lists the panel in order: node changes, the intro line, the control rows, then the ADR row", () => {
+      const tool = { id: "tool", label: "Metrics Tool", kind: "service" as const, meta: "Service", purpose: "Counts things.", x: 0, y: 320 };
+      const before: ArchPartData = { ...PART_1, nodes: [...PART_1.nodes, tool] };
+      const after: ArchPartData = { ...PART_2_BUILT, nodes: [...REWORDED_NODES, { ...tool, purpose: "Counts and reports things." }] };
       installMatchMedia();
-      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+      render(<ArchitectureExplorer parts={[before, after]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+      const text = screen.getByLabelText("Details").textContent ?? "";
+      const at = (needle: string) => text.indexOf(needle);
 
-      const panel = within(screen.getByLabelText("Details"));
-      expect(panel.getByText("Bullpen Landing")).toBeInTheDocument();
-      expect(panel.getByText("An app never depends on another app.")).toBeInTheDocument();
-      expect(panel.getByText("app-boundaries")).toBeInTheDocument();
-      expect(panel.getByText("Price Snapshot Service → CoinGecko")).toBeInTheDocument();
-      expect(panel.getByText("Calls stay in the allowance.")).toBeInTheDocument();
-      // No description: the key is the text, shown once, with no second line.
-      expect(panel.getAllByText("bare-control")).toHaveLength(1);
+      expect(at("Metrics Tool")).toBeGreaterThan(-1);
+      expect(at("Metrics Tool")).toBeLessThan(at("No services or connections"));
+      expect(at("No services or connections")).toBeLessThan(at("Bullpen Landing"));
+      expect(at("Bullpen Landing")).toBeLessThan(at("ADR-0009"));
+    });
+
+    it("shows a changed node once, with the ~ marker and its chips, not a second '+' row", () => {
+      const panel = renderPart2();
+      expect(panel.getAllByText("Bullpen Landing")).toHaveLength(1);
+      expect(panel.getByRole("button", { name: "App boundaries" })).toBeInTheDocument();
+      expect(panel.getByRole("button", { name: "Bare control" })).toBeInTheDocument();
+      expect(panel.getAllByText("~").length).toBeGreaterThan(0);
+    });
+
+    it("gives a node that only gained controls no ~ row", () => {
+      const controlsOnly: ArchPartData = { ...PART_2_BUILT, nodes: PART_1.nodes };
+      const panel = renderPart2(controlsOnly);
+      expect(panel.queryByText("~")).not.toBeInTheDocument();
+      expect(panel.getByRole("button", { name: "App boundaries" })).toBeInTheDocument();
+    });
+
+    it("shows no description inline: it is in a popover that stays hidden until its chip is pressed", () => {
+      const panel = renderPart2();
+      expect(panel.getByRole("button", { name: "App boundaries" })).toHaveAttribute("aria-expanded", "false");
+      expect(panel.getByText("An app never depends on another app.")).not.toBeVisible();
+    });
+
+    it("opens a labelled popover with the model's description and the key, wired by aria-controls", () => {
+      const panel = renderPart2();
+      const chip = panel.getByRole("button", { name: "App boundaries" });
+      fireEvent.click(chip);
+
+      expect(chip).toHaveAttribute("aria-expanded", "true");
+      const popover = panel.getByRole("region", { name: "App boundaries" });
+      expect(chip.getAttribute("aria-controls")).toBe(popover.id);
+      expect(popover).toBeVisible();
+      expect(within(popover).getByText("An app never depends on another app.")).toBeVisible();
+      expect(within(popover).getByText("app-boundaries")).toBeVisible();
+    });
+
+    it("shows only the key in the popover when the model gives no description", () => {
+      const panel = renderPart2();
+      fireEvent.click(panel.getByRole("button", { name: "Bare control" }));
+      const popover = panel.getByRole("region", { name: "Bare control" });
+      expect(popover).toBeVisible();
+      expect(within(popover).getByText("bare-control")).toBeVisible();
+    });
+
+    it("closes on Esc and gives focus back to the chip", () => {
+      const panel = renderPart2();
+      const chip = panel.getByRole("button", { name: "App boundaries" });
+      chip.focus();
+      fireEvent.click(chip);
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(chip).toHaveAttribute("aria-expanded", "false");
+      expect(panel.getAllByRole("region", { hidden: true }).every((popover) => !popover.matches(":not([hidden])"))).toBe(true);
+      expect(document.activeElement).toBe(chip);
+    });
+
+    it("closes on a pointer press outside, and stays open for a press inside the popover", () => {
+      const panel = renderPart2();
+      const chip = panel.getByRole("button", { name: "App boundaries" });
+      fireEvent.click(chip);
+
+      fireEvent.pointerDown(panel.getByText("An app never depends on another app."));
+      expect(chip).toHaveAttribute("aria-expanded", "true");
+      fireEvent.pointerDown(document.body);
+      expect(chip).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("keeps one popover open at a time: opening a second chip closes the first", () => {
+      const panel = renderPart2();
+      const first = panel.getByRole("button", { name: "App boundaries" });
+      const second = panel.getByRole("button", { name: "Call budget" });
+      fireEvent.click(first);
+      fireEvent.click(second);
+
+      expect(first).toHaveAttribute("aria-expanded", "false");
+      expect(second).toHaveAttribute("aria-expanded", "true");
+      expect(panel.getAllByRole("region").filter((el) => el.hidden === false)).toHaveLength(1);
+    });
+
+    it("closes the popover when its chip is pressed again", () => {
+      const panel = renderPart2();
+      const chip = panel.getByRole("button", { name: "App boundaries" });
+      fireEvent.click(chip);
+      fireEvent.click(chip);
+      expect(chip).toHaveAttribute("aria-expanded", "false");
     });
 
     it("reads an ADR row as 'ADR-0009 — its title' and links it like the other ADR rows", () => {
-      installMatchMedia();
-      render(<ArchitectureExplorer parts={[PART_1, PART_2_BUILT]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
-
-      const row = screen.getByRole("link", { name: "ADR-0009 — Guardrails enforced, not requested" });
+      const row = renderPart2().getByRole("link", { name: "ADR-0009 — Guardrails enforced, not requested" });
       expect(row).toHaveAttribute("href", "#adr-0009");
     });
 
     it("says only that nothing was added or removed when the moment added no controls or ADRs", () => {
-      installMatchMedia();
-      render(<ArchitectureExplorer parts={[PART_1, { ...PART_2_BUILT, changes: undefined }]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
+      const panel = renderPart2({ ...PART_2_BUILT, nodes: PART_1.nodes, changes: undefined });
+      expect(panel.getByText("No services or connections were added or removed in Part 2.")).toBeInTheDocument();
+      expect(panel.queryByText(/starting point/)).not.toBeInTheDocument();
+    });
 
-      expect(screen.getByText("No services or connections were added or removed in Part 2.")).toBeInTheDocument();
-      expect(screen.queryByText(/starting point/)).not.toBeInTheDocument();
+    it("leaves the intro out when a service was added, since the node diff says it", () => {
+      const added: ArchPartData = { ...PART_2_BUILT, nodes: [...PART_1.nodes, { id: "extra", label: "Extra", kind: "service", meta: "New", purpose: "New in Part 2.", x: 0, y: 320 }] };
+      const panel = renderPart2(added);
+      expect(panel.getByText("Extra")).toBeInTheDocument();
+      expect(panel.queryByText(/No services or connections/)).not.toBeInTheDocument();
     });
 
     it("compares with the part before, not the part the visitor came from: Part 2 reads the same after Part 3, and Part 1 after Part 2", () => {
@@ -182,24 +276,6 @@ describe("ArchitectureExplorer", () => {
 
       fireEvent.keyDown(scrubber, { key: "ArrowLeft" });
       expect(within(screen.getByLabelText("Details")).getByText(/Part 1 is the starting point/)).toBeInTheDocument();
-    });
-
-    it("still shows the cards whose description changed, then the intro, since none was added or removed", () => {
-      installMatchMedia();
-      const reworded: ArchPartData = { ...PART_2_BUILT, nodes: PART_1.nodes.map((n) => ({ ...n, purpose: "Reworded in Part 2." })) };
-      render(<ArchitectureExplorer parts={[PART_1, reworded]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
-
-      const panel = within(screen.getByLabelText("Details"));
-      expect(panel.getByText("Reader")).toBeInTheDocument();
-      expect(panel.getByText("No services or connections were added or removed in Part 2. What changed are the rules around them:")).toBeInTheDocument();
-    });
-
-    it("leaves the intro out when a service was added, since the node diff says it", () => {
-      installMatchMedia();
-      const added: ArchPartData = { ...PART_2_BUILT, nodes: [...PART_1.nodes, { id: "extra", label: "Extra", kind: "service", meta: "New", purpose: "New in Part 2.", x: 0, y: 320 }] };
-      render(<ArchitectureExplorer parts={[PART_1, added]} adrTitles={adrTitles} adrHrefs={adrHrefs} />);
-
-      expect(within(screen.getByLabelText("Details")).queryByText(/No services or connections/)).not.toBeInTheDocument();
     });
 
     it("keeps the starting-point text for Part 1 only", () => {
