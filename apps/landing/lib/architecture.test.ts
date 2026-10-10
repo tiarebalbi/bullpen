@@ -136,6 +136,16 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
       ]);
     });
 
+    it("names the node a change belongs to by its id, and leaves a connection's change without one", () => {
+      const changes = loadArchitectureParts(architectureDir, plannedDir, calmDir)[1]!.changes!.filter((c) => c.kind === "controls");
+      expect(changes.map((c) => [c.target, c.nodeId])).toEqual([
+        ["Bullpen Landing", "landing-app"],
+        ["Bullpen Trading App", "trading-app"],
+        ["Price Snapshot Service", "price-snapshot-service"],
+        ["Price Snapshot Service → CoinGecko", undefined],
+      ]);
+    });
+
     it("uses each control's own description from the CALM model, never one written in the loader", () => {
       const part2 = loadArchitectureParts(architectureDir, plannedDir, calmDir)[1]!;
       const model = JSON.parse(readFileSync(join(calmDir, "moments", "part-02.architecture.json"), "utf8")) as {
