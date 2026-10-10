@@ -384,7 +384,7 @@ for (const viewport of [
 
       await card.click();
       const panel = architecture.getByLabel("Details");
-      await expect(panel.getByText("Built in Part 1; still running in this prediction.")).toBeVisible();
+      await expect(panel.getByText("Built in Part 1; still running in this plan.")).toBeVisible();
     });
 
     test("what changed in Part 2 lists neither analytics node", async ({ page }) => {
@@ -405,7 +405,7 @@ for (const viewport of [
 
       await architecture.getByRole("button", { name: /^Google Analytics 4, External/ }).click();
       const panel = architecture.getByLabel("Details");
-      await expect(panel.getByText("Built in Part 1; still running in this prediction.")).toBeVisible();
+      await expect(panel.getByText("Built in Part 1; still running in this plan.")).toBeVisible();
       await expect(panel.getByText(/Built in Part 2/)).toHaveCount(0);
       await expect(panel.getByText(/Page views and a few events from both apps/)).toBeVisible();
       await expect(panel.getByText("ADR-0010")).toBeVisible();
