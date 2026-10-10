@@ -420,6 +420,21 @@ for (const viewport of [
 test.describe("What changed in Part 2 fits its panel at 1440x900", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
+  test("every popover stays inside the panel's width", async ({ page }) => {
+    const panel = await openPart2Panel(page);
+    const panelBox = (await panel.boundingBox())!;
+    for (const name of CHIPS) {
+      const chips = panel.getByRole("button", { name });
+      for (let i = 0; i < (await chips.count()); i++) {
+        await chips.nth(i).click();
+        const box = (await page.getByRole("region", { name }).boundingBox())!;
+        expect(box.x, `${name} left`).toBeGreaterThanOrEqual(panelBox.x);
+        expect(box.x + box.width, `${name} right`).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+        await page.keyboard.press("Escape");
+      }
+    }
+  });
+
   test("with the banner dismissed, the panel's content fits within its height, and the panel within the viewport", async ({ page }) => {
     const panel = await openPart2Panel(page);
     const metrics = await panel.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, height: el.getBoundingClientRect().height }));

@@ -805,7 +805,7 @@ function SidePanel({
   }
 
   return (
-    <aside aria-label="Details" style={panelStyle}>
+    <aside aria-label="Details" data-popover-bounds style={panelStyle}>
       <div style={smallEyebrow}>What changed in Part {part.part}</div>
       <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
         <PartChanges part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />

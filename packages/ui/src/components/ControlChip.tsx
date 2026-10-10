@@ -16,17 +16,28 @@ export interface Placement {
   top: number;
 }
 
+/** The popover's width: its own 320px, or less where the viewport or the panel it sits in is narrower. */
+export function popoverWidth(viewportWidth: number, within?: { left: number; right: number }): number {
+  const room = within ? within.right - within.left : Infinity;
+  return Math.max(0, Math.min(POPOVER_WIDTH, viewportWidth - MARGIN * 2, room - MARGIN * 2));
+}
+
 /**
  * Where a popover goes, in viewport coordinates: under its chip when it fits,
  * above when it only fits there, and always inside the viewport. The left edge
- * follows the chip, clamped so the whole popover stays on screen.
+ * follows the chip. It is kept inside `within` (the panel the chip sits in)
+ * when the popover fits there, and inside the viewport otherwise.
  */
 export function placePopover(
   anchor: { left: number; top: number; bottom: number },
   size: { width: number; height: number },
   viewport: { width: number; height: number },
+  within?: { left: number; right: number },
 ): Placement {
-  const left = Math.min(Math.max(anchor.left, MARGIN), Math.max(MARGIN, viewport.width - size.width - MARGIN));
+  const fromViewport = { min: MARGIN, max: Math.max(MARGIN, viewport.width - size.width - MARGIN) };
+  const fromPanel = within ? { min: Math.max(MARGIN, within.left + MARGIN), max: Math.min(fromViewport.max, within.right - size.width - MARGIN) } : fromViewport;
+  const range = fromPanel.max >= fromPanel.min ? fromPanel : fromViewport;
+  const left = Math.min(Math.max(anchor.left, range.min), range.max);
   const below = anchor.bottom + GAP;
   const above = anchor.top - GAP - size.height;
   const fitsBelow = below + size.height <= viewport.height - MARGIN;
@@ -60,6 +71,12 @@ const POPOVER_STYLE: CSSProperties = {
 
 type ElementRef<T extends HTMLElement> = { current: T | null };
 
+/** Gives the popover its width and returns the height it then has: the text wraps to the width, so the width comes first. */
+function heightAtWidth(element: HTMLElement, width: number): number {
+  element.style.width = `${width}px`;
+  return element.offsetHeight;
+}
+
 /** While `open`: Esc closes and gives focus back to the chip, and a press outside the chip and the popover closes. */
 function useDismiss(open: boolean, onOpenChange: (open: boolean) => void, button: ElementRef<HTMLButtonElement>, popover: ElementRef<HTMLDivElement>): void {
   useEffect(() => {
@@ -83,14 +100,16 @@ function useDismiss(open: boolean, onOpenChange: (open: boolean) => void, button
 }
 
 /** Where the open popover goes, kept inside the viewport as it resizes or scrolls; null while closed. */
-function usePlacement(open: boolean, button: ElementRef<HTMLButtonElement>, popover: ElementRef<HTMLDivElement>): Placement | null {
-  const [placement, setPlacement] = useState<Placement | null>(null);
+function usePlacement(open: boolean, button: ElementRef<HTMLButtonElement>, popover: ElementRef<HTMLDivElement>): (Placement & { width: number }) | null {
+  const [placement, setPlacement] = useState<(Placement & { width: number }) | null>(null);
   useLayoutEffect(() => {
     if (!open || !button.current || !popover.current) return;
     const place = (): void => {
       const anchor = button.current!.getBoundingClientRect();
-      const size = { width: popover.current!.offsetWidth, height: popover.current!.offsetHeight };
-      setPlacement(placePopover(anchor, size, { width: window.innerWidth, height: window.innerHeight }));
+      const panel = button.current!.closest("[data-popover-bounds]")?.getBoundingClientRect();
+      const width = popoverWidth(window.innerWidth, panel);
+      const size = { width, height: heightAtWidth(popover.current!, width) };
+      setPlacement({ ...placePopover(anchor, size, { width: window.innerWidth, height: window.innerHeight }, panel), width });
     };
     place();
     window.addEventListener("resize", place);
@@ -142,7 +161,13 @@ export function ControlChip({
         role="region"
         aria-label={label}
         hidden={!open}
-        style={{ ...POPOVER_STYLE, left: placement?.left ?? 0, top: placement?.top ?? 0, visibility: placement ? "visible" : "hidden" }}
+        style={{
+          ...POPOVER_STYLE,
+          ...(placement ? { width: placement.width } : {}),
+          left: placement?.left ?? 0,
+          top: placement?.top ?? 0,
+          visibility: placement ? "visible" : "hidden",
+        }}
       >
         {control.description ? <div>{control.description}</div> : null}
         <code style={{ display: "block", marginTop: control.description ? 8 : 0, font: "500 11px/1.4 var(--font-mono)", color: "var(--foreground-muted)" }}>

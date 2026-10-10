@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { controlLabel, placePopover } from "./ControlChip.js";
+import { controlLabel, placePopover, popoverWidth } from "./ControlChip.js";
 import { diffWhatChanged } from "./ArchitectureExplorerChanges.js";
 import type { ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
@@ -10,6 +10,16 @@ describe("controlLabel", () => {
     expect(controlLabel("call-budget")).toBe("Call budget");
     expect(controlLabel("secret_containment")).toBe("Secret containment");
     expect(controlLabel("analytics")).toBe("Analytics");
+  });
+});
+
+describe("popoverWidth", () => {
+  it("is 320px where there is room, and narrower in a narrow viewport or panel", () => {
+    expect(popoverWidth(1440)).toBe(320);
+    expect(popoverWidth(1440, { left: 0, right: 1000 })).toBe(320);
+    expect(popoverWidth(300)).toBe(284);
+    expect(popoverWidth(1440, { left: 977, right: 1297 })).toBe(304);
+    expect(popoverWidth(390, { left: 32, right: 358 })).toBe(310);
   });
 });
 
@@ -41,6 +51,28 @@ describe("placePopover", () => {
     const { top } = placePopover({ left: 40, top: 60, bottom: 86 }, { width: 320, height: 800 }, viewport);
     expect(top).toBeGreaterThanOrEqual(8);
     expect(top + 800).toBeLessThanOrEqual(viewport.height + 8);
+  });
+
+  it("stays inside the panel the chip sits in when the popover fits there", () => {
+    const panel = { left: 977, right: 1295 };
+    const { left } = placePopover({ left: 1135, top: 360, bottom: 380 }, { width: 300, height: 90 }, { width: 1440, height: 900 }, panel);
+    expect(left).toBe(1295 - 300 - 8);
+    expect(left).toBeGreaterThanOrEqual(panel.left);
+  });
+
+  it("sits fully inside a panel it was sized to", () => {
+    const panel = { left: 977, right: 1297 };
+    const width = popoverWidth(1440, panel);
+    const { left } = placePopover({ left: 1135, top: 360, bottom: 380 }, { width, height: 90 }, { width: 1440, height: 900 }, panel);
+    expect(left).toBeGreaterThanOrEqual(panel.left);
+    expect(left + width).toBeLessThanOrEqual(panel.right);
+  });
+
+  it("falls back to the viewport when the popover is wider than the panel allows", () => {
+    const panel = { left: 32, right: 358 };
+    const { left } = placePopover({ left: 100, top: 360, bottom: 380 }, { width: 320, height: 90 }, { width: 390, height: 844 }, panel);
+    expect(left).toBeGreaterThanOrEqual(8);
+    expect(left + 320).toBeLessThanOrEqual(390 - 8);
   });
 
   it("fits a viewport narrower than the popover's own width", () => {
