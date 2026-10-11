@@ -2,6 +2,7 @@
   {
     "part": 1,
     "title": "Why distribute at all",
+    "headline": "When to Use Microservices in 2026: Scaling Alone Is No Longer the Reason",
     "status": "published",
     "url": "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
     "date": "2026-10-04",
@@ -10,6 +11,7 @@
   {
     "part": 2,
     "title": "Architecture as code",
+    "headline": "Architecture as Code Has Three Jobs: Describe, Govern, Remember",
     "status": "published",
     "url": "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
     "date": "2026-10-11",

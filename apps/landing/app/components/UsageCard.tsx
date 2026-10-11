@@ -18,9 +18,9 @@ export function UsageCard({ allowances, usage }: { allowances: AllowanceEntry[];
   return (
     <section id="cost-usage" className="bp-bento__card" aria-labelledby="cost-usage-heading">
       <div className="bp-bento__head">
-        <h2 id="cost-usage-heading" className="bp-eyebrow bp-eyebrow--heading">
+        <p id="cost-usage-heading" className="bp-eyebrow bp-eyebrow--heading">
           Free-tier usage
-        </h2>
+        </p>
         <span className="bp-bento__meta">
           {usage.week} · {usage.period.start} – {usage.period.end} · {usage.status}
         </span>

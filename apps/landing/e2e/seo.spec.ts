@@ -33,7 +33,7 @@ test.describe("SEO metadata", () => {
 
     expect(html).toContain("<title>Bullpen: Architecting Software in 2026, Built in Public</title>");
     expect(html).toMatch(/<meta name="description" content="Bullpen is a paper-trading league/);
-    expect(html).toContain(`<link rel="canonical" href="https://${PRODUCTION_HOST}"`);
+    expect(html).toContain(`<link rel="canonical" href="https://${PRODUCTION_HOST}/"`);
     expect(html).toContain('<meta property="og:type" content="website"');
     expect(html).toContain('<meta property="og:site_name" content="Bullpen"');
     expect(html).toContain('<meta property="og:locale" content="en_US"');
@@ -106,13 +106,13 @@ test.describe("SEO metadata", () => {
     expect(series.hasPart).toEqual([
       {
         "@type": "BlogPosting",
-        headline: "Why distribute at all",
+        headline: "When to Use Microservices in 2026: Scaling Alone Is No Longer the Reason",
         url: "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026",
         datePublished: "2026-10-04",
       },
       {
         "@type": "BlogPosting",
-        headline: "Architecture as code",
+        headline: "Architecture as Code Has Three Jobs: Describe, Govern, Remember",
         url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
         datePublished: "2026-10-11",
       },
