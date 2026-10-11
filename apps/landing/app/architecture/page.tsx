@@ -14,6 +14,7 @@ import { loadLatestRulesSnapshot } from "../../lib/rulesSnapshot.js";
 import { buildRulesTabData } from "../../lib/rulesView.js";
 import { loadSeries } from "../../lib/series.js";
 import { Footer } from "../components/Footer.js";
+import { JsonLd } from "../components/JsonLd.js";
 import { Nav } from "../components/Nav.js";
 import { ArchitectureApp } from "./ArchitectureApp.js";
 
@@ -59,6 +60,7 @@ export default function ArchitecturePage(): ReactNode {
 
   return (
     <>
+      <JsonLd page="architecture" parts={series} />
       <Nav onArchitecturePage />
       <main>
         <ArchitectureApp

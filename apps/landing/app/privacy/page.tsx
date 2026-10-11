@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Footer } from "../components/Footer.js";
+import { JsonLd } from "../components/JsonLd.js";
+import { PRIVACY_UPDATED, formatLongDate } from "../lib/contentDates.js";
 
 const TITLE = "Privacy: what Bullpen collects, and why";
 const DESCRIPTION =
@@ -46,6 +48,7 @@ const COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: stri
 export default function PrivacyPage(): ReactNode {
   return (
     <>
+      <JsonLd page="privacy" parts={[]} />
       <header className="bp-nav">
         <div className="bp-nav__brand">
           <Link href="/" className="bp-nav__wordmark bp-nav__wordmark--link">
@@ -70,7 +73,7 @@ export default function PrivacyPage(): ReactNode {
             about you by name. If you accept, two analytics tools measure how the site is used. If you
             don&rsquo;t, they never load.
           </p>
-          <p className="bp-privacy__updated">Last updated 1 October 2026</p>
+          <p className="bp-privacy__updated">Last updated {formatLongDate(PRIVACY_UPDATED)}</p>
         </div>
 
         <div className="bp-privacy__body">

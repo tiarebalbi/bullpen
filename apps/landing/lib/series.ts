@@ -5,6 +5,11 @@ export type SeriesStatus = "published" | "next" | "planned";
 export interface SeriesPart {
   part: number;
   title: string;
+  /**
+   * The post's real headline, when it differs from the short card `title`.
+   * Optional: JSON-LD uses it for `hasPart` and falls back to `title`.
+   */
+  headline?: string;
   status: SeriesStatus;
   url: string;
   /**
@@ -58,11 +63,17 @@ export function parseSeries(content: string, sourceLabel = "content/series.json"
   return parts;
 }
 
+function checkHeadline(headline: unknown, where: string): asserts headline is string | undefined {
+  if (headline !== undefined && (typeof headline !== "string" || headline.trim().length === 0)) {
+    throw new Error(`${where} has an invalid "headline" (expected a non-empty string when present)`);
+  }
+}
+
 function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string): SeriesPart {
   if (typeof entry !== "object" || entry === null) {
     throw new Error(`${sourceLabel}: entry ${index} is not an object`);
   }
-  const { part, title, status, url, introduced, date } = entry as Record<string, unknown>;
+  const { part, title, headline, status, url, introduced, date } = entry as Record<string, unknown>;
 
   if (typeof part !== "number" || !Number.isInteger(part) || part < 1 || part > 6) {
     throw new Error(
@@ -77,6 +88,7 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
       `${sourceLabel}: entry ${index} (part ${part}) has a "title" of ${title.length} characters, over the ${TITLE_MAX_LENGTH}-character card budget: ${JSON.stringify(title)}`,
     );
   }
+  checkHeadline(headline, `${sourceLabel}: entry ${index} (part ${part})`);
   if (typeof status !== "string" || !VALID_STATUS.has(status)) {
     throw new Error(
       `${sourceLabel}: entry ${index} (part ${part}) has an invalid "status" (expected "published", "next" or "planned", got ${JSON.stringify(status)})`,
@@ -111,7 +123,7 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
     throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is "${status}" but has a "url" and "date" -- only a published part has them`);
   }
 
-  return { part, title, status: status as SeriesStatus, url, introduced, date: date as string | null };
+  return { part, title, ...(headline === undefined ? {} : { headline }), status: status as SeriesStatus, url, introduced, date: date as string | null };
 }
 
 /**
