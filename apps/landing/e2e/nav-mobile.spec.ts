@@ -49,7 +49,7 @@ test.describe("nav at 390px", () => {
     await page.goto("/");
 
     await expect(page.locator(".bp-nav .bp-nav__cta")).toBeHidden();
-    await expect(page.locator(".bp-hero__ctas").getByText("League opens in Part 3")).toBeVisible();
+    await expect(page.locator(".bp-hero__ctas").getByText("See the six-part plan")).toBeVisible();
   });
 });
 

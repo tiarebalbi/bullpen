@@ -98,7 +98,7 @@ export function Nav({ onArchitecturePage = false }: { onArchitecturePage?: boole
         <span aria-hidden="true" className="bp-nav__toggle-icon" />
       </button>
       <LinkButton href={onArchitecturePage ? "/#series" : "#series"} className="bp-nav__cta">
-        League opens in Part 3
+        See the six-part plan
       </LinkButton>
     </header>
   );
