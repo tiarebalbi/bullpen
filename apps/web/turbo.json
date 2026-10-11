@@ -1,1 +1,1 @@
-{ "extends": ["//"], "tags": ["app"] }
+{ "extends": ["//"], "tags": ["trading-app"] }

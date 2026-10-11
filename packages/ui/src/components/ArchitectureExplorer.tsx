@@ -10,20 +10,35 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { latestBuiltPart } from "../lib/latestBuiltPart.js";
+import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
+import { PartChanges, partBefore } from "./ArchitectureExplorerChanges.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
 import type { ArchGroupData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
-export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData } from "./ArchitectureExplorer.types.js";
+export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange } from "./ArchitectureExplorer.types.js";
 
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
   parts: ArchPartData[];
+  /** Opens on this part. Without it, the explorer opens on the latest part whose status is "built". */
   initialPart?: number;
+  /**
+   * Controlled part. When set, the explorer follows it instead of its own
+   * state and reports every change through `onPartChange`, so a page can
+   * share one moment scrubber across several views.
+   */
+  part?: number;
+  onPartChange?: (part: number) => void;
+  /** Hide the explorer's own moment scrubber, for a page that renders one of its own. */
+  hideScrubber?: boolean;
+  /** Start with this node selected (for a link that arrives from another view). */
+  initialSelectedId?: string;
   /** Real ADR titles keyed by id (e.g. { "ADR-0001": "Stack" }), for the side panel. */
   adrTitles: Record<string, string>;
   /** hrefs for each ADR id, e.g. for a deep link into the Decisions section/modal. */
@@ -71,22 +86,14 @@ export function ArchitectureExplorer(props: ArchitectureExplorerProps): ReactNod
   );
 }
 
-function ArchitectureExplorerInner({
-  parts,
-  initialPart = 1,
-  adrTitles,
-  adrHrefs,
-  onPartMoved,
-  className,
-}: ArchitectureExplorerProps): ReactNode {
+function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode {
+  const { parts, initialPart = latestBuiltPart(parts), part: controlledPart, onPartChange, hideScrubber, initialSelectedId, adrTitles, adrHrefs, onPartMoved, className } = props;
   const reduced = useReducedMotion();
   const { fitView } = useReactFlow();
   const partsById = useMemo(() => new Map(parts.map((p) => [p.part, p])), [parts]);
   const maxPart = parts.length;
 
-  const [part, setPart] = useState(initialPart);
-  const [prevPart, setPrevPart] = useState(initialPart);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
@@ -96,12 +103,23 @@ function ArchitectureExplorerInner({
     idx: 0,
     playing: false,
   });
-  const [settling, setSettling] = useState(false);
+
+  const { part, prevPart, settling, requestPart } = useControllablePart({
+    controlledPart,
+    onPartChange,
+    initialPart,
+    reduced,
+    exitMs: REMOVE_ANIM_MS,
+    // Leaving a part ends its playback, and drops a selection that part does not have.
+    onArrive: (next) => {
+      setRequest({ on: false, idx: 0, playing: false });
+      setSelectedId((id) => (id && partsById.get(next)?.nodes.some((n) => n.id === id) ? id : null));
+    },
+  });
 
   const current = partsById.get(part) ?? parts[0]!;
   const previous = partsById.get(prevPart) ?? current;
 
-  const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrubTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const requestTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const partRef = useRef(part);
@@ -113,25 +131,13 @@ function ArchitectureExplorerInner({
   const goToPart = useCallback(
     (next: number) => {
       const clamped = Math.max(1, Math.min(maxPart, next));
-      if (clamped === part) return;
-      setPrevPart(part);
-      setPart(clamped);
-      setSelectedId((id) => {
-        const stillExists = id ? partsById.get(clamped)?.nodes.some((n) => n.id === id) : false;
-        return stillExists ? id : null;
-      });
-      setRequest({ on: false, idx: 0, playing: false });
-      if (requestTimer.current) clearInterval(requestTimer.current);
-      setSettling(true);
-      if (removeTimer.current) clearTimeout(removeTimer.current);
-      removeTimer.current = setTimeout(() => setSettling(false), reduced ? 420 : REMOVE_ANIM_MS);
+      if (clamped !== part) requestPart(clamped);
     },
-    [maxPart, part, partsById, reduced],
+    [maxPart, part, requestPart],
   );
 
   useEffect(() => {
     return () => {
-      if (removeTimer.current) clearTimeout(removeTimer.current);
       if (scrubTimer.current) clearInterval(scrubTimer.current);
       if (requestTimer.current) clearInterval(requestTimer.current);
     };
@@ -152,13 +158,9 @@ function ArchitectureExplorerInner({
         setScrubPlaying(false);
         return;
       }
-      setPrevPart(p);
-      setSettling(true);
-      if (removeTimer.current) clearTimeout(removeTimer.current);
-      removeTimer.current = setTimeout(() => setSettling(false), reduced ? 420 : REMOVE_ANIM_MS);
-      setPart(p + 1);
+      requestPart(p + 1);
     }, SCRUB_PLAY_MS);
-  }, [scrubPlaying, part, maxPart, goToPart, reduced]);
+  }, [scrubPlaying, part, maxPart, goToPart, requestPart]);
 
   const startRequest = useCallback(() => {
     setSelectedId(null);
@@ -381,14 +383,16 @@ function ArchitectureExplorerInner({
         />
       </div>
 
-      <MomentScrubber
-        part={part}
-        maxPart={maxPart}
-        parts={parts}
-        playing={scrubPlaying}
-        onTogglePlay={toggleScrubPlay}
-        onGoTo={goToPart}
-      />
+      {hideScrubber ? null : (
+        <MomentScrubber
+          part={part}
+          maxPart={maxPart}
+          parts={parts}
+          playing={scrubPlaying}
+          onTogglePlay={toggleScrubPlay}
+          onGoTo={goToPart}
+        />
+      )}
 
       <div
         className="bp-arch-explorer__grid"
@@ -467,7 +471,7 @@ function ArchitectureExplorerInner({
           adrTitles={adrTitles}
           adrHrefs={adrHrefs}
           part={current}
-          prevPart={previous}
+          before={partBefore(partsById, current)}
         />
       </div>
 
@@ -733,7 +737,7 @@ function SidePanel({
   adrTitles,
   adrHrefs,
   part,
-  prevPart,
+  before,
 }: {
   node: ArchNodeData | null;
   nodeState: ArchNodeVisualState;
@@ -741,7 +745,8 @@ function SidePanel({
   adrTitles: Record<string, string>;
   adrHrefs: Record<string, string>;
   part: ArchPartData;
-  prevPart: ArchPartData;
+  /** The part before `part`, or `part` itself for the first. */
+  before: ArchPartData;
 }): ReactNode {
   const panelStyle: CSSProperties = {
     background: "var(--bp-panel)",
@@ -799,36 +804,11 @@ function SidePanel({
     );
   }
 
-  const whatChanged = diffWhatChanged(prevPart, part);
   return (
-    <aside aria-label="Details" style={panelStyle}>
+    <aside aria-label="Details" data-popover-bounds style={panelStyle}>
       <div style={smallEyebrow}>What changed in Part {part.part}</div>
       <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
-        {whatChanged.length > 0 ? (
-          whatChanged.map((c) => (
-            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, font: "500 13.5px/1.3 var(--font-body)" }}>
-              <span
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 6,
-                  display: "grid",
-                  placeItems: "center",
-                  background: c.tone === "add" ? "color-mix(in oklch, var(--bp-gain) 16%, transparent)" : c.tone === "remove" ? "color-mix(in oklch, var(--destructive) 12%, transparent)" : "color-mix(in oklch, var(--ember) 16%, transparent)",
-                  color: c.tone === "add" ? "var(--bp-gain)" : c.tone === "remove" ? "var(--destructive)" : "var(--bp-accent-text)",
-                  font: "700 12px/1 var(--font-mono)",
-                }}
-              >
-                {c.tone === "add" ? "+" : c.tone === "remove" ? "−" : "~"}
-              </span>
-              {c.label}
-            </div>
-          ))
-        ) : (
-          <span style={{ font: "400 13.5px/1.55 var(--font-body)", color: "var(--foreground-muted)" }}>
-            Part 1 is the starting point: one deployable, one live symbol.
-          </span>
-        )}
+        <PartChanges part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       </div>
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
@@ -843,24 +823,6 @@ const smallEyebrow: CSSProperties = {
   textTransform: "uppercase",
   color: "var(--foreground-muted)",
 };
-
-function diffWhatChanged(prev: ArchPartData, curr: ArchPartData): Array<{ id: string; label: string; tone: "add" | "remove" | "change" }> {
-  if (prev.part === curr.part) return [];
-  const prevIds = new Map(prev.nodes.map((n) => [n.id, n]));
-  const currIds = new Set(curr.nodes.map((n) => n.id));
-  const out: Array<{ id: string; label: string; tone: "add" | "remove" | "change" }> = [];
-  for (const n of curr.nodes) {
-    if (!prevIds.has(n.id)) out.push({ id: n.id, label: n.label, tone: "add" });
-    else {
-      const p = prevIds.get(n.id)!;
-      if (p.purpose !== n.purpose || p.meta !== n.meta) out.push({ id: n.id, label: n.label, tone: "change" });
-    }
-  }
-  for (const n of prev.nodes) {
-    if (!currIds.has(n.id)) out.push({ id: n.id, label: n.label, tone: "remove" });
-  }
-  return out;
-}
 
 function FollowRequestBar({
   requestName,

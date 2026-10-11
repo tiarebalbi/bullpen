@@ -36,8 +36,8 @@ const NOTE_STYLE: CSSProperties = {
   color: "var(--bp-gain)",
 };
 
-/** The side panel's line for a carried node: built earlier, still running in this part's prediction. */
+/** The side panel's line for a carried node: built earlier, still running in this part's plan. */
 export function CarriedNote({ node }: { node: ArchNodeData }): ReactNode {
   if (!node.carried || !node.builtIn) return null;
-  return <span style={NOTE_STYLE}>Built in {builtInLabel(node.builtIn)}; still running in this prediction.</span>;
+  return <span style={NOTE_STYLE}>Built in {builtInLabel(node.builtIn)}; still running in this plan.</span>;
 }

@@ -60,6 +60,11 @@ describe("loadAdrs / parseAdr", () => {
     expect(withRawHtml.contextHtml).toContain("&lt;script&gt;");
   });
 
+  it("reads only the first line of Status as the status, so a clarification line under it does not become the chip", () => {
+    const adr = parseAdr(validAdr({ Status: "Proposed\n\nClarified 2026-10-09: builtIn is where the item was first built." }), "0099-fixture.md");
+    expect(adr.status).toBe("Proposed");
+  });
+
   it("throws a clear error when a required section is missing", () => {
     expect(() => parseAdr(validAdr({ Decision: "" }), "0099-missing-decision.md")).toThrow(
       /missing required "## Decision" section/,

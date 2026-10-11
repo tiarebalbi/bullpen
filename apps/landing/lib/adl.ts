@@ -1,4 +1,30 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+
+/**
+ * The ADL as the landing page uses it. There is no parser here: the one
+ * parser lives in architecture/fitness (src/adl.ts), and `adl:emit` writes
+ * what it read from architecture/adl/structure.adl to
+ * apps/landing/.generated/adl.json. This module only reads that JSON and
+ * checks its shape, so a page is never drawn from a file the build could not
+ * parse, and nothing here imports from architecture/ (an app does not).
+ */
+
+export type AdlTokenKind = "keyword" | "name" | "path" | "comment" | "text";
+
+export interface AdlToken {
+  text: string;
+  kind: AdlTokenKind;
+}
+
+export type AdlLineKind = "blank" | "comment" | "header" | "define" | "assert";
+
+export interface AdlLine {
+  number: number;
+  /** The line exactly as written in the file, indentation included. */
+  raw: string;
+  kind: AdlLineKind;
+  tokens: AdlToken[];
+}
 
 export type AdlKind = "SYSTEM" | "COMPONENT" | "LIBRARY";
 
@@ -6,99 +32,82 @@ export interface AdlEntry {
   kind: AdlKind;
   name: string;
   path: string;
+  line: number;
+}
+
+export interface AdlRule {
+  /** Derived from the rule's text by the parser; the key results and "arrives in" are looked up by. */
+  id: string;
+  text: string;
+  line: number;
+  group: string;
+}
+
+export interface AdlGroup {
+  heading: string;
+  /** The line of the `#` heading. */
+  line: number;
+  ruleIds: string[];
 }
 
 export interface Adl {
-  type: string;
+  /** Repo-relative path of the file these lines were read from. */
+  source: string;
   description: string;
+  category: string;
   entries: AdlEntry[];
-  /** Raw text inside each `ASSERT(...)` line — the structural rules. */
-  rules: string[];
+  rules: AdlRule[];
+  groups: AdlGroup[];
+  lines: AdlLine[];
 }
 
-// Matches lines like:
-//   DEFINE SYSTEM Bullpen AS bullpen
-//   DEFINE COMPONENT Trading App AS apps/web
-// The name can contain spaces, so the split on " AS " is greedy (anchored
-// to the end of the line) rather than the first occurrence.
-const DEFINE_LINE = /^DEFINE\s+(SYSTEM|COMPONENT|LIBRARY)\s+(.+)\s+AS\s+(\S+)$/;
-const ASSERT_LINE = /^ASSERT\((.+)\)$/;
-const TYPE_LINE = /^TYPE\s+(.+)$/;
-const DESCRIPTION_LINE = /^DESCRIPTION\s+(.+)$/;
+const LINE_KINDS: readonly string[] = ["blank", "comment", "header", "define", "assert"];
+const TOKEN_KINDS: readonly string[] = ["keyword", "name", "path", "comment", "text"];
 
-/**
- * A small, local re-implementation of the DEFINE/ASSERT line parsing in
- * architecture/fitness/src/parse-adl.ts. Duplicated on purpose rather than
- * imported: apps/landing is an app (per architecture/adl/structure.adl) and
- * architecture/fitness is a sibling workspace package outside apps/ and
- * packages/, so importing its source here would be exactly the kind of
- * undeclared cross-boundary dependency `turbo boundaries` and the ADL rules
- * exist to catch (see ADR-0003). This parser only needs ~20 lines, so
- * re-implementing it locally is cheaper than restructuring package
- * boundaries for one consumer.
- */
-export function parseAdl(content: string): Adl {
-  const entries: AdlEntry[] = [];
-  const rules: string[] = [];
-  let type = "";
-  let description = "";
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
-  for (const rawLine of content.split("\n")) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    const defineMatch = DEFINE_LINE.exec(line);
-    if (defineMatch) {
-      const [, kind, name, path] = defineMatch;
-      entries.push({ kind: kind as AdlKind, name: name!.trim(), path: path!.trim() });
-      continue;
-    }
-
-    const assertMatch = ASSERT_LINE.exec(line);
-    if (assertMatch) {
-      rules.push(assertMatch[1]!.trim());
-      continue;
-    }
-
-    const typeMatch = TYPE_LINE.exec(line);
-    if (typeMatch) {
-      type = typeMatch[1]!.trim();
-      continue;
-    }
-
-    const descriptionMatch = DESCRIPTION_LINE.exec(line);
-    if (descriptionMatch) {
-      description = descriptionMatch[1]!.trim();
-    }
-  }
-
-  if (entries.length === 0) {
-    throw new Error("structure.adl: no DEFINE SYSTEM/COMPONENT/LIBRARY entries found");
-  }
-  if (rules.length === 0) {
-    throw new Error("structure.adl: no ASSERT rules found");
-  }
-
-  return { type, description, entries, rules };
+function validLine(line: unknown): boolean {
+  if (!isRecord(line) || typeof line.number !== "number" || typeof line.raw !== "string" || !LINE_KINDS.includes(line.kind as string)) return false;
+  if (!Array.isArray(line.tokens)) return false;
+  const tokens = line.tokens as unknown[];
+  const joined = tokens.map((token) => (isRecord(token) && typeof token.text === "string" ? token.text : "")).join("");
+  return joined === line.raw && tokens.every((token) => isRecord(token) && TOKEN_KINDS.includes(token.kind as string));
 }
 
-export function loadAdl(filePath: string): Adl {
-  return parseAdl(readFileSync(filePath, "utf8"));
+/** The first thing wrong with `data`, or null if it is what `adl:emit` writes. */
+function firstProblem(data: Record<string, unknown>): string | null {
+  if (data.schema !== 1) return `unknown schema ${JSON.stringify(data.schema)}`;
+  const text = (["source", "description", "category"] as const).find((key) => typeof data[key] !== "string" || data[key] === "");
+  if (text) return `missing ${text}`;
+  const list = (["entries", "rules", "groups", "lines"] as const).find((key) => !Array.isArray(data[key]) || (data[key] as unknown[]).length === 0);
+  if (list) return `missing ${list}`;
+  if (!(data.lines as unknown[]).every(validLine)) return "a line whose tokens do not join back to it";
+  return null;
 }
 
-export type AdlRuleToken = { text: string; keyword: boolean };
+/** Parses the JSON `adl:emit` wrote. Throws on anything else rather than drawing a rule that is not there. */
+export function parseAdlJson(content: string, label: string): Adl {
+  let data: unknown;
+  try {
+    data = JSON.parse(content);
+  } catch (cause) {
+    throw new Error(`${label}: invalid JSON (${(cause as Error).message})`, { cause });
+  }
+  const problem = isRecord(data) ? firstProblem(data) : "not an object";
+  if (problem) throw new Error(`${label}: ${problem}. Run \`pnpm --filter @bullpen/fitness-checks run adl:emit\`.`);
+  return data as unknown as Adl;
+}
 
-// Longest first, so "NEVER DEPEND ON" matches whole rather than leaving a
-// stray "DEPEND ON" unmatched by a shorter, earlier alternative.
-const ADL_KEYWORDS = ["NEVER DEPEND ON", "DEFINED", "ASSERT"] as const;
-const KEYWORD_PATTERN = new RegExp(`(${ADL_KEYWORDS.join("|")})`, "g");
+export function loadAdl(jsonPath: string): Adl {
+  if (!existsSync(jsonPath)) {
+    throw new Error(`${jsonPath} does not exist. It is generated from structure.adl: run \`pnpm --filter @bullpen/fitness-checks run adl:emit\`.`);
+  }
+  return parseAdlJson(readFileSync(jsonPath, "utf8"), jsonPath);
+}
 
-/**
- * Splits one real ASSERT rule's text into plain/keyword segments, so the
- * Rules card can highlight structure.adl's actual vocabulary (never a
- * fictional pseudocode-DSL) without hand-authoring markup per rule.
- */
-export function tokenizeAdlRule(rule: string): AdlRuleToken[] {
-  const parts = rule.split(KEYWORD_PATTERN).filter((part) => part.length > 0);
-  return parts.map((text) => ({ text, keyword: (ADL_KEYWORDS as readonly string[]).includes(text) }));
+/** The lines of one group: its `#` heading and the ASSERT lines under it, as written. */
+export function groupLines(adl: Adl, group: AdlGroup): AdlLine[] {
+  const byNumber = new Map(adl.lines.map((line) => [line.number, line]));
+  const rules = group.ruleIds.map((id) => adl.rules.find((rule) => rule.id === id)!);
+  return [group.line, ...rules.map((rule) => rule.line)].map((number) => byNumber.get(number)!);
 }

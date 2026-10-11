@@ -1,0 +1,24 @@
+{
+  "part": 3,
+  "status": "planned",
+  "nodes": [
+    {
+      "id": "app",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "id": "new-service",
+      "x": 40,
+      "y": 220
+    },
+    {
+      "id": "tool",
+      "x": 40,
+      "y": 400,
+      "carried": true,
+      "builtIn": "part-02"
+    }
+  ],
+  "edges": []
+}

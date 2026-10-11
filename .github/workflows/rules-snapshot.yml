@@ -1,0 +1,100 @@
+name: Rules snapshot
+
+# Runs every rule check once and records the result in
+# architecture/reports/part-0N/ (summary.json plus each raw output), so the
+# landing's Rules cards and the architecture page can show a result and the
+# commit it ran for. Runs when I dispatch it for a part, and when I tag a part
+# `post-*`. It never pushes to main: it pushes a branch and opens a pull
+# request, which I review and merge like any other.
+
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: Part of the series to snapshot (1 to 6)
+        required: true
+  push:
+    tags:
+      - "post-*"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    env:
+      INPUT_PART: ${{ inputs.part }}
+      # Commits must carry the repo identity (commit-policy), and the address is
+      # written in no file, so it comes from two repository variables.
+      AUTHOR_NAME: ${{ vars.COMMIT_AUTHOR_NAME }}
+      AUTHOR_EMAIL: ${{ vars.COMMIT_AUTHOR_EMAIL }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 12.6.0
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22.23.3
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Which part
+        id: part
+        run: |
+          if [ -n "$INPUT_PART" ]; then
+            PART="$INPUT_PART"
+          else
+            PART="$(printf '%s' "$GITHUB_REF_NAME" | sed -E 's/^post-0*([0-9]+).*/\1/')"
+          fi
+          case "$PART" in
+            [1-6]) ;;
+            *) echo "Could not work out a part from '$INPUT_PART' / '$GITHUB_REF_NAME'. Use a tag like post-02, or pass 1 to 6."; exit 1 ;;
+          esac
+          echo "part=$PART" >> "$GITHUB_OUTPUT"
+
+      # A failing snapshot is still a real result: it is written and reported, not hidden.
+      - name: Run the checks
+        id: run
+        run: |
+          set +e
+          pnpm --filter @bullpen/fitness-checks run rules-snapshot --part "${{ steps.part.outputs.part }}"
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Open a pull request with the snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$AUTHOR_NAME" ] || [ -z "$AUTHOR_EMAIL" ]; then
+            echo "Set the repository variables COMMIT_AUTHOR_NAME and COMMIT_AUTHOR_EMAIL: commits here must carry the repo identity (commit-policy)."
+            exit 1
+          fi
+          PART="${{ steps.part.outputs.part }}"
+          DIR="architecture/reports/part-0${PART}"
+          BRANCH="rules-snapshot/part-0${PART}-${GITHUB_RUN_ID}"
+          git config user.name "$AUTHOR_NAME"
+          git config user.email "$AUTHOR_EMAIL"
+          git checkout -b "$BRANCH"
+          git add "$DIR"
+          if git diff --cached --quiet; then
+            echo "The snapshot for Part ${PART} is already up to date."
+            exit 0
+          fi
+          git commit -m "chore(reports): rules snapshot for Part ${PART}"
+          git push origin "HEAD:refs/heads/${BRANCH}"
+          gh pr create --base main --head "$BRANCH" \
+            --title "Rules snapshot for Part ${PART}" \
+            --body "Every rule check, run once at \`${GITHUB_SHA}\`. Status of the run: ${{ steps.run.outputs.status }} (0 means every check passed). A pull request opened with the workflow token does not start CI: close and reopen it to run the required checks."
+
+      - name: Fail the job if a check failed
+        if: steps.run.outputs.status != '0'
+        run: |
+          echo "A rule check failed. The snapshot recorded it, and the pull request shows it."
+          exit 1
