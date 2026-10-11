@@ -17,18 +17,18 @@ export function Hero(): ReactNode {
   return (
     <section className="bp-hero" aria-labelledby="hero-heading">
       <div className="bp-hero__copy">
-        <div className="bp-eyebrow">A series in six parts · this is Part 1</div>
+        <div className="bp-eyebrow">A six-part architecture build log</div>
         <h1 id="hero-heading" className="bp-hero__heading">
           Architecting software in 2026, <span className="bp-accent">built in public</span>
         </h1>
         <p className="bp-hero__sub">
-          A paper-trading league with play money, live crypto prices, and U.S. stocks from Part 6. It is
+          A paper-trading league with play money, live crypto prices, and U.S. stocks from Part 3. It is
           also the system I&rsquo;m designing in the open for the series{" "}
           <em>Architecting Software in 2026</em>, one part a week.
         </p>
         <div className="bp-hero__ctas">
           <LinkButton variant="primary" href="#series">
-            League opens in Part 3
+            See the six-part plan
           </LinkButton>
           <LinkButton variant="secondary" href="#architecture">
             Explore the architecture
