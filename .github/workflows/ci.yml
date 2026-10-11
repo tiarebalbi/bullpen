@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main, post-01-use-case]
+    # experiment/** so a throwaway branch (the agent-boundary experiment) gets CI
+    # on every push, without a pull request: GitHub will not open one for a
+    # branch that has no commits yet.
+    branches: [main, post-01-use-case, "experiment/**"]
   pull_request:
 
 jobs:
@@ -28,7 +31,19 @@ jobs:
         run: pnpm --filter @bullpen/landing exec playwright install --with-deps chromium
 
       - name: turbo (affected)
-        run: pnpm exec turbo run lint typecheck test build check:arch --affected
+        run: pnpm exec turbo run lint typecheck test build --affected
+
+      # Not under --affected on purpose. check:arch is defined only in
+      # @bullpen/fitness-checks, which an app-only change never marks as
+      # affected, so turbo would skip the check that reads the whole repo
+      # exactly when an app breaks a rule.
+      - name: check:arch (always)
+        run: pnpm check:arch
+
+      # The git hook and commit-policy tests live in the same package and
+      # cover files outside any workspace (.claude/), so they run every time.
+      - name: guardrail tests (always)
+        run: pnpm --filter @bullpen/fitness-checks test
 
       - name: Upload Playwright report (on failure)
         if: failure()
@@ -50,6 +65,13 @@ jobs:
           -p architecture/calm/bullpen.pattern.json
           --strict -f junit -o calm-result.xml
 
+      - name: calm validate (Part 2 model)
+        run: >
+          npx --yes @finos/calm-cli@1.60.1 validate
+          -a architecture/calm/moments/part-02.architecture.json
+          -p architecture/calm/bullpen.pattern.json
+          --strict -f junit -o calm-part-02-result.xml
+
       - name: calm validate (timeline)
         run: >
           npx --yes @finos/calm-cli@1.60.1 validate
@@ -63,6 +85,7 @@ jobs:
           name: calm-reports
           path: |
             calm-result.xml
+            calm-part-02-result.xml
             calm-timeline-result.xml
 
   # Every commit in the PR must carry the repo identity and no Co-Authored-By

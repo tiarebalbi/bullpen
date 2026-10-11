@@ -1,0 +1,356 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "unique-id": "bullpen-part-02",
+  "name": "Bullpen — Part 2",
+  "description": "What actually runs at the end of Part 2: the same two Next.js apps and the same single serverless function as Part 1, and both apps still load Google Analytics 4 and Microsoft Clarity in the visitor's browser, only after consent (ADR-0010), with no new runtime node. What changed is that the rules I had only stated in prompts now fail a build. The controls below name the check that enforces each one: app boundaries, secret containment, the free-tier call budget, and the explorer matching this model.",
+  "metadata": {
+    "status": "current",
+    "part": 2
+  },
+  "adrs": [
+    "architecture/adr/0001-stack.md",
+    "architecture/adr/0002-why-distribute-at-all.md",
+    "architecture/adr/0003-monorepo.md",
+    "architecture/adr/0005-crypto-market-data-coingecko.md",
+    "architecture/adr/0006-react-flow-architecture-explorer.md",
+    "architecture/adr/0007-markdown-it-for-adr-rendering.md",
+    "architecture/adr/0009-guardrails-enforced-not-requested.md",
+    "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md"
+  ],
+  "nodes": [
+    {
+      "unique-id": "reader",
+      "node-type": "actor",
+      "name": "Reader",
+      "description": "A blog reader who lands on the public site to learn about Bullpen, and can now read its architecture page."
+    },
+    {
+      "unique-id": "player",
+      "node-type": "actor",
+      "name": "Player",
+      "description": "A registered player who opens the trading app to view prices and (in later parts) place paper trades."
+    },
+    {
+      "unique-id": "landing-app",
+      "node-type": "webclient",
+      "name": "Bullpen Landing",
+      "description": "The public landing site (apps/landing). Part 2 adds the /architecture page, which reads the repo's own records: the ADRs, the ADL, the CALM moments and the rules snapshot.",
+      "metadata": {
+        "bullpen:path": "apps/landing",
+        "bullpen:libraries": ["packages/ui", "packages/contracts"]
+      },
+      "controls": {
+        "app-boundaries": {
+          "description": "An app never depends on another app, and imports a library only through its package entry point. Both are ADL rules that fail check:arch.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-COMPONENT-DEPENDENCIES",
+                "name": "Components depend only on what they may",
+                "description": "turbo boundaries enforces the IS DEPENDENT ON and HAS NO DEPENDENCY ON rules of structure.adl, direct and transitive, and reports a breach as the ASSERT it breaks.",
+                "enforced-by": "architecture/fitness/src/boundaries-check.ts"
+              }
+            },
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-LIBRARY-ENTRY-POINT",
+                "name": "Libraries are imported through their entry point",
+                "description": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point: no @bullpen/ui/src/... and no relative path into packages/.",
+                "enforced-by": "architecture/fitness/src/imports-check.ts"
+              }
+            }
+          ]
+        },
+        "explorer-matches-model": {
+          "description": "What the architecture explorer draws has to be this model. Part 2's explorer content is checked against this file, not against the prediction.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-EXPLORER-MATCHES-MODEL",
+                "name": "The explorer matches the model",
+                "description": "Every explorer node and edge exists in its CALM document, and every CALM node is drawn.",
+                "enforced-by": "architecture/fitness/src/explorer-consistency-check.ts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "trading-app",
+      "node-type": "webclient",
+      "name": "Bullpen Trading App",
+      "description": "The trading app (apps/web) where players view live prices and will place paper trades.",
+      "metadata": {
+        "bullpen:path": "apps/web",
+        "bullpen:libraries": ["packages/ui", "packages/contracts"]
+      },
+      "controls": {
+        "app-boundaries": {
+          "description": "An app never depends on another app, and imports a library only through its package entry point. Both are ADL rules that fail check:arch.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-COMPONENT-DEPENDENCIES",
+                "name": "Components depend only on what they may",
+                "description": "turbo boundaries enforces the IS DEPENDENT ON and HAS NO DEPENDENCY ON rules of structure.adl, direct and transitive, and reports a breach as the ASSERT it breaks.",
+                "enforced-by": "architecture/fitness/src/boundaries-check.ts"
+              }
+            },
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-LIBRARY-ENTRY-POINT",
+                "name": "Libraries are imported through their entry point",
+                "description": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point: no @bullpen/ui/src/... and no relative path into packages/.",
+                "enforced-by": "architecture/fitness/src/imports-check.ts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "price-snapshot-service",
+      "node-type": "service",
+      "name": "Price Snapshot Service",
+      "description": "Serverless function backing GET /api/price/[symbol] in apps/web; fetches a point-in-time price for a symbol from CoinGecko and returns it to the trading app. It is the only code that reads the CoinGecko Demo API key.",
+      "metadata": {
+        "bullpen:path": "apps/web/app/api/price"
+      },
+      "controls": {
+        "secret-containment": {
+          "description": "The CoinGecko Demo API key stays in one place: only this route reads it. Everything else in apps/ and packages/ fails check:arch if it names the variable in code.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-SECRET-CONTAINMENT",
+                "name": "The API key is read in one place",
+                "description": "ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY.",
+                "enforced-by": "architecture/fitness/src/secret-check.ts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "market-data-provider",
+      "node-type": "external-system",
+      "name": "CoinGecko",
+      "description": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use, which forbid public display of their data (see issue #6, ADR-0005, docs/data-sources.md)."
+    },
+    {
+      "unique-id": "google-analytics",
+      "node-type": "external-system",
+      "name": "Google Analytics 4",
+      "description": "Google's product analytics (gtag.js from www.googletagmanager.com), loaded in the visitor's browser by both apps only after they accept and only in production. Receives page views and four custom events with no personal data. Consent Mode starts denied for all four signals; only analytics_storage is ever granted, and the advertising signals never are (see ADR-0010).",
+      "controls": {
+        "analytics-consent": {
+          "description": "Nothing loads and no cookie is set until the visitor accepts; advertising signals are always denied.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-ANALYTICS-CONSENT",
+                "name": "Analytics only after consent",
+                "description": "packages/ui's Analytics loads the Google tag only after Accept, with the Consent Mode default (all four denied) queued first and ad_storage, ad_user_data and ad_personalization never granted."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "microsoft-clarity",
+      "node-type": "external-system",
+      "name": "Microsoft Clarity",
+      "description": "Microsoft's heatmaps and session recordings (www.clarity.ms), loaded in the visitor's browser by both apps only after they accept and only in production. Receives the Consent API v2 signal with advertising storage denied, and a part tag. Form fields are masked (see ADR-0010).",
+      "controls": {
+        "analytics-consent": {
+          "description": "Nothing loads and no cookie is set until the visitor accepts; advertising storage is always denied.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-ANALYTICS-CONSENT",
+                "name": "Analytics only after consent",
+                "description": "packages/ui's Analytics loads the Clarity tag only after Accept, with Consent API v2 queued first: ad_Storage denied, analytics_Storage granted."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "reader-to-landing",
+      "description": "Reader browses the public landing site and its architecture page.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "reader",
+          "nodes": ["landing-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "player-to-trading-app",
+      "description": "Player opens the trading app.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "player",
+          "nodes": ["trading-app"]
+        }
+      }
+    },
+    {
+      "unique-id": "trading-app-to-price-snapshot",
+      "description": "Trading app requests a live price snapshot for a symbol.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "trading-app" },
+          "destination": { "node": "price-snapshot-service" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
+      }
+    },
+    {
+      "unique-id": "price-snapshot-to-market-data",
+      "description": "Price snapshot service calls CoinGecko's /simple/price endpoint for the current BTC-USD price, authenticated via a server-side Demo API key header, and caches the answer for 300 seconds.",
+      "relationship-type": {
+        "connects": {
+          "source": { "node": "price-snapshot-service" },
+          "destination": { "node": "market-data-provider" }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
+      },
+      "controls": {
+        "attribution": {
+          "description": "CoinGecko's API Terms of Service require a 'Powered by CoinGecko' credit (or an approved equivalent), legible font no smaller than 10px, linked to coingecko.com, on every screen that displays the price this relationship fetches. See ADR-0005 and docs/data-sources.md.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-COINGECKO-ATTRIBUTION",
+                "name": "CoinGecko attribution",
+                "description": "apps/web's PriceCell/CoinGeckoCredit rendering satisfies this: a linked 'Powered by CoinGecko' credit next to every price sourced from this relationship."
+              }
+            }
+          ]
+        },
+        "call-budget": {
+          "description": "The 300 second cache interval keeps modeled monthly calls within 90% of the Demo plan's 10,000-call allowance. Lowering the interval without raising the allowance fails check:arch. See ADR-0005.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-COINGECKO-CALL-BUDGET",
+                "name": "CoinGecko call budget",
+                "description": "Modeled monthly CoinGecko calls stay within 90% of the Demo plan's monthly allowance in cost/allowances.json.",
+                "enforced-by": "architecture/fitness/src/budget-check.ts"
+              }
+            }
+          ]
+        },
+        "secret-containment": {
+          "description": "The Demo API key this call sends is read only by the route that makes the call.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-SECRET-CONTAINMENT",
+                "name": "The API key is read in one place",
+                "description": "ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY.",
+                "enforced-by": "architecture/fitness/src/secret-check.ts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "landing-to-google-analytics",
+      "description": "The landing site sends page views and custom events to Google Analytics 4 from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "landing-app"
+          },
+          "destination": {
+            "node": "google-analytics"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "landing-to-microsoft-clarity",
+      "description": "The landing site sends interaction data to Microsoft Clarity from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "landing-app"
+          },
+          "destination": {
+            "node": "microsoft-clarity"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-google-analytics",
+      "description": "The trading app sends page views to Google Analytics 4 from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "google-analytics"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-microsoft-clarity",
+      "description": "The trading app sends interaction data to Microsoft Clarity from the visitor's browser, after consent.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "microsoft-clarity"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "asynchronous"
+      }
+    }
+  ]
+}

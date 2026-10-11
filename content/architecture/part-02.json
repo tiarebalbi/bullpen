@@ -1,14 +1,14 @@
 {
   "part": 2,
-  "status": "planned",
-  "summary": "Prediction, not yet built: no new runtime nodes over Part 1 -- the landing app gains an in-browser architecture explorer reading the CALM timeline directly.",
+  "status": "built",
+  "summary": "What actually runs at the end of Part 2: the same two Next.js apps and one serverless function, and the same two analytics tools that load only after consent, with no new runtime node. What changed is that the rules now fail a build.",
   "nodes": [
     {
       "id": "reader",
       "label": "Reader",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "A blog reader who now also explores Bullpen's own architecture timeline on the landing site.",
+      "purpose": "A blog reader who lands on the public site to learn about Bullpen, and can now read its architecture page.",
       "x": 40,
       "y": 40
     },
@@ -26,55 +26,85 @@
       "label": "Bullpen Landing",
       "kind": "app",
       "meta": "Static",
-      "purpose": "The public landing site, now rendering an in-browser architecture explorer that reads the docify-generated CALM diagrams and timeline for every part.",
+      "purpose": "The public landing site (apps/landing). Part 2 adds the /architecture page, which reads the repo's own records: the ADRs, the ADL, the CALM moments and the rules snapshot.",
       "x": 40,
       "y": 220,
-      "costNote": "Planned"
+      "adrs": ["ADR-0003", "ADR-0006", "ADR-0009"],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "trading-app",
       "label": "Bullpen Trading App",
       "kind": "app",
       "meta": "Next.js",
-      "purpose": "The trading app where players view live prices and place paper trades.",
+      "purpose": "The trading app (apps/web) where players view live prices and will place paper trades.",
       "x": 320,
       "y": 220,
-      "costNote": "Planned"
+      "adrs": ["ADR-0001", "ADR-0003"],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "price-snapshot-service",
       "label": "Price Snapshot Service",
       "kind": "service",
       "meta": "Serverless",
-      "purpose": "Serverless function backing GET /api/price/[symbol]; fetches a point-in-time price for a symbol from the external market-data provider.",
+      "purpose": "Serverless function backing GET /api/price/[symbol] in apps/web; fetches a point-in-time price for a symbol from CoinGecko and returns it to the trading app. It is the only code that reads the CoinGecko Demo API key.",
       "x": 320,
       "y": 400,
-      "costNote": "Planned"
+      "adrs": ["ADR-0002", "ADR-0005"],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "market-data-provider",
-      "label": "Market Data Provider",
+      "label": "CoinGecko",
       "kind": "ext",
-      "meta": "TBD",
-      "purpose": "External market-data API Bullpen calls for live price snapshots. Provider still TBD pending a terms-of-use-compliant choice.",
+      "meta": "Demo API",
+      "purpose": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use.",
       "x": 320,
       "y": 580,
-      "costNote": "Planned"
+      "adrs": ["ADR-0005"],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "google-analytics",
+      "label": "Google Analytics 4",
+      "kind": "ext",
+      "meta": "Analytics",
+      "purpose": "Page views and a few events from both apps, loaded in the browser only after a visitor accepts. Advertising signals stay denied.",
+      "x": 40,
+      "y": 400,
+      "adrs": ["ADR-0010"],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "microsoft-clarity",
+      "label": "Microsoft Clarity",
+      "kind": "ext",
+      "meta": "Recordings",
+      "purpose": "Heatmaps and session recordings from both apps, loaded only after a visitor accepts, with form fields masked. Advertising storage stays denied.",
+      "x": 600,
+      "y": 400,
+      "adrs": ["ADR-0010"],
+      "costNote": "Free tier"
     }
   ],
   "edges": [
     { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
     { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
     { "id": "trading-app-to-price-snapshot", "a": "trading-app", "b": "price-snapshot-service", "type": "sync" },
-    { "id": "price-snapshot-to-market-data", "a": "price-snapshot-service", "b": "market-data-provider", "type": "sync" }
+    { "id": "price-snapshot-to-market-data", "a": "price-snapshot-service", "b": "market-data-provider", "type": "sync" },
+    { "id": "landing-to-google-analytics", "a": "landing-app", "b": "google-analytics", "type": "async" },
+    { "id": "landing-to-microsoft-clarity", "a": "landing-app", "b": "microsoft-clarity", "type": "async" },
+    { "id": "trading-app-to-google-analytics", "a": "trading-app", "b": "google-analytics", "type": "async" },
+    { "id": "trading-app-to-microsoft-clarity", "a": "trading-app", "b": "microsoft-clarity", "type": "async" }
   ],
   "groups": [],
   "request": {
     "name": "a price request",
     "steps": [
-      { "edge": "trading-app-to-price-snapshot", "caption": "Ask for a quote", "detail": "The trading app requests a live price snapshot." },
-      { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the (still TBD) market-data provider." },
-      { "edge": "price-snapshot-to-market-data", "caption": "Return the snapshot", "detail": "Bullpen's own shape, never the raw upstream payload.", "reverse": true }
+      { "edge": "trading-app-to-price-snapshot", "caption": "Ask for a quote", "detail": "The trading app requests a live BTC-USD snapshot." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to CoinGecko, Demo API key in a header, never the URL." },
+      { "edge": "price-snapshot-to-market-data", "caption": "Return the snapshot", "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt.", "reverse": true }
     ]
   }
 }

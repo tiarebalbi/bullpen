@@ -1,4 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expectedOpeningPart } from "./builtParts.js";
 
 // The "Live prices" strip isn't relevant to these tests but renders on the
 // same page; mock it so it never fails a request and never logs a console
@@ -28,15 +31,44 @@ test.describe("Architecture Explorer", () => {
     await page.goto("/");
   });
 
-  test("scrubbing to the next part updates the summary and status chip", async ({ page }) => {
+  test("opens on the latest built part, read from the explorer content, and shows it as built", async ({ page }) => {
     const architecture = page.locator("#architecture");
+    const opening = expectedOpeningPart();
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    await expect(architecture.getByText(`Overview · Part ${opening}`)).toBeVisible();
+    await expect(scrubber.getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+  });
+
+  test("a part the reader picks stays picked, instead of snapping back to the default", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    await scrubber.getByRole("button", { name: "PART 1" }).click();
+    await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
+    await page.waitForTimeout(600);
+    await expect(scrubber.getByRole("button", { name: "PART 1" })).toHaveAttribute("aria-current", "step");
+    await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
+  });
+
+  test("scrubbing from part to part updates the summary and status chip", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+
+    await scrubber.getByRole("button", { name: "PART 1" }).click();
     await expect(architecture.getByText("Overview · Part 1")).toBeVisible();
     await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
 
-    const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 2" }).click();
 
+    // Part 2 is built: same runtime nodes, the rules now fail a build.
     await expect(architecture.getByText("Overview · Part 2")).toBeVisible();
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
+
+    await expect(architecture.getByText("Overview · Part 3")).toBeVisible();
     await expect(architecture.getByText("Planned", { exact: true }).first()).toBeVisible();
   });
 
@@ -90,12 +122,12 @@ test.describe("Architecture Explorer", () => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
 
-    // Part 1 (the initial, smallest part) mounts and fits the viewport
-    // first. Part 6 has far more nodes spread further out; without a
-    // refit on part change, React Flow's `fitView` only ever fires once
-    // on mount, so Part 6's outer nodes render outside that stale,
-    // Part-1-sized viewport -- present in the DOM, but not actually
-    // visible on screen.
+    // The opening part (a built one, with only its few real nodes) mounts
+    // and fits the viewport first. Part 6 has far more nodes spread
+    // further out; without a refit on part change, React Flow's `fitView`
+    // only ever fires once on mount, so Part 6's outer nodes render
+    // outside that stale, smaller viewport -- present in the DOM, but not
+    // actually visible on screen.
     await scrubber.getByRole("button", { name: "PART 6" }).click();
     // Let both the node-settling animation and fitView's own pan/zoom
     // transition finish before measuring -- otherwise this reads
@@ -279,6 +311,170 @@ const ANALYTICS_EDGES = [
   "trading-app-to-microsoft-clarity",
 ] as const;
 
+// Part 2 added and removed no node: its panel says so, then lists each node or connection that gained
+// controls once, as chips. A chip opens a popover with the model's description, so the panel stays short.
+const PART_2_MOMENT = JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "architecture", "calm", "moments", "part-02.architecture.json"), "utf8")) as {
+  nodes: Array<{ "unique-id": string; controls?: Record<string, { description?: string }> }>;
+};
+const APP_BOUNDARIES = PART_2_MOMENT.nodes.find((n) => n["unique-id"] === "landing-app")!.controls!["app-boundaries"]!.description!;
+const INTRO = "No services or connections were added or removed in Part 2. What changed are the rules around them:";
+const CHIPS = ["App boundaries", "Explorer matches model", "Secret containment", "Call budget"] as const;
+
+async function openPart2Panel(page: Page): Promise<Locator> {
+  await mockPriceRoute(page);
+  await page.goto("/");
+  const architecture = page.locator("#architecture");
+  await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 2" }).click();
+  const panel = architecture.getByLabel("Details");
+  await expect(panel.getByText("What changed in Part 2")).toBeVisible();
+  return panel;
+}
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test.describe(`What changed in Part 2 at ${viewport.width}px`, () => {
+    test.use({ viewport });
+
+    test("says nothing was added or removed, then lists the controls as chips and the ADR, never Part 1's fallback", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await expect(panel.getByText(INTRO)).toBeVisible();
+      await expect(panel.getByText(/starting point/)).toHaveCount(0);
+      for (const name of CHIPS) await expect(panel.getByRole("button", { name }).first()).toBeVisible();
+      await expect(panel.getByRole("link", { name: /^ADR-0009 — / })).toBeVisible();
+    });
+
+    test("shows each node once, and no description inline until a chip is pressed", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await expect(panel.getByText("Bullpen Landing", { exact: true })).toHaveCount(1);
+      // The Landing and the Trading App share this control, so its text sits in two popovers.
+      for (const description of await panel.getByText(APP_BOUNDARIES).all()) await expect(description).toBeHidden();
+      await expect(panel.locator('[role="region"]:not([hidden])')).toHaveCount(0);
+    });
+
+    test("opens a popover with the model's description and the key, and wires aria-expanded and aria-controls", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      const chip = panel.getByRole("button", { name: "App boundaries" }).first();
+      await expect(chip).toHaveAttribute("aria-expanded", "false");
+      await chip.click();
+
+      const popover = page.getByRole("region", { name: "App boundaries" });
+      await expect(popover).toBeVisible();
+      await expect(chip).toHaveAttribute("aria-expanded", "true");
+      await expect(chip).toHaveAttribute("aria-controls", (await popover.getAttribute("id"))!);
+      await expect(popover.getByText(APP_BOUNDARIES)).toBeVisible();
+      await expect(popover.getByText("app-boundaries", { exact: true })).toBeVisible();
+    });
+
+    test("opens with Enter and Space, closes on Esc, and focus returns to the chip", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      const chip = panel.getByRole("button", { name: "App boundaries" }).first();
+      const popover = page.getByRole("region", { name: "App boundaries" });
+
+      await chip.focus();
+      await page.keyboard.press("Enter");
+      await expect(popover).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(popover).toHaveCount(0);
+      await expect(chip).toBeFocused();
+
+      await page.keyboard.press("Space");
+      await expect(popover).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(chip).toBeFocused();
+      await expect(chip).toHaveAttribute("aria-expanded", "false");
+    });
+
+    test("opening a second chip closes the first, and a press outside closes the open one", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await panel.getByRole("button", { name: "App boundaries" }).first().click();
+      await expect(page.getByRole("region", { name: "App boundaries" })).toBeVisible();
+
+      await panel.getByRole("button", { name: "Call budget" }).click();
+      await expect(page.getByRole("region", { name: "Call budget" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "App boundaries" })).toHaveCount(0);
+
+      await page.locator("#architecture h2").first().click();
+      await expect(page.getByRole("region", { name: "Call budget" })).toHaveCount(0);
+    });
+
+    test("keeps every popover fully inside the viewport", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      for (const name of CHIPS) {
+        const chips = panel.getByRole("button", { name });
+        for (let i = 0; i < (await chips.count()); i++) {
+          await chips.nth(i).click();
+          const box = (await page.getByRole("region", { name }).boundingBox())!;
+          expect(box.x, `${name} left`).toBeGreaterThanOrEqual(0);
+          expect(box.y, `${name} top`).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width, `${name} right`).toBeLessThanOrEqual(viewport.width);
+          expect(box.y + box.height, `${name} bottom`).toBeLessThanOrEqual(viewport.height);
+          await page.keyboard.press("Escape");
+        }
+      }
+    });
+  });
+}
+
+test.describe("What changed in Part 2 fits its panel at 1440x900", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("every popover stays inside the panel's width", async ({ page }) => {
+    const panel = await openPart2Panel(page);
+    const panelBox = (await panel.boundingBox())!;
+    for (const name of CHIPS) {
+      const chips = panel.getByRole("button", { name });
+      for (let i = 0; i < (await chips.count()); i++) {
+        await chips.nth(i).click();
+        const box = (await page.getByRole("region", { name }).boundingBox())!;
+        expect(box.x, `${name} left`).toBeGreaterThanOrEqual(panelBox.x);
+        expect(box.x + box.width, `${name} right`).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+        await page.keyboard.press("Escape");
+      }
+    }
+  });
+
+  test("with the banner dismissed, the panel's content fits within its height, and the panel within the viewport", async ({ page }) => {
+    const panel = await openPart2Panel(page);
+    const metrics = await panel.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, height: el.getBoundingClientRect().height }));
+    expect(metrics.scroll).toBeLessThanOrEqual(metrics.client + 1);
+    // With the descriptions inline the panel was about 980px tall; as chips it is well under the viewport.
+    expect(metrics.height).toBeLessThan(900);
+  });
+});
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test.describe(`A popover and the consent banner at ${viewport.width}px`, () => {
+    test.use({ viewport, storageState: { cookies: [], origins: [] } });
+
+    test("opens above the banner, never hidden behind it", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      const banner = page.getByRole("region", { name: "Analytics and cookies" });
+      await expect(banner).toBeVisible();
+
+      const chip = panel.getByRole("button", { name: "Secret containment" }).last();
+      await chip.evaluate((el) => el.scrollIntoView({ block: "end" }));
+      await chip.click();
+      const popover = page.getByRole("region", { name: "Secret containment" });
+      await expect(popover).toBeVisible();
+
+      const box = (await popover.boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+      // Whatever is on top at the popover's centre is the popover, not the banner.
+      const onTop = await popover.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+      });
+      expect(onTop).toBe(true);
+    });
+  });
+}
+
 for (const viewport of [
   { width: 1440, height: 1200 },
   { width: 390, height: 844 },
@@ -291,18 +487,20 @@ for (const viewport of [
       await page.goto("/");
     });
 
-    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built from Part 2 on", async ({ page }) => {
+    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 3 on", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
 
       for (let part = 1; part <= 6; part++) {
-        if (part > 1) await scrubber.getByRole("button", { name: `PART ${part}` }).click();
+        await scrubber.getByRole("button", { name: `PART ${part}` }).click();
         await expect(architecture.getByText(`Overview · Part ${part}`)).toBeVisible();
 
         for (const name of ANALYTICS_CARDS) {
           const card = architecture.getByRole("button", { name: new RegExp(`^${name}`) });
           await expect(card, `${name} in Part ${part}`).toHaveCount(1);
-          await expect(card.getByText("Built in Part 1")).toHaveCount(part === 1 ? 0 : 1);
+          // Part 2 is built and has the cards itself; Parts 3 to 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
+          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 3 ? 1 : 0);
+          await expect(card.getByText("Built in Part 2")).toHaveCount(0);
           // Built, not predicted: never ghosted.
           await expect(card.getByText("PLANNED")).toHaveCount(0);
         }
@@ -310,6 +508,19 @@ for (const viewport of [
           await expect(architecture.getByTestId(`rf__edge-${edge}`), `${edge} in Part ${part}`).toHaveCount(1);
         }
       }
+    });
+
+    test("Part 3's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
+      const architecture = page.locator("#architecture");
+      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 3" }).click();
+
+      const card = architecture.getByRole("button", { name: /^Google Analytics 4, External/ });
+      await expect(card.getByText("Built in Part 1")).toBeVisible();
+      await expect(card).toHaveAccessibleName(/built in Part 1/i);
+
+      await card.click();
+      const panel = architecture.getByLabel("Details");
+      await expect(panel.getByText("Built in Part 1; still running in this plan.")).toBeVisible();
     });
 
     test("what changed in Part 2 lists neither analytics node", async ({ page }) => {
@@ -330,7 +541,8 @@ for (const viewport of [
 
       await architecture.getByRole("button", { name: /^Google Analytics 4, External/ }).click();
       const panel = architecture.getByLabel("Details");
-      await expect(panel.getByText("Built in Part 1; still running in this prediction.")).toBeVisible();
+      await expect(panel.getByText("Built in Part 1; still running in this plan.")).toBeVisible();
+      await expect(panel.getByText(/Built in Part 2/)).toHaveCount(0);
       await expect(panel.getByText(/Page views and a few events from both apps/)).toBeVisible();
       await expect(panel.getByText("ADR-0010")).toBeVisible();
       await expect(panel.getByText("ADR pending: written before this part ships.")).toHaveCount(0);

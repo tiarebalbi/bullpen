@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { carryForward, plannedNamesOf, type CalmIds } from "@bullpen/contracts/architecture";
+import { carryForward, momentChanges, momentIdOfPart, plannedNamesOf, type CalmChangeDoc, type CalmIds } from "@bullpen/contracts/architecture";
 import type { ArchGroupData, ArchNodeData, ArchPartData } from "@bullpen/ui";
 
 const VALID_KIND = new Set(["actor", "app", "service", "data", "infra", "ext"]);
@@ -153,14 +153,49 @@ function loadPlannedCalmDocs(plannedDir: string): CalmIds[] {
     .map((file) => JSON.parse(readFileSync(join(plannedDir, file), "utf8")) as CalmIds);
 }
 
+interface TimelineMoment {
+  "unique-id": string;
+  details?: { "detailed-architecture"?: string };
+  adrs?: string[];
+}
+
+function readCalmDoc(calmDir: string, moment: TimelineMoment | undefined): CalmChangeDoc | undefined {
+  const file = moment?.details?.["detailed-architecture"];
+  return file ? (JSON.parse(readFileSync(join(calmDir, file), "utf8")) as CalmChangeDoc) : undefined;
+}
+
+function changesOfPart(part: ArchPartData, previous: ArchPartData | undefined, moments: Map<string, TimelineMoment>, calmDir: string): ArchPartData {
+  if (part.status !== "built" || previous?.status !== "built") return part;
+  const prevMoment = moments.get(momentIdOfPart(previous.part));
+  const moment = moments.get(momentIdOfPart(part.part));
+  const [prevDoc, doc] = [readCalmDoc(calmDir, prevMoment), readCalmDoc(calmDir, moment)];
+  if (!prevDoc || !doc) return part;
+  const changes = momentChanges(prevDoc, doc, prevMoment?.adrs ?? [], moment?.adrs ?? []);
+  return changes.length > 0 ? { ...part, changes } : part;
+}
+
+/**
+ * Attaches to each built part what its moment added to the previous built one
+ * beyond the node diff: controls on existing nodes and connections, and the
+ * ADRs the timeline links to it. Read from the CALM documents the timeline
+ * names, so it is derived, never written by hand. Part 1, and any part whose
+ * previous moment is not built, get none.
+ */
+function withMomentChanges(parts: ArchPartData[], calmDir: string): ArchPartData[] {
+  const timeline = JSON.parse(readFileSync(join(calmDir, "bullpen.timeline.json"), "utf8")) as { moments?: TimelineMoment[] };
+  const moments = new Map((timeline.moments ?? []).map((m) => [m["unique-id"], m]));
+  return parts.map((part) => changesOfPart(part, parts.find((p) => p.part === part.part - 1), moments, calmDir));
+}
+
 /**
  * Loads and parses all six content/architecture/part-0N.json files, sorted by
  * part number, then carries what is built into the planned parts that follow
  * (ADR-0011). The part files stay what they are, the week-one predictions; the
  * carry is derived here, from the built part and the ids the planned CALM
- * moments in `plannedDir` name, so nothing derived is ever committed.
+ * moments in `plannedDir` name, so nothing derived is ever committed. With
+ * `calmDir` (architecture/calm) each built part also gets its derived changes.
  */
-export function loadArchitectureParts(dirPath: string, plannedDir: string): ArchPartData[] {
+export function loadArchitectureParts(dirPath: string, plannedDir: string, calmDir?: string): ArchPartData[] {
   const parts: ArchPartData[] = [];
   for (let part = 1; part <= PART_COUNT; part++) {
     const filePath = join(dirPath, `part-${String(part).padStart(2, "0")}.json`);
@@ -168,5 +203,6 @@ export function loadArchitectureParts(dirPath: string, plannedDir: string): Arch
     parts.push(parseArchitecturePart(content, `content/architecture/part-${String(part).padStart(2, "0")}.json`));
   }
   parts.sort((a, b) => a.part - b.part);
-  return carryForward(parts, plannedNamesOf(loadPlannedCalmDocs(plannedDir)));
+  const carried = carryForward(parts, plannedNamesOf(loadPlannedCalmDocs(plannedDir)));
+  return calmDir ? withMomentChanges(carried, calmDir) : carried;
 }

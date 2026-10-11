@@ -10,4 +10,10 @@ for how the system's shape changes over time.
 
 ## Status
 
-Part 1 — Why distribute at all — in progress.
+- Part 1 — Why distribute at all — published 2026-10-04. Code: tag `post-01`.
+- Part 2 — Architecture as code — published 2026-10-11. Code: branch
+  `post-02-architecture-as-code`, tag `post-02`.
+- Parts 3–6 — planned.
+
+`architecture/calm/planned/` is the current plan; the week-one predictions are
+kept at the tag `predictions-week-1`.

@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/trading-app",
+  "private": true,
+  "version": "0.1.0",
+  "dependencies": {
+    "@fixture/ui": "workspace:*",
+    "@fixture/contracts": "workspace:*"
+  }
+}

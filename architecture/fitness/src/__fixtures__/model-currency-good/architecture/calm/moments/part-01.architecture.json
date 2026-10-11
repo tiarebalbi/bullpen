@@ -1,0 +1,18 @@
+{
+  "unique-id": "fixture-part-01",
+  "nodes": [
+    {
+      "unique-id": "web",
+      "node-type": "webclient",
+      "name": "Web",
+      "metadata": { "bullpen:path": "apps/web", "bullpen:libraries": ["packages/kit"] }
+    },
+    {
+      "unique-id": "api",
+      "node-type": "service",
+      "name": "Quote API",
+      "metadata": { "bullpen:path": "apps/web/app/api/quote" }
+    },
+    { "unique-id": "quotes", "node-type": "external-system", "name": "Acme Quotes" }
+  ]
+}

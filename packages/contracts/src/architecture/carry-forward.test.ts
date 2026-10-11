@@ -78,12 +78,51 @@ describe("carryForward", () => {
 
     const out = carryForward([built, part2, part(3, "planned", ["app"]), part(4, "planned", ["app"])], none);
     expect(carriedIds(out[2])).toEqual(["tool", "explorer"]);
-    expect(out[2]!.nodes.find((n) => n.id === "tool")?.builtIn).toBe("part-02");
-    expect(out[3]!.nodes.every((n) => !n.carried || n.builtIn === "part-02")).toBe(true);
+    // `tool` was first built in Part 1, `explorer` in Part 2: builtIn says where, not where it was copied from.
+    expect(out[2]!.nodes.find((n) => n.id === "tool")?.builtIn).toBe("part-01");
+    expect(out[2]!.nodes.find((n) => n.id === "explorer")?.builtIn).toBe("part-02");
+    expect(out[3]!.nodes.filter((n) => n.carried).map((n) => [n.id, n.builtIn])).toEqual([
+      ["tool", "part-01"],
+      ["explorer", "part-02"],
+    ]);
 
     // What Part 2 no longer has is not resurrected from Part 1.
     const afterDrop = carryForward([built, dropped, part(3, "planned", ["app"])], none);
     expect(carriedIds(afterDrop[2])).toEqual(["explorer"]);
+  });
+
+  describe("builtIn is where an item was first built (ADR-0011)", () => {
+    const analytics = (n: number, status: "built" | "planned") =>
+      part(n, status, ["landing", "google-analytics"], [["landing-to-google-analytics", "landing", "google-analytics"]]);
+
+    it("labels analytics carried into Part 3 as built in Part 1, though Part 2 is the part it is copied from", () => {
+      const out = carryForward([analytics(1, "built"), analytics(2, "built"), part(3, "planned", ["landing"])], none);
+      expect(out[2]!.nodes.find((n) => n.id === "google-analytics")).toMatchObject({ carried: true, builtIn: "part-01" });
+      expect(out[2]!.edges.find((e) => e.id === "landing-to-google-analytics")).toMatchObject({ carried: true, builtIn: "part-01" });
+    });
+
+    it("labels a node first added in Part 2 as built in Part 2", () => {
+      const out = carryForward([part(1, "built", ["landing"]), analytics(2, "built"), part(3, "planned", ["landing"])], none);
+      expect(out[2]!.nodes.find((n) => n.id === "google-analytics")?.builtIn).toBe("part-02");
+      expect(out[2]!.edges.find((e) => e.id === "landing-to-google-analytics")?.builtIn).toBe("part-02");
+    });
+
+    it("copies the item from the latest built part, so the card shows its current version", () => {
+      type Labelled = CarryPart & { nodes: Array<CarryPart["nodes"][number] & { label: string }> };
+      const labelled = (n: number, status: "built" | "planned", label: string): Labelled => ({
+        part: n,
+        status,
+        nodes: [{ id: "tool", x: 0, y: 0, label }],
+        edges: [],
+      });
+      const out = carryForward<Labelled>([labelled(1, "built", "Tool v1"), labelled(2, "built", "Tool v2"), { ...labelled(3, "planned", ""), nodes: [] }], none);
+      expect(out[2]!.nodes[0]).toMatchObject({ id: "tool", label: "Tool v2", builtIn: "part-01" });
+    });
+
+    it("keeps the first build moment when an item was dropped and came back", () => {
+      const out = carryForward([part(1, "built", ["tool"]), part(2, "built", []), part(3, "built", ["tool"]), part(4, "planned", [])], none);
+      expect(out[3]!.nodes[0]!.builtIn).toBe("part-01");
+    });
   });
 
   it("carries nothing when there is no earlier built part", () => {

@@ -32,7 +32,7 @@ Every future split — the order saga, the Rust ingestion service, and anything 
 2. **Failure isolation** — one component's outage shouldn't be able to take another down with it.
 3. **Independent change** — a deploy cadence or ownership boundary that genuinely differs.
 4. **Runtime fit** — a workload that needs a different runtime (e.g., Rust for a latency-critical ingestion path Node/TypeScript can't serve well enough).
-5. **Shared budgets** — cost allocation across teams or features that a single deployable can't express.
+5. **Shared budgets** — cost allocation across teams or features that a single deployable can't express. With one person on the project, this also covers a limit every instance draws from and only one owner can manage, such as an upstream API call budget.
 
 ## Consequences
 

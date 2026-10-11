@@ -1,10 +1,7 @@
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkBudget, readConfiguredRevalidateSeconds, type AllowanceEntry } from "./budget-check.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const fixturesRoot = join(__dirname, "__fixtures__");
+import { BUDGET_RULE, checkBudget, checkBudgetAt, readConfiguredRevalidateSeconds, type AllowanceEntry } from "./budget-check.js";
+import { expectFailureFormat, fixturesRoot } from "./test-helpers.js";
 
 const ALLOWANCES: AllowanceEntry[] = [
   { service: "coingecko-demo", metric: "monthly_calls", allowance: 10_000, unit: "calls/month" },
@@ -24,20 +21,39 @@ describe("readConfiguredRevalidateSeconds", () => {
 
 describe("checkBudget", () => {
   it("passes at 300s (8,640 modeled monthly calls, within 90% of 10,000)", () => {
-    const violations = checkBudget(300, ALLOWANCES);
-    expect(violations).toEqual([]);
+    expect(checkBudget(300, ALLOWANCES)).toEqual([]);
   });
 
   it("fails at 60s (43,200 modeled monthly calls, far over budget)", () => {
-    const violations = checkBudget(60, ALLOWANCES);
-    expect(violations.length).toBeGreaterThan(0);
-    expect(violations[0]).toContain("43200");
-    expect(violations[0]).toContain("60s");
+    const [violation] = checkBudget(60, ALLOWANCES);
+    expect(violation!.why).toContain("43200");
+    expect(violation!.why).toContain("60s");
+    expect(violation!.where).toBe("apps/web/app/api/price/[symbol]/route.ts");
   });
 
   it("fails clearly when the allowance entry is missing", () => {
-    const violations = checkBudget(300, []);
-    expect(violations.length).toBeGreaterThan(0);
-    expect(violations[0]).toContain("coingecko-demo");
+    const [violation] = checkBudget(300, []);
+    expect(violation!.where).toBe("cost/allowances.json");
+    expect(violation!.why).toContain("coingecko-demo");
+  });
+
+  it("fails in the shared format, citing ADR-0005", () => {
+    const text = expectFailureFormat(checkBudget(60, ALLOWANCES)[0]!, "budget");
+    expect(text).toContain(`✗ budget: ${BUDGET_RULE}`);
+    expect(text).toContain("(ADR-0005)");
+    expectFailureFormat(checkBudget(300, [])[0]!, "budget");
+  });
+});
+
+describe("checkBudgetAt", () => {
+  it("turns an unreadable route into a violation instead of a crash", () => {
+    const [violation] = checkBudgetAt(join(fixturesRoot, "does-not-exist"), ALLOWANCES);
+    expectFailureFormat(violation!, "budget");
+    expect(violation!.fix).toContain("REVALIDATE_SECONDS");
+  });
+
+  it("runs the whole check against a fixture repo", () => {
+    expect(checkBudgetAt(join(fixturesRoot, "budget-ok"), ALLOWANCES)).toEqual([]);
+    expect(checkBudgetAt(join(fixturesRoot, "budget-violation"), ALLOWANCES)).toHaveLength(1);
   });
 });

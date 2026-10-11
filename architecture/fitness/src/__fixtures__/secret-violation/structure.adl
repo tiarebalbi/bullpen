@@ -1,0 +1,8 @@
+DESCRIPTION Secret containment fixture
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Landing AS apps/landing
+  DEFINE COMPONENT Web AS apps/web
+
+# Entry points and secrets
+ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)
