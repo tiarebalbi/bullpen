@@ -54,3 +54,17 @@ trading_owner  SELECT trading.leaderboard_mv    -> OK 0 rows
 
 The same denials are tests in `architecture/fitness/src/db-integration/ownership.int.test.ts`,
 which run in CI against a Postgres service container.
+
+## Why the preview branch had no roles
+
+The Neon branch the `post-03-data` preview uses was created by the Vercel integration before the two owner
+roles existed on production. A Neon branch copies its parent's roles when it is created and not after, so
+it has `neondb_owner` and nothing else. Branches created from production from now on inherit the two roles
+and their schemas. The existing preview branch gets them by running the same two commands against its own
+admin URL.
+
+## Variable names
+
+The runtime URLs keep one name in every environment, with a different value per environment:
+`DATABASE_URL_MARKET_DATA` (read only by `apps/market-data/src/db`) and `DATABASE_URL_TRADING` (read only by
+`apps/web/app/lib/trading`).
