@@ -31,6 +31,8 @@ accounts and positions), and later the leaderboard, which reads both.
 
 ## Decision
 
+Each transactional owner gets its own schema and its own database role, in one database, and nothing reaches across them except one read-only view.
+
 - **One Neon project and one database.** Inside it, a schema and a database
   role per transactional owner, not per code module: `market_data`, owned by
   `market_data_owner`, and `trading`, owned by `trading_owner`.
