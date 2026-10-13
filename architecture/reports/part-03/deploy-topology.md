@@ -178,6 +178,14 @@ sends no `Origin`, so the landing's price strip can be served a response without
 (`s-maxage` with `Vary: Origin`) is unchanged from before the move to the service, so this is likely a problem
 that existed already; I did not check production.
 
+### The daily cron
+
+A top-level `"crons": [{"path": "/api/cron/ingest", "schedule": "0 23 * * *"}]` in the root `vercel.json` is
+accepted in Services mode: the preview deployment is ready and its record lists the cron. The project's own
+cron list (Settings, Cron Jobs) stays empty for a preview, because only production deployments register crons.
+That the schedule then fires, and reaches the Market Data service through its rewrite, is not yet observed: it
+is the first thing to check after merge. On Hobby it fires at some point between 23:00 and 23:59 UTC.
+
 ## Not run
 
 (c) separate Vercel projects: not approved.
