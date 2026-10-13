@@ -47,7 +47,7 @@ describe("the highlighter's token classes", () => {
     expect(spans("name")).toEqual(expect.arrayContaining(["Landing", "Trading App", "UI", "Contracts"]));
     // The secret's name comes from the rule that states it, so this file never spells it.
     const secret = /^ONLY \S+ READS (\S+)$/.exec(adl.rules.find((rule) => rule.text.includes(" READS "))!.text)![1]!;
-    expect(spans("path")).toEqual(expect.arrayContaining(["apps/landing", "packages/ui", "apps/web/app/api/price", secret]));
+    expect(spans("path")).toEqual(expect.arrayContaining(["apps/landing", "packages/ui", "apps/market-data/src", secret]));
     expect(spans("comment")).toEqual(adl.lines.filter((line) => line.kind === "comment").map((line) => line.raw.trim()));
   });
 

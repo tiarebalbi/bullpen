@@ -10,7 +10,7 @@ import { loadCalmDocs } from "../../lib/calm.js";
 import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
 import { buildRuleCards } from "../../lib/ruleCards.js";
-import { loadLatestRulesSnapshot } from "../../lib/rulesSnapshot.js";
+import { loadLatestRulesSnapshot, loadRuleHistory } from "../../lib/rulesSnapshot.js";
 import { buildRulesTabData } from "../../lib/rulesView.js";
 import { loadSeries } from "../../lib/series.js";
 import { Footer } from "../components/Footer.js";
@@ -51,6 +51,7 @@ export default function ArchitecturePage(): ReactNode {
     series: series.map(({ part, title }) => ({ part, title })),
     calm: loadCalmDocs(repoRoot),
     adlRules: adl.rules.map((rule) => rule.text),
+    ruleHistory: loadRuleHistory(join(repoRoot, "architecture", "reports")),
     snapshot,
     cacheSeconds: readPriceCacheSeconds(repoRoot),
   });

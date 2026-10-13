@@ -74,6 +74,19 @@ export function loadLatestRulesSnapshot(reportsDir: string): RulesSnapshot | nul
   return parseRulesSnapshot(readFileSync(join(reportsDir, latest, "summary.json"), "utf8"), `architecture/reports/${latest}/summary.json`);
 }
 
+/** The rule texts each committed snapshot held the code to, by part: what the ADL said when that part was snapshotted. */
+export function loadRuleHistory(reportsDir: string): Map<number, string[]> {
+  const history = new Map<number, string[]>();
+  if (!existsSync(reportsDir)) return history;
+  for (const name of readdirSync(reportsDir).filter((entry) => /^part-0[1-6]$/.test(entry)).sort()) {
+    const file = join(reportsDir, name, "summary.json");
+    if (!existsSync(file)) continue;
+    const snapshot = parseRulesSnapshot(readFileSync(file, "utf8"), `architecture/reports/${name}/summary.json`);
+    history.set(snapshot.part, snapshot.checks.flatMap((check) => check.rules.map((rule) => rule.rule)));
+  }
+  return history;
+}
+
 /** The result of one rule, by its id, or null if the snapshot has none for it. */
 export function resultForRule(snapshot: RulesSnapshot | null, id: string): SnapshotRule | null {
   return snapshot?.checks.flatMap((check) => check.rules).find((rule) => rule.id === id) ?? null;

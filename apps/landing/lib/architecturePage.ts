@@ -110,7 +110,10 @@ export interface ArchitecturePageInput {
   parts: ArchPartData[];
   series: Array<{ part: number; title: string }>;
   calm: Map<number, CalmDocView>;
+  /** The rules of the ADL as it is now: the code on this branch, which the latest built part describes. */
   adlRules: string[];
+  /** The rules each earlier part was held to, from its committed snapshot, keyed by part. An earlier part's moment names paths the live ADL has since moved on from. */
+  ruleHistory?: Map<number, string[]>;
   snapshot: RulesSnapshot | null;
   /** The price route's cache interval, from its own code: shown on the fetch step of a built part's flow. */
   cacheSeconds: number | null;
@@ -130,6 +133,11 @@ function controlRules(controls: CalmControl[], snapshot: RulesSnapshot | null): 
   return rules;
 }
 
+/** A node owns a directory it runs from; a service also owns the directories under its own (its `src`, its `config`). */
+function ownsDirectory(node: CalmNodeView, directory: string): boolean {
+  return directory === node.path || (node.type === "service" && directory.startsWith(`${node.path}/`));
+}
+
 /** What a service owns, from the moment (where it runs from, what it ships) and the ADL (a secret only it may read). */
 function ownedThings(node: CalmNodeView, adlRules: string[]): string[] {
   const owns: string[] = [];
@@ -137,7 +145,7 @@ function ownedThings(node: CalmNodeView, adlRules: string[]): string[] {
   if (node.libraries.length > 0) owns.push(`Ships ${node.libraries.join(" and ")}`);
   for (const rule of adlRules) {
     const secret = SECRET_RULE.exec(rule);
-    if (secret && node.path && secret[1] === node.path) owns.push(`The only code that reads ${secret[2]}`);
+    if (secret && node.path && ownsDirectory(node, secret[1]!)) owns.push(`The only code that reads ${secret[2]}`);
   }
   return owns;
 }
@@ -188,6 +196,18 @@ function builtPartFor(part: number, calm: Map<number, CalmDocView>): number {
   return 1;
 }
 
+/**
+ * The rules a built part is held to: the live ADL for the latest built part, and for an earlier one the
+ * snapshot of the first part at or after it that was snapshotted (Part 1 had no snapshot of its own, and its
+ * rules were Part 2's). Without a snapshot there is nothing older to read, so the live ADL stands.
+ */
+function rulesFor(builtPart: number, input: ArchitecturePageInput): string[] {
+  const latest = Math.max(...[...input.calm].filter(([, doc]) => doc.origin === "moments").map(([part]) => part));
+  if (builtPart >= latest || !input.ruleHistory) return input.adlRules;
+  const snapshotted = [...input.ruleHistory.keys()].filter((part) => part >= builtPart && part < latest).sort((a, b) => a - b)[0];
+  return snapshotted === undefined ? input.adlRules : input.ruleHistory.get(snapshotted)!;
+}
+
 function buildServices(part: number, input: ArchitecturePageInput): ServicesView {
   const builtPart = builtPartFor(part, input.calm);
   const doc = input.calm.get(builtPart);
@@ -196,7 +216,7 @@ function buildServices(part: number, input: ArchitecturePageInput): ServicesView
 
   const built = doc.nodes
     .filter((node) => node.type === "webclient" || node.type === "service")
-    .map((node) => buildService(node, doc, content, input.adlRules, input.snapshot));
+    .map((node) => buildService(node, doc, content, rulesFor(builtPart, input), input.snapshot));
 
   const builtIds = new Set(doc.nodes.map((n) => n.id));
   const selected = input.parts.find((p) => p.part === part);

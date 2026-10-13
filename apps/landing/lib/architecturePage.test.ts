@@ -5,7 +5,7 @@ import { loadArchitectureParts } from "./architecture.js";
 import { buildArchitecturePage, CHECK_NAME_BY_FILE, type ArchitecturePageData } from "./architecturePage.js";
 import { loadCalmDocs } from "./calm.js";
 import { readPriceCacheSeconds } from "./priceCache.js";
-import type { RulesSnapshot } from "./rulesSnapshot.js";
+import { loadRuleHistory, type RulesSnapshot } from "./rulesSnapshot.js";
 import { loadSeries } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
@@ -38,6 +38,7 @@ function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
     parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
     series: loadSeries(join(repoRoot, "content", "series.json")),
     calm: loadCalmDocs(repoRoot),
+    ruleHistory: loadRuleHistory(join(repoRoot, "architecture", "reports")),
     adlRules: adl.rules.map((rule) => rule.text),
     snapshot: withSnapshot,
     cacheSeconds: readPriceCacheSeconds(repoRoot),
@@ -72,6 +73,22 @@ describe("buildArchitecturePage, from the real repo", () => {
       expect(route!.adrs).toEqual(["ADR-0002", "ADR-0005"]);
     });
 
+    it("holds an earlier part to the rules of its own snapshot, not to an ADL its code has since moved on from", () => {
+      const route = page.services[2]!.built[2]!;
+      // Part 2's route ran from apps/web/app/api/price; today's ADL no longer has that rule, the Part 2 snapshot does.
+      expect(route.path).toBe("apps/web/app/api/price");
+      expect(route.owns.some((line) => line.startsWith("The only code that reads "))).toBe(true);
+    });
+
+    it("says a service owns the secrets read under its own directory, from the live ADL, at the latest built part", () => {
+      const service = page.services[3]!.built.find((s) => s.name === "Market Data Service")!;
+      const secrets = service.owns.filter((line) => line.startsWith("The only code that reads ")).map((line) => line.replace("The only code that reads ", ""));
+      // The names come from the ADL's own rules, so this file never has to spell them.
+      const underService = adl.rules.flatMap((rule) => /^ONLY apps\/market-data(?:\/\S+)? READS (\S+)$/.exec(rule.text)?.slice(1) ?? []);
+      expect(underService.length).toBeGreaterThanOrEqual(4);
+      expect(secrets).toEqual(expect.arrayContaining(underService));
+    });
+
     it("lists the interfaces the CALM moment declares, in and out", () => {
       const route = page.services[2]!.built[2]!;
       expect(route.interfaces).toEqual([
@@ -101,7 +118,7 @@ describe("buildArchitecturePage, from the real repo", () => {
         ["Market History Service", 3],
       ]);
       expect(page.services[5]!.planned.map((s) => s.name)).toContain("Orders Service");
-      expect(page.services[3]!.built).toHaveLength(4);
+      expect(page.services[3]!.built).toHaveLength(3);
     });
 
     it("every control that names a check names one the snapshot can report on", () => {

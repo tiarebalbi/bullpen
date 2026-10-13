@@ -36,7 +36,9 @@ ASSERT(Landing HAS NO DEPENDENCY ON trading, market-data)
 
 # Entry points and secrets
 ASSERT(COMPONENTS use LIBRARIES ONLY THROUGH their package entry point)
-ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)
+ASSERT(ONLY apps/market-data/src READS COINGECKO_DEMO_API_KEY)
+ASSERT(ONLY apps/market-data/src READS ALPHA_VANTAGE_API_KEY)
+ASSERT(ONLY apps/market-data/src READS CRON_SECRET)
 ASSERT(ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA)
 ASSERT(ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING)
 

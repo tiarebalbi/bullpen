@@ -17,6 +17,8 @@ export interface IngestDeps {
   log: Logger & { info: (message: string, fields: Record<string, unknown>) => void };
   symbols?: readonly string[];
   spacingMs?: number;
+  /** `VERCEL_ENV`: decides which cap and ledger row the calls count against. */
+  vercelEnv?: string;
   /** Test seams: what the ingest stores into, asks, and reserves with. They default to the real ones. */
   seams?: { has?: typeof hasQuote; store?: typeof storeQuote; reserve?: Reserve };
 }
@@ -44,7 +46,7 @@ export interface IngestSummary {
  * provider's latest trading day is the day being priced.
  */
 export async function runStockIngest(deps: IngestDeps): Promise<IngestSummary> {
-  const { pool, apiKey, now, fetchFn, sleep, log, symbols = STOCK_SYMBOLS, spacingMs = CALL_SPACING_MS, seams = {} } = deps;
+  const { pool, apiKey, now, fetchFn, sleep, log, symbols = STOCK_SYMBOLS, spacingMs = CALL_SPACING_MS, vercelEnv, seams = {} } = deps;
   const { has = hasQuote, store = storeQuote, reserve } = seams;
   const date = newYorkDate(now);
   const summary: IngestSummary = { date, skipped: null, stored: [], alreadyHad: [], notYetPublished: [], failed: [], refused: false };
@@ -58,7 +60,7 @@ export async function runStockIngest(deps: IngestDeps): Promise<IngestSummary> {
       continue;
     }
     try {
-      await reserveCall(pool, "alphavantage", now, { log, reserve });
+      await reserveCall(pool, "alphavantage", now, { log, reserve, vercelEnv });
     } catch (error) {
       if (!(error instanceof BudgetExceeded)) throw error;
       summary.refused = true;

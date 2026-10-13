@@ -7,8 +7,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { globalQuoteUrl } from "../src/alphavantage.ts";
-import { STOCK_SYMBOLS } from "../src/symbols.ts";
+import { globalQuoteUrl } from "../alphavantage.js";
+import { STOCK_SYMBOLS } from "../symbols.js";
 
 const key = process.env.ALPHA_VANTAGE_API_KEY;
 if (!key) {
@@ -18,7 +18,7 @@ if (!key) {
 const maxIndex = process.argv.indexOf("--max");
 const max = Math.min(10, maxIndex === -1 ? 10 : Number(process.argv[maxIndex + 1]));
 const symbols = STOCK_SYMBOLS.slice(0, max);
-const directory = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "__fixtures__", "alphavantage");
+const directory = join(dirname(fileURLToPath(import.meta.url)), "..", "__fixtures__", "alphavantage");
 mkdirSync(directory, { recursive: true });
 
 for (const [index, symbol] of symbols.entries()) {

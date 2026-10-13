@@ -28,7 +28,7 @@ const FULL_ADL = [
   ...Object.values(ADL_RULE).map((rule) => `ASSERT(${rule})`),
   "ASSERT(A IS DEPENDENT ON L)",
   "ASSERT(A HAS NO DEPENDENCY ON B)",
-  "ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)",
+  "ASSERT(ONLY apps/market-data/src READS COINGECKO_DEMO_API_KEY)",
 ].join("\n");
 
 describe("the real structure.adl", () => {
@@ -54,7 +54,7 @@ describe("the real structure.adl", () => {
     for (const text of Object.values(ADL_RULE)) expect(texts).toContain(text);
     expect(texts).toContain("Landing IS DEPENDENT ON UI, Contracts");
     expect(texts).toContain("Landing HAS NO DEPENDENCY ON Trading App");
-    expect(texts).toContain("ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY");
+    expect(texts).toContain("ONLY apps/market-data/src READS COINGECKO_DEMO_API_KEY");
   });
 
   it("is fully enforced: every ASSERT has a check, and every check's rule is still written here", () => {

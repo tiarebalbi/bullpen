@@ -127,31 +127,6 @@
       }
     },
     {
-      "unique-id": "price-snapshot-service",
-      "node-type": "service",
-      "name": "Price Snapshot Service",
-      "description": "Serverless function backing GET /api/price/[symbol] in apps/web; fetches a point-in-time price for a symbol from CoinGecko and returns it to the trading app. It is the only code that reads the CoinGecko Demo API key.",
-      "metadata": {
-        "bullpen:path": "apps/web/app/api/price"
-      },
-      "controls": {
-        "secret-containment": {
-          "description": "The CoinGecko Demo API key stays in one place: only this route reads it. Everything else in apps/ and packages/ fails check:arch if it names the variable in code.",
-          "requirements": [
-            {
-              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
-              "config": {
-                "control-id": "CR-SECRET-CONTAINMENT",
-                "name": "The API key is read in one place",
-                "description": "ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY.",
-                "enforced-by": "architecture/fitness/src/secret-check.ts"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
       "unique-id": "market-data-provider",
       "node-type": "external-system",
       "name": "CoinGecko",
@@ -203,13 +178,29 @@
       "unique-id": "market-data-service",
       "node-type": "service",
       "name": "Market Data Service",
-      "description": "The single owner of market data: both providers (stocks end of day, crypto) and both call budgets. It is a boundary inside one release, not an independently deployed microservice.",
+      "description": "The single owner of market data: both providers (stocks end of day, crypto) and both call budgets. It serves the public price route and the daily ingest. It is a boundary inside one release, not an independently deployed microservice.",
       "metadata": {
         "bullpen:path": "apps/market-data",
         "bullpen:libraries": [
           "packages/contracts",
           "packages/db-market-data"
         ]
+      },
+      "controls": {
+        "secret-containment": {
+          "description": "The provider keys, the cron secret and the database URL stay in one place: only this service reads them. Everything else in apps/ and packages/ fails check:arch if it names them in code.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-SECRET-CONTAINMENT",
+                "name": "The market-data secrets are read in one place",
+                "description": "ONLY apps/market-data/src READS COINGECKO_DEMO_API_KEY. ONLY apps/market-data/src READS ALPHA_VANTAGE_API_KEY. ONLY apps/market-data/src READS CRON_SECRET.",
+                "enforced-by": "architecture/fitness/src/secret-check.ts"
+              }
+            }
+          ]
+        }
       }
     },
     {
@@ -233,6 +224,12 @@
           ]
         }
       }
+    },
+    {
+      "unique-id": "stock-data-provider",
+      "node-type": "external-system",
+      "name": "Stock data provider",
+      "description": "External market-data API for U.S. stock prices: end of day, one request per symbol, fetched once a day by the Market Data service within a daily call budget."
     }
   ],
   "relationships": [
@@ -261,15 +258,15 @@
       }
     },
     {
-      "unique-id": "trading-app-to-price-snapshot",
-      "description": "Trading app requests a live price snapshot for a symbol.",
+      "unique-id": "trading-app-to-market-data",
+      "description": "Trading app requests a live price for a symbol: GET /api/price/<symbol>, rewritten to the Market Data service.",
       "relationship-type": {
         "connects": {
           "source": {
             "node": "trading-app"
           },
           "destination": {
-            "node": "price-snapshot-service"
+            "node": "market-data-service"
           }
         }
       },
@@ -279,12 +276,12 @@
       }
     },
     {
-      "unique-id": "price-snapshot-to-market-data",
-      "description": "Price snapshot service calls CoinGecko's /simple/price endpoint for the current BTC-USD price, authenticated via a server-side Demo API key header, and caches the answer for 300 seconds.",
+      "unique-id": "market-data-to-crypto-provider",
+      "description": "The Market Data service fetches a crypto price from CoinGecko, after reserving a call against its budget.",
       "relationship-type": {
         "connects": {
           "source": {
-            "node": "price-snapshot-service"
+            "node": "market-data-service"
           },
           "destination": {
             "node": "market-data-provider"
@@ -447,6 +444,24 @@
       "metadata": {
         "role": "trading_owner",
         "schema": "trading"
+      }
+    },
+    {
+      "unique-id": "market-data-to-stock-provider",
+      "description": "The Market Data service fetches each stock's end-of-day price once a day, after reserving a call against the daily budget.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "stock-data-provider"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous"
       }
     }
   ]
