@@ -55,16 +55,24 @@ trading_owner  SELECT trading.leaderboard_mv    -> OK 0 rows
 The same denials are tests in `architecture/fitness/src/db-integration/ownership.int.test.ts`,
 which run in CI against a Postgres service container.
 
-## Why the preview branch had no roles
+## Previews use the production branch
 
-The Neon branch the `post-03-data` preview uses was created by the Vercel integration before the two owner
-roles existed on production. A Neon branch copies its parent's roles when it is created and not after, so
-it has `neondb_owner` and nothing else. Branches created from production from now on inherit the two roles
-and their schemas. The existing preview branch gets them by running the same two commands against its own
-admin URL.
+Preview deployments connect to the production Neon branch: there is no preview database. Preview branching is
+off, and the preview branch the integration had made (`preview/post-03-data`) is deleted. It had no owner roles
+because it was created before they existed on production; a Neon branch copies its parent's roles when it is
+created, not after. `DATABASE_URL_TRADING` and `DATABASE_URL_MARKET_DATA` apply to Preview and Production with
+the same values.
+
+The production branch holds no real data yet, and the owner resets it if a test goes wrong. Test data written by
+a validation run carries a marker (an account handle starting `zz-test-`, or a quote whose source is `test`),
+and `pnpm --filter @bullpen/fitness-checks db:cleanup-test-data` removes it, with `--dry-run` to count first.
+
+Because the database is shared, so is the provider call ledger. A call made outside production is counted on its
+own row (`alphavantage:non-production`, cap 5) next to production's (`alphavantage`, cap 20): both are visible in
+`market_data.provider_calls`, and 20 plus 5 stay inside the provider's 25 a day.
 
 ## Variable names
 
-The runtime URLs keep one name in every environment, with a different value per environment:
+The runtime URLs keep one name in every environment (the same value in Preview and Production):
 `DATABASE_URL_MARKET_DATA` (read only by `apps/market-data/src/db`) and `DATABASE_URL_TRADING` (read only by
 `apps/web/app/lib/trading`).

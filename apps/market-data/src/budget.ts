@@ -6,7 +6,7 @@ export type Provider = "alphavantage" | "coingecko";
 interface Budget {
   /** The production cap. */
   cap: number;
-  /** The cap everywhere else (previews, local): small, because a preview has its own ledger but draws on the provider's one real allowance. */
+  /** The cap everywhere else (previews, local): small, because a preview shares the database but draws on the provider's one real allowance. */
   nonProductionCap: number;
   window: "provider-day" | "month";
 }
@@ -17,10 +17,12 @@ interface Budget {
  * manual re-run. CoinGecko's Demo plan allows 10,000 calls a month; the cap is
  * 9,000, the 90% line ADR-0005's budget check models against.
  *
- * A preview deployment has its own database branch, so its own ledger, but
- * the provider counts one allowance for the key. Production's 20 plus a
- * preview's 5 stay inside Alpha Vantage's 25, so a hand-called preview
- * ingest cannot take production's day away.
+ * A preview deployment uses the same database as production, and the provider
+ * counts one allowance for the key. Calls made outside production are counted
+ * on their own ledger row (`alphavantage:non-production`) with the smaller cap,
+ * so both are visible in the same table, and production's 20 plus a preview's 5
+ * stay inside Alpha Vantage's 25: a hand-called preview ingest cannot take
+ * production's day away.
  */
 export const BUDGETS: Record<Provider, Budget> = {
   alphavantage: { cap: 20, nonProductionCap: 5, window: "provider-day" },
@@ -39,6 +41,11 @@ export function providerDay(now: Date): string {
 /** The cap in force: production's own, or the smaller one for a preview or local run. */
 export function capFor(provider: Provider, vercelEnv: string | undefined = process.env.VERCEL_ENV): number {
   return vercelEnv === "production" ? BUDGETS[provider].cap : BUDGETS[provider].nonProductionCap;
+}
+
+/** The ledger row a call counts against: the provider itself in production, a separate row elsewhere. */
+export function ledgerName(provider: Provider, vercelEnv: string | undefined = process.env.VERCEL_ENV): string {
+  return vercelEnv === "production" ? provider : `${provider}:non-production`;
 }
 
 export function windowKey(provider: Provider, now: Date): string {
@@ -68,7 +75,7 @@ export type Reserve = (pool: Pool, provider: string, window: string, cap: number
 export async function reserveCall(pool: Pool, provider: Provider, now: Date, seams: { log?: Logger; reserve?: Reserve; vercelEnv?: string } = {}): Promise<number> {
   const { log = consoleLogger, reserve = reserveProviderCall, vercelEnv } = seams;
   const window = windowKey(provider, now);
-  const { granted, calls, cap } = await reserve(pool, provider, window, capFor(provider, vercelEnv));
+  const { granted, calls, cap } = await reserve(pool, ledgerName(provider, vercelEnv), window, capFor(provider, vercelEnv));
   if (!granted) {
     log.warn("provider call refused before it left the process", { provider, window, calls, cap });
     throw new BudgetExceeded(provider, window, cap);

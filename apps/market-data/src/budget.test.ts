@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Pool } from "pg";
-import { BUDGETS, BudgetExceeded, capFor, providerDay, reserveCall, windowKey } from "./budget.js";
+import { BUDGETS, BudgetExceeded, capFor, ledgerName, providerDay, reserveCall, windowKey } from "./budget.js";
 
 describe("the provider budgets", () => {
   it("caps Alpha Vantage below its 25 a day, with headroom", () => {
@@ -18,6 +18,12 @@ describe("the provider budgets", () => {
     expect(capFor("alphavantage", undefined)).toBe(5);
     expect(capFor("alphavantage", "production") + capFor("alphavantage", "preview")).toBeLessThanOrEqual(25);
     expect(capFor("coingecko", "preview")).toBeLessThan(capFor("coingecko", "production"));
+  });
+
+  it("counts non-production calls on their own ledger row, production's on the provider's", () => {
+    expect(ledgerName("alphavantage", "production")).toBe("alphavantage");
+    expect(ledgerName("alphavantage", "preview")).toBe("alphavantage:non-production");
+    expect(ledgerName("coingecko", undefined)).toBe("coingecko:non-production");
   });
 
   it("rolls the provider-day over at midnight UTC, not a second before", () => {
@@ -44,15 +50,18 @@ describe("reserveCall", () => {
     expect(warnings).toEqual([]);
   });
 
-  it("reserves with the preview cap outside production", async () => {
-    const caps: number[] = [];
-    const reserve = async (_p: Pool, _n: string, _w: string, cap: number) => {
-      caps.push(cap);
+  it("reserves with the preview cap on the non-production row outside production, and production's on its own", async () => {
+    const seen: Array<[string, number]> = [];
+    const reserve = async (_p: Pool, name: string, _w: string, cap: number) => {
+      seen.push([name, cap]);
       return { granted: true, calls: 1, cap };
     };
     await reserveCall(pool, "alphavantage", now, { reserve, vercelEnv: "preview" });
     await reserveCall(pool, "alphavantage", now, { reserve, vercelEnv: "production" });
-    expect(caps).toEqual([5, 20]);
+    expect(seen).toEqual([
+      ["alphavantage:non-production", 5],
+      ["alphavantage", 20],
+    ]);
   });
 
   it("refuses a call over the cap, logs the refusal with the provider, window and cap, and throws", async () => {
