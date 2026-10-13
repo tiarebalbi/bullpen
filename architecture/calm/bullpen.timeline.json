@@ -45,10 +45,10 @@
     {
       "unique-id": "part-03",
       "node-type": "moment",
-      "name": "Part 3 (planned) — Data ownership and the first split",
-      "description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database, and a proposed U.S. stock data provider (Alpha Vantage, pending written permission — see ADR-0008) appears as an external system.",
+      "name": "Part 3 — Who owns the data",
+      "description": "What runs at the end of Part 3: a Market Data service beside the trading app in one Vercel project, and one Neon database with a schema and role per owner. Week one predicted two services with two databases; the build kept one owner per transaction instead.",
       "details": {
-        "detailed-architecture": "planned/part-03.architecture.json",
+        "detailed-architecture": "moments/part-03.architecture.json",
         "required-pattern": "bullpen.pattern.json"
       },
       "adrs": [
@@ -57,8 +57,14 @@
         "architecture/adr/0016-only-accepted-decisions-authorize-the-model.md",
         "architecture/adr/0012-data-ownership-schema-and-role-per-owner.md",
         "architecture/adr/0013-one-market-data-owner.md",
-        "architecture/adr/0014-leaderboard-as-a-materialized-view.md"
-      ]
+        "architecture/adr/0014-leaderboard-as-a-materialized-view.md",
+        "architecture/adr/0004-deploy-topology-vercel-services.md"
+      ],
+      "metadata": {
+        "planned-architecture": "planned/part-03.architecture.json",
+        "planned-name": "Part 3 (planned) — Data ownership and the first split",
+        "planned-description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database, and a stock data provider appears as an external system."
+      }
     },
     {
       "unique-id": "part-04",

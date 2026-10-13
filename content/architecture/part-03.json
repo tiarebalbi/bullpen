@@ -1,7 +1,7 @@
 {
   "part": 3,
   "status": "planned",
-  "summary": "Prediction, not yet built: data ownership and the first real service split. The Prices Service and Market History Service each own their own database instead of sharing state.",
+  "summary": "What runs at the end of Part 3: a Market Data service beside the trading app in one Vercel project, and one Neon database with a schema and role per owner. Week one predicted two services with two databases; the build kept one owner per transaction instead.",
   "nodes": [
     {
       "id": "reader",
@@ -17,9 +17,22 @@
       "label": "Player",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "Views live and historical prices. Paper trades arrive in Part 4.",
-      "x": 400,
+      "purpose": "Sees live crypto and end-of-day stock prices and the leaderboard. Accounts and orders arrive in Part 4.",
+      "x": 320,
       "y": 40
+    },
+    {
+      "id": "daily-ingest-cron",
+      "label": "Daily ingest cron",
+      "kind": "infra",
+      "meta": "Vercel cron",
+      "purpose": "Vercel's scheduler: once a day after the U.S. close it calls the Market Data service's ingest, with a secret.",
+      "x": 600,
+      "y": 40,
+      "adrs": [
+        "ADR-0004",
+        "ADR-0013"
+      ]
     },
     {
       "id": "landing-app",
@@ -29,88 +42,315 @@
       "purpose": "The public landing site with the architecture timeline explorer.",
       "x": 40,
       "y": 220,
-      "costNote": "Planned"
+      "adrs": [
+        "ADR-0003",
+        "ADR-0006",
+        "ADR-0009"
+      ],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "trading-app",
       "label": "Bullpen Trading App",
       "kind": "app",
       "meta": "Next.js",
-      "purpose": "The trading app where players view live and historical prices and place paper trades.",
-      "x": 400,
+      "purpose": "The trading app. It owns orders, the ledger, positions and the leaderboard view in the trading schema, and shows end-of-day stock prices read through prices_v1.",
+      "x": 320,
       "y": 220,
-      "costNote": "Planned"
+      "adrs": [
+        "ADR-0001",
+        "ADR-0003",
+        "ADR-0012",
+        "ADR-0014"
+      ],
+      "costNote": "Free tier (Hobby)"
     },
     {
-      "id": "prices-service",
-      "label": "Prices Service",
+      "id": "market-data-service",
+      "label": "Market Data Service",
       "kind": "service",
-      "meta": "Serverless",
-      "purpose": "Owns live price snapshots; supersedes Part 1's price-snapshot-service now that history has split out into its own service and database.",
-      "x": 260,
-      "y": 400,
-      "db": true,
-      "costNote": "Planned"
-    },
-    {
-      "id": "prices-db",
-      "label": "Prices Database",
-      "kind": "data",
-      "meta": "Neon Postgres",
-      "purpose": "Neon Postgres database owned solely by the Prices Service; the first data-ownership boundary in the system.",
-      "x": 260,
-      "y": 560,
-      "costNote": "Planned"
-    },
-    {
-      "id": "market-history-service",
-      "label": "Market History Service",
-      "kind": "service",
-      "meta": "Serverless",
-      "purpose": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database.",
-      "x": 540,
-      "y": 400,
-      "db": true,
-      "costNote": "Planned"
-    },
-    {
-      "id": "market-history-db",
-      "label": "Market History Database",
-      "kind": "data",
-      "meta": "Neon Postgres",
-      "purpose": "Neon Postgres database owned solely by the Market History Service.",
-      "x": 540,
-      "y": 560,
-      "costNote": "Planned"
+      "meta": "Vercel Service",
+      "purpose": "Replaces the Price Snapshot Service: the CoinGecko price route moved into it. It owns both providers and both call budgets, and is the only writer of the market_data schema. A boundary in one release, not an independently deployed microservice.",
+      "x": 600,
+      "y": 220,
+      "adrs": [
+        "ADR-0004",
+        "ADR-0013"
+      ],
+      "costNote": "Free tier (Hobby)",
+      "replaces": [
+        "price-snapshot-service"
+      ]
     },
     {
       "id": "market-data-provider",
-      "label": "Stock data provider",
+      "label": "CoinGecko",
       "kind": "ext",
-      "meta": "Pending",
-      "purpose": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display.",
-      "x": 260,
-      "y": 720,
-      "costNote": "Planned"
+      "meta": "Demo API",
+      "purpose": "Crypto prices. Called only by the Market Data service, inside a monthly call budget, with the key in a header.",
+      "x": 880,
+      "y": 160,
+      "adrs": [
+        "ADR-0005"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "stock-data-provider",
+      "label": "Alpha Vantage",
+      "kind": "ext",
+      "meta": "End of day",
+      "purpose": "U.S. stock prices, end of day, one request per symbol, fetched once a day by the Market Data service inside a daily call budget.",
+      "x": 880,
+      "y": 300,
+      "adrs": [
+        "ADR-0008"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "google-analytics",
+      "label": "Google Analytics 4",
+      "kind": "ext",
+      "meta": "Analytics",
+      "purpose": "Page views and a short list of events, only after the visitor accepts.",
+      "x": 40,
+      "y": 400,
+      "adrs": [
+        "ADR-0010"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "microsoft-clarity",
+      "label": "Microsoft Clarity",
+      "kind": "ext",
+      "meta": "Recordings",
+      "purpose": "Heatmaps and session recordings, only after the visitor accepts.",
+      "x": 40,
+      "y": 560,
+      "adrs": [
+        "ADR-0010"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "schema-trading",
+      "label": "trading schema",
+      "kind": "data",
+      "meta": "Schema · trading_owner",
+      "purpose": "Accounts, orders, the ledger, positions and the leaderboard view. Orders and the ledger are written in one transaction.",
+      "x": 320,
+      "y": 420,
+      "adrs": [
+        "ADR-0012"
+      ],
+      "owner": "trading-app"
+    },
+    {
+      "id": "schema-market-data",
+      "label": "market_data schema",
+      "kind": "data",
+      "meta": "Schema · market_data_owner",
+      "purpose": "Quotes, the provider call ledger, and the view prices_v1.",
+      "x": 600,
+      "y": 420,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0013"
+      ],
+      "owner": "market-data-service"
+    },
+    {
+      "id": "prices-v1",
+      "label": "market_data.prices_v1",
+      "kind": "data",
+      "meta": "View · read-only",
+      "purpose": "The price contract: symbol, price, as-of time, source and a stale flag. The only thing outside market_data that trading may read.",
+      "x": 460,
+      "y": 580,
+      "adrs": [
+        "ADR-0012"
+      ],
+      "owner": "market-data-service"
+    },
+    {
+      "id": "bullpen-database",
+      "label": "Bullpen Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "One Neon project and one database, with a schema and a plain role per owner.",
+      "x": 460,
+      "y": 740,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0014"
+      ],
+      "costNote": "Free tier"
     }
   ],
   "edges": [
-    { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
-    { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
-    { "id": "trading-app-to-prices", "a": "trading-app", "b": "prices-service", "type": "sync" },
-    { "id": "trading-app-to-history", "a": "trading-app", "b": "market-history-service", "type": "sync" },
-    { "id": "prices-to-market-data", "a": "prices-service", "b": "market-data-provider", "type": "sync" },
-    { "id": "prices-to-prices-db", "a": "prices-service", "b": "prices-db", "type": "sync" },
-    { "id": "history-to-history-db", "a": "market-history-service", "b": "market-history-db", "type": "sync" }
+    {
+      "id": "reader-to-landing",
+      "a": "reader",
+      "b": "landing-app",
+      "type": "sync"
+    },
+    {
+      "id": "player-to-trading-app",
+      "a": "player",
+      "b": "trading-app",
+      "type": "sync"
+    },
+    {
+      "id": "daily-cron-to-market-data",
+      "a": "daily-ingest-cron",
+      "b": "market-data-service",
+      "type": "sync"
+    },
+    {
+      "id": "landing-to-market-data",
+      "a": "landing-app",
+      "b": "market-data-service",
+      "type": "sync"
+    },
+    {
+      "id": "trading-app-to-market-data",
+      "a": "trading-app",
+      "b": "market-data-service",
+      "type": "sync"
+    },
+    {
+      "id": "market-data-to-crypto-provider",
+      "a": "market-data-service",
+      "b": "market-data-provider",
+      "type": "sync"
+    },
+    {
+      "id": "market-data-to-stock-provider",
+      "a": "market-data-service",
+      "b": "stock-data-provider",
+      "type": "sync"
+    },
+    {
+      "id": "trading-app-to-trading-schema",
+      "a": "trading-app",
+      "b": "schema-trading",
+      "type": "sync",
+      "label": "trading_owner · read/write"
+    },
+    {
+      "id": "trading-app-to-prices-v1",
+      "a": "trading-app",
+      "b": "prices-v1",
+      "type": "sync",
+      "label": "trading_owner · read only"
+    },
+    {
+      "id": "market-data-to-market-data-schema",
+      "a": "market-data-service",
+      "b": "schema-market-data",
+      "type": "sync",
+      "label": "market_data_owner · write"
+    },
+    {
+      "id": "landing-to-google-analytics",
+      "a": "landing-app",
+      "b": "google-analytics",
+      "type": "async"
+    },
+    {
+      "id": "landing-to-microsoft-clarity",
+      "a": "landing-app",
+      "b": "microsoft-clarity",
+      "type": "async"
+    },
+    {
+      "id": "trading-app-to-google-analytics",
+      "a": "trading-app",
+      "b": "google-analytics",
+      "type": "async"
+    },
+    {
+      "id": "trading-app-to-microsoft-clarity",
+      "a": "trading-app",
+      "b": "microsoft-clarity",
+      "type": "async"
+    }
   ],
-  "groups": [],
+  "groups": [
+    {
+      "id": "vercel-project",
+      "label": "One Vercel project, shared release",
+      "nodeIds": [
+        "trading-app",
+        "market-data-service"
+      ]
+    },
+    {
+      "id": "neon-database",
+      "label": "One Neon database",
+      "nodeIds": [
+        "bullpen-database",
+        "schema-trading",
+        "schema-market-data",
+        "prices-v1"
+      ]
+    }
+  ],
   "request": {
     "name": "a price request",
     "steps": [
-      { "edge": "trading-app-to-prices", "caption": "Ask for a live quote", "detail": "The trading app requests a live price snapshot from the Prices Service." },
-      { "edge": "prices-to-market-data", "caption": "Fetch upstream", "detail": "Server-side call to the proposed stock data provider (pending permission)." },
-      { "edge": "prices-to-prices-db", "caption": "Cache the snapshot", "detail": "Written to the Prices Service's own database." },
-      { "edge": "trading-app-to-prices", "caption": "Return the snapshot", "detail": "Bullpen's own shape, never the raw upstream payload.", "reverse": true }
+      {
+        "edge": "landing-to-market-data",
+        "caption": "Ask for a quote",
+        "detail": "The landing's price strip asks the trading app's domain for BTC-USD; a rewrite on /api/price sends the request to the Market Data service."
+      },
+      {
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Fetch upstream",
+        "detail": "The service counts the call against its monthly budget, then calls CoinGecko server-side with the Demo API key in a header, never the URL."
+      },
+      {
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Return the snapshot",
+        "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt. The response says it varies by Origin.",
+        "reverse": true
+      },
+      {
+        "edge": "landing-to-market-data",
+        "caption": "Answer the strip",
+        "detail": "The allowed landing origin is echoed in the response, and nothing else is.",
+        "reverse": true
+      }
     ]
-  }
+  },
+  "requests": [
+    {
+      "name": "a buy",
+      "steps": [
+        {
+          "edge": "player-to-trading-app",
+          "caption": "Place a buy",
+          "detail": "A market order, filled at the latest price. Part 3 builds the transaction and tests it; no page offers it yet, because accounts and orders arrive in Part 4."
+        },
+        {
+          "edge": "trading-app-to-prices-v1",
+          "caption": "Read the price",
+          "detail": "Through prices_v1 only, as trading_owner. A stale price is refused with a clear message."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "One transaction",
+          "detail": "Reserve buying power with one conditional update, insert the order and its ledger entries, update the position. Any failure rolls all of it back."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "Commit or refuse",
+          "detail": "Two buys that each fit but together overspend leave exactly one committed; the other leaves no order, no ledger entry and no reservation.",
+          "reverse": true
+        }
+      ]
+    }
+  ]
 }

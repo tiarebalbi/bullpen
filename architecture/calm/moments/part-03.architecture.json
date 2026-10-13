@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "bullpen-part-03",
   "name": "Bullpen — Part 3",
-  "description": "What runs on the branch that builds Part 3. It starts as the Part 2 system and gains a node in the same commit that adds the matching entry to the ADL.",
+  "description": "What runs at the end of Part 3: a Market Data service beside the trading app in one Vercel project, and one Neon database with a schema and role per owner. Week one predicted two services with two databases; the build kept one owner per transaction instead.",
   "metadata": {
     "status": "current",
     "part": 3
@@ -20,7 +20,8 @@
     "architecture/adr/0016-only-accepted-decisions-authorize-the-model.md",
     "architecture/adr/0012-data-ownership-schema-and-role-per-owner.md",
     "architecture/adr/0013-one-market-data-owner.md",
-    "architecture/adr/0014-leaderboard-as-a-materialized-view.md"
+    "architecture/adr/0014-leaderboard-as-a-materialized-view.md",
+    "architecture/adr/0004-deploy-topology-vercel-services.md"
   ],
   "nodes": [
     {
@@ -91,35 +92,27 @@
       "unique-id": "trading-app",
       "node-type": "webclient",
       "name": "Bullpen Trading App",
-      "description": "The trading app (apps/web) where players view live prices and will place paper trades.",
+      "description": "The trading app: it owns orders, the ledger, positions and the leaderboard view in the trading schema, and shows end-of-day stock prices read through prices_v1.",
       "metadata": {
         "bullpen:path": "apps/web",
         "bullpen:libraries": [
           "packages/ui",
           "packages/contracts",
           "packages/db-trading"
-        ]
+        ],
+        "bullpen:group": "One Vercel project, shared release"
       },
       "controls": {
-        "app-boundaries": {
-          "description": "An app never depends on another app, and imports a library only through its package entry point. Both are ADL rules that fail check:arch.",
+        "price-contract-only": {
+          "description": "trading READS market_data ONLY THROUGH market_data.prices_v1: no grant on any market_data table.",
           "requirements": [
             {
               "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
               "config": {
-                "control-id": "CR-COMPONENT-DEPENDENCIES",
-                "name": "Components depend only on what they may",
-                "description": "turbo boundaries enforces the IS DEPENDENT ON and HAS NO DEPENDENCY ON rules of structure.adl, direct and transitive, and reports a breach as the ASSERT it breaks.",
-                "enforced-by": "architecture/fitness/src/boundaries-check.ts"
-              }
-            },
-            {
-              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
-              "config": {
-                "control-id": "CR-LIBRARY-ENTRY-POINT",
-                "name": "Libraries are imported through their entry point",
-                "description": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point: no @bullpen/ui/src/... and no relative path into packages/.",
-                "enforced-by": "architecture/fitness/src/imports-check.ts"
+                "control-id": "CR-PRICE-CONTRACT",
+                "name": "Prices only through the contract",
+                "description": "trading READS market_data ONLY THROUGH market_data.prices_v1: no grant on any market_data table.",
+                "enforced-by": "architecture/fitness/src/data-ownership-check.ts"
               }
             }
           ]
@@ -184,7 +177,8 @@
         "bullpen:libraries": [
           "packages/contracts",
           "packages/db-market-data"
-        ]
+        ],
+        "bullpen:group": "One Vercel project, shared release"
       },
       "controls": {
         "secret-containment": {
@@ -200,6 +194,20 @@
               }
             }
           ]
+        },
+        "call-budget": {
+          "description": "A call ledger caps stock calls at 20 a provider-day and crypto at 9,000 a month; a call over the cap is refused before it leaves the process. CoinGecko's monthly volume is also modelled against its allowance.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-CALL-BUDGET",
+                "name": "Every provider call is counted before it leaves",
+                "description": "A call ledger caps stock calls at 20 a provider-day and crypto at 9,000 a month; a call over the cap is refused before it leaves the process. CoinGecko's monthly volume is also modelled against its allowance.",
+                "enforced-by": "architecture/fitness/src/budget-check.ts"
+              }
+            }
+          ]
         }
       }
     },
@@ -207,17 +215,31 @@
       "unique-id": "bullpen-database",
       "node-type": "database",
       "name": "Bullpen Database",
-      "description": "One Neon Postgres project and one database, with a schema and a database role per transactional owner: market_data (owned by market_data_owner) and trading (owned by trading_owner). The only read across them is the view market_data.prices_v1.",
+      "description": "One Neon Postgres project and one database. A schema and a plain database role per transactional owner: market_data (market_data_owner) and trading (trading_owner), with one read-only view, market_data.prices_v1, between them. Orders and the ledger stay in one transaction.",
       "controls": {
-        "data-ownership": {
-          "description": "Writes to a schema come only from its owner; trading reads market_data only through market_data.prices_v1; a migration touches only its own schema.",
+        "owner-roles": {
+          "description": "ONLY market-data WRITES market_data. ONLY trading WRITES trading.orders AND trading.ledger. The runtime roles are plain: no superuser, no bypass, no membership of a role that reads every schema.",
           "requirements": [
             {
               "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
               "config": {
-                "control-id": "CR-DATA-OWNERSHIP",
-                "name": "Each schema has one owner",
-                "description": "ONLY market-data WRITES market_data. trading READS market_data ONLY THROUGH market_data.prices_v1. ONLY trading WRITES trading.orders AND trading.ledger.",
+                "control-id": "CR-OWNER-ROLES",
+                "name": "One writer per schema",
+                "description": "ONLY market-data WRITES market_data. ONLY trading WRITES trading.orders AND trading.ledger. The runtime roles are plain: no superuser, no bypass, no membership of a role that reads every schema.",
+                "enforced-by": "architecture/fitness/src/data-ownership-check.ts"
+              }
+            }
+          ]
+        },
+        "migration-folders": {
+          "description": "A migration in one owner's folder that names the other owner's schema fails the build, and fails in the database because each folder runs as its own owner.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-MIGRATION-FOLDERS",
+                "name": "A migration touches only its own schema",
+                "description": "A migration in one owner's folder that names the other owner's schema fails the build, and fails in the database because each folder runs as its own owner.",
                 "enforced-by": "architecture/fitness/src/data-ownership-check.ts"
               }
             }
@@ -228,8 +250,63 @@
     {
       "unique-id": "stock-data-provider",
       "node-type": "external-system",
-      "name": "Stock data provider",
-      "description": "External market-data API for U.S. stock prices: end of day, one request per symbol, fetched once a day by the Market Data service within a daily call budget."
+      "name": "Alpha Vantage",
+      "description": "External market-data API for U.S. stock prices: end of day, one request per symbol, fetched once a day by the Market Data service within a daily call budget (ADR-0008).",
+      "controls": {
+        "status-aware-drift-check": {
+          "description": "A node that names a provider is held to an Accepted ADR: a Proposed one counts as undecided and fails the build (ADR-0016).",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-STATUS-AWARE-DRIFT",
+                "name": "The drift check is status-aware",
+                "description": "A node that names a provider is held to an Accepted ADR: a Proposed one counts as undecided and fails the build (ADR-0016).",
+                "enforced-by": "architecture/fitness/src/model-currency-check.ts"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "daily-ingest-cron",
+      "node-type": "actor",
+      "name": "Daily ingest cron",
+      "description": "Vercel's scheduler: once a day after the U.S. close it calls the Market Data service's ingest, with a secret."
+    },
+    {
+      "unique-id": "schema-market-data",
+      "node-type": "data-asset",
+      "name": "market_data schema",
+      "description": "Schema market_data, owned by the role market_data_owner: quotes, the provider call ledger, and the view prices_v1."
+    },
+    {
+      "unique-id": "schema-trading",
+      "node-type": "data-asset",
+      "name": "trading schema",
+      "description": "Schema trading, owned by the role trading_owner: accounts, orders, the ledger, positions and the leaderboard view. Orders and the ledger are written in one transaction.",
+      "controls": {
+        "reconciliation-check": {
+          "description": "The materialized view must equal the same ranking computed on read from the source tables; the check names the account and both values when they differ. It runs in CI's database tests.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-RECONCILIATION",
+                "name": "The leaderboard view equals its source",
+                "description": "The materialized view must equal the same ranking computed on read from the source tables; the check names the account and both values when they differ. It runs in CI's database tests."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "prices-v1",
+      "node-type": "data-asset",
+      "name": "market_data.prices_v1",
+      "description": "The price contract: symbol, price, as-of time, source and a stale flag, read-only. The only thing outside market_data that trading may read."
     }
   ],
   "relationships": [
@@ -409,44 +486,6 @@
       }
     },
     {
-      "unique-id": "market-data-to-database",
-      "description": "The Market Data Service connects as market_data_owner and writes the market_data schema.",
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "market-data-service"
-          },
-          "destination": {
-            "node": "bullpen-database"
-          }
-        }
-      },
-      "protocol": "JDBC",
-      "metadata": {
-        "role": "market_data_owner",
-        "schema": "market_data"
-      }
-    },
-    {
-      "unique-id": "trading-app-to-database",
-      "description": "The trading app connects as trading_owner (apps/web/app/lib/trading). It serves the leaderboard from trading.leaderboard_mv (GET /api/leaderboard) and the end-of-day stock prices through market_data.prices_v1 (GET /api/stock-prices). No route places an order yet: the buy transaction is exercised by the database tests.",
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "trading-app"
-          },
-          "destination": {
-            "node": "bullpen-database"
-          }
-        }
-      },
-      "protocol": "JDBC",
-      "metadata": {
-        "role": "trading_owner",
-        "schema": "trading"
-      }
-    },
-    {
       "unique-id": "market-data-to-stock-provider",
       "description": "The Market Data service fetches each stock's end-of-day price once a day, after reserving a call against the daily budget.",
       "relationship-type": {
@@ -462,6 +501,111 @@
       "protocol": "HTTPS",
       "metadata": {
         "interaction": "synchronous"
+      }
+    },
+    {
+      "unique-id": "daily-cron-to-market-data",
+      "description": "Once a day after the U.S. close the cron calls the Market Data service's ingest with Authorization: Bearer <secret>.",
+      "relationship-type": {
+        "interacts": {
+          "actor": "daily-ingest-cron",
+          "nodes": [
+            "market-data-service"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "landing-to-market-data",
+      "description": "The landing's price strip asks for BTC-USD: GET /api/price/<symbol> on the trading app's domain, rewritten to the Market Data service.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "landing-app"
+          },
+          "destination": {
+            "node": "market-data-service"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous",
+        "via": "the /api/price rewrite"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-trading-schema",
+      "description": "The trading app reads and writes the trading schema as trading_owner.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "schema-trading"
+          }
+        }
+      },
+      "protocol": "JDBC",
+      "metadata": {
+        "role": "trading_owner",
+        "access": "read/write",
+        "label": "trading_owner · read/write"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-prices-v1",
+      "description": "The trading app reads prices only through the view market_data.prices_v1, as trading_owner.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "prices-v1"
+          }
+        }
+      },
+      "protocol": "JDBC",
+      "metadata": {
+        "role": "trading_owner",
+        "access": "read only",
+        "label": "trading_owner · read only"
+      }
+    },
+    {
+      "unique-id": "market-data-to-market-data-schema",
+      "description": "The Market Data service writes the market_data schema as market_data_owner.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "schema-market-data"
+          }
+        }
+      },
+      "protocol": "JDBC",
+      "metadata": {
+        "role": "market_data_owner",
+        "access": "write",
+        "label": "market_data_owner · write"
+      }
+    },
+    {
+      "unique-id": "database-composition",
+      "description": "The one database holds both schemas and the view between them.",
+      "relationship-type": {
+        "composed-of": {
+          "container": "bullpen-database",
+          "nodes": [
+            "schema-market-data",
+            "schema-trading",
+            "prices-v1"
+          ]
+        }
       }
     }
   ]
