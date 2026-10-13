@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
-import type { ArchChange, ArchPartData } from "./ArchitectureExplorer.types.js";
+import type { ArchChange, ArchPartData, ArchPrediction } from "./ArchitectureExplorer.types.js";
 import { ControlChip } from "./ControlChip.js";
 
 type Tone = "add" | "remove" | "change";
@@ -20,13 +20,19 @@ export function diffWhatChanged(prev: ArchPartData, curr: ArchPartData): NodeCha
   if (prev.part === curr.part) return [];
   const before = new Map(prev.nodes.map((n) => [n.id, n]));
   const currIds = new Set(curr.nodes.map((n) => n.id));
+  // An earlier node a new one says it took over is moved, not removed.
+  const movedInto = new Map(curr.nodes.flatMap((n) => (n.replaces ?? []).map((id): [string, string] => [id, n.label])));
   const out: NodeChange[] = [];
   for (const n of curr.nodes) {
     const p = before.get(n.id);
     if (!p) out.push({ id: n.id, label: n.label, tone: "add" });
     else if (p.label !== n.label || p.kind !== n.kind || p.purpose !== n.purpose || p.meta !== n.meta) out.push({ id: n.id, label: n.label, tone: "change" });
   }
-  for (const n of prev.nodes) if (!currIds.has(n.id)) out.push({ id: n.id, label: n.label, tone: "remove" });
+  for (const n of prev.nodes) {
+    if (currIds.has(n.id)) continue;
+    const into = movedInto.get(n.id);
+    out.push(into ? { id: n.id, label: `${n.label} (moved into ${into})`, tone: "change" } : { id: n.id, label: n.label, tone: "remove" });
+  }
   return out;
 }
 
@@ -62,6 +68,25 @@ function introFor(part: ArchPartData, hasChanges: boolean): string {
 }
 
 type ControlsChange = Extract<ArchChange, { kind: "controls" }>;
+
+/** The week-one prediction's nodes that were not built, with the tag the prediction is kept at. */
+function PredictionRows({ prediction }: { prediction: ArchPrediction }): ReactNode {
+  if (prediction.notBuilt.length === 0) return null;
+  return (
+    <div data-testid="prediction-not-built" style={{ display: "grid", gap: 8, marginTop: 6, paddingTop: 10, borderTop: "1px dashed var(--bp-hair)" }}>
+      <span style={{ font: "600 10.5px/1 var(--font-body)", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--foreground-muted)" }}>Predicted in week one, not built</span>
+      {prediction.notBuilt.map((node) => (
+        <div key={node.id} style={{ ...ROW, alignItems: "center", color: "var(--foreground-muted)" }}>
+          <Mark tone="remove" />
+          {node.label}
+        </div>
+      ))}
+      <a href={prediction.tagUrl} style={{ font: "500 12px/1.4 var(--font-mono)", color: "var(--bp-accent-text)" }}>
+        the prediction, at tag {prediction.tag}
+      </a>
+    </div>
+  );
+}
 
 function ControlsRow({
   change,
@@ -153,6 +178,7 @@ export function PartChanges({
       {adrs.map((c) => (
         <AdrRow key={c.adr} adr={c.adr} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       ))}
+      {part.prediction ? <PredictionRows prediction={part.prediction} /> : null}
     </>
   );
 }

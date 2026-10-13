@@ -11,6 +11,8 @@ export interface ArchFlowEdgeData extends Record<string, unknown> {
   dimmed: boolean;
   showType: boolean;
   reduced: boolean;
+  /** The database role and access, written on the connection while the "Data ownership" toggle is on. */
+  label?: string;
 }
 
 const LINE = "color-mix(in oklch, var(--foreground) 32%, transparent)";
@@ -33,8 +35,8 @@ export function ArchitectureExplorerEdge({
   targetPosition,
   data,
 }: EdgeProps): ReactNode {
-  const { type, ghosted, onPath, dimmed, showType, reduced } = data as ArchFlowEdgeData;
-  const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
+  const { type, ghosted, onPath, dimmed, showType, reduced, label } = data as ArchFlowEdgeData;
+  const [path, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const isAsync = type === "async" && showType;
   const stroke = onPath ? "var(--ember)" : LINE;
 
@@ -51,6 +53,13 @@ export function ArchitectureExplorerEdge({
           opacity: dimmed ? 0.25 : ghosted ? 0.4 : 1,
           transition: "opacity 240ms, stroke 200ms",
         }}
+        label={label}
+        labelX={labelX}
+        labelY={labelY}
+        labelStyle={{ font: "600 9.5px/1 var(--font-mono)", fill: "var(--foreground)" }}
+        labelBgStyle={{ fill: "var(--surface-elevated)", fillOpacity: 0.92 }}
+        labelBgPadding={[6, 3]}
+        labelBgBorderRadius={6}
       />
       {!reduced && !ghosted && !isAsync && showType && type === "sync" ? (
         <path

@@ -21,7 +21,7 @@ import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureE
 import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
 import type { ArchGroupData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
-export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange } from "./ArchitectureExplorer.types.js";
+export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
 
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
@@ -67,6 +67,8 @@ function groupBounds(group: ArchGroupData, nodesById: Map<string, ArchNodeData>)
 
 const REQUEST_STEP_MS = 1900;
 const SCRUB_PLAY_MS = 2400;
+/** One hue per owner while the "Data ownership" toggle is on, in the order the nodes name their owners. */
+const OWNER_HUES = [65, 250, 150, 320];
 const REMOVE_ANIM_MS = 940;
 
 function diffNodeState(node: ArchNodeData, prevNodesById: Map<string, ArchNodeData>, currIds: Set<string>): ArchNodeVisualState {
@@ -97,6 +99,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
+  const [flowIdx, setFlowIdx] = useState(0);
   const [scrubPlaying, setScrubPlaying] = useState(false);
   const [request, setRequest] = useState<{ on: boolean; idx: number; playing: boolean }>({
     on: false,
@@ -113,6 +116,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     // Leaving a part ends its playback, and drops a selection that part does not have.
     onArrive: (next) => {
       setRequest({ on: false, idx: 0, playing: false });
+      setFlowIdx(0);
       setSelectedId((id) => (id && partsById.get(next)?.nodes.some((n) => n.id === id) ? id : null));
     },
   });
@@ -172,7 +176,14 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     setRequest({ on: false, idx: 0, playing: false });
   }, []);
 
-  const requestSteps = current.request.steps;
+  const flows = useMemo(() => [current.request, ...(current.requests ?? [])], [current]);
+  const activeFlow = flows[Math.min(flowIdx, flows.length - 1)]!;
+  const requestSteps = activeFlow.steps;
+  // Who owns what, while the "Data ownership" toggle is on: each owner gets its own hue, in the order the nodes name them.
+  const ownerHues = useMemo(() => {
+    const owners = [...new Set(current.nodes.map((n) => n.owner).filter((id): id is string => Boolean(id)))];
+    return new Map(owners.map((id, i): [string, number] => [id, OWNER_HUES[i % OWNER_HUES.length]!]));
+  }, [current]);
 
   const toggleRequestPlay = useCallback(() => {
     setRequest((r) => {
@@ -325,6 +336,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           dimmed: Boolean(selectedId) && selectedId !== n.id && !(request.on && touchedIds.has(n.id)),
           touched: request.on && touchedIds.has(n.id),
           showData,
+          ownerHue: n.owner ? ownerHues.get(n.owner) : undefined,
           onSelect: setSelectedId,
         } satisfies ArchFlowNodeData,
       };
@@ -346,6 +358,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
         dimmed: request.on ? !onPath : false,
         showType,
         reduced,
+        label: showData ? e.label : undefined,
       } satisfies ArchFlowEdgeData,
     };
   });
@@ -382,6 +395,13 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           onData={setShowData}
         />
       </div>
+
+      {showData && ownerHues.size > 0 ? (
+        <OwnerLegend
+          owners={[...ownerHues].map(([id, hue]) => ({ id, hue, label: current.nodes.find((n) => n.id === id)?.label ?? id }))}
+          note="Each schema takes its owner's colour. The label on a connection is the database role that uses it, and what it may do."
+        />
+      ) : null}
 
       {hideScrubber ? null : (
         <MomentScrubber
@@ -476,7 +496,13 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
       </div>
 
       <FollowRequestBar
-        requestName={current.request.name}
+        requestName={activeFlow.name}
+        flowNames={flows.map((flow) => flow.name)}
+        flowIdx={Math.min(flowIdx, flows.length - 1)}
+        onFlow={(i) => {
+          stopRequest();
+          setFlowIdx(i);
+        }}
         on={request.on}
         idx={request.idx}
         playing={request.playing}
@@ -512,6 +538,20 @@ function chipStyle(status: "built" | "planned"): CSSProperties {
     color: status === "built" ? "var(--bp-gain)" : "var(--foreground-muted)",
     border: status === "built" ? "0" : "1px dashed var(--foreground-muted)",
   };
+}
+
+function OwnerLegend({ owners, note }: { owners: Array<{ id: string; hue: number; label: string }>; note: string }): ReactNode {
+  return (
+    <div data-testid="owner-legend" style={{ marginTop: 12, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", font: "500 12.5px/1.4 var(--font-body)", color: "var(--foreground-muted)" }}>
+      {owners.map((owner) => (
+        <span key={owner.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--foreground)" }}>
+          <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 9999, background: `oklch(66% 0.14 ${owner.hue})` }} />
+          {owner.label}
+        </span>
+      ))}
+      <span>{note}</span>
+    </div>
+  );
 }
 
 function Toggles({
@@ -826,6 +866,9 @@ const smallEyebrow: CSSProperties = {
 
 function FollowRequestBar({
   requestName,
+  flowNames,
+  flowIdx,
+  onFlow,
   on,
   idx,
   playing,
@@ -838,6 +881,10 @@ function FollowRequestBar({
   onStepTo,
 }: {
   requestName: string;
+  /** The names of every request this part can follow; a chooser shows when there is more than one. */
+  flowNames: string[];
+  flowIdx: number;
+  onFlow: (index: number) => void;
   on: boolean;
   idx: number;
   playing: boolean;
@@ -862,6 +909,30 @@ function FollowRequestBar({
         gap: 14,
       }}
     >
+      {!on && flowNames.length > 1 ? (
+        <div role="radiogroup" aria-label="Request to follow" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {flowNames.map((name, i) => (
+            <button
+              key={name}
+              type="button"
+              role="radio"
+              aria-checked={i === flowIdx}
+              onClick={() => onFlow(i)}
+              style={{
+                border: 0,
+                cursor: "pointer",
+                padding: "8px 12px",
+                borderRadius: 9999,
+                background: i === flowIdx ? "color-mix(in oklch, var(--ember) 22%, var(--surface-sunken))" : "var(--surface-sunken)",
+                color: "var(--foreground)",
+                font: "600 12px/1 var(--font-body)",
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {!on ? (
         <>
           <button

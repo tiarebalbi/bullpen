@@ -10,6 +10,10 @@ export interface ArchNodeData {
   y: number;
   /** Renders a small database pill under the node when the "Data ownership" toggle is on. */
   db?: boolean;
+  /** The id of the node that owns this one (a schema's owning service): the "Data ownership" toggle colours it by owner. */
+  owner?: string;
+  /** Ids of earlier nodes this one took over, so "What changed" says they moved here instead of calling them removed. */
+  replaces?: string[];
   adrs?: string[];
   costNote?: string;
   /** Not this part's prediction but a built part's: it carried forward, still running (ADR-0011). */
@@ -25,6 +29,8 @@ export interface ArchEdgeData {
   a: string;
   b: string;
   type: ArchEdgeType;
+  /** Written on the connection when the "Data ownership" toggle is on: the database role and what it may do. */
+  label?: string;
   carried?: true;
   builtIn?: string;
 }
@@ -59,6 +65,14 @@ export type ArchChange =
   | { kind: "controls"; target: string; nodeId?: string; controls: ArchControlChange[] }
   | { kind: "adr"; adr: string };
 
+/** What the week-one prediction named that the part did not build, derived from its planned moment. */
+export interface ArchPrediction {
+  /** The tag the predictions are kept at. */
+  tag: string;
+  tagUrl: string;
+  notBuilt: Array<{ id: string; label: string }>;
+}
+
 export interface ArchPartData {
   part: number;
   status: "built" | "planned";
@@ -67,6 +81,10 @@ export interface ArchPartData {
   edges: ArchEdgeData[];
   groups: ArchGroupData[];
   request: ArchRequestData;
+  /** Further requests to follow beyond `request`, such as a buy next to a price request. */
+  requests?: ArchRequestData[];
+  /** Derived by the loader for a built part that had a prediction; absent otherwise. */
+  prediction?: ArchPrediction;
   /** Derived by the loader from the part's moment and the previous built one; absent for Part 1 and planned parts. */
   changes?: ArchChange[];
 }

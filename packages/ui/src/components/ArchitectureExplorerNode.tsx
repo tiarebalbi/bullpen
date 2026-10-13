@@ -16,6 +16,8 @@ export interface ArchFlowNodeData extends Record<string, unknown> {
   dimmed: boolean;
   touched: boolean;
   showData: boolean;
+  /** Hue of the node's owner while the "Data ownership" toggle is on: the node is tinted by who owns it. */
+  ownerHue?: number;
   onSelect: (id: string) => void;
 }
 
@@ -38,7 +40,7 @@ const NODE_HEIGHT = 60;
  * design's external-system treatment.
  */
 export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNode {
-  const { node, visualState, ghosted, reduced, dimmed, touched, showData, onSelect } = data as ArchFlowNodeData;
+  const { node, visualState, ghosted, reduced, dimmed, touched, showData, ownerHue, onSelect } = data as ArchFlowNodeData;
   const isExternal = node.kind === "ext";
   const hot = selected || touched;
   const removed = visualState === "removed";
@@ -47,8 +49,8 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     width: NODE_WIDTH,
     height: NODE_HEIGHT,
     borderRadius: node.kind === "data" ? 26 : 10,
-    background: isExternal ? "var(--background)" : hot ? "color-mix(in oklch, var(--ember) 14%, var(--surface-elevated))" : "var(--surface-elevated)",
-    border: hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
+    background: showData && ownerHue !== undefined && !hot ? `color-mix(in oklch, var(--surface-elevated) 82%, oklch(66% 0.14 ${ownerHue}))` : isExternal ? "var(--background)" : hot ? "color-mix(in oklch, var(--ember) 14%, var(--surface-elevated))" : "var(--surface-elevated)",
+    border: showData && ownerHue !== undefined && !hot ? `1.5px solid oklch(66% 0.14 ${ownerHue})` : hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
     padding: "8px 14px",
     boxSizing: "border-box",
     display: "flex",

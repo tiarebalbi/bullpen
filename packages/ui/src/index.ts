@@ -43,6 +43,7 @@ export type {
   ArchRequestData,
   ArchChange,
   ArchControlChange,
+  ArchPrediction,
 } from "./components/ArchitectureExplorer.js";
 
 export { latestBuiltPart } from "./lib/latestBuiltPart.js";
