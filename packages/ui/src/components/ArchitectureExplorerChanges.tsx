@@ -152,8 +152,9 @@ export function PartChanges({
   const controlRows = changes.filter((c): c is ControlsChange => c.kind === "controls");
   const adrs = changes.filter((c): c is Extract<ArchChange, { kind: "adr" }> => c.kind === "adr");
   const withControls = new Set(controlRows.flatMap((c) => (c.nodeId ? [c.nodeId] : [])));
-  const changedIds = new Set(nodeChanges.filter((c) => c.tone === "change").map((c) => c.id));
-  const nodeRows = nodeChanges.filter((c) => !(c.tone === "change" && withControls.has(c.id)));
+  const toneOf = new Map(nodeChanges.map((c) => [c.id, c.tone]));
+  // A node that is added or changed and carries controls gets one row: its mark, its name and its chips.
+  const nodeRows = nodeChanges.filter((c) => !withControls.has(c.id));
   const structural = nodeChanges.some((c) => c.tone !== "change");
 
   return (
@@ -169,7 +170,7 @@ export function PartChanges({
         <ControlsRow
           key={`${change.nodeId ?? "rel"}-${i}`}
           change={change}
-          tone={change.nodeId && changedIds.has(change.nodeId) ? "change" : "add"}
+          tone={(change.nodeId ? toneOf.get(change.nodeId) : undefined) ?? "add"}
           rowId={String(i)}
           openId={openId}
           setOpenId={setOpenId}

@@ -59,6 +59,17 @@ describe("what changed: a node another took over is moved, not removed", () => {
   });
 });
 
+describe("what changed: an added node's controls", () => {
+  it("shows an added node once, with its rule chips beside it, not as a second row", () => {
+    const part: ArchPartData = { ...BUILT, changes: [{ kind: "controls", target: "Market Data Service", nodeId: "market-data-service", controls: [{ key: "call-budget", description: "A call over the cap is refused." }] }] };
+    render(<PartChanges part={part} before={BEFORE} adrTitles={{}} adrHrefs={{}} />);
+
+    expect(screen.getAllByText("Market Data Service")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /call.budget/i })).toBeInTheDocument();
+    expect(screen.getAllByText("+").length).toBeGreaterThan(0);
+  });
+});
+
 describe("what changed: the week-one prediction", () => {
   it("lists what the prediction named and the part did not build, and links the tag", () => {
     render(<PartChanges part={BUILT} before={BEFORE} adrTitles={{}} adrHrefs={{}} />);
