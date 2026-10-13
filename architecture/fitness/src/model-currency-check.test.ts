@@ -1,8 +1,8 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadAdlDocument } from "./adl.js";
-import { ADR_LINKED_RULE, CONTROL_POINTER_RULE, EXTERNAL_SYSTEM_RULE, checkModelCurrency } from "./model-currency-check.js";
+import { ADR_LINKED_RULE, CONTROL_POINTER_RULE, EXTERNAL_SYSTEM_RULE, checkModelCurrency, latestBuiltMoment } from "./model-currency-check.js";
 import { ADL_RULE } from "./rules.js";
 import { copyFixture, expectFailureFormat, fixturesRoot, readJsonFile, realRepoRoot, writeJsonFile } from "./test-helpers.js";
 
@@ -194,18 +194,33 @@ describe("model currency: the ADL and the current moment describe the same compo
     expect(violation!.fix).toContain("DEFINE a component or library");
   });
 
-  it("follows current-moment: moving it to a moment without the mapping fails, adding the mapping passes", () => {
+  it("follows the latest built moment, not current-moment: a missing mapping fails and names that file", () => {
     const root = copyFixture("model-currency-good");
-    const timeline = readJsonFile<Timeline>(root, TIMELINE);
-    timeline["current-moment"] = "part-02";
-    writeJsonFile(root, TIMELINE, timeline);
-    expect(checkModelCurrency(root, entriesOf(root)).map((v) => v.rule)).toContain(ADL_RULE.componentsMapped);
+    const next = readJsonFile<Doc>(root, MOMENT);
+    for (const node of next.nodes) delete (node as { metadata?: unknown }).metadata;
+    writeJsonFile(root, "architecture/calm/moments/part-02.architecture.json", next);
 
-    const planned = readJsonFile<Doc>(root, PLANNED);
-    (planned.nodes[0] as { metadata?: unknown }).metadata = { "bullpen:path": "apps/web", "bullpen:libraries": ["packages/kit"] };
-    (planned.nodes[1] as { metadata?: unknown }).metadata = { "bullpen:path": "apps/web/app/api/quote" };
-    writeJsonFile(root, PLANNED, planned);
+    const violations = checkModelCurrency(root, entriesOf(root));
+    expect(violations.map((v) => v.rule)).toContain(ADL_RULE.componentsMapped);
+    expect(violations.find((v) => v.rule === ADL_RULE.componentsMapped)!.where).toBe("architecture/calm/moments/part-02.architecture.json");
+    expect(readJsonFile<Timeline>(root, TIMELINE)["current-moment"]).toBe("part-01");
+  });
+
+  it("passes an ADL entry that the latest built moment has and current-moment's moment does not", () => {
+    const root = copyFixture("model-currency-good");
+    const next = readJsonFile<Doc>(root, MOMENT);
+    (next.nodes[0] as { metadata?: unknown }).metadata = { "bullpen:path": "apps/web", "bullpen:libraries": ["packages/kit", "packages/extra"] };
+    writeJsonFile(root, "architecture/calm/moments/part-02.architecture.json", next);
+    // part-01 (current-moment) does not list packages/extra; the ADL does not define it either, so only the latest moment is consulted.
+    const adl = readFileSync(join(root, "architecture/adl/structure.adl"), "utf8");
+    writeFileSync(join(root, "architecture/adl/structure.adl"), adl.replace(/(  DEFINE LIBRARY .+\n)/, "$1  DEFINE LIBRARY Extra AS packages/extra\n"));
+    mkdirSync(join(root, "packages/extra"), { recursive: true });
     expect(checkModelCurrency(root, entriesOf(root))).toEqual([]);
+  });
+
+  it("names the latest built moment as the highest-numbered file in moments/", () => {
+    expect(latestBuiltMoment(GOOD)).toEqual({ momentId: "part-01", file: "architecture/calm/moments/part-01.architecture.json" });
+    expect(latestBuiltMoment(realRepoRoot)!.momentId).toBe("part-03");
   });
 
   it("fails in the shared format, citing the ADL line", () => {
@@ -274,11 +289,6 @@ describe("model currency: the planned Part 2 moment, which must stay exactly as 
 describe("model currency: the real repo", () => {
   it("has no undecided external system, no unlinked ADR, and every component mapped", () => {
     expect(checkModelCurrency(realRepoRoot, loadAdlDocument(realRepoRoot).entries)).toEqual([]);
-  });
-
-  it("still holds with Part 2 as the current moment, so the flip on publish day is safe", () => {
-    const entries = loadAdlDocument(realRepoRoot).entries;
-    expect(checkModelCurrency(realRepoRoot, entries, { currentMoment: "part-02" })).toEqual([]);
   });
 
   it("points the Part 2 entry at the built moment, and keeps the prediction it replaced readable", () => {

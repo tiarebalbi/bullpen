@@ -293,32 +293,46 @@ function checkAdrLinks(repoRoot: string, decisions: Decisions, timeline: Timelin
   return violations;
 }
 
-function checkAdlMapping(repoRoot: string, entries: AdlEntry[], timeline: Timeline | undefined, currentMoment: string | undefined): Violation[] {
-  const momentId = currentMoment ?? timeline?.["current-moment"];
-  const moment = timeline?.moments?.find((m) => m["unique-id"] === momentId);
-  const detailed = moment?.details?.["detailed-architecture"];
-  if (!momentId || !moment || !detailed) {
+/**
+ * The latest built moment: the highest-numbered `moments/part-0N.architecture.json`.
+ * The ADL describes the code on this branch, so it is held to the moment that
+ * describes this branch, which can be ahead of the timeline's `current-moment`
+ * (the pointer to what is published). ADR-0015.
+ */
+export function latestBuiltMoment(repoRoot: string): { momentId: string; file: string } | undefined {
+  const dir = join(repoRoot, "architecture", "calm", "moments");
+  if (!existsSync(dir)) return undefined;
+  const found = readdirSync(dir)
+    .map((name) => ({ name, match: /^part-(\d+)\.architecture\.json$/.exec(name) }))
+    .filter((entry): entry is { name: string; match: RegExpExecArray } => entry.match !== null)
+    .sort((a, b) => Number(b.match[1]) - Number(a.match[1]))[0];
+  return found ? { momentId: `part-${found.match[1]}`, file: `architecture/calm/moments/${found.name}` } : undefined;
+}
+
+function checkAdlMapping(repoRoot: string, entries: AdlEntry[]): Violation[] {
+  const latest = latestBuiltMoment(repoRoot);
+  if (!latest) {
     return [
       {
         check: CHECK,
         rule: ADL_RULE.componentsMapped,
-        where: TIMELINE,
-        why: `The timeline's current moment "${momentId ?? "(none)"}" has no detailed architecture to map the ADL onto (${citeAdl(repoRoot, ADL_RULE.componentsMapped)}).`,
-        fix: `Set "current-moment" in ${TIMELINE} to a moment that has a detailed-architecture file.`,
+        where: "architecture/calm/moments",
+        why: `There is no built moment to map the ADL onto (${citeAdl(repoRoot, ADL_RULE.componentsMapped)}).`,
+        fix: `Add architecture/calm/moments/part-0N.architecture.json for the part this branch builds.`,
       },
     ];
   }
-
-  const file = `architecture/calm/${detailed}`;
+  const momentId = latest.momentId;
+  const file = latest.file;
   const doc = readJson<CalmDoc>(repoRoot, file);
   if (!doc) {
     return [
       {
         check: CHECK,
         rule: ADL_RULE.componentsMapped,
-        where: TIMELINE,
+        where: file,
         why: `Moment ${momentId} points at ${file}, which does not exist (${citeAdl(repoRoot, ADL_RULE.componentsMapped)}).`,
-        fix: `Restore ${file}, or correct the moment's detailed-architecture.`,
+        fix: `Restore ${file}.`,
       },
     ];
   }
@@ -378,16 +392,16 @@ function checkAdlMapping(repoRoot: string, entries: AdlEntry[], timeline: Timeli
  * must be decided, every ADR must be linked from its part's moment, and the
  * ADL and the current moment must describe the same components.
  *
- * `currentMoment` overrides the timeline's own `current-moment`, so the
- * tests can ask "would this still hold if Part 2 were current?".
+ * The ADL is held to the latest built moment in `moments/`, not to the
+ * timeline's `current-moment` (ADR-0015).
  */
-export function checkModelCurrency(repoRoot: string, entries: AdlEntry[], options: { currentMoment?: string } = {}): Violation[] {
+export function checkModelCurrency(repoRoot: string, entries: AdlEntry[]): Violation[] {
   const decisions = readDecisions(repoRoot);
   const timeline = readJson<Timeline>(repoRoot, TIMELINE);
   return [
     ...checkExternalSystems(repoRoot, decisions),
     ...checkControlPointers(repoRoot),
     ...checkAdrLinks(repoRoot, decisions, timeline),
-    ...checkAdlMapping(repoRoot, entries, timeline, options.currentMoment),
+    ...checkAdlMapping(repoRoot, entries),
   ];
 }
