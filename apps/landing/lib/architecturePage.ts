@@ -10,6 +10,7 @@ export const CHECK_NAME_BY_FILE: Record<string, string> = {
   "architecture/fitness/src/boundaries-check.ts": "turbo boundaries",
   "architecture/fitness/src/imports-check.ts": "entry-point imports",
   "architecture/fitness/src/secret-check.ts": "secret containment",
+  "architecture/fitness/src/model-currency-check.ts": "model currency",
   "architecture/fitness/src/data-ownership-check.ts": "data ownership",
   "architecture/fitness/src/budget-check.ts": "budget",
   "architecture/fitness/src/explorer-consistency-check.ts": "explorer consistency",
@@ -103,6 +104,8 @@ export interface ArchitecturePageData {
   scrubber: ScrubberPart[];
   services: Record<number, ServicesView>;
   flows: Record<number, FlowView>;
+  /** The requests a part offers beyond its first, in order: a buy next to a price request. */
+  moreFlows: Record<number, FlowView[]>;
   data: Record<number, DataView>;
 }
 
@@ -238,9 +241,9 @@ function buildServices(part: number, input: ArchitecturePageInput): ServicesView
 type RawStep = Omit<FlowStepView, "n">;
 
 /** The request starts where an actor opens the app the first step leaves from. */
-function openingStep(content: ArchPartData, doc: CalmDocView | undefined): RawStep | null {
+function openingStep(content: ArchPartData, request: ArchPartData["request"], doc: CalmDocView | undefined): RawStep | null {
   const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
-  const first = content.request.steps[0];
+  const first = request.steps[0];
   const firstEdge = first ? content.edges.find((e) => e.id === first.edge) : undefined;
   if (!firstEdge) return null;
   const opening = content.edges.find((e) => nodeById.get(e.a)?.kind === "actor" && e.b === firstEdge.a);
@@ -253,10 +256,10 @@ function openingStep(content: ArchPartData, doc: CalmDocView | undefined): RawSt
 }
 
 /** The part's own request steps, with the cache note on the call out to the provider of a built part. */
-function requestSteps(content: ArchPartData, cacheSeconds: number | null): RawStep[] {
+function requestSteps(content: ArchPartData, request: ArchPartData["request"], cacheSeconds: number | null): RawStep[] {
   const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
   const steps: RawStep[] = [];
-  for (const step of content.request.steps) {
+  for (const step of request.steps) {
     const edge = content.edges.find((e) => e.id === step.edge);
     if (!edge) continue;
     // The call out to the provider is the one the cache sits on. A planned part makes no such claim.
@@ -278,25 +281,33 @@ function laneFor(id: string, nodeById: Map<string, ArchPartData["nodes"][number]
   return { id, label: node?.label ?? id, meta: node?.meta ?? "" };
 }
 
-function buildFlow(content: ArchPartData, doc: CalmDocView | undefined, cacheSeconds: number | null): FlowView {
+function buildFlow(content: ArchPartData, request: ArchPartData["request"], doc: CalmDocView | undefined, cacheSeconds: number | null): FlowView {
   const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
-  const opening = openingStep(content, doc);
-  const raw = [...(opening ? [opening] : []), ...requestSteps(content, cacheSeconds)];
+  const opening = openingStep(content, request, doc);
+  const raw = [...(opening ? [opening] : []), ...requestSteps(content, request, cacheSeconds)];
 
   const laneIds = [...new Set(raw.flatMap((step) => [step.from, step.to]))];
   return {
-    name: content.request.name,
+    name: request.name,
     planned: content.status === "planned",
     lanes: laneIds.map((id) => laneFor(id, nodeById)),
     steps: raw.map((step, index) => ({ n: index + 1, ...step })),
   };
 }
 
-/** The service a database hangs off: the service on the other end of an edge that touches it. */
+/** The service on the other end of an edge that touches the database, if any. */
+function adjacentService(db: ArchPartData["nodes"][number], content: ArchPartData): string | null {
+  const byId = new Map(content.nodes.map((n) => [n.id, n]));
+  const ends = content.edges.filter((e) => e.a === db.id || e.b === db.id).map((e) => (e.a === db.id ? e.b : e.a));
+  const service = ends.map((id) => byId.get(id)).find((n) => n && n.kind === "service");
+  return service ? service.label : null;
+}
+
+/** The node that owns a database: the one the content names as its `owner`, else the service next to it. */
 function ownerLabel(db: ArchPartData["nodes"][number], content: ArchPartData): string | null {
-  const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
-  const neighbours = content.edges.filter((e) => e.a === db.id || e.b === db.id).map((e) => nodeById.get(e.a === db.id ? e.b : e.a));
-  return neighbours.find((n) => n?.kind === "service")?.label ?? null;
+  const owner = db.owner ? content.nodes.find((n) => n.id === db.owner) : undefined;
+  if (db.owner) return owner ? owner.label : null;
+  return adjacentService(db, content);
 }
 
 function databaseView(db: ArchPartData["nodes"][number], content: ArchPartData): DatabaseView {
@@ -312,16 +323,20 @@ function buildData(content: ArchPartData): DataView {
 export function buildArchitecturePage(input: ArchitecturePageInput): ArchitecturePageData {
   const services: Record<number, ServicesView> = {};
   const flows: Record<number, FlowView> = {};
+  const moreFlows: Record<number, FlowView[]> = {};
   const data: Record<number, DataView> = {};
   for (const content of input.parts) {
     services[content.part] = buildServices(content.part, input);
-    flows[content.part] = buildFlow(content, input.calm.get(content.part), input.cacheSeconds);
+    const doc = input.calm.get(content.part);
+    flows[content.part] = buildFlow(content, content.request, doc, input.cacheSeconds);
+    moreFlows[content.part] = (content.requests ?? []).map((request) => buildFlow(content, request, doc, input.cacheSeconds));
     data[content.part] = buildData(content);
   }
   return {
     scrubber: input.parts.map((p) => ({ part: p.part, title: input.series.find((s) => s.part === p.part)?.title ?? `Part ${p.part}`, status: p.status })),
     services,
     flows,
+    moreFlows,
     data,
   };
 }

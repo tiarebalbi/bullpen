@@ -112,13 +112,10 @@ describe("buildArchitecturePage, from the real repo", () => {
     });
 
     it("adds the planned services for a planned part, with the part they arrive in", () => {
-      const planned = page.services[3]!.planned;
-      expect(planned.map((s) => [s.name, s.arrives])).toEqual([
-        ["Prices Service", 3],
-        ["Market History Service", 3],
-      ]);
-      expect(page.services[5]!.planned.map((s) => s.name)).toContain("Orders Service");
-      expect(page.services[3]!.built).toHaveLength(3);
+      expect(page.services[3]!.planned).toEqual([]); // Part 3 is built as written: it predicts nothing more
+      const orders = page.services[5]!.planned.find((s) => s.name === "Orders Service");
+      expect(orders?.arrives).toBe(4);
+      expect(page.services[3]!.built.map((s) => s.name)).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service"]);
     });
 
     it("every control that names a check names one the snapshot can report on", () => {
@@ -126,6 +123,41 @@ describe("buildArchitecturePage, from the real repo", () => {
         const enforced = [...doc.nodes.flatMap((n) => n.controls), ...doc.relationships.flatMap((r) => r.controls)].flatMap((c) => c.requirements).map((r) => r.enforcedBy).filter((f): f is string => Boolean(f));
         for (const file of enforced) expect(CHECK_NAME_BY_FILE[file], `${file} has no check name`).toBeDefined();
       }
+    });
+  });
+
+  describe("flows at Part 3", () => {
+    it("follows a price request from the landing, through the rewrite, to the Market Data service and CoinGecko", () => {
+      const flow = page.flows[3]!;
+      expect(flow.name).toBe("a price request");
+      expect(flow.lanes.map((l) => l.label)).toEqual(["Reader", "Bullpen Landing", "Market Data Service", "CoinGecko"]);
+      expect(flow.steps.map((st) => `${st.from}>${st.to}`)).toEqual([
+        "reader>landing-app",
+        "landing-app>market-data-service",
+        "market-data-service>market-data-provider",
+        "market-data-provider>market-data-service",
+        "market-data-service>landing-app",
+      ]);
+      expect(flow.steps[1]!.detail).toContain("rewrite on /api/price");
+    });
+
+    it("offers a buy too: the player, the trading app, then one transaction in the trading schema, reading the price from prices_v1", () => {
+      const [buy] = page.moreFlows[3]!;
+      expect(buy!.name).toBe("a buy");
+      expect(buy!.steps.map((st) => `${st.from}>${st.to}`)).toEqual([
+        "player>trading-app",
+        "trading-app>prices-v1",
+        "trading-app>schema-trading",
+        "schema-trading>trading-app",
+      ]);
+      expect(buy!.steps[0]!.detail).toContain("no page offers it yet");
+      expect(buy!.steps[1]!.detail).toContain("prices_v1 only");
+      expect(buy!.steps[2]!.detail).toContain("one conditional update");
+    });
+
+    it("offers one request where a part has one", () => {
+      expect(page.moreFlows[1]).toEqual([]);
+      expect(page.moreFlows[2]).toEqual([]);
     });
   });
 
@@ -180,12 +212,19 @@ describe("buildArchitecturePage, from the real repo", () => {
       expect(page.data[2]!.reached).toBe(false);
     });
 
-    it("shows each planned database with the service that owns it from Part 3", () => {
-      expect(page.data[3]).toMatchObject({ reached: true, planned: true });
+    it("shows the database and each schema with the node that owns it, from Part 3", () => {
+      expect(page.data[3]).toMatchObject({ reached: true });
       expect(page.data[3]!.databases.map((d) => [d.label, d.ownerLabel])).toEqual([
-        ["Prices Database", "Prices Service"],
-        ["Market History Database", "Market History Service"],
+        ["trading schema", "Bullpen Trading App"],
+        ["market_data schema", "Market Data Service"],
+        ["market_data.prices_v1", "Market Data Service"],
+        ["Bullpen Database", null],
       ]);
+    });
+
+    it("has no database before Part 3", () => {
+      expect(page.data[1]).toMatchObject({ reached: false });
+      expect(page.data[2]).toMatchObject({ reached: false });
     });
   });
 });
