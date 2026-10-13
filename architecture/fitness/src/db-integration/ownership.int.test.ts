@@ -131,7 +131,7 @@ describe("the roles hold only what they should", () => {
 
   it("is idempotent: applying the migrations again changes nothing and fails nothing", async () => {
     const migrator = await as(urls.migrator);
-    expect(await migrateMarketData(migrator, "market_data_owner")).toEqual(["0001_schema.sql", "0002_quotes_and_price_contract.sql"]);
-    expect(await migrateTrading(migrator, "trading_owner")).toEqual(["0001_schema.sql", "0002_accounts_orders_ledger.sql"]);
+    expect(await migrateMarketData(migrator, "market_data_owner")).toEqual(["0001_schema.sql", "0002_quotes_and_price_contract.sql", "0003_provider_calls.sql"]);
+    expect(await migrateTrading(migrator, "trading_owner")).toEqual(["0001_schema.sql", "0002_accounts_orders_ledger.sql", "0003_leaderboard.sql"]);
   });
 });
