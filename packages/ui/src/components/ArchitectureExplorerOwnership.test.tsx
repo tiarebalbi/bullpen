@@ -89,7 +89,7 @@ describe("ArchitectureExplorer: more than one request, and who owns what", () =>
   });
 
   it("offers each request to follow and starts the one chosen", () => {
-    render(<ArchitectureExplorer parts={[BEFORE, BUILT]} initialPart={3} hideScrubber />);
+    render(<ArchitectureExplorer parts={[BEFORE, BUILT]} initialPart={3} hideScrubber adrTitles={{}} adrHrefs={{}} />);
     const group = screen.getByRole("radiogroup", { name: "Request to follow" });
 
     expect(group).toHaveTextContent("a price request");
@@ -103,12 +103,12 @@ describe("ArchitectureExplorer: more than one request, and who owns what", () =>
   });
 
   it("offers no chooser when a part has only one request", () => {
-    render(<ArchitectureExplorer parts={[BEFORE, { ...BUILT, requests: undefined }]} initialPart={3} hideScrubber />);
+    render(<ArchitectureExplorer parts={[BEFORE, { ...BUILT, requests: undefined }]} initialPart={3} hideScrubber adrTitles={{}} adrHrefs={{}} />);
     expect(screen.queryByRole("radiogroup", { name: "Request to follow" })).not.toBeInTheDocument();
   });
 
   it("shows who owns each schema, with a colour per owner, only while Data ownership is on", () => {
-    render(<ArchitectureExplorer parts={[BEFORE, BUILT]} initialPart={3} hideScrubber />);
+    render(<ArchitectureExplorer parts={[BEFORE, BUILT]} initialPart={3} hideScrubber adrTitles={{}} adrHrefs={{}} />);
     expect(screen.queryByTestId("owner-legend")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("switch", { name: "Data ownership" }));
