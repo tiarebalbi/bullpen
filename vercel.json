@@ -35,5 +35,11 @@
         "service": "web"
       }
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/ingest",
+      "schedule": "0 23 * * *"
+    }
   ]
 }
