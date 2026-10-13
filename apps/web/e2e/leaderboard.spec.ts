@@ -4,6 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 // handler never runs and no database is touched, in CI or locally.
 async function mockLeaderboard(page: Page, body: unknown, status = 200): Promise<void> {
   await page.route("**/api/leaderboard", (route) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) }));
+  await page.route("**/api/stock-prices", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ rows: [] }) }));
   await page.route("**/api/price/BTC-USD", (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "off" }) }));
 }
 

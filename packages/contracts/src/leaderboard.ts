@@ -21,3 +21,18 @@ export interface LeaderboardSnapshot {
   stale: boolean;
   lastFailure: { at: string; error: string } | null;
 }
+
+/** One symbol's latest end-of-day price, as GET /api/stock-prices returns it. */
+export interface StockPriceEntry {
+  symbol: string;
+  /** A decimal string. */
+  price: string;
+  /** ISO timestamp of the close the price belongs to. */
+  asOf: string;
+  /** Older than its expected cadence. */
+  stale: boolean;
+}
+
+export interface StockPriceSnapshot {
+  rows: StockPriceEntry[];
+}

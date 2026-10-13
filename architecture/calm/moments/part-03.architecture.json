@@ -429,7 +429,7 @@
     },
     {
       "unique-id": "trading-app-to-database",
-      "description": "The trading app connects as trading_owner (apps/web/app/lib/trading) and serves the leaderboard from trading.leaderboard_mv through GET /api/leaderboard. No route places an order yet: the buy transaction is exercised by the database tests. Prices are read only through market_data.prices_v1.",
+      "description": "The trading app connects as trading_owner (apps/web/app/lib/trading). It serves the leaderboard from trading.leaderboard_mv (GET /api/leaderboard) and the end-of-day stock prices through market_data.prices_v1 (GET /api/stock-prices). No route places an order yet: the buy transaction is exercised by the database tests.",
       "relationship-type": {
         "connects": {
           "source": {
