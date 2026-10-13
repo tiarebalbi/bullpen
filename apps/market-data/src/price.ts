@@ -43,12 +43,16 @@ function allowedOriginOf(request: Request, origins: PriceDeps["landingOrigins"])
   return null;
 }
 
+/**
+ * Every response says it varies by `Origin`, whether or not the origin is allowed. The CDN keys its cache on
+ * what a response says it varies by: a response cached without the header (the trading app's own same-origin
+ * request sends no `Origin`) was served unchanged to the landing's cross-origin request, without the allow
+ * header, for the whole cache lifetime.
+ */
 function respond(body: unknown, init: { status?: number; headers?: Record<string, string> }, allowedOrigin: string | null): Response {
   const headers = new Headers(init.headers);
-  if (allowedOrigin) {
-    headers.set("Access-Control-Allow-Origin", allowedOrigin);
-    headers.set("Vary", "Origin");
-  }
+  headers.set("Vary", "Origin");
+  if (allowedOrigin) headers.set("Access-Control-Allow-Origin", allowedOrigin);
   return Response.json(body, { status: init.status ?? 200, headers });
 }
 

@@ -64,6 +64,23 @@ describe("handlePrice", () => {
     }
   });
 
+  it("says Vary: Origin on every response, allowed origin or not, so a cached response is never served to another origin", async () => {
+    const cases: Array<[string, PriceDeps, string | undefined]> = [
+      ["success, no origin", deps().built, undefined],
+      ["success, allowed origin", deps().built, origins.production],
+      ["success, other origin", deps().built, "https://evil.example.com"],
+      ["upstream 500", deps({ upstream: response(500, {}) }).built, undefined],
+      ["upstream 429", deps({ upstream: response(429, {}) }).built, origins.custom],
+      ["malformed upstream", deps({ upstream: response(200, { bitcoin: {} }) }).built, undefined],
+      ["budget refusal", deps({ reserveCall: async () => { throw new Error("budget"); } }).built, undefined],
+      ["missing key", deps({ apiKey: undefined }).built, undefined],
+    ];
+    for (const [label, built, origin] of cases) {
+      expect((await get("BTC-USD", built, origin)).headers.get("Vary"), label).toBe("Origin");
+    }
+    expect((await get("DOGE-USD", deps().built)).headers.get("Vary"), "unknown symbol").toBe("Origin");
+  });
+
   it("sets no CORS header for any other origin, never a wildcard", async () => {
     expect((await get("BTC-USD", deps().built, "https://evil.example.com")).headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
