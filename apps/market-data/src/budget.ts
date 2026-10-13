@@ -4,7 +4,10 @@ import { reserveProviderCall, type CallReservation } from "@bullpen/db-market-da
 export type Provider = "alphavantage" | "coingecko";
 
 interface Budget {
+  /** The production cap. */
   cap: number;
+  /** The cap everywhere else (previews, local): small, because a preview has its own ledger but draws on the provider's one real allowance. */
+  nonProductionCap: number;
   window: "provider-day" | "month";
 }
 
@@ -13,10 +16,15 @@ interface Budget {
  * requests a day; the cap is 20, which leaves headroom for a retry and a
  * manual re-run. CoinGecko's Demo plan allows 10,000 calls a month; the cap is
  * 9,000, the 90% line ADR-0005's budget check models against.
+ *
+ * A preview deployment has its own database branch, so its own ledger, but
+ * the provider counts one allowance for the key. Production's 20 plus a
+ * preview's 5 stay inside Alpha Vantage's 25, so a hand-called preview
+ * ingest cannot take production's day away.
  */
 export const BUDGETS: Record<Provider, Budget> = {
-  alphavantage: { cap: 20, window: "provider-day" },
-  coingecko: { cap: 9000, window: "month" },
+  alphavantage: { cap: 20, nonProductionCap: 5, window: "provider-day" },
+  coingecko: { cap: 9000, nonProductionCap: 300, window: "month" },
 };
 
 /**
@@ -26,6 +34,11 @@ export const BUDGETS: Record<Provider, Budget> = {
  */
 export function providerDay(now: Date): string {
   return now.toISOString().slice(0, 10);
+}
+
+/** The cap in force: production's own, or the smaller one for a preview or local run. */
+export function capFor(provider: Provider, vercelEnv: string | undefined = process.env.VERCEL_ENV): number {
+  return vercelEnv === "production" ? BUDGETS[provider].cap : BUDGETS[provider].nonProductionCap;
 }
 
 export function windowKey(provider: Provider, now: Date): string {
@@ -52,10 +65,10 @@ export class BudgetExceeded extends Error {
 export type Reserve = (pool: Pool, provider: string, window: string, cap: number) => Promise<CallReservation>;
 
 /** Reserves one call or throws `BudgetExceeded`, logging the refusal. Call it before every provider request. */
-export async function reserveCall(pool: Pool, provider: Provider, now: Date, seams: { log?: Logger; reserve?: Reserve } = {}): Promise<number> {
-  const { log = consoleLogger, reserve = reserveProviderCall } = seams;
+export async function reserveCall(pool: Pool, provider: Provider, now: Date, seams: { log?: Logger; reserve?: Reserve; vercelEnv?: string } = {}): Promise<number> {
+  const { log = consoleLogger, reserve = reserveProviderCall, vercelEnv } = seams;
   const window = windowKey(provider, now);
-  const { granted, calls, cap } = await reserve(pool, provider, window, BUDGETS[provider].cap);
+  const { granted, calls, cap } = await reserve(pool, provider, window, capFor(provider, vercelEnv));
   if (!granted) {
     log.warn("provider call refused before it left the process", { provider, window, calls, cap });
     throw new BudgetExceeded(provider, window, cap);
