@@ -1,0 +1,17 @@
+DESCRIPTION Data ownership dependency fixture: Trading App depends on the market-data library
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Trading App AS apps/trading-app
+  DEFINE COMPONENT Market Data Service AS apps/market-data
+  DEFINE LIBRARY market-data AS packages/db-market-data
+  DEFINE LIBRARY trading AS packages/db-trading
+
+# Allowed dependencies
+ASSERT(Trading App IS DEPENDENT ON trading)
+ASSERT(Market Data Service IS DEPENDENT ON market-data)
+
+# Disallowed dependencies (direct and transitive)
+ASSERT(Trading App HAS NO DEPENDENCY ON market-data)
+ASSERT(Market Data Service HAS NO DEPENDENCY ON trading)
+ASSERT(trading HAS NO DEPENDENCY ON market-data)
+ASSERT(market-data HAS NO DEPENDENCY ON trading)

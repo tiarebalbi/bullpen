@@ -69,7 +69,7 @@ test("landing page renders every section with no console/page errors", async ({ 
   // Rules: a card for each # heading of structure.adl plus the CALM and budget cards, each with a
   // real result chip: the pass or fail the last committed rules snapshot recorded, never a fabricated pass.
   const ruleCards = page.locator("#rules .bp-rule-card");
-  await expect(ruleCards).toHaveCount(7);
+  await expect(ruleCards).toHaveCount(8);
   for (let i = 0; i < 7; i++) {
     await expect(ruleCards.nth(i).locator(".bp-rule-card__foot")).toContainText(/pass|fail/);
   }

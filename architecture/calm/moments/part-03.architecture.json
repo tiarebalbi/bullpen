@@ -92,7 +92,8 @@
         "bullpen:path": "apps/web",
         "bullpen:libraries": [
           "packages/ui",
-          "packages/contracts"
+          "packages/contracts",
+          "packages/db-trading"
         ]
       },
       "controls": {
@@ -188,6 +189,41 @@
                 "control-id": "CR-ANALYTICS-CONSENT",
                 "name": "Analytics only after consent",
                 "description": "packages/ui's Analytics loads the Clarity tag only after Accept, with Consent API v2 queued first: ad_Storage denied, analytics_Storage granted."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "market-data-service",
+      "node-type": "service",
+      "name": "Market Data Service",
+      "description": "The single owner of market data: both providers (stocks end of day, crypto) and both call budgets. It is a boundary inside one release, not an independently deployed microservice.",
+      "metadata": {
+        "bullpen:path": "apps/market-data",
+        "bullpen:libraries": [
+          "packages/contracts",
+          "packages/db-market-data"
+        ]
+      }
+    },
+    {
+      "unique-id": "bullpen-database",
+      "node-type": "database",
+      "name": "Bullpen Database",
+      "description": "One Neon Postgres project and one database, with a schema and a database role per transactional owner: market_data (owned by market_data_owner) and trading (owned by trading_owner). The only read across them is the view market_data.prices_v1.",
+      "controls": {
+        "data-ownership": {
+          "description": "Writes to a schema come only from its owner; trading reads market_data only through market_data.prices_v1; a migration touches only its own schema.",
+          "requirements": [
+            {
+              "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
+              "config": {
+                "control-id": "CR-DATA-OWNERSHIP",
+                "name": "Each schema has one owner",
+                "description": "ONLY market-data WRITES market_data. trading READS market_data ONLY THROUGH market_data.prices_v1. ONLY trading WRITES trading.orders AND trading.ledger.",
+                "enforced-by": "architecture/fitness/src/data-ownership-check.ts"
               }
             }
           ]
@@ -369,6 +405,44 @@
       "protocol": "HTTPS",
       "metadata": {
         "interaction": "asynchronous"
+      }
+    },
+    {
+      "unique-id": "market-data-to-database",
+      "description": "The Market Data Service connects as market_data_owner and writes the market_data schema.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "bullpen-database"
+          }
+        }
+      },
+      "protocol": "JDBC",
+      "metadata": {
+        "role": "market_data_owner",
+        "schema": "market_data"
+      }
+    },
+    {
+      "unique-id": "trading-app-to-database",
+      "description": "The trading app connects as trading_owner and writes the trading schema; it reads prices only through market_data.prices_v1.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "bullpen-database"
+          }
+        }
+      },
+      "protocol": "JDBC",
+      "metadata": {
+        "role": "trading_owner",
+        "schema": "trading"
       }
     }
   ]

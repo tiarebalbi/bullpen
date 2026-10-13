@@ -1,0 +1,22 @@
+{
+  "name": "@bullpen/market-data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bullpen/contracts": "workspace:*",
+    "@bullpen/db-market-data": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "5.0.2",
+    "typescript": "6.0.3",
+    "@types/node": "22.20.4",
+    "eslint": "10.11.0"
+  }
+}

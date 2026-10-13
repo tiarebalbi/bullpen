@@ -260,7 +260,7 @@ test.describe("Architecture page, desktop", () => {
     await open(page, "rules", 2);
 
     await expect(panel(page)).toContainText(/Snapshot for Part \d, commit [0-9a-f]{7}/);
-    await expect(panel(page).locator(".bp-rule-card")).toHaveCount(7);
+    await expect(panel(page).locator(".bp-rule-card")).toHaveCount(8);
     const row = panel(page).locator("tr", { hasText: "UI HAS NO DEPENDENCY ON Landing, Trading App" });
     await expect(row).toContainText(/pass|fail/);
     await expect(row).not.toContainText("Arrives in Part");

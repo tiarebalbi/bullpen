@@ -10,7 +10,7 @@ Proposed
 
 ## Summary
 
-The ADL is held to the moment that describes the branch, not to the published one
+ADL maps to the latest built moment
 
 ## Part
 

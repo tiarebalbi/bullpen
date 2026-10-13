@@ -57,7 +57,7 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
     page,
   }) => {
     const ruleCards = page.locator("#rules .bp-rule-card");
-    await expect(ruleCards).toHaveCount(7);
+    await expect(ruleCards).toHaveCount(8);
 
     const text = await page.locator("#rules").innerText();
     expect(text).toContain("DEFINED");

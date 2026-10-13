@@ -70,3 +70,20 @@ describe("ci workflow", () => {
     expect((text.match(/--strict/g) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("ci workflow: the database tests", () => {
+  const text = workflow("ci.yml");
+
+  it("runs them on every push against a Postgres service container, outside --affected", () => {
+    expect(text).toMatch(/services:\s*\n\s+postgres:\s*\n\s+image: postgres:/);
+    expect(text).toMatch(/name: database tests \(always\)/);
+    expect(text).toContain("TEST_DATABASE_URL:");
+    expect(text).toContain("pnpm --filter @bullpen/fitness-checks test:db:ci");
+    const step = text.slice(text.indexOf("database tests (always)"));
+    expect(step.slice(0, step.indexOf("- name:", 10))).not.toContain("--affected");
+  });
+
+  it("validates the Part 3 moment strictly", () => {
+    expect(text).toContain("moments/part-03.architecture.json");
+  });
+});

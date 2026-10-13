@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { loadAdlDocument, type AdlDocument, type AdlEntry } from "./adl.js";
 import { checkBoundaries, type BoundariesRunner } from "./boundaries-check.js";
 import { BUDGET_RULE, checkBudgetAt, type AllowanceEntry } from "./budget-check.js";
+import { MIGRATION_FOLDER_RULE, checkDataOwnership } from "./data-ownership-check.js";
 import { EMAIL_RULE, checkEmailInFiles } from "./email-in-files-check.js";
 import { EXPLORER_RULE, checkAllExplorerParts } from "./explorer-consistency-check.js";
 import { checkEntryPointImports } from "./imports-check.js";
@@ -45,6 +46,11 @@ export const CHECKS: CheckDefinition[] = [
     name: "model currency",
     rules: [ADL_RULE.componentsMapped, ADL_RULE.nodesMapped, EXTERNAL_SYSTEM_RULE, ADR_LINKED_RULE, CONTROL_POINTER_RULE],
     run: ({ repoRoot, entries }) => checkModelCurrency(repoRoot, entries),
+  },
+  {
+    name: "data ownership",
+    rules: ({ adl }) => [...adl.rules.filter((rule) => rule.form.form === "owner-writes" || rule.form.form === "reads-through").map((rule) => rule.text), MIGRATION_FOLDER_RULE],
+    run: ({ repoRoot }) => checkDataOwnership(repoRoot),
   },
   { name: "budget", rules: [BUDGET_RULE], run: ({ repoRoot, allowances }) => checkBudgetAt(repoRoot, allowances) },
   { name: "explorer consistency", rules: [EXPLORER_RULE], run: ({ repoRoot }) => checkAllExplorerParts(repoRoot) },

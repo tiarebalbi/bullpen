@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/market-data",
+  "private": true,
+  "version": "0.1.0",
+  "dependencies": {
+    "@fixture/db-market-data": "workspace:*",
+    "@fixture/db-trading": "workspace:*"
+  }
+}

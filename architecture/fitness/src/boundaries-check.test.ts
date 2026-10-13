@@ -34,10 +34,38 @@ describe("turbo boundaries, through the wrapper (real mechanism, no mocking)", (
       "boundaries-relative-import",
       "boundaries-laundered",
       "boundaries-allowlist-violation",
+      "boundaries-data-good",
+      "boundaries-data-trading-crosses",
+      "boundaries-data-market-crosses",
     ]) {
       results.set(name, checkBoundaries(fixture(name)));
     }
   }, TIMEOUT_MS);
+
+  it("passes when each data owner uses only its own data library", () => {
+    expect(run("boundaries-data-good")).toEqual([]);
+  });
+
+  it("fails the Trading App depending on the market-data library, under the Trading App's own line", () => {
+    const rule = assertIn("boundaries-data-trading-crosses", "Trading App HAS NO DEPENDENCY ON market-data");
+    const violations = run("boundaries-data-trading-crosses");
+    const violation = violations.find((v) => v.rule === rule.text)!;
+
+    expect(violation).toBeDefined();
+    expect(violation.where).toBe("apps/trading-app/package.json");
+    expect(violation.why).toContain("Trading App depends on market-data");
+    expect(violation.why).toContain(rule.cite);
+  });
+
+  it("fails the Market Data Service depending on the trading library, under its own line", () => {
+    const rule = assertIn("boundaries-data-market-crosses", "Market Data Service HAS NO DEPENDENCY ON trading");
+    const violation = run("boundaries-data-market-crosses").find((v) => v.rule === rule.text)!;
+
+    expect(violation).toBeDefined();
+    expect(violation.where).toBe("apps/market-data/package.json");
+    expect(violation.why).toContain("Market Data Service depends on trading");
+    expect(violation.why).toContain(rule.cite);
+  });
 
   it("passes when no component depends on or imports another", () => {
     expect(run("boundaries-good")).toEqual([]);

@@ -101,7 +101,7 @@ describe("buildArchitecturePage, from the real repo", () => {
         ["Market History Service", 3],
       ]);
       expect(page.services[5]!.planned.map((s) => s.name)).toContain("Orders Service");
-      expect(page.services[3]!.built).toHaveLength(3);
+      expect(page.services[3]!.built).toHaveLength(4);
     });
 
     it("every control that names a check names one the snapshot can report on", () => {

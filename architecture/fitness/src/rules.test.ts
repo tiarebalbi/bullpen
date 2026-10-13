@@ -44,6 +44,7 @@ describe("the real structure.adl", () => {
       "Allowed dependencies",
       "Disallowed dependencies (direct and transitive)",
       "Entry points and secrets",
+      "Data ownership",
       "Model currency",
     ]);
     expect(document.entries.filter((entry) => entry.kind !== "SYSTEM").every((entry) => /^ {2}DEFINE /.test(document.lines[entry.line - 1]!.raw))).toBe(true);
