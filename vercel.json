@@ -3,18 +3,35 @@
   "services": {
     "web": {
       "root": "apps/web/",
-      "framework": "nextjs",
-      "ignoreCommand": "npx turbo-ignore @bullpen/web"
+      "framework": "nextjs"
     },
     "market-data": {
       "root": "apps/market-data/",
-      "ignoreCommand": "npx turbo-ignore @bullpen/market-data",
-      "functions": { "api/**/*.ts": { "maxDuration": 300 } }
+      "functions": {
+        "api/**/*.ts": {
+          "maxDuration": 300
+        }
+      }
     }
   },
   "rewrites": [
-    { "source": "/api/price/(.*)", "destination": { "service": "market-data" } },
-    { "source": "/api/cron/(.*)", "destination": { "service": "market-data" } },
-    { "source": "/(.*)", "destination": { "service": "web" } }
+    {
+      "source": "/api/price/(.*)",
+      "destination": {
+        "service": "market-data"
+      }
+    },
+    {
+      "source": "/api/cron/(.*)",
+      "destination": {
+        "service": "market-data"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
   ]
 }
