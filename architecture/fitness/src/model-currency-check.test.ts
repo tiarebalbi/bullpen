@@ -50,7 +50,7 @@ describe("model currency: external systems nobody decided", () => {
     expect(violation!.where).toBe(PLANNED);
     expect(violation!.why).toContain('"broker"');
     expect(violation!.why).toContain('"Stripe"');
-    expect(violation!.why).toContain("no ADR Decision");
+    expect(violation!.why).toContain("no Accepted ADR Decision");
     expect(violation!.rule).toBe(EXTERNAL_SYSTEM_RULE);
   });
 
@@ -99,6 +99,78 @@ describe("model currency: external systems nobody decided", () => {
     const rejected = withExternalSystem("Initech");
     const rejectedText = expectFailureFormat(checkModelCurrency(rejected, entriesOf(rejected))[0]!, "model currency");
     expect(rejectedText).toContain("only as turned down");
+  });
+});
+
+describe("model currency: only an Accepted decision authorizes the model (ADR-0016)", () => {
+  const DOCS = "docs/data-sources.md";
+
+  /** A copy of the fixture whose planned moment names `provider`, decided by an ADR with `status`. */
+  function withDecidingAdr(status: string, provider = "Alpha Vantage"): string {
+    const root = withExternalSystem(provider);
+    writeFileSync(join(root, "architecture/adr/0008-stock-prices.md"), `# ADR-0008: Stock prices\n\n## Status\n\n${status}\n\n## Decision\n\nUse ${provider} for stock prices.\n\n## Alternatives\n\n- **Hooli** — rejected.\n`);
+    return root;
+  }
+
+  it("fails a node whose provider a Proposed ADR decides, naming the node and the ADR", () => {
+    const root = withDecidingAdr("Proposed");
+    const [violation] = checkModelCurrency(root, entriesOf(root));
+
+    expect(violation!.rule).toBe(EXTERNAL_SYSTEM_RULE);
+    expect(violation!.where).toBe(PLANNED);
+    expect(violation!.why).toContain('"broker"');
+    expect(violation!.why).toContain('"Alpha Vantage"');
+    expect(violation!.why).toContain("ADR-0008 is proposed");
+    expect(violation!.why).toContain("only an Accepted decision authorizes the model");
+    expect(violation!.fix).toContain("Accept ADR-0008");
+    expectFailureFormat(violation!, "model currency");
+  });
+
+  it("passes the same model once the ADR is Accepted", () => {
+    const root = withDecidingAdr("Accepted");
+    expect(checkModelCurrency(root, entriesOf(root))).toEqual([]);
+  });
+
+  it("reads the status from the first line, so a note under Proposed does not make it Accepted", () => {
+    const root = withDecidingAdr("Proposed\n\nClarified 2026-10-10: this was accepted in the plan.");
+    expect(checkModelCurrency(root, entriesOf(root)).map((v) => v.why).join()).toContain("ADR-0008 is proposed");
+  });
+
+  it("fails a node an ADR without a status decides", () => {
+    const root = withDecidingAdr("Superseded");
+    expect(checkModelCurrency(root, entriesOf(root))[0]!.why).toContain("ADR-0008 is superseded");
+  });
+
+  it("lets a Proposed ADR's status govern a provider that docs/data-sources.md also lists as in use", () => {
+    const root = withDecidingAdr("Proposed", "Initrode");
+    writeFileSync(join(root, DOCS), `${readFileSync(join(root, DOCS), "utf8")}\n## Initrode — in use\n\nPrices come from Initrode.\n`);
+    const [violation] = checkModelCurrency(root, entriesOf(root));
+    expect(violation!.why).toContain("ADR-0008 is proposed");
+
+    writeFileSync(join(root, "architecture/adr/0008-stock-prices.md"), readFileSync(join(root, "architecture/adr/0008-stock-prices.md"), "utf8").replace("Proposed", "Accepted"));
+    expect(checkModelCurrency(root, entriesOf(root))).toEqual([]);
+  });
+
+  it("fails a provider with no ADR that docs/data-sources.md lists only as proposed", () => {
+    const root = withExternalSystem("Initrode");
+    writeFileSync(join(root, DOCS), `${readFileSync(join(root, DOCS), "utf8")}\n## Initrode — proposed\n\nPrices would come from Initrode.\n`);
+    const [violation] = checkModelCurrency(root, entriesOf(root));
+
+    expect(violation!.why).toContain('"Initrode"');
+    expect(violation!.why).toContain("docs/data-sources.md (Initrode — proposed) lists only as proposed");
+    expect(violation!.fix).toContain("as in use in docs/data-sources.md once it is decided");
+  });
+
+  it("passes a provider with no ADR that docs/data-sources.md lists as in use", () => {
+    const root = withExternalSystem("Initrode");
+    writeFileSync(join(root, DOCS), `${readFileSync(join(root, DOCS), "utf8")}\n## Initrode — in use\n\nPrices come from Initrode.\n`);
+    expect(checkModelCurrency(root, entriesOf(root))).toEqual([]);
+  });
+
+  it("still lets an Accepted ADR's Decision decide a provider an unrelated Proposed ADR also names", () => {
+    const root = withDecidingAdr("Accepted", "Initrode");
+    writeFileSync(join(root, "architecture/adr/0009-later.md"), "# ADR-0009: Later\n\n## Status\n\nProposed\n\n## Decision\n\nAlso consider Initrode.\n");
+    expect(checkModelCurrency(root, entriesOf(root))).toEqual([]);
   });
 });
 

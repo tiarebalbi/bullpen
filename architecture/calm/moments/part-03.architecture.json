@@ -16,7 +16,8 @@
     "architecture/adr/0007-markdown-it-for-adr-rendering.md",
     "architecture/adr/0009-guardrails-enforced-not-requested.md",
     "architecture/adr/0010-product-analytics-ga4-clarity-behind-consent.md",
-    "architecture/adr/0015-adl-maps-to-the-latest-built-moment.md"
+    "architecture/adr/0015-adl-maps-to-the-latest-built-moment.md",
+    "architecture/adr/0016-only-accepted-decisions-authorize-the-model.md"
   ],
   "nodes": [
     {

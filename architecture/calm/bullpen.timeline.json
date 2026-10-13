@@ -53,7 +53,8 @@
       },
       "adrs": [
         "architecture/adr/0008-alpha-vantage-stock-prices.md",
-        "architecture/adr/0015-adl-maps-to-the-latest-built-moment.md"
+        "architecture/adr/0015-adl-maps-to-the-latest-built-moment.md",
+        "architecture/adr/0016-only-accepted-decisions-authorize-the-model.md"
       ]
     },
     {
