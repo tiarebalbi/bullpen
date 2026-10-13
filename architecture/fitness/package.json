@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "bash scripts/test-db.sh",
-    "test:db:ci": "vitest run -c vitest.db.config.ts"
+    "test:db:ci": "vitest run -c vitest.db.config.ts",
+    "db:migrate": "tsx scripts/db-migrate.ts"
   },
   "dependencies": {
     "@bullpen/contracts": "workspace:*",
