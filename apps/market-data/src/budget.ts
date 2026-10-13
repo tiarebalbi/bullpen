@@ -49,14 +49,11 @@ export class BudgetExceeded extends Error {
   }
 }
 
+export type Reserve = (pool: Pool, provider: string, window: string, cap: number) => Promise<CallReservation>;
+
 /** Reserves one call or throws `BudgetExceeded`, logging the refusal. Call it before every provider request. */
-export async function reserveCall(
-  pool: Pool,
-  provider: Provider,
-  now: Date,
-  log: Logger = consoleLogger,
-  reserve: (pool: Pool, provider: string, window: string, cap: number) => Promise<CallReservation> = reserveProviderCall,
-): Promise<number> {
+export async function reserveCall(pool: Pool, provider: Provider, now: Date, seams: { log?: Logger; reserve?: Reserve } = {}): Promise<number> {
+  const { log = consoleLogger, reserve = reserveProviderCall } = seams;
   const window = windowKey(provider, now);
   const { granted, calls, cap } = await reserve(pool, provider, window, BUDGETS[provider].cap);
   if (!granted) {

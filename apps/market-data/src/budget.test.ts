@@ -31,7 +31,7 @@ describe("reserveCall", () => {
 
   it("returns the count of a granted call and logs nothing", async () => {
     const warnings: unknown[] = [];
-    const calls = await reserveCall(pool, "alphavantage", now, { warn: (...args) => warnings.push(args) }, async () => ({ granted: true, calls: 7, cap: 20 }));
+    const calls = await reserveCall(pool, "alphavantage", now, { log: { warn: (...args) => warnings.push(args) }, reserve: async () => ({ granted: true, calls: 7, cap: 20 }) });
     expect(calls).toBe(7);
     expect(warnings).toEqual([]);
   });
@@ -39,9 +39,12 @@ describe("reserveCall", () => {
   it("refuses a call over the cap, logs the refusal with the provider, window and cap, and throws", async () => {
     const warnings: Array<[string, Record<string, unknown>]> = [];
     const seen: unknown[][] = [];
-    const attempt = reserveCall(pool, "alphavantage", now, { warn: (message, fields) => warnings.push([message, fields]) }, async (...args) => {
-      seen.push(args.slice(1));
-      return { granted: false, calls: 20, cap: 20 };
+    const attempt = reserveCall(pool, "alphavantage", now, {
+      log: { warn: (message, fields) => warnings.push([message, fields]) },
+      reserve: async (...args) => {
+        seen.push(args.slice(1));
+        return { granted: false, calls: 20, cap: 20 };
+      },
     });
 
     await expect(attempt).rejects.toBeInstanceOf(BudgetExceeded);
