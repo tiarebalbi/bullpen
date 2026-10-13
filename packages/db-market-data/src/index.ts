@@ -7,6 +7,6 @@ export const OWNER_ROLE = "market_data_owner";
 export const SCHEMA = "market_data";
 
 /** A pool that connects with the market-data owner's own URL. */
-export function createPool(connectionString: string): pg.Pool {
-  return new pg.Pool({ connectionString, max: 3 });
+export function createPool(connectionString: string, max = 3): pg.Pool {
+  return new pg.Pool({ connectionString, max });
 }

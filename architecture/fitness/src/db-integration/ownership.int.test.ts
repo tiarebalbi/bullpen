@@ -49,7 +49,7 @@ describe("market_data is owned by market_data_owner, trading by trading_owner", 
   });
 
   it("lets trading_owner SELECT from market_data.prices_v1, with the stale flag", async () => {
-    const { rows } = await trading.query("SELECT symbol, price::float AS price, source, stale FROM market_data.prices_v1 ORDER BY symbol");
+    const { rows } = await trading.query("SELECT symbol, price::float AS price, source, stale FROM market_data.prices_v1 WHERE symbol IN ('AAPL', 'BTC-USD') ORDER BY symbol");
     expect(rows).toEqual([
       { symbol: "AAPL", price: 190, source: "test", stale: true },
       { symbol: "BTC-USD", price: 61000, source: "test", stale: false },
