@@ -10,7 +10,7 @@ Proposed
 
 ## Summary
 
-A materialized view, no queue yet, with written switch criteria
+Materialized view, no queue yet, written switch criteria
 
 ## Part
 

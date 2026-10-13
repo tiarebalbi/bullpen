@@ -4,6 +4,10 @@ import { expect, test, type Page } from "@playwright/test";
 // network layer (page.route), so the real Next server handler is never
 // invoked -- CoinGecko is never called, in CI or locally.
 async function mockPriceRoute(page: Page, body: unknown, status = 200): Promise<void> {
+  // The page also shows the leaderboard; keep it out of these specs with an empty one.
+  await page.route("**/api/leaderboard", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ rows: [], asOf: new Date().toISOString(), ageMs: 0, stale: false, lastFailure: null }) }),
+  );
   await page.route("**/api/price/BTC-USD", (route) =>
     route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) }),
   );

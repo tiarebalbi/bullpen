@@ -432,7 +432,7 @@
     },
     {
       "unique-id": "trading-app-to-database",
-      "description": "The trading app holds a pool that connects as trading_owner (apps/web/app/lib/trading). No route places an order yet: the buy transaction is exercised by the database tests. Prices are read only through market_data.prices_v1.",
+      "description": "The trading app connects as trading_owner (apps/web/app/lib/trading) and serves the leaderboard from trading.leaderboard_mv through GET /api/leaderboard. No route places an order yet: the buy transaction is exercised by the database tests. Prices are read only through market_data.prices_v1.",
       "relationship-type": {
         "connects": {
           "source": {
