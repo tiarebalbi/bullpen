@@ -54,3 +54,11 @@ describe("when a stock price stops being current", () => {
     expect(stockValidUntil("2026-10-30").toISOString()).toBe("2026-11-03T04:59:59.000Z");
   });
 });
+
+describe("the closing time", () => {
+  it("is 16:00 New York time, 20:00 UTC in daylight time and 21:00 UTC in standard time", async () => {
+    const { closeOfNewYorkDay } = await import("./calendar.js");
+    expect(closeOfNewYorkDay("2026-10-13").toISOString()).toBe("2026-10-13T20:00:00.000Z");
+    expect(closeOfNewYorkDay("2026-11-02").toISOString()).toBe("2026-11-02T21:00:00.000Z");
+  });
+});

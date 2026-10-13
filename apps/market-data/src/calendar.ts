@@ -109,3 +109,9 @@ export function endOfNewYorkDay(date: string): Date {
 export function stockValidUntil(asOf: string): Date {
   return endOfNewYorkDay(nextTradingDay(asOf));
 }
+
+/** 16:00 in New York on a calendar date, as a UTC instant: the as-of time of that day's closing price. */
+export function closeOfNewYorkDay(date: string): Date {
+  const eightHoursBeforeMidnight = (7 * 3600 + 59 * 60 + 59) * 1000;
+  return new Date(endOfNewYorkDay(date).getTime() - eightHoursBeforeMidnight);
+}

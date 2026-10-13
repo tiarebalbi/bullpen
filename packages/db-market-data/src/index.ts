@@ -2,6 +2,7 @@ import pg from "pg";
 
 export { migrate } from "./migrate.js";
 export { reserveProviderCall, type CallReservation } from "./budget.js";
+export { hasQuote, storeQuote, type StoredQuote } from "./quotes.js";
 
 /** The runtime role this module connects as, and the schema it owns. */
 export const OWNER_ROLE = "market_data_owner";
