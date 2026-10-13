@@ -1,0 +1,89 @@
+{
+  "week": "2026-w42",
+  "period": {
+    "start": "2026-10-12",
+    "end": "2026-10-18"
+  },
+  "status": "pending",
+  "note": "Week 42 has not ended as of 2026-10-13. Actual usage is filled in from the provider dashboards at or after the end of the week (2026-10-18), by a human or a later automated step. Until then every value below is null and status stays \"pending\": nothing here is estimated.",
+  "usage": [
+    {
+      "service": "vercel-hobby",
+      "metric": "active_cpu_time",
+      "value": null,
+      "unit": "hours"
+    },
+    {
+      "service": "vercel-hobby",
+      "metric": "provisioned_memory",
+      "value": null,
+      "unit": "GB-hrs"
+    },
+    {
+      "service": "vercel-hobby",
+      "metric": "function_invocations",
+      "value": null,
+      "unit": "invocations"
+    },
+    {
+      "service": "vercel-hobby",
+      "metric": "edge_requests",
+      "value": null,
+      "unit": "requests"
+    },
+    {
+      "service": "vercel-hobby",
+      "metric": "deployments_per_day",
+      "value": null,
+      "unit": "deployments (peak day in week)"
+    },
+    {
+      "service": "vercel-queues",
+      "metric": "api_operations",
+      "value": null,
+      "unit": "operations"
+    },
+    {
+      "service": "vercel-workflows",
+      "metric": "workflow_events",
+      "value": null,
+      "unit": "events"
+    },
+    {
+      "service": "vercel-workflows",
+      "metric": "workflow_data_written",
+      "value": null,
+      "unit": "GB"
+    },
+    {
+      "service": "neon",
+      "metric": "storage",
+      "value": null,
+      "unit": "GB"
+    },
+    {
+      "service": "neon",
+      "metric": "compute",
+      "value": null,
+      "unit": "CU-hours"
+    },
+    {
+      "service": "coingecko-demo",
+      "metric": "monthly_calls",
+      "value": null,
+      "unit": "calls"
+    },
+    {
+      "service": "alpha-vantage-free",
+      "metric": "daily_calls",
+      "value": null,
+      "unit": "calls (peak day in week)"
+    },
+    {
+      "service": "vercel-services",
+      "metric": "service_requests",
+      "value": null,
+      "unit": "requests"
+    }
+  ]
+}

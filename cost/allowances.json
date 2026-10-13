@@ -92,11 +92,11 @@
   {
     "service": "neon",
     "metric": "storage",
-    "allowance": 0.5,
+    "allowance": 1,
     "unit": "GB/project",
     "source_url": "https://neon.com/docs/introduction/plans",
-    "checked_on": "2026-09-25",
-    "note": "Neon Free plan storage allowance per project."
+    "checked_on": "2026-10-13",
+    "note": "Neon Free plan Postgres storage per project (20 GB across all projects). The 2026-09-25 reading was 0.5 GB; the plans page now says 1 GB."
   },
   {
     "service": "neon",
@@ -104,8 +104,17 @@
     "allowance": 100,
     "unit": "CU-hours/project/month",
     "source_url": "https://neon.com/docs/introduction/plans",
-    "checked_on": "2026-09-25",
-    "note": "Neon's docs note this is enough to run a 0.25 CU compute for 400 hours/month."
+    "checked_on": "2026-10-13",
+    "note": "Neon Free plan: 100 CU-hours per project per month, enough for a 0.25 CU compute for 400 hours. Computes suspend after 5 minutes of inactivity and this cannot be disabled on Free. Autoscaling goes up to 2 CU."
+  },
+  {
+    "service": "neon",
+    "metric": "projects",
+    "allowance": 100,
+    "unit": "projects",
+    "source_url": "https://neon.com/docs/introduction/plans",
+    "checked_on": "2026-10-13",
+    "note": "Neon Free plan project count. Bullpen uses one project and one database, with a schema and a role per transactional owner (ADR-0012)."
   },
   {
     "service": "upstash-redis",
@@ -203,7 +212,16 @@
     "allowance": 25,
     "unit": "calls/day",
     "source_url": "https://www.alphavantage.co/premium/",
-    "checked_on": "2026-09-26",
-    "note": "Free tier daily call limit, end-of-day data only. See ADR-0008 (Proposed, not Accepted): the free key's terms license 'personal, non-commercial use' and written permission for Bullpen's public display was requested from premium@alphavantage.co on 2026-09-26, still pending. Finnhub is under evaluation as a possible second source (permission requested 2026-09-25, not used until granted, not named on any public page)."
+    "checked_on": "2026-10-13",
+    "note": "Free key's daily call limit, end-of-day data only. One symbol per GLOBAL_QUOTE request. The call budget caps Bullpen's own calls at 20 a day (ADR-0008, ADR-0013). A 5-a-minute limit is reported by secondary sources only and is unconfirmed."
+  },
+  {
+    "service": "vercel-services",
+    "metric": "service_requests",
+    "allowance": 1000000,
+    "unit": "requests/month",
+    "source_url": "https://vercel.com/docs/services/pricing",
+    "checked_on": "2026-10-13",
+    "note": "Vercel Services is in Beta. A service request is one call from one service to another over a binding; requests from the public internet are not service requests. Compute is billed like Vercel Functions, so Active CPU and provisioned memory draw on the Hobby allowances above."
   }
 ]

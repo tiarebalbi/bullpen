@@ -7,8 +7,9 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
  * Which later part first uses a service, sourced from the real committed
  * planned CALM files (grep architecture/calm/planned + content/architecture
  * for the node that owns each real dependency) -- never guessed:
- *  - neon: Part 3's Prices/Market History services each get a Neon Postgres database.
- *  - alpha-vantage-free: Part 3's proposed stock data provider (ADR-0008).
+ *  - neon: Part 3's one Neon project, with a schema and a role per transactional owner.
+ *  - alpha-vantage-free: Part 3's stock data provider (ADR-0008).
+ *  - vercel-services: Part 3's Market Data Service (ADR-0004).
  *  - vercel-workflows: Part 4's order-saga-workflow.
  *  - vercel-queues: Part 5's market-open-queue.
  * upstash-redis, grafana-cloud and aws-lambda never appear in any real
@@ -19,14 +20,14 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
 export const SERVICE_ARRIVES_IN_PART: Record<string, number | undefined> = {
   neon: 3,
   "alpha-vantage-free": 3,
+  "vercel-services": 3,
   "vercel-workflows": 4,
   "vercel-queues": 5,
 };
 
-// "alpha-vantage-free" reads as "Stock data provider", not by name --
-// ADR-0008 is Proposed, not Accepted, so no page names Alpha Vantage as
-// the resolved provider until written permission for public display
-// arrives.
+// "alpha-vantage-free" reads as "Stock data provider", not by name: the
+// pages credit the data source where its prices are shown and name no
+// provider elsewhere.
 const SERVICE_LABELS: Record<string, string> = {
   "vercel-hobby": "Vercel Hobby",
   "coingecko-demo": "CoinGecko Demo",
@@ -36,6 +37,7 @@ const SERVICE_LABELS: Record<string, string> = {
   "grafana-cloud": "Grafana Cloud",
   "aws-lambda": "AWS Lambda",
   "vercel-queues": "Vercel Queues",
+  "vercel-services": "Vercel Services",
   "vercel-workflows": "Vercel Workflows",
 };
 
@@ -62,6 +64,8 @@ const METRIC_LABELS: Record<string, string> = {
   traces_ingest: "Trace ingest",
   requests: "Requests",
   daily_calls: "Daily calls",
+  projects: "Projects",
+  service_requests: "Service requests",
 };
 
 /** Every allowance's service/metric must have a human label -- throws rather than silently falling back to the raw id, so a new entry in cost/allowances.json can't ship unlabeled. */
