@@ -14,13 +14,14 @@ const PRODUCTION_URL = "https://bullpen-web-nine.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(PRODUCTION_URL),
-  title: "Bullpen trading app — live BTC-USD",
-  description: "Live BTC-USD price for Bullpen, a paper-trading league built in public for the series Architecting Software in 2026.",
+  title: "Bullpen trading app — live BTC-USD and end-of-day stocks",
+  description: "Live BTC-USD and end-of-day U.S. stock prices for Bullpen, a paper-trading league built in public for the series Architecting Software in 2026.",
   alternates: {
     canonical: "/",
   },
-  // No content here is worth ranking yet -- one live price, no league to
-  // join until Part 3. Revisit once there's something real to index.
+  // No content here is worth ranking yet -- two kinds of price and a
+  // leaderboard with no players until accounts arrive in Part 4. Revisit
+  // once there's something real to index.
   robots: { index: false },
 };
 

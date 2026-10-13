@@ -6,7 +6,7 @@ import { LinkButton } from "./LinkButton.js";
 /**
  * The design export's hero (variant 1j, design/README.md) shows a live
  * "214 players" pill and a fake scrolling leaderboard. Neither is real yet
- * (no live league until Part 3), so this hero drops the player-count pill
+ * (the leaderboard has no players until accounts arrive in Part 4), so this hero drops the player-count pill
  * entirely and replaces the leaderboard with the design system's own
  * EmptyState, using the export's real "Your spot is open" copy rather than
  * fabricated rows. Rendered directly (no extra bordered wrapper) --
@@ -22,7 +22,7 @@ export function Hero(): ReactNode {
           Architecting software in 2026, <span className="bp-accent">built in public</span>
         </h1>
         <p className="bp-hero__sub">
-          A paper-trading league with play money, live crypto prices, and U.S. stocks from Part 3. It is
+          A paper-trading league with play money, live crypto prices, and end-of-day U.S. stock prices. It is
           also the system I&rsquo;m designing in the open for the series{" "}
           <em>Architecting Software in 2026</em>, one part a week.
         </p>
@@ -40,8 +40,9 @@ export function Hero(): ReactNode {
         title="Your spot is open"
         description={
           <>
-            There&apos;s no live leaderboard yet — the league opens in Part 3. BTC-USD is already live in
-            the <a href={BULLPEN_WEB_URL}>trading app</a>.
+            The leaderboard is open in the <a href={BULLPEN_WEB_URL}>trading app</a> and no one is on it
+            yet. Accounts and orders arrive in Part 4. BTC-USD and end-of-day U.S. stock prices are already
+            live there.
           </>
         }
       />
