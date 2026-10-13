@@ -24,6 +24,7 @@ describe("parseSeries", () => {
       date: "2026-10-11",
     });
     expect(parts[2]).toMatchObject({ part: 3, status: "next", url: "", date: null });
+    expect(parts[2]).toMatchObject({ title: "Who owns the data", introduced: "One owner per transaction, one Market Data service" });
     for (const part of parts.slice(3)) {
       expect(part.status).toBe("planned");
       expect(part.url).toBe("");

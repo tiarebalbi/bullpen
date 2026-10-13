@@ -23,7 +23,7 @@
     "status": "next",
     "url": "",
     "date": null,
-    "introduced": "Orders and Ledger split, and a queue"
+    "introduced": "One owner per transaction, one Market Data service"
   },
   {
     "part": 4,
