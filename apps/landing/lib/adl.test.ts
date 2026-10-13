@@ -20,7 +20,7 @@ describe("the ADL the page reads", () => {
   it("has the book's header, the DEFINEs and one group per # heading, each rule under its own", () => {
     expect(adl.description).toBe(file[0]!.replace("DESCRIPTION ", ""));
     expect(adl.category).toBe("Structural");
-    expect(adl.entries.map((entry) => entry.name)).toEqual(["Bullpen", "Landing", "Trading App", "Market Data Service", "UI", "Contracts", "market-data", "trading"]);
+    expect(adl.entries.map((entry) => entry.name)).toEqual(["Bullpen", "Landing", "Trading App", "UI", "Contracts", "market-data", "trading"]);
     expect(adl.groups.map((group) => group.heading)).toEqual([
       "Structural assertions",
       "Allowed dependencies",
@@ -38,8 +38,7 @@ describe("the ADL the page reads", () => {
     expect(groupLines(adl, allowed).map((line) => line.raw)).toEqual([
       "# Allowed dependencies",
       "ASSERT(Landing IS DEPENDENT ON UI, Contracts)",
-      "ASSERT(Trading App IS DEPENDENT ON UI, Contracts, trading)",
-      "ASSERT(Market Data Service IS DEPENDENT ON Contracts, market-data)",
+      "ASSERT(Trading App IS DEPENDENT ON UI, Contracts, trading, market-data)",
     ]);
   });
 });

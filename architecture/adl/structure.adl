@@ -3,7 +3,6 @@ CATEGORY Structural
 DEFINE SYSTEM Bullpen AS bullpen
   DEFINE COMPONENT Landing AS apps/landing
   DEFINE COMPONENT Trading App AS apps/web
-  DEFINE COMPONENT Market Data Service AS apps/market-data
   DEFINE LIBRARY UI AS packages/ui
   DEFINE LIBRARY Contracts AS packages/contracts
   DEFINE LIBRARY market-data AS packages/db-market-data
@@ -15,21 +14,13 @@ ASSERT(every DEFINED COMPONENT and LIBRARY exists as a directory)
 
 # Allowed dependencies
 ASSERT(Landing IS DEPENDENT ON UI, Contracts)
-ASSERT(Trading App IS DEPENDENT ON UI, Contracts, trading)
-ASSERT(Market Data Service IS DEPENDENT ON Contracts, market-data)
+ASSERT(Trading App IS DEPENDENT ON UI, Contracts, trading, market-data)
 
 # Disallowed dependencies (direct and transitive)
 ASSERT(Landing HAS NO DEPENDENCY ON Trading App)
 ASSERT(Trading App HAS NO DEPENDENCY ON Landing)
 ASSERT(UI HAS NO DEPENDENCY ON Landing, Trading App)
 ASSERT(Contracts HAS NO DEPENDENCY ON Landing, Trading App)
-ASSERT(Market Data Service HAS NO DEPENDENCY ON Landing, Trading App, UI)
-ASSERT(Landing HAS NO DEPENDENCY ON Market Data Service)
-ASSERT(Trading App HAS NO DEPENDENCY ON Market Data Service)
-ASSERT(UI HAS NO DEPENDENCY ON Market Data Service)
-ASSERT(Contracts HAS NO DEPENDENCY ON Market Data Service)
-ASSERT(Trading App HAS NO DEPENDENCY ON market-data)
-ASSERT(Market Data Service HAS NO DEPENDENCY ON trading)
 ASSERT(trading HAS NO DEPENDENCY ON market-data)
 ASSERT(market-data HAS NO DEPENDENCY ON trading)
 ASSERT(Landing HAS NO DEPENDENCY ON trading, market-data)
@@ -37,7 +28,9 @@ ASSERT(Landing HAS NO DEPENDENCY ON trading, market-data)
 # Entry points and secrets
 ASSERT(COMPONENTS use LIBRARIES ONLY THROUGH their package entry point)
 ASSERT(ONLY apps/web/app/api/price READS COINGECKO_DEMO_API_KEY)
-ASSERT(ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA)
+ASSERT(ONLY apps/web/app/market-data/db READS DATABASE_URL_MARKET_DATA)
+ASSERT(ONLY apps/web/app/market-data READS CRON_SECRET)
+ASSERT(ONLY apps/web/app/market-data READS ALPHA_VANTAGE_API_KEY)
 ASSERT(ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING)
 
 # Data ownership

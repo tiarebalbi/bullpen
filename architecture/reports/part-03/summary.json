@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "part": 3,
-  "generatedAt": "2026-10-13T14:51:02.045Z",
-  "commit": "f9c8be0133f17af2e02db2a4084fa944e3b2bf64",
+  "generatedAt": "2026-10-13T16:08:42.277Z",
+  "commit": "7bf8a5d7e768c18209ac62e99ebc07fdcde05ccf",
   "dirty": true,
-  "ref": "post-03-data",
+  "ref": "experiment/topology-a",
   "source": "local",
   "passed": true,
   "checks": [
@@ -13,7 +13,7 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 10 checks held, 36 rules enforced",
+      "summary": "check:arch passed: 10 checks held, 30 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
@@ -35,14 +35,8 @@
           "passed": true
         },
         {
-          "id": "trading-app-is-dependent-on-ui-contracts-trading",
-          "rule": "Trading App IS DEPENDENT ON UI, Contracts, trading",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "market-data-service-is-dependent-on-contracts-market-data",
-          "rule": "Market Data Service IS DEPENDENT ON Contracts, market-data",
+          "id": "trading-app-is-dependent-on-ui-contracts-trading-market-data",
+          "rule": "Trading App IS DEPENDENT ON UI, Contracts, trading, market-data",
           "check": "turbo boundaries",
           "passed": true
         },
@@ -67,48 +61,6 @@
         {
           "id": "contracts-has-no-dependency-on-landing-trading-app",
           "rule": "Contracts HAS NO DEPENDENCY ON Landing, Trading App",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "market-data-service-has-no-dependency-on-landing-trading-app-ui",
-          "rule": "Market Data Service HAS NO DEPENDENCY ON Landing, Trading App, UI",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "landing-has-no-dependency-on-market-data-service",
-          "rule": "Landing HAS NO DEPENDENCY ON Market Data Service",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "trading-app-has-no-dependency-on-market-data-service",
-          "rule": "Trading App HAS NO DEPENDENCY ON Market Data Service",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "ui-has-no-dependency-on-market-data-service",
-          "rule": "UI HAS NO DEPENDENCY ON Market Data Service",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "contracts-has-no-dependency-on-market-data-service",
-          "rule": "Contracts HAS NO DEPENDENCY ON Market Data Service",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "trading-app-has-no-dependency-on-market-data",
-          "rule": "Trading App HAS NO DEPENDENCY ON market-data",
-          "check": "turbo boundaries",
-          "passed": true
-        },
-        {
-          "id": "market-data-service-has-no-dependency-on-trading",
-          "rule": "Market Data Service HAS NO DEPENDENCY ON trading",
           "check": "turbo boundaries",
           "passed": true
         },
@@ -143,8 +95,20 @@
           "passed": true
         },
         {
-          "id": "only-apps-market-data-src-db-reads-database-url-market-data",
-          "rule": "ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA",
+          "id": "only-apps-web-app-market-data-db-reads-database-url-market-data",
+          "rule": "ONLY apps/web/app/market-data/db READS DATABASE_URL_MARKET_DATA",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-market-data-reads-cron-secret",
+          "rule": "ONLY apps/web/app/market-data READS CRON_SECRET",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-market-data-reads-alpha-vantage-api-key",
+          "rule": "ONLY apps/web/app/market-data READS ALPHA_VANTAGE_API_KEY",
           "check": "secret containment",
           "passed": true
         },
@@ -167,8 +131,8 @@
           "passed": true
         },
         {
-          "id": "every-external-system-in-a-calm-moment-is-decided-in-an-adr-decision-or-listed-as-in-use-or-proposed-in-docs-data-sources-md",
-          "rule": "every external system in a CALM moment is decided in an ADR Decision or listed as in use or proposed in docs/data-sources.md",
+          "id": "every-external-system-in-a-calm-moment-is-decided-in-an-accepted-adr-s-decision-or-listed-as-in-use-in-docs-data-sources-md",
+          "rule": "every external system in a CALM moment is decided in an Accepted ADR's Decision or listed as in use in docs/data-sources.md",
           "check": "model currency",
           "passed": true
         },

@@ -97,7 +97,8 @@
         "bullpen:libraries": [
           "packages/ui",
           "packages/contracts",
-          "packages/db-trading"
+          "packages/db-trading",
+          "packages/db-market-data"
         ]
       },
       "controls": {
@@ -197,19 +198,6 @@
             }
           ]
         }
-      }
-    },
-    {
-      "unique-id": "market-data-service",
-      "node-type": "service",
-      "name": "Market Data Service",
-      "description": "The single owner of market data: both providers (stocks end of day, crypto) and both call budgets. It is a boundary inside one release, not an independently deployed microservice.",
-      "metadata": {
-        "bullpen:path": "apps/market-data",
-        "bullpen:libraries": [
-          "packages/contracts",
-          "packages/db-market-data"
-        ]
       }
     },
     {
@@ -412,25 +400,6 @@
       }
     },
     {
-      "unique-id": "market-data-to-database",
-      "description": "The Market Data Service connects as market_data_owner and writes the market_data schema.",
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "market-data-service"
-          },
-          "destination": {
-            "node": "bullpen-database"
-          }
-        }
-      },
-      "protocol": "JDBC",
-      "metadata": {
-        "role": "market_data_owner",
-        "schema": "market_data"
-      }
-    },
-    {
       "unique-id": "trading-app-to-database",
       "description": "The trading app connects as trading_owner (apps/web/app/lib/trading) and serves the leaderboard from trading.leaderboard_mv through GET /api/leaderboard. No route places an order yet: the buy transaction is exercised by the database tests. Prices are read only through market_data.prices_v1.",
       "relationship-type": {
@@ -447,6 +416,25 @@
       "metadata": {
         "role": "trading_owner",
         "schema": "trading"
+      }
+    },
+    {
+      "unique-id": "trading-app-market-data-module-to-database",
+      "description": "The market-data module inside the trading app (apps/web/app/market-data) connects as market_data_owner and writes the market_data schema; it is called by the daily cron through /api/cron/ingest.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "bullpen-database"
+          }
+        }
+      },
+      "protocol": "JDBC",
+      "metadata": {
+        "role": "market_data_owner",
+        "schema": "market_data"
       }
     }
   ]
