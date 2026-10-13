@@ -58,9 +58,14 @@ accounts and positions), and later the leaderboard, which reads both.
 
 ## Consequences
 
-- A role created in a provider's console can join a superuser-like role that
-  reads every schema. The migrations refuse to run if a runtime role can, and
-  `roles.sql` revokes it. No committed SQL holds a password.
+- **The owner roles are created with SQL, not in the provider's console.** I
+  checked on Neon: a role made in the console is a member of `neon_superuser`,
+  granted by the platform, and through it reads and writes every schema; the
+  admin role cannot revoke that. A role the admin creates with SQL is plain and
+  the admin holds ADMIN on it. `db:create-roles` makes them with random
+  passwords it writes to a file and never prints, and the migrations refuse to
+  run if a runtime role can read every schema. No committed SQL holds a
+  password.
 - The leaderboard reads both schemas through the owners' contracts, not around
   them (ADR-0014).
 - One project means one set of connections and one cold start for every owner,

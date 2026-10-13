@@ -1,5 +1,6 @@
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
+import { createOwnerRoles } from "./create-roles.js";
 import { migrate as migrateMarketData } from "@bullpen/db-market-data";
 import { migrate as migrateTrading } from "@bullpen/db-trading";
 
@@ -105,18 +106,30 @@ describe("market_data is owned by market_data_owner, trading by trading_owner", 
 });
 
 describe("the roles hold only what they should", () => {
-  it("revoked neon_superuser from both runtime roles, and no runtime role is a superuser", async () => {
+  it("created both runtime roles as plain roles: no superuser, no bypassrls, no membership of a role that reads every schema", async () => {
     const migrator = await as(urls.migrator);
     const { rows } = await migrator.query(
-      `SELECT r.rolname, r.rolsuper, r.rolbypassrls,
+      `SELECT r.rolname, r.rolsuper, r.rolbypassrls, r.rolcreatedb, r.rolcreaterole,
               pg_has_role(r.rolname, 'neon_superuser', 'MEMBER') AS neon_superuser,
-              pg_has_role(r.rolname, 'pg_read_all_data', 'MEMBER') AS reads_all
+              pg_has_role(r.rolname, 'pg_read_all_data', 'USAGE') AS reads_all,
+              pg_has_role(r.rolname, 'pg_write_all_data', 'USAGE') AS writes_all
          FROM pg_roles r WHERE r.rolname IN ('market_data_owner', 'trading_owner') ORDER BY 1`,
     );
+    const plain = { rolsuper: false, rolbypassrls: false, rolcreatedb: false, rolcreaterole: false, neon_superuser: false, reads_all: false, writes_all: false };
     expect(rows).toEqual([
-      { rolname: "market_data_owner", rolsuper: false, rolbypassrls: false, neon_superuser: false, reads_all: false },
-      { rolname: "trading_owner", rolsuper: false, rolbypassrls: false, neon_superuser: false, reads_all: false },
+      { rolname: "market_data_owner", ...plain },
+      { rolname: "trading_owner", ...plain },
     ]);
+  });
+
+  it("refuses to create over an existing role that can read every schema, such as one made in a console", async () => {
+    const migrator = await as(urls.migrator);
+    await migrator.query("GRANT neon_superuser TO trading_owner");
+    try {
+      await expect(createOwnerRoles(migrator)).rejects.toThrow(/trading_owner exists and can read or write every schema/);
+    } finally {
+      await migrator.query("REVOKE neon_superuser FROM trading_owner");
+    }
   });
 
   it("refuses to migrate if a runtime role can read every schema", async () => {
