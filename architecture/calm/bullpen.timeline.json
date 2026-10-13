@@ -54,7 +54,10 @@
       "adrs": [
         "architecture/adr/0008-alpha-vantage-stock-prices.md",
         "architecture/adr/0015-adl-maps-to-the-latest-built-moment.md",
-        "architecture/adr/0016-only-accepted-decisions-authorize-the-model.md"
+        "architecture/adr/0016-only-accepted-decisions-authorize-the-model.md",
+        "architecture/adr/0012-data-ownership-schema-and-role-per-owner.md",
+        "architecture/adr/0013-one-market-data-owner.md",
+        "architecture/adr/0014-leaderboard-as-a-materialized-view.md"
       ]
     },
     {
