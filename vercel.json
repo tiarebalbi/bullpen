@@ -7,8 +7,10 @@
     },
     "market-data": {
       "root": "apps/market-data/",
+      "runtime": "node",
+      "entrypoint": "server.ts",
       "functions": {
-        "api/**/*.ts": {
+        "server.ts": {
           "maxDuration": 300
         }
       }
