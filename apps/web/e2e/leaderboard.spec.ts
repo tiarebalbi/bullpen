@@ -23,7 +23,7 @@ for (const viewport of [
       await page.goto("/");
 
       const section = page.getByRole("region", { name: "Leaderboard" });
-      await expect(section.getByRole("row")).toHaveCount(3);
+      await expect(section.getByRole("listitem")).toHaveCount(2);
       await expect(section.getByText("ada")).toBeVisible();
       await expect(section.getByText(/as of \d\d:\d\d:\d\d/)).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -34,7 +34,7 @@ for (const viewport of [
       await page.goto("/");
 
       const section = page.getByRole("region", { name: "Leaderboard" });
-      await expect(section.getByText("Stale")).toBeVisible();
+      await expect(section.getByText("Stale", { exact: true })).toBeVisible();
       await expect(section.getByTestId("leaderboard-refresh-failed")).toContainText("last good ranking");
     });
 

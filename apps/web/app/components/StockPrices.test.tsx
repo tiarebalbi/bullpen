@@ -18,10 +18,9 @@ describe("StockPrices", () => {
     vi.stubGlobal("fetch", respond({ rows }));
     render(<StockPrices />);
 
-    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
-    expect(screen.getByText("AAPL")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0));
+    expect(screen.getAllByText("AAPL").length).toBeGreaterThan(0);
     expect(screen.getByText("190.12")).toBeInTheDocument();
-    expect(screen.getByText("Oct 13")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Alpha Vantage" })).toHaveAttribute("href", "https://www.alphavantage.co");
     expect(screen.getByText(/End of day, not live/)).toBeInTheDocument();
   });
@@ -30,10 +29,10 @@ describe("StockPrices", () => {
     vi.stubGlobal("fetch", respond({ rows }));
     render(<StockPrices />);
 
-    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
-    expect(screen.getAllByText("Stale")).toHaveLength(1);
+    await waitFor(() => expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/^stale · as of /)).toHaveLength(1);
     expect(screen.getByText("older than its close")).toBeInTheDocument();
-    expect(screen.getAllByText("Delayed")).toHaveLength(1);
+    expect(screen.getAllByText("end of day")).toHaveLength(1);
   });
 
   it("shows the empty state, not placeholder prices, when none have been stored", async () => {
@@ -41,7 +40,7 @@ describe("StockPrices", () => {
     render(<StockPrices />);
 
     await waitFor(() => expect(screen.getByText("No end-of-day prices yet")).toBeInTheDocument());
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
 
   it("shows an error state when the route fails", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ConnectionIndicator, EmptyState, ErrorState, fmt, formatTime, useNow } from "@bullpen/ui";
+import { ConnectionIndicator, EmptyState, ErrorState, LeaderboardList, LeaderboardRow, Panel, Skeleton, formatTime, useNow } from "@bullpen/ui";
 import type { LeaderboardSnapshot } from "@bullpen/contracts";
 
 const POLL_INTERVAL_MS = 60_000;
@@ -42,12 +42,22 @@ export function Leaderboard(): ReactNode {
     };
   }, []);
 
-  if (state.status === "loading") return <section aria-label="Leaderboard" className="bp-leaderboard"><ConnectionIndicator status="reconnecting" detail="loading" /></section>;
+  if (state.status === "loading") {
+    return (
+      <Panel title="Leaderboard" aside={<ConnectionIndicator status="reconnecting" detail="loading" />}>
+        <div style={{ display: "grid", gap: 14 }} aria-hidden="true">
+          {[0, 1, 2].map((n) => (
+            <Skeleton key={n} width="100%" height={40} />
+          ))}
+        </div>
+      </Panel>
+    );
+  }
   if (state.status === "error") {
     return (
-      <section aria-label="Leaderboard" className="bp-leaderboard">
+      <Panel title="Leaderboard">
         <ErrorState title="Leaderboard unavailable" description={state.message} />
-      </section>
+      </Panel>
     );
   }
 
@@ -58,40 +68,21 @@ export function Leaderboard(): ReactNode {
   const failedAt = snapshot.lastFailure ? new Date(snapshot.lastFailure.at).getTime() : null;
 
   return (
-    <section aria-label="Leaderboard" className="bp-leaderboard">
-      <h2>Leaderboard</h2>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <ConnectionIndicator status={snapshot.stale ? "stale" : "live"} detail={`as of ${formatTime(asOf)} · ${ageLabel(age)}`} />
-        {failedAt !== null ? (
-          <span data-testid="leaderboard-refresh-failed" style={{ font: "500 12px/1.3 var(--font-mono)", color: "var(--foreground-muted)" }}>
-            The last refresh failed at {formatTime(failedAt)}; this is the last good ranking.
-          </span>
-        ) : null}
-      </div>
+    <Panel title="Leaderboard" aside={<ConnectionIndicator status={snapshot.stale ? "stale" : "live"} detail={`as of ${formatTime(asOf)} · ${ageLabel(age)}`} />}>
+      {failedAt !== null ? (
+        <p className="bp-leaderboard__failed" data-testid="leaderboard-refresh-failed">
+          The last refresh failed at {formatTime(failedAt)}; this is the last good ranking.
+        </p>
+      ) : null}
       {snapshot.rows.length === 0 ? (
         <EmptyState title="No players yet" description="The ranking appears here once the first account has a position or cash to count." />
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Rank</th>
-              <th scope="col">Player</th>
-              <th scope="col" style={{ textAlign: "right" }}>Equity</th>
-              <th scope="col" style={{ textAlign: "right" }}>Cash</th>
-            </tr>
-          </thead>
-          <tbody>
-            {snapshot.rows.map((row) => (
-              <tr key={row.accountId}>
-                <td>{row.rank}</td>
-                <td>{row.handle}</td>
-                <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(Number(row.equity))}</td>
-                <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(Number(row.cash))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <LeaderboardList label="Players ranked by equity">
+          {snapshot.rows.map((row) => (
+            <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} />
+          ))}
+        </LeaderboardList>
       )}
-    </section>
+    </Panel>
   );
 }

@@ -26,9 +26,9 @@ for (const viewport of [
       await page.goto("/");
 
       const section = page.getByRole("region", { name: "Stock prices" });
-      await expect(section.getByRole("row")).toHaveCount(3);
-      await expect(section.getByText("AAPL")).toBeVisible();
-      await expect(section.getByText("Stale")).toHaveCount(1);
+      await expect(section.getByRole("listitem")).toHaveCount(2);
+      await expect(section.getByText("AAPL", { exact: true }).last()).toBeVisible();
+      await expect(section.getByText(/stale · as of Oct 8/)).toHaveCount(1);
       await expect(section.getByRole("link", { name: "Alpha Vantage" })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     });

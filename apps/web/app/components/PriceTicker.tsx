@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ConnectionIndicator, ErrorState, PriceCell, TickerBadge, useNow } from "@bullpen/ui";
+import { ConnectionIndicator, ErrorState, Panel, PriceCell, TickerBadge, useNow } from "@bullpen/ui";
 import type { PriceSnapshot } from "@bullpen/contracts";
 import { CoinGeckoCredit } from "./CoinGeckoCredit.js";
 
@@ -60,22 +60,20 @@ export function PriceTicker({ symbol }: { symbol: string }): ReactNode {
 
   if (state.status === "loading") {
     return (
-      <div className="bp-price-ticker">
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <Panel title="BTC-USD, live" label="Live price" aside={<ConnectionIndicator status="reconnecting" detail="connecting" />}>
+        <div className="bp-price-ticker">
           <TickerBadge symbol={symbol} kind="crypto" hue={BTC_HUE} />
           <PriceCell symbol={symbol} price={0} changePercent={0} timestamp={0} status="loading" />
         </div>
-        <ConnectionIndicator status="reconnecting" detail="connecting" />
-      </div>
+      </Panel>
     );
   }
 
   if (state.status === "error") {
     return (
-      <div className="bp-price-ticker">
+      <Panel title="BTC-USD, live" label="Live price" aside={<ConnectionIndicator status="offline" detail={`attempt ${state.attempt}`} />}>
         <ErrorState title="Price unavailable" description={state.message} />
-        <ConnectionIndicator status="offline" detail={`attempt ${state.attempt}`} />
-      </div>
+      </Panel>
     );
   }
 
@@ -84,8 +82,8 @@ export function PriceTicker({ symbol }: { symbol: string }): ReactNode {
   const isStale = now - timestamp > STALE_AFTER_MS;
 
   return (
-    <div className="bp-price-ticker">
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <Panel title="BTC-USD, live" label="Live price" aside={<ConnectionIndicator status={isStale ? "stale" : "live"} />}>
+      <div className="bp-price-ticker">
         <TickerBadge symbol={snapshot.symbol} kind="crypto" hue={BTC_HUE} />
         <PriceCell
           symbol={snapshot.symbol}
@@ -95,8 +93,7 @@ export function PriceTicker({ symbol }: { symbol: string }): ReactNode {
           staleAfterMs={STALE_AFTER_MS}
         />
       </div>
-      <ConnectionIndicator status={isStale ? "stale" : "live"} />
       <CoinGeckoCredit />
-    </div>
+    </Panel>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@bullpen/ui/styles.css";
+import "./web.css";
 import { join } from "node:path";
 import { resolveAnalyticsConfig } from "@bullpen/ui/analytics-config";
 import { AnalyticsHost } from "./components/AnalyticsHost.js";

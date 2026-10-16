@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ConnectionIndicator, EmptyState, ErrorState, fmt } from "@bullpen/ui";
+import { ConnectionIndicator, EmptyState, ErrorState, Panel, PriceCell, Skeleton, TickerBadge, isUsMarketClosed, useNow } from "@bullpen/ui";
 import type { StockPriceSnapshot } from "@bullpen/contracts";
 
 const POLL_INTERVAL_MS = 5 * 60_000;
+// A quiet tint for scanning, never meaning: the same hue for every stock, so no ticker is made to stand out.
+const STOCK_HUE = 235;
 
 type FetchState = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; snapshot: StockPriceSnapshot };
 
@@ -40,48 +42,61 @@ export function StockPrices(): ReactNode {
     };
   }, []);
 
-  if (state.status === "loading") return <section aria-label="Stock prices" className="bp-stock-prices"><ConnectionIndicator status="reconnecting" detail="loading" /></section>;
+  if (state.status === "loading") {
+    return (
+      <Panel title="U.S. stocks, end of day" label="Stock prices" aside={<ConnectionIndicator status="reconnecting" detail="loading" />}>
+        <div style={{ display: "grid", gap: 14 }} aria-hidden="true">
+          {[0, 1, 2].map((n) => (
+            <Skeleton key={n} width="100%" height={40} />
+          ))}
+        </div>
+      </Panel>
+    );
+  }
   if (state.status === "error") {
     return (
-      <section aria-label="Stock prices" className="bp-stock-prices">
+      <Panel title="U.S. stocks, end of day" label="Stock prices">
         <ErrorState title="Stock prices unavailable" description={state.message} />
-      </section>
+      </Panel>
     );
   }
 
-  const { rows } = state.snapshot;
+  return <StockList rows={state.snapshot.rows} />;
+}
+
+function StockList({ rows }: { rows: StockPriceSnapshot["rows"] }): ReactNode {
+  const now = useNow();
+  const closed = isUsMarketClosed(now);
   return (
-    <section aria-label="Stock prices" className="bp-stock-prices">
-      <h2>U.S. stocks, end of day</h2>
+    <Panel title="U.S. stocks, end of day" label="Stock prices" aside={closed ? <span className="bp-stock-prices__closed">Market closed</span> : undefined}>
       {rows.length === 0 ? (
         <EmptyState title="No end-of-day prices yet" description="The first prices arrive after the next U.S. market close." />
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Symbol</th>
-              <th scope="col" style={{ textAlign: "right" }}>Close</th>
-              <th scope="col">As of</th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.symbol}>
-                <td>{row.symbol}</td>
-                <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(Number(row.price))}</td>
-                <td>{closeLabel(row.asOf)}</td>
-                <td>
-                  <ConnectionIndicator status={row.stale ? "stale" : "delayed"} detail={row.stale ? "older than its close" : "end of day"} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="bp-stock-list">
+          {rows.map((row) => (
+            <li key={row.symbol} className="bp-stock-row">
+              <TickerBadge symbol={row.symbol} kind="stock" hue={STOCK_HUE} size="md" stale={row.stale} marketClosed={closed} />
+              <span>
+                <span className="bp-stock-row__name">{row.symbol}</span>
+                <span className="bp-stock-row__note">{row.stale ? "older than its close" : "end of day"}</span>
+              </span>
+              <PriceCell
+                symbol={row.symbol}
+                price={Number(row.price)}
+                changePercent={0}
+                timestamp={new Date(row.asOf).getTime()}
+                status="market-closed"
+                statusLabel="Close · 16:00 ET"
+                stale={row.stale}
+                asOfLabel={closeLabel(row.asOf)}
+              />
+            </li>
+          ))}
+        </ul>
       )}
       <p className="bp-stock-prices__credit">
         Stock prices: <a href="https://www.alphavantage.co">Alpha Vantage</a>. End of day, not live.
       </p>
-    </section>
+    </Panel>
   );
 }

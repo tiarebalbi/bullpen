@@ -25,10 +25,10 @@ describe("Leaderboard", () => {
     vi.stubGlobal("fetch", respond(snapshot()));
     render(<Leaderboard />);
 
-    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
-    expect(screen.getAllByRole("row")).toHaveLength(3);
+    await waitFor(() => expect(screen.getByRole("list", { name: "Players ranked by equity" })).toBeInTheDocument());
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByText("ada")).toBeInTheDocument();
-    expect(screen.getByText("1,000.00")).toBeInTheDocument();
+    expect(screen.getByText("$1,000.00")).toBeInTheDocument();
     expect(screen.getByText(/as of \d\d:\d\d:\d\d/)).toBeInTheDocument();
     expect(screen.queryByText("Stale")).not.toBeInTheDocument();
     expect(screen.queryByTestId("leaderboard-refresh-failed")).not.toBeInTheDocument();
@@ -47,7 +47,7 @@ describe("Leaderboard", () => {
     render(<Leaderboard />);
 
     await waitFor(() => expect(screen.getByTestId("leaderboard-refresh-failed")).toHaveTextContent("this is the last good ranking"));
-    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Players ranked by equity" })).toBeInTheDocument();
   });
 
   it("shows the empty state, not placeholder players, when nobody has an account", async () => {
@@ -55,7 +55,7 @@ describe("Leaderboard", () => {
     render(<Leaderboard />);
 
     await waitFor(() => expect(screen.getByText("No players yet")).toBeInTheDocument());
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Players ranked by equity" })).not.toBeInTheDocument();
   });
 
   it("shows an error state when the route fails", async () => {
