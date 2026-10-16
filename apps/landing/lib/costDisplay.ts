@@ -19,6 +19,7 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
  */
 export const SERVICE_ARRIVES_IN_PART: Record<string, number | undefined> = {
   neon: 3,
+  "neon-launch": 3,
   "alpha-vantage-free": 3,
   "vercel-services": 3,
   "vercel-workflows": 4,
@@ -32,6 +33,7 @@ const SERVICE_LABELS: Record<string, string> = {
   "vercel-hobby": "Vercel Hobby",
   "coingecko-demo": "CoinGecko Demo",
   neon: "Neon",
+  "neon-launch": "Neon Launch",
   "alpha-vantage-free": "Stock data provider",
   "upstash-redis": "Upstash Redis",
   "grafana-cloud": "Grafana Cloud",
@@ -58,6 +60,8 @@ const METRIC_LABELS: Record<string, string> = {
   compute: "Compute",
   data_size: "Data size",
   network_transfer: "Network transfer",
+  compute_rate: "Compute rate",
+  storage_rate: "Storage rate",
   monthly_commands: "Monthly commands",
   monthly_bandwidth: "Monthly bandwidth",
   metrics_active_series: "Active metric series",

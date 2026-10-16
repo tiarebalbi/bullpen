@@ -123,7 +123,34 @@
     "unit": "GB/project/month",
     "source_url": "https://neon.com/docs/introduction/plans",
     "checked_on": "2026-10-16",
-    "note": "Neon Free plan: 5 GB of network transfer per project per month. When it is used up, Neon suspends the compute until the allowance resets. Added on 2026-10-16, the day it was used up: the project's compute was suspended after my contention runs read the full leaderboard (about 1.7 GB per cell). The figure and the page were checked by the project owner on 2026-10-16."
+    "note": "Neon Free plan: 5 GB of network transfer per project per month. When it is used up, Neon suspends the compute until the allowance resets. Added on 2026-10-16, the day it was used up: the project's compute was suspended after my contention runs read the full leaderboard (about 1.7 GB per cell). The figure and the page were checked by the project owner on 2026-10-16. Superseded on 2026-10-16: the project moved to the Launch plan (service neon-launch), which includes 500 GB. Kept as the record of the allowance that was used up."
+  },
+  {
+    "service": "neon-launch",
+    "metric": "network_transfer",
+    "allowance": 500,
+    "unit": "GB/project/month",
+    "source_url": "https://neon.com/pricing",
+    "checked_on": "2026-10-16",
+    "note": "Neon Launch plan: 500 GB of network transfer a month included, then $0.10 per GB. In force from 2026-10-16, when the Free plan's 5 GB was used up by the 2,000-account contention run."
+  },
+  {
+    "service": "neon-launch",
+    "metric": "compute_rate",
+    "allowance": 0.106,
+    "unit": "USD per CU-hour",
+    "source_url": "https://neon.com/pricing",
+    "checked_on": "2026-10-16",
+    "note": "Neon Launch plan: compute is billed at $0.106 per CU-hour. Compute stays fixed at 0.25 CU, with scale-to-zero on at 5 minutes."
+  },
+  {
+    "service": "neon-launch",
+    "metric": "storage_rate",
+    "allowance": 0.35,
+    "unit": "USD per GB-month",
+    "source_url": "https://neon.com/pricing",
+    "checked_on": "2026-10-16",
+    "note": "Neon Launch plan: storage is billed at $0.35 per GB-month."
   },
   {
     "service": "upstash-redis",

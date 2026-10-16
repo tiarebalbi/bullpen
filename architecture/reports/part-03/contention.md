@@ -7,6 +7,12 @@
 > at the top 50 plus the caller's row, `leaderboard-payload.md`), and every measurement script now estimates its transfer before it
 > starts and refuses a run that would pass a share of what is left (`scripts/transfer-budget.ts`). A cold-start run that was
 > under way against the preview was stopped at the same time, after 6 of its 10 rounds, and kept nothing.
+>
+> **2026-10-16, later the same day: the project moved to Neon's Launch plan**, because the Free plan's transfer was used up by the
+> 2,000-account run (about 1.7 GB for each full-ranking cell, several cells). Launch includes 500 GB of transfer a month, then $0.10 a
+> GB; compute stays at 0.25 CU with scale-to-zero at 5 minutes. Nothing about the measurements changed, but the cost did: this week's
+> Neon cost is no longer zero (`cost.md`). The transfer budget stays in force at 10% of what remains; with the upgrade, `--remaining-mb`
+> is 500 GB minus what was used before it, and what was used before it was at most the Free plan's 5 GB.
 
 Date: 2026-10-16T12:39:10Z. Neon production branch of the Bullpen project, Postgres 18.6, database `neondb`, through the pooled host as
 `trading_owner`. Client: my laptop, Node v26.11.1, `pg` over the public internet, so every statement carries a round trip

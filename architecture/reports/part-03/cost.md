@@ -17,7 +17,9 @@ afterwards. This table holds what I could read myself today, from the database a
 Rows in the database at the time: 2,000 test accounts and 5,338 ledger rows, all from the contention run; removed by
 `db:cleanup-test-data` at the end (counts in the final report). 10 quotes are on file.
 
-**Total in USD: pending.** Every service I use is on a free plan (Vercel Hobby, Neon Free, CoinGecko Demo, Alpha Vantage free), so
-the plans themselves cost nothing. That is what the plans cost, not a bill I have seen: the Vercel billing endpoint answers "Plan not
-found" for a Hobby team, and Neon and the two providers show no charge I can read from here. I will read the dashboards after
-2026-10-18 and fill in `cost/usage/2026-w42.json` and this table then.
+**Total in USD: pending, and no longer zero for Neon.** On 2026-10-16 the project moved from Neon's Free plan to the Launch plan, because the Free
+plan's 5 GB of network transfer was used up by the 2,000-account contention run. Launch includes 500 GB of transfer a month, then
+$0.10 a GB, and bills compute at $0.106 per CU-hour and storage at $0.35 per GB-month (`cost/allowances.json`, source neon.com/pricing).
+The rest (Vercel Hobby, CoinGecko Demo, Alpha Vantage free) is still free. I have not seen a Neon charge: the actual amount is pending
+until the console shows it, and I will not put a number here before it does. The Vercel billing endpoint answers "Plan not found" for a
+Hobby team, so the Vercel line is a plan price, not an invoice.
