@@ -14,7 +14,8 @@
     "test:db:ci": "vitest run -c vitest.db.config.ts",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:create-roles": "tsx scripts/db-create-roles.ts",
-    "db:cleanup-test-data": "tsx scripts/db-cleanup-test-data.ts"
+    "db:cleanup-test-data": "tsx scripts/db-cleanup-test-data.ts",
+    "db:measure-contention": "tsx scripts/measure-contention.ts"
   },
   "dependencies": {
     "@bullpen/contracts": "workspace:*",
