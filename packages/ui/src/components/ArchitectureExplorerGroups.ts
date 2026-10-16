@@ -45,3 +45,9 @@ export function groupFlowNodes(groups: ArchGroupData[], nodesById: Map<string, A
   }
   return out;
 }
+
+/** The nodes drawn as cards: every node but the ones that are drawn as boxes. */
+export const cardNodesOf = (nodes: ArchNodeData[], groups: ArchGroupData[]): ArchNodeData[] => {
+  const boxes = boxNodeIdsOf(groups);
+  return nodes.filter((n) => !boxes.has(n.id));
+};

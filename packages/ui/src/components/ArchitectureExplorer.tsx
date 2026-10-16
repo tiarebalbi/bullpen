@@ -15,7 +15,8 @@ import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { fitPaddingOf, flowEdgesOf } from "./ArchitectureExplorerFlowEdges.js";
-import { boxNodeIdsOf, groupBounds, groupFlowNodes, groupsToDraw } from "./ArchitectureExplorerGroups.js";
+import { TrafficControl, TrafficPanel, useTrafficPlayback } from "./ArchitectureExplorerTraffic.js";
+import { cardNodesOf, groupBounds, groupFlowNodes, groupsToDraw } from "./ArchitectureExplorerGroups.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
 import { PartChanges, partBefore } from "./ArchitectureExplorerChanges.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
@@ -89,6 +90,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
+  const traffic = useTrafficPlayback();
   const [flowIdx, setFlowIdx] = useState(0);
   const [scrubPlaying, setScrubPlaying] = useState(false);
   const [request, setRequest] = useState<{ on: boolean; idx: number; playing: boolean }>({
@@ -275,7 +277,6 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
 
   const fitPadding = fitPaddingOf(current);
   const groups = useMemo(() => groupsToDraw(current.groups, showQuanta), [showQuanta, current.groups]);
-  const boxNodeIds = useMemo(() => boxNodeIdsOf(current.groups), [current.groups]);
 
   const nodesById = useMemo(() => new Map(displayNodes.map((n) => [n.id, n])), [displayNodes]);
   const groupNodes: Node[] = useMemo(() => groupFlowNodes(groups, nodesById, selectedId, setSelectedId), [groups, nodesById, selectedId]);
@@ -292,7 +293,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   // Group containers must precede their members in the array -- React Flow
   // requires a parent node to already be known when it processes a child
   // that references it via parentId.
-  const cardNodes = displayNodes.filter((n) => !boxNodeIds.has(n.id));
+  const cardNodes = cardNodesOf(displayNodes, current.groups);
   const flowNodes: Node[] = [
     ...groupNodes,
     ...cardNodes.map((n) => {
@@ -320,7 +321,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     }),
   ];
 
-  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, nodesById, activeStep, requestOn: request.on, showData, showType, reduced });
+  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, nodesById, activeStep, requestOn: request.on, showData, showType, reduced, paused: traffic.paused, ownerHues });
 
   // React Flow's `fitView` prop only fits once, on mount (for whichever
   // part happened to be initial). Without this, scrubbing to a part whose
@@ -353,6 +354,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           onSync={setShowType}
           onData={setShowData}
         />
+        <TrafficControl edges={current.edges} paused={traffic.paused} reduced={reduced} onToggle={traffic.toggle} />
       </div>
 
       {showData && ownerHues.size > 0 ? (
@@ -810,6 +812,7 @@ function SidePanel({
       <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
         <PartChanges part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       </div>
+      <TrafficPanel part={part} />
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
       </div>

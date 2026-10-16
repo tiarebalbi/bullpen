@@ -24,6 +24,18 @@ export interface ArchNodeData {
 
 export type ArchEdgeType = "sync" | "async";
 
+/** Where a rate comes from. Only "measured" is a measurement; "configured" is a setting; "illustrative" says only that the edge is used. */
+export type ArchRateSource = "measured" | "configured" | "illustrative";
+
+/** How often something travels over a connection, as the part's CALM moment states it (`bullpen:rate`). */
+export interface ArchEdgeRate {
+  count: number;
+  per: "second" | "minute" | "hour" | "day";
+  source: ArchRateSource;
+  /** Where the figure comes from, in a sentence. */
+  basis: string;
+}
+
 export interface ArchEdgeData {
   id: string;
   a: string;
@@ -33,6 +45,8 @@ export interface ArchEdgeData {
   label?: string;
   /** Written on the connection always: what travels over it, e.g. "/api/price (rewrite)". */
   caption?: string;
+  /** How often something travels over it, and where that figure comes from. Drives the traffic animation. */
+  rate?: ArchEdgeRate;
   carried?: true;
   builtIn?: string;
 }
