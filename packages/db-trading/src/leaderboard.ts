@@ -1,8 +1,11 @@
 import type { Pool } from "pg";
+import { TEST_HANDLE_PREFIX } from "./testRows.js";
 
 /** Advisory lock key for the leaderboard refresh. */
 const REFRESH_LOCK = 7340601;
 export const MAX_AGE_MS = 5 * 60 * 1000;
+/** The most rows one read returns, apart from the caller's own row. */
+export const LEADERBOARD_TOP = 50;
 
 /**
  * The ranking, computed from the source tables. The materialized view in
@@ -31,7 +34,10 @@ export interface LeaderboardRow {
 }
 
 export interface LeaderboardRead {
+  /** The top of the ranking, at most LEADERBOARD_TOP rows, then the caller's own row if it is not among them. */
   rows: LeaderboardRow[];
+  /** How many accounts are ranked, so a page can say "top 50 of 812". */
+  total: number;
   /** When the ranking was computed: the last successful refresh. */
   asOf: Date;
   ageMs: number;
@@ -65,17 +71,46 @@ export async function computeLeaderboardOnRead(pool: Pool): Promise<LeaderboardR
   return rows.map(toRow);
 }
 
+export interface ReadLeaderboardOptions {
+  /** How many rows from the top. Default LEADERBOARD_TOP, and never more. */
+  limit?: number;
+  /** The caller's own account: its row is added when it is not among the top rows. */
+  accountId?: string;
+  /** Include accounts whose handle carries the test marker. A page never does. */
+  includeTestRows?: boolean;
+}
+
+/**
+ * Ranks the view's accounts, leaving out test-marked ones, and returns the top rows plus the caller's own. Ranks are computed
+ * here over what is shown, so a hidden account never takes a place and tied accounts share a rank. The view is read whole on
+ * the server (a few thousand rows is milliseconds) and only the cap crosses the wire.
+ */
+const READ_SQL = `
+  WITH ranked AS (
+    SELECT account_id, handle, cash, positions_value, equity,
+           RANK() OVER (ORDER BY equity DESC)::integer AS rank,
+           COUNT(*) OVER ()::integer AS total
+      FROM trading.leaderboard_mv
+     WHERE ($3::boolean OR handle NOT LIKE $4)
+  )
+  (SELECT account_id, handle, cash::text, positions_value::text, equity::text, rank, total FROM ranked ORDER BY rank, handle LIMIT $1)
+  UNION
+  (SELECT account_id, handle, cash::text, positions_value::text, equity::text, rank, total FROM ranked WHERE account_id = $2::uuid)
+  ORDER BY rank, handle`;
+
 /** The current ranking with its as-of time. It never recomputes and never waits for a refresh. */
-export async function readLeaderboard(pool: Pool, now: Date = new Date(), maxAgeMs: number = MAX_AGE_MS): Promise<LeaderboardRead> {
+export async function readLeaderboard(pool: Pool, now: Date = new Date(), maxAgeMs: number = MAX_AGE_MS, options: ReadLeaderboardOptions = {}): Promise<LeaderboardRead> {
+  const limit = Math.max(1, Math.min(options.limit ?? LEADERBOARD_TOP, LEADERBOARD_TOP));
   const client = await pool.connect();
   try {
     await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
     const meta = await client.query<{ refreshed_at: Date; last_failed_at: Date | null; last_error: string | null }>("SELECT refreshed_at, last_failed_at, last_error FROM trading.leaderboard_refresh");
-    const rows = await client.query<RawRow>("SELECT account_id, handle, cash::text, positions_value::text, equity::text, rank FROM trading.leaderboard_mv ORDER BY rank, handle");
+    const rows = await client.query<RawRow & { total: number }>(READ_SQL, [limit, options.accountId ?? null, options.includeTestRows ?? false, `${TEST_HANDLE_PREFIX}%`]);
     await client.query("COMMIT");
     const { refreshed_at: asOf, last_failed_at: failedAt, last_error: error } = meta.rows[0]!;
     const ageMs = Math.max(0, now.getTime() - asOf.getTime());
-    return { rows: rows.rows.map(toRow), asOf, ageMs, stale: ageMs > maxAgeMs, lastFailure: failedAt ? { at: failedAt, error: error ?? "" } : null };
+    const total = rows.rows[0]?.total ?? 0;
+    return { rows: rows.rows.map(toRow), total, asOf, ageMs, stale: ageMs > maxAgeMs, lastFailure: failedAt ? { at: failedAt, error: error ?? "" } : null };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -127,6 +162,8 @@ export interface ServeOptions {
   maxAgeMs?: number;
   /** Runs work after the response is sent (Next's `after`). */
   schedule: (work: () => Promise<unknown>) => void;
+  /** What to read: the cap, the caller's own account, test rows. */
+  read?: ReadLeaderboardOptions;
 }
 
 /**
@@ -135,8 +172,8 @@ export interface ServeOptions {
  * reader waits for a refresh, and readers that all see a stale view start at
  * most one refresh between them.
  */
-export async function serveLeaderboard(pool: Pool, { now = new Date(), maxAgeMs = MAX_AGE_MS, schedule }: ServeOptions): Promise<LeaderboardRead> {
-  const read = await readLeaderboard(pool, now, maxAgeMs);
+export async function serveLeaderboard(pool: Pool, { now = new Date(), maxAgeMs = MAX_AGE_MS, schedule, read: options }: ServeOptions): Promise<LeaderboardRead> {
+  const read = await readLeaderboard(pool, now, maxAgeMs, options);
   if (read.stale) schedule(() => refreshLeaderboard(pool));
   return read;
 }

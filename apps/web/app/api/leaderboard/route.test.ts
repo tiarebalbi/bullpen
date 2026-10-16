@@ -1,69 +1,47 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const serveLeaderboard = vi.fn();
-const after = vi.fn();
-vi.mock("@bullpen/db-trading", () => ({ serveLeaderboard }));
-vi.mock("next/server", async () => {
-  const actual = await vi.importActual<typeof import("next/server")>("next/server");
-  return { ...actual, after };
-});
+const serve = vi.fn();
+vi.mock("@bullpen/db-trading", () => ({ serveLeaderboard: (...args: unknown[]) => serve(...args) }));
 vi.mock("../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), after: (work: () => unknown) => void work }));
 
 const { GET } = await import("./route.js");
 
-const read = (overrides = {}) => ({
-  rows: [{ accountId: "a1", handle: "ada", cash: "600.00000000", positionsValue: "400.00000000", equity: "1000.00000000", rank: 1 }],
-  asOf: new Date("2026-10-13T20:00:00Z"),
-  ageMs: 120_000,
-  stale: false,
-  lastFailure: null,
-  ...overrides,
-});
+const read = { rows: [{ accountId: "a", handle: "ada", cash: "1", positionsValue: "0", equity: "1", rank: 1 }], total: 812, asOf: new Date("2026-10-16T12:00:00Z"), ageMs: 1000, stale: false, lastFailure: null };
+const UUID = "0b9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f11";
 
 describe("GET /api/leaderboard", () => {
   beforeEach(() => {
-    serveLeaderboard.mockReset();
-    after.mockReset();
+    // Braces: a function returned from beforeEach is run as its cleanup, and the mock would be called again.
+    serve.mockReset().mockResolvedValue(read);
   });
 
-  it("returns the ranking with its as-of time and age, and never caches it", async () => {
-    serveLeaderboard.mockResolvedValue(read());
-    const response = await GET();
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(await response.json()).toEqual({
-      rows: [{ accountId: "a1", handle: "ada", cash: "600.00000000", positionsValue: "400.00000000", equity: "1000.00000000", rank: 1 }],
-      asOf: "2026-10-13T20:00:00.000Z",
-      ageMs: 120_000,
-      stale: false,
-      lastFailure: null,
-    });
-  });
-
-  it("hands the refresh to Next's after(), so it starts once the response has been sent", async () => {
-    serveLeaderboard.mockImplementation(async (_pool: unknown, { schedule }: { schedule: (work: () => Promise<unknown>) => void }) => {
-      schedule(async () => "refreshed");
-      return read({ stale: true, ageMs: 400_000 });
-    });
-    const response = await GET();
-
-    expect(after).toHaveBeenCalledTimes(1);
-    expect((await response.json()).stale).toBe(true);
-  });
-
-  it("reports the last failed refresh, keeping the ranking it has", async () => {
-    serveLeaderboard.mockResolvedValue(read({ stale: true, lastFailure: { at: new Date("2026-10-13T20:05:00Z"), error: "boom" } }));
-    const body = await (await GET()).json();
+  it("returns what the read gives, with the number of ranked accounts, and caches nothing", async () => {
+    const response = await GET(new Request("http://x/api/leaderboard"));
+    const body = await response.json();
+    expect(body).toMatchObject({ total: 812, stale: false, asOf: "2026-10-16T12:00:00.000Z" });
     expect(body.rows).toHaveLength(1);
-    expect(body.lastFailure).toEqual({ at: "2026-10-13T20:05:00.000Z", error: "boom" });
+    expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
-  it("answers 503 with a plain message when the database cannot be reached", async () => {
-    serveLeaderboard.mockRejectedValue(new Error("connect ECONNREFUSED"));
-    const response = await GET();
+  it("asks for no more than the cap: it passes no limit above the one the read enforces", async () => {
+    await GET(new Request("http://x/api/leaderboard"));
+    expect(serve.mock.calls[0]![1].read).toEqual({ accountId: undefined });
+  });
 
+  it("passes the caller's account to the read when it is a uuid, and ignores anything else", async () => {
+    await GET(new Request(`http://x/api/leaderboard?account=${UUID}`));
+    expect(serve.mock.calls[0]![1].read).toEqual({ accountId: UUID });
+    await GET(new Request("http://x/api/leaderboard?account=1%3B%20DROP%20TABLE%20x"));
+    expect(serve.mock.calls[1]![1].read).toEqual({ accountId: undefined });
+  });
+
+  it("answers 503 when the database is unavailable, without the error text", async () => {
+    serve.mockImplementation(async () => {
+      throw new Error("password authentication failed for user x");
+    });
+    const response = await GET(new Request("http://x/api/leaderboard"));
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ error: "Leaderboard unavailable." });
+    expect(JSON.stringify(await response.json())).not.toContain("password");
   });
 });

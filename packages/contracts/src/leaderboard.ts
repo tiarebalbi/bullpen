@@ -14,7 +14,10 @@ export interface LeaderboardEntry {
  * refresh leaves the last good ranking and says so in `lastFailure`.
  */
 export interface LeaderboardSnapshot {
+  /** The top rows of the ranking (at most 50), then the caller's own row when it is not among them. Never the whole ranking. */
   rows: LeaderboardEntry[];
+  /** How many accounts are ranked in all. */
+  total: number;
   /** ISO timestamp of the last successful refresh. */
   asOf: string;
   ageMs: number;

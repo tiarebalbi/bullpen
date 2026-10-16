@@ -5,17 +5,23 @@ import { tradingPool } from "../../lib/trading/pool.js";
 
 export const dynamic = "force-dynamic";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * The leaderboard: the current ranking with its as-of time. It never waits
+ * The leaderboard: the top of the current ranking, never the whole of it, with its as-of time. It never waits
  * for a refresh. If the ranking is older than 5 minutes, the refresh starts
  * after the response is sent, under a lock that lets only one run. A failed
  * refresh leaves the last good ranking, and `lastFailure` says so.
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const read = await serveLeaderboard(tradingPool(), { schedule: (work) => after(work) });
+    // The caller's own account, if the page knows it: its row is added when it is not in the top. Anything but a uuid is ignored.
+    const account = new URL(request.url).searchParams.get("account");
+    const accountId = account !== null && UUID.test(account) ? account : undefined;
+    const read = await serveLeaderboard(tradingPool(), { schedule: (work) => after(work), read: { accountId } });
     const body: LeaderboardSnapshot = {
       rows: read.rows,
+      total: read.total,
       asOf: read.asOf.toISOString(),
       ageMs: read.ageMs,
       stale: read.stale,

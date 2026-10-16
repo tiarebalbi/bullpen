@@ -6,10 +6,7 @@
 // Real data is never touched: quotes from a provider and the call ledger stay. Each owner's data is removed with
 // that owner's own role, so the cleanup respects the same boundaries as the code. It prints counts, never URLs.
 import pg from "pg";
-import { refreshLeaderboard, createPool } from "@bullpen/db-trading";
-
-export const TEST_HANDLE_PREFIX = "zz-test-";
-export const TEST_QUOTE_SOURCE = "test";
+import { TEST_HANDLE_PREFIX, TEST_QUOTE_SOURCE, refreshLeaderboard, createPool } from "@bullpen/db-trading";
 
 const dryRun = process.argv.includes("--dry-run");
 const tradingUrl = process.env.DATABASE_URL_TRADING;

@@ -19,7 +19,7 @@ describe("readPrices: the trading owner reads prices through the contract", () =
     const old = symbol();
     await marketData.query("INSERT INTO market_data.quotes (symbol, as_of, price, source, valid_until) VALUES ($1, now() - interval '2 days', 100, 'test', now() + interval '1 day'), ($1, now() - interval '1 hour', 123.45, 'test', now() + interval '1 day'), ($2, now() - interval '5 days', 9, 'test', now() - interval '1 day')", [fresh, old]);
 
-    const prices = await readPrices(trading);
+    const prices = await readPrices(trading, { includeTestRows: true });
     const latest = prices.find((p) => p.symbol === fresh)!;
     const stale = prices.find((p) => p.symbol === old)!;
 
