@@ -39,14 +39,91 @@ Refresh (CONCURRENTLY), 1950 accounts: 70 refreshes, duration p50 421 ms, p95 50
 Ledger write p95 with no refresh running: 669 ms; during back-to-back refreshes: 617 ms
 ```
 
-## What it says
+## What the table says, and what it does not
 
 - With nobody reading, a buy costs about 545 ms at p50 from here. That is the baseline.
 - At N = 10 neither path moves the writes much; the view serves the same readers faster (read p95 115 ms against 204 ms).
-- At N = 50 both paths slow the writes, the view less: write p95 1,005 ms with the view against 1,275 ms computed on read, and the
-  read p95 is 365 ms against 958 ms. The view is cheaper, not free: 50 readers still share 0.25 CU with the writers. "No reader
-  waits for a refresh" holds (no lock is taken); "reads cost nothing" does not.
-- A refresh takes about 420 ms (p95 506 ms) for 2,000 accounts. Ledger write p95 during back-to-back refreshes was 617 ms against
-  669 ms with none running: within the noise of a 30-second cell, so I found no measurable cost of the refresh itself.
-- Each cell is 30 seconds and one run. The N = 0 row's p95 (878 ms) is higher than two of the cells with readers, which says how
-  much run-to-run noise there is: differences under about 200 ms between cells are not evidence.
+- At N = 50 both paths slow the writes, the view less (write p95 1,005 ms against 1,275 ms computed on read; read p95 365 ms against
+  958 ms). I first read this as 50 readers sharing 0.25 CU with the writers. **The diagnosis below shows that reading was not
+  supported by the data**, and this table alone cannot say why N = 50 is slower.
+- A refresh takes about 420 ms (p95 506 ms) for 2,000 accounts. Ledger write p95 during back-to-back refreshes was 617 ms against 669 ms with
+  none running: within the noise of a 30-second cell, so I found no measurable cost of the refresh itself.
+- Each cell is 30 seconds and one run. The N = 0 row's p95 (878 ms) is higher than two of the cells with readers: differences under about
+  200 ms between cells are not evidence.
+
+## Diagnosing the N = 50 slowdown
+
+Question: is the slowdown CPU on the 0.25 CU compute, connection or pool queueing, or lock waits? I reran the baseline and the N = 50 view
+cell with sampling, and added one cell that changes only how much each read returns. While each cell ran, a separate connection sampled
+`pg_stat_activity` for the role's sessions every 250 ms (state and wait event), `EXPLAIN (ANALYZE)` timed a leaderboard read on the server about
+every second, and the script recorded its own pool queue and Node's event-loop delay. Command:
+
+```
+pnpm --filter @bullpen/fitness-checks db:measure-contention -- --accounts 2000 --seconds 30 --writers 8 --diagnose
+```
+
+Output, verbatim (the same 2,000 accounts; 6,634 ledger rows before the first cell):
+
+```
+batch: 2000 accounts, 10000 positions, 6634 ledger rows before; 8 writers; 30 s per cell
+
+
+### 0 readers, 8 writers, 30 s
+client: ledger write p50 / p95 544 ms / 574 ms (439); leaderboard read p95 n/a (0)
+server: leaderboard read executes in p50 1.16 ms / p95 1.59 ms (EXPLAIN ANALYZE, 22 samples); planning p50 0.07 ms
+this machine: Node event-loop delay p50 11.0 ms / p95 11.2 ms / max 16.2 ms; 0 rows per read, 0 rows a second received
+sessions of this role, 88 samples: active avg 0.0, max 1; our pool: max 8 connections, max 0 callers waiting for one
+what those sessions were in (sample counts):
+    2683  idle | Client | ClientRead
+     566  idle in transaction | Client | ClientRead
+       4  active | CPU or running | -
+       3  idle in transaction | CPU or running | -
+
+### 50 readers, the whole ranking (2,000 rows a read), 8 writers, 30 s
+client: ledger write p50 / p95 1135 ms / 1535 ms (213); leaderboard read p95 463 ms (5650)
+server: leaderboard read executes in p50 1.18 ms / p95 15.30 ms (EXPLAIN ANALYZE, 17 samples); planning p50 0.04 ms
+this machine: Node event-loop delay p50 10.2 ms / p95 11.5 ms / max 22.4 ms; 2000 rows per read, 376667 rows a second received
+sessions of this role, 66 samples: active avg 1.7, max 8; our pool: max 58 connections, max 0 callers waiting for one
+what those sessions were in (sample counts):
+    2209  idle | Client | ClientRead
+     437  idle in transaction | Client | ClientRead
+     110  active | CPU or running | -
+       3  active | IPC | SyncRep
+       2  idle | CPU or running | -
+       2  active | Lock | transactionid
+
+### 50 readers, the top 20 rows a read, 8 writers, 30 s
+client: ledger write p50 / p95 553 ms / 648 ms (428); leaderboard read p95 101 ms (17965)
+server: leaderboard read executes in p50 1.21 ms / p95 4.53 ms (EXPLAIN ANALYZE, 22 samples); planning p50 0.03 ms
+this machine: Node event-loop delay p50 10.2 ms / p95 11.0 ms / max 15.6 ms; 20 rows per read, 11977 rows a second received
+sessions of this role, 86 samples: active avg 0.9, max 11; our pool: max 58 connections, max 0 callers waiting for one
+what those sessions were in (sample counts):
+    3304  idle | Client | ClientRead
+     569  idle in transaction | Client | ClientRead
+      72  idle | CPU or running | -
+      69  active | CPU or running | -
+       4  active | IPC | SyncRep
+       1  none | CPU or running | -
+       1  idle in transaction | CPU or running | -
+       1  active | Lock | transactionid
+       1  active | Client | ClientRead
+```
+
+What the evidence points to:
+
+| Candidate | What I captured | Verdict |
+|---|---|---|
+| Lock waits | `Lock / transactionid` in 2 of 2,763 session samples in the full-ranking cell, 1 of 4,022 in the top-20 cell | not it: two writers picked the same random account now and then |
+| Pool queueing on my side | my pool never had a caller waiting (max 0), 58 connections for 58 loops | not it |
+| CPU on the 0.25 CU compute | a read executes in 1.2 ms at p50 on the server in every cell (p95 4.5 to 15 ms under load); active sessions averaged 1.7 of 58; and with the top 20 rows, 600 reads a second (three times the full-ranking rate) left ledger write p95 at 648 ms against 574 ms idle | not the limit at this load; the server is mostly idle |
+| Bytes moved | the slow cell received 376,667 rows a second (about 1.7 GB in 30 seconds); the cell that sent 20 rows a read did not slow the writes at all, with three times as many reads | **this is what changes between the cells** |
+| My machine's event loop | event-loop delay p95 11 ms in all three cells (the timer's own resolution is 10 ms) | not it |
+
+So the 1,005 ms (and 1,461 to 1,535 ms in the reruns) comes from reading the whole ranking 190 times a second, and not from the database
+doing more work. The data does not say which hop carries the cost: my network link, or Neon's proxy and pooler on the way, since both
+move the same bytes and I have no counter on either. It also does not say what a read of the whole ranking costs in production, where a
+page reads a page of rows, not 2,000, and where the readers' bytes do not cross my laptop's connection.
+
+What I take from it for the post: the claim that stands is "no reader waits for a refresh, and a read costs the server about a
+millisecond". The claim I cannot make is that 50 concurrent readers of 2,000 rows cost a ledger write nothing. They did not, and the cause I can
+rule out is the compute, not the one I can name.

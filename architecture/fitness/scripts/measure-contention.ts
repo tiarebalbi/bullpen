@@ -6,7 +6,7 @@
 //
 // Everything it writes is marked as test data (account handles start "zz-test-", quotes have source "test") and is
 // removed by `db:cleanup-test-data`. It prints a markdown table and never a URL.
-import { performance } from "node:perf_hooks";
+import { monitorEventLoopDelay, performance } from "node:perf_hooks";
 import pg from "pg";
 import { computeLeaderboardOnRead, createPool, placeMarketBuy, readLeaderboardRows, refreshLeaderboard } from "@bullpen/db-trading";
 
@@ -46,10 +46,8 @@ async function seed(): Promise<string[]> {
     );
   }
   await market.end();
-  const { rows } = await pool.query<{ account_id: string }>(
-    "INSERT INTO trading.accounts (handle, buying_power) SELECT $1 || g, 1000000 FROM generate_series(1, $2) g ON CONFLICT (handle) DO NOTHING RETURNING account_id",
-    [HANDLE, ACCOUNTS],
-  );
+  await pool.query("INSERT INTO trading.accounts (handle, buying_power) SELECT $1 || g, 1000000 FROM generate_series(1, $2) g ON CONFLICT (handle) DO NOTHING", [HANDLE, ACCOUNTS]);
+  const { rows } = await pool.query<{ account_id: string }>("SELECT account_id FROM trading.accounts WHERE handle LIKE $1 || '%'", [HANDLE]);
   const ids = rows.map((r) => r.account_id);
   await pool.query("INSERT INTO trading.positions (account_id, symbol, quantity) SELECT a, s, 3 FROM unnest($1::uuid[]) a, unnest($2::text[]) s ON CONFLICT DO NOTHING", [ids, SYMBOLS]);
   await refreshLeaderboard(pool);
@@ -87,9 +85,77 @@ async function run(ids: string[], readers: number, read: () => Promise<unknown>,
   return cell;
 }
 
+const DIAGNOSE = process.argv.includes("--diagnose");
+
+interface Diagnosis { waits: Map<string, number>; samples: number; activeMax: number; activeSum: number; poolWaitingMax: number; poolTotalMax: number; execMs: number[]; planMs: number[] }
+
+/** While a cell runs: what the sessions of this role wait on, how many are active, whether our own pool queues, and what the server says a leaderboard read costs it. */
+async function watch(stopAt: number, pool: pg.Pool): Promise<Diagnosis> {
+  const client = new pg.Client({ connectionString: tradingUrl });
+  await client.connect();
+  const d: Diagnosis = { waits: new Map(), samples: 0, activeMax: 0, activeSum: 0, poolWaitingMax: 0, poolTotalMax: 0, execMs: [], planMs: [] };
+  let tick = 0;
+  while (Date.now() < stopAt) {
+    const { rows } = await client.query<{ state: string | null; wait_event_type: string | null; wait_event: string | null; n: string }>(
+      "SELECT state, wait_event_type, wait_event, count(*) AS n FROM pg_stat_activity WHERE usename = current_user AND pid <> pg_backend_pid() GROUP BY 1, 2, 3",
+    );
+    let active = 0;
+    for (const r of rows) {
+      const key = `${r.state ?? "none"} | ${r.wait_event_type ?? "CPU or running"} | ${r.wait_event ?? "-"}`;
+      d.waits.set(key, (d.waits.get(key) ?? 0) + Number(r.n));
+      if (r.state === "active") active += Number(r.n);
+    }
+    d.samples += 1;
+    d.activeSum += active;
+    d.activeMax = Math.max(d.activeMax, active);
+    d.poolWaitingMax = Math.max(d.poolWaitingMax, pool.waitingCount);
+    d.poolTotalMax = Math.max(d.poolTotalMax, pool.totalCount);
+    if (tick++ % 4 === 0) {
+      const plan = (await client.query<{ "QUERY PLAN": { "Execution Time": number; "Planning Time": number }[] }>("EXPLAIN (ANALYZE, FORMAT JSON) SELECT account_id, handle, cash, positions_value, equity, rank FROM trading.leaderboard_mv ORDER BY rank, handle")).rows[0]!["QUERY PLAN"][0]!;
+      d.execMs.push(plan["Execution Time"]);
+      d.planMs.push(plan["Planning Time"]);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  await client.end();
+  return d;
+}
+
+function printDiagnosis(title: string, cell: Cell, d: Diagnosis, loop: { p50: number; p95: number; max: number }, rowsPerRead: number): void {
+  const w = summary(cell.writes);
+  const r = summary(cell.reads);
+  const ex = summary(d.execMs);
+  console.log(`\n### ${title}`);
+  console.log(`client: ledger write p50 / p95 ${fmt(w.p50)} / ${fmt(w.p95)} (${w.n}); leaderboard read p95 ${r.n ? fmt(r.p95) : "n/a"} (${r.n})`);
+  console.log(`server: leaderboard read executes in p50 ${ex.p50.toFixed(2)} ms / p95 ${ex.p95.toFixed(2)} ms (EXPLAIN ANALYZE, ${ex.n} samples); planning p50 ${summary(d.planMs).p50.toFixed(2)} ms`);
+  console.log(`this machine: Node event-loop delay p50 ${loop.p50.toFixed(1)} ms / p95 ${loop.p95.toFixed(1)} ms / max ${loop.max.toFixed(1)} ms; ${rowsPerRead} rows per read, ${(r.n * rowsPerRead / SECONDS).toFixed(0)} rows a second received`);
+  console.log(`sessions of this role, ${d.samples} samples: active avg ${(d.activeSum / d.samples).toFixed(1)}, max ${d.activeMax}; our pool: max ${d.poolTotalMax} connections, max ${d.poolWaitingMax} callers waiting for one`);
+  console.log("what those sessions were in (sample counts):");
+  for (const [key, n] of [...d.waits.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(6)}  ${key}`);
+}
+
 const ids = await seed();
 const [{ n: ledgerBefore }] = (await pool.query<{ n: string }>("SELECT count(*) AS n FROM trading.ledger")).rows as [{ n: string }];
 console.log(`batch: ${ids.length} accounts, ${ids.length * SYMBOLS.length} positions, ${ledgerBefore} ledger rows before; ${WRITERS} writers; ${SECONDS} s per cell\n`);
+
+if (DIAGNOSE) {
+  const top20 = () => pool.query("SELECT account_id, handle, cash::text, positions_value::text, equity::text, rank FROM trading.leaderboard_mv ORDER BY rank, handle LIMIT 20");
+  const cells: [string, number, () => Promise<unknown>, number][] = [
+    ["0 readers", 0, () => readLeaderboardRows(pool), 0],
+    ["50 readers, the whole ranking (2,000 rows a read)", 50, () => readLeaderboardRows(pool), ids.length],
+    ["50 readers, the top 20 rows a read", 50, top20, 20],
+  ];
+  for (const [title, readers, read, rowsPerRead] of cells) {
+    const histogram = monitorEventLoopDelay({ resolution: 10 });
+    histogram.enable();
+    const stopAt = Date.now() + SECONDS * 1000 + 1000;
+    const [cell, d] = await Promise.all([run(ids, readers, read, false), watch(stopAt, pool)]);
+    histogram.disable();
+    printDiagnosis(`${title}, ${WRITERS} writers, ${SECONDS} s`, cell, d, { p50: histogram.percentile(50) / 1e6, p95: histogram.percentile(95) / 1e6, max: histogram.max / 1e6 }, rowsPerRead);
+  }
+  await pool.end();
+  process.exit(0);
+}
 
 const paths: [string, () => Promise<unknown>][] = [
   ["computed on read", () => computeLeaderboardOnRead(pool)],
