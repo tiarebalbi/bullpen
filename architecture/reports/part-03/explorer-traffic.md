@@ -39,7 +39,9 @@ wrong. Every illustrative line says so in the side panel ("Illustrative, 6 a min
 - **Reduced motion:** nothing moves. Each line has three static arrowheads along it and its rate written on it (`14/s`, `12/hour`,
   `1/day`), and the pause control is disabled and says "Traffic off · reduced motion".
 - **Pause / play** for the traffic; pausing writes the rates on the lines, as reduced motion does.
-- **The side panel** lists every connection with its rate and source.
+- **The side panel is kept to the diagram's height** (480 px, 360 px when the two stack). With nothing selected it holds a summary (added, changed, removed, decisions, lines with a rate) and two buttons, "What changed" and "Traffic details".
+- **The bottom sheet** ("Part 3 in detail", a native `<dialog>`) holds everything long, in two sections: **What changed** under headings (services, data and connections; new nodes and the rules on them; decisions; what week one predicted) and **Traffic** (an intro explaining Measured, Configured and Illustrative, then the connections in those three groups, one row each: pair, rate, one line of basis). It slides up at every width, is at most 70% of the viewport high and scrolls inside; it closes on its button, Escape and the overlay; focus goes in on open and back to the button on close; the page behind does not scroll; under reduced motion it appears in place.
+- **Clicking a line** opens its own panel in the side panel: what it joins, whether it is synchronous, its caption, and its rate with where the rate comes from.
 
 ## Where it lives
 
@@ -73,6 +75,10 @@ Follow a price request).
 | Data ownership on | ![](explorer/traffic-data-ownership-1440.png) | ![](explorer/traffic-data-ownership-390.png) |
 | Following a price request | ![](explorer/traffic-follow-price-request-1440.png) | ![](explorer/traffic-follow-price-request-390.png) |
 | Following a buy | ![](explorer/traffic-follow-buy-1440.png) | ![](explorer/traffic-follow-buy-390.png) |
+| Side panel, kept to the diagram's height | ![](explorer/traffic-side-panel-1440.png) | ![](explorer/traffic-side-panel-390.png) |
+| Sheet open on Traffic | ![](explorer/traffic-sheet-open-1440.png) | ![](explorer/traffic-sheet-open-390.png) |
+| Sheet open on What changed | ![](explorer/traffic-sheet-changes-1440.png) | ![](explorer/traffic-sheet-changes-390.png) |
+| A clicked line | ![](explorer/traffic-line-panel-1440.png) | ![](explorer/traffic-line-panel-390.png) |
 
 ## Known gaps
 
