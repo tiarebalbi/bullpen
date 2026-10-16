@@ -3,7 +3,10 @@ import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 // The count the card shows is the number of rows in the ledger, read from the file, so adding an allowance does not break this.
-const ALLOWANCE_COUNT = String((JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "cost", "allowances.json"), "utf8")) as unknown[]).length);
+const ALLOWANCES = JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "cost", "allowances.json"), "utf8")) as Array<{ service: string }>;
+const ALLOWANCE_COUNT = String(ALLOWANCES.length);
+// The services that arrive in later parts: every service in the ledger but the two Part 1 uses.
+const LATER_SERVICES = new Set(ALLOWANCES.map((a) => a.service).filter((s) => s !== "vercel-hobby" && s !== "coingecko-demo")).size;
 
 async function mockPriceRoute(page: Page): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) =>
@@ -107,7 +110,7 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
     // CoinGecko Demo's 2); the other 16 show up grouped in "Arrives in
     // later parts" below, not as individual rows.
     await expect(details.locator("table tbody tr")).toHaveCount(9);
-    await expect(details.locator(".bp-bento__later li")).toHaveCount(8);
+    await expect(details.locator(".bp-bento__later li")).toHaveCount(LATER_SERVICES);
   });
 
   test("Free-tier usage shows the real pending state for every real metric, with no bars", async ({ page }) => {
