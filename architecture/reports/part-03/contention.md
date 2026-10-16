@@ -15,7 +15,7 @@ of tens of milliseconds that a function in the same region would not. Compare ro
 **Compute is fixed at 0.25 CU on production.** It does not scale up for this run.
 
 **Batch size:** 2,000 accounts (50 from a smoke run of the same script, 1,950 from this one), each holding 5 positions, so 10,000
-positions; the ledger grew from 160 rows by every measured buy. Prices are 5 test symbols with source `test`.
+positions; **this is the "before" run, with a whole-ranking read and 30-second cells;** the ledger grew from 160 rows by every measured buy. Prices are 5 test symbols with source `test`.
 
 ## What I ran
 
@@ -30,7 +30,14 @@ tables; "materialized view" is `readLeaderboardRows`, a select from `trading.lea
 `architecture/fitness/scripts/measure-contention.ts`; every row it wrote carries the test marker and is removed by
 `db:cleanup-test-data`.
 
-## Result
+That command ran the first version of the script, which read the whole ranking and took `--accounts` and `--seconds` as written. The script in the
+repo now reads the capped payload, defaults to 200 accounts and 15 seconds, cleans up after itself, and has the transfer budget; see "After".
+The `--diagnose` mode used for the diagnosis below was part of that earlier version, and its output is kept below as it ran.
+
+## Before: 2,000 accounts, the whole ranking a read, 30-second cells
+
+Dataset 2,000 accounts x 5 positions. Payload: every read returned the whole ranking, 2,000 rows, about 345 KB. Duration: 30 s a cell.
+Bytes moved: about 1.7 GB for each N = 50 cell (measured on the client from the rows received; the connection meter below did not exist yet).
 
 ```
 batch: 1950 accounts, 9750 positions, 160 ledger rows before; 8 writers; 30 s per cell
@@ -46,6 +53,56 @@ batch: 1950 accounts, 9750 positions, 160 ledger rows before; 8 writers; 30 s pe
 Refresh (CONCURRENTLY), 1950 accounts: 70 refreshes, duration p50 421 ms, p95 506 ms
 Ledger write p95 with no refresh running: 669 ms; during back-to-back refreshes: 617 ms
 ```
+
+## After: 200 accounts, the top 50 and the caller's row a read, 15-second cells
+
+**Not run yet.** Neon suspended the compute on 2026-10-16 for network transfer, and nothing runs against it until the allowance resets
+and the project owner says so. What is ready is the run, its estimate and its refusal.
+
+**Three variables change between "before" and "after", not one:** the dataset (2,000 accounts to 200), the rows per read (2,000 to
+at most 51: the top 50 and the caller's own row) and the duration of a cell (30 s to 15 s). The new table therefore shows what the
+page will actually do and how cheap measuring it is; it is not an experiment that isolates one cause. The cause of the N = 50
+slowdown was isolated above, with the top-20 cell, which changed only rows per read.
+
+Command:
+
+```
+DATABASE_URL_TRADING=<owner URL> DATABASE_URL_MARKET_DATA=<owner URL> \
+  pnpm --filter @bullpen/fitness-checks db:measure-contention -- --remaining-mb <left this month, from the Neon dashboard>
+```
+
+The script seeds once, runs all cells (N = 0, 10, 50, both read paths), cleans up once, and every row it writes is test-marked
+(handle `zz-test-contention-<run id>-…`, quotes with source `test`). Before it starts it prints the estimate below and refuses if
+the run would pass 10% of `--remaining-mb` (`--max-share` changes that), or if `--remaining-mb` is not given. After it runs it prints
+measured bytes next to each estimate. The estimate, from `--estimate-only` (no database needed):
+
+```
+estimate: 200 accounts, 15 s cells, 8 writers, 10 reads a second per reader, 51 rows a read
+  per read: 10.1 KB
+  0 readers, baseline                0.6 MB
+  10 readers, computed on read       15.7 MB
+  10 readers, materialized view      15.7 MB
+  50 readers, computed on read       76.3 MB
+  50 readers, materialized view      76.3 MB
+  refresh phase, with refreshes      0.6 MB
+  refresh phase, without             0.6 MB
+  setup 0.0 MB; whole run 185.6 MB
+Within budget: estimated 185.6 MB, 10% of the 5000.0 MB remaining is 500.0 MB.
+```
+
+The estimate assumes one reader reads 10 times a second (measured at 12 for 20 rows) and prices a read at 175 bytes a row, 250 bytes of
+framing and a 10% wire overhead. The run's measured bytes will be recorded in this table beside each estimate, once it has run:
+
+| N readers | Read path | Ledger write p50 / p95 | Leaderboard read p95 | Bytes per read | Bytes per cell, measured (estimated) |
+|---|---|---|---|---|---|
+| 0 | none (baseline) | pending | n/a | n/a | pending (0.6 MB) |
+| 10 | computed on read | pending | pending | pending (10.1 KB) | pending (15.7 MB) |
+| 10 | materialized view | pending | pending | pending (10.1 KB) | pending (15.7 MB) |
+| 50 | computed on read | pending | pending | pending (10.1 KB) | pending (76.3 MB) |
+| 50 | materialized view | pending | pending | pending (10.1 KB) | pending (76.3 MB) |
+
+Your estimate was about 70 MB for the N = 50 cell and about 250 MB for the run; mine is 76 MB and 185 MB. The script reports the
+measured value beside both after the run.
 
 ## What the table says, and what it does not
 

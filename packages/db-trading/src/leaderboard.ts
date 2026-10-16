@@ -65,9 +65,24 @@ export async function readLeaderboardRows(pool: Pool, relation = "trading.leader
   return rows.map(toRow);
 }
 
-/** The ranking computed from the source tables now, ordered like the view. */
-export async function computeLeaderboardOnRead(pool: Pool): Promise<LeaderboardRow[]> {
-  const { rows } = await pool.query<RawRow>(`SELECT account_id, handle, cash::text, positions_value::text, equity::text, rank FROM (${LEADERBOARD_ON_READ_SQL}) l ORDER BY rank, handle`);
+/**
+ * The ranking computed from the source tables now, ordered like the view. With `limit` it returns the top rows and the caller's
+ * own, as `readLeaderboard` does; without, every account (what the reconciliation check compares against the view).
+ */
+export async function computeLeaderboardOnRead(pool: Pool, options: { limit?: number; accountId?: string } = {}): Promise<LeaderboardRow[]> {
+  const columns = "account_id, handle, cash::text, positions_value::text, equity::text, rank";
+  if (options.limit === undefined) {
+    const { rows } = await pool.query<RawRow>(`SELECT ${columns} FROM (${LEADERBOARD_ON_READ_SQL}) l ORDER BY rank, handle`);
+    return rows.map(toRow);
+  }
+  const { rows } = await pool.query<RawRow>(
+    `WITH l AS (${LEADERBOARD_ON_READ_SQL})
+     (SELECT ${columns} FROM l ORDER BY rank, handle LIMIT $1)
+     UNION
+     (SELECT ${columns} FROM l WHERE account_id = $2::uuid)
+     ORDER BY rank, handle`,
+    [Math.max(1, Math.min(options.limit, LEADERBOARD_TOP)), options.accountId ?? null],
+  );
   return rows.map(toRow);
 }
 

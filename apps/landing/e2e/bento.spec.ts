@@ -1,4 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+
+// The count the card shows is the number of rows in the ledger, read from the file, so adding an allowance does not break this.
+const ALLOWANCE_COUNT = String((JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "cost", "allowances.json"), "utf8")) as unknown[]).length);
 
 async function mockPriceRoute(page: Page): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) =>
@@ -91,7 +96,7 @@ test.describe("Status bento (Decisions, Rules, Cost, Free-tier usage)", () => {
 
   test("Cost card shows a real allowance count and links to the full allowances table", async ({ page }) => {
     const cost = page.locator("#cost");
-    await expect(cost.getByText("25", { exact: true })).toBeVisible();
+    await expect(cost.getByText(ALLOWANCE_COUNT, { exact: true })).toBeVisible();
     await expect(cost.getByText("Part 5", { exact: true })).toBeVisible();
 
     const details = cost.locator("details.bp-bento__more");
