@@ -21,3 +21,12 @@ I report it, I do not warm the routes to hide it.
 
 Plan: 10 cold samples per route, 20 minutes apart (30 warm samples per route), against one fixed preview deployment of this
 branch, not the branch alias, so a later push cannot swap the deployment under the run.
+
+## Status: not measured
+
+A run of the plan above started against a fixed preview deployment at 12:44 UTC on 2026-10-16. It was stopped after round 6 of 10
+(about 15:00 UTC), when Neon suspended the project's compute for network transfer. The script prints its results only when it
+finishes, so the stopped run kept no numbers, and I have none to report. Nothing in this file is a measurement. The run starts again
+after the allowance resets and the project owner says so; the targets above are unchanged. Each request of a cold round reads the
+database through `/api/leaderboard`, which is now capped at 50 rows plus the caller's own, so a round moves about 10 KB, not the
+whole ranking.
