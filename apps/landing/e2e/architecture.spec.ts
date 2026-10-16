@@ -415,20 +415,44 @@ for (const viewport of [
       await expect(chip).toHaveAttribute("aria-expanded", "false");
     });
 
-    test("opening a second chip closes the first, and a press outside closes the open one", async ({ page }) => {
+    test("opening a second chip with the mouse closes the first, and a press outside closes the open one", async ({ page }) => {
       const panel = await openPart2Panel(page);
       await panel.getByRole("button", { name: "App boundaries" }).first().click();
       await expect(page.getByRole("region", { name: "App boundaries" })).toBeVisible();
 
-      // The open popover can sit over the next chip in the wider sheet, so the second chip is reached by keyboard, as a keyboard reader would.
-      await panel.getByRole("button", { name: "Call budget" }).focus();
-      await page.keyboard.press("Enter");
+      // The description sits in the flow, under the chips, so the next chip is still there to click.
+      await panel.getByRole("button", { name: "Call budget" }).click();
       await expect(page.getByRole("region", { name: "Call budget" })).toBeVisible();
       await expect(page.getByRole("region", { name: "App boundaries" })).toHaveCount(0);
 
       // A press outside the popover but inside the sheet: outside the sheet it would close the sheet, which is its own test.
       await panel.locator(".bp-traffic-sheet__head").click({ position: { x: 6, y: 6 } });
       await expect(page.getByRole("region", { name: "Call budget" })).toHaveCount(0);
+    });
+
+    test("opening a second chip with the keyboard closes the first", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await panel.getByRole("button", { name: "App boundaries" }).first().click();
+      await expect(page.getByRole("region", { name: "App boundaries" })).toBeVisible();
+      await panel.getByRole("button", { name: "Call budget" }).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("region", { name: "Call budget" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "App boundaries" })).toHaveCount(0);
+    });
+
+    test("an open description covers no chip: every chip is still at its place on the screen's hit test", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await panel.getByRole("button", { name: "App boundaries" }).first().click();
+      const popover = page.getByRole("region", { name: "App boundaries" });
+      const popoverBox = (await popover.boundingBox())!;
+      for (const name of CHIPS) {
+        const chips = panel.getByRole("button", { name });
+        for (let i = 0; i < (await chips.count()); i++) {
+          const box = (await chips.nth(i).boundingBox())!;
+          const overlaps = box.x < popoverBox.x + popoverBox.width && box.x + box.width > popoverBox.x && box.y < popoverBox.y + popoverBox.height && box.y + box.height > popoverBox.y;
+          expect(overlaps, `${name} #${i} is not under the open description`).toBe(false);
+        }
+      }
     });
 
     test("keeps every popover fully inside the viewport", async ({ page }) => {

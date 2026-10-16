@@ -253,6 +253,27 @@ for (const viewport of [
       await shot(page, "sheet-changes", viewport.width, true);
     });
 
+    test("on a touch screen a tap on a row shows the whole basis, and the next tap hides it again", async ({ browser }) => {
+      test.skip(viewport.width > 500, "the touch test is for the phone width");
+      const context = await browser.newContext({ viewport, hasTouch: true, isMobile: true });
+      const page = await context.newPage();
+      await open(page);
+      await page.getByRole("button", { name: "Traffic details" }).tap();
+      const sheet = page.getByRole("dialog", { name: /in detail/ });
+      const row = sheet.locator('li[data-edge="trading-app-to-trading-schema"]'); // the longest basis
+      const basis = row.locator(".bp-traffic-sheet__basis");
+      const cut = () => basis.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+      expect(await cut()).toBe(true); // cut at two lines on a phone
+      await row.locator("button").tap();
+      await expect(row.locator("button")).toHaveAttribute("aria-expanded", "true");
+      expect(await cut()).toBe(false); // the whole text
+      await shot(page, "sheet-row-expanded", viewport.width, true);
+      await row.locator("button").tap();
+      await expect(row.locator("button")).toHaveAttribute("aria-expanded", "false");
+      expect(await cut()).toBe(true);
+      await context.close();
+    });
+
     test("the sheet is at most 70% of the viewport high, pinned to the bottom, and its content scrolls inside it", async ({ page }) => {
       await open(page);
       await page.getByRole("button", { name: "Traffic details" }).click();

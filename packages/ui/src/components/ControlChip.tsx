@@ -1,48 +1,10 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from "react";
 import type { ArchControlChange } from "./ArchitectureExplorer.types.js";
 
 /** "app-boundaries" becomes "App boundaries": the model's key made readable, with no wording of its own. */
 export function controlLabel(key: string): string {
   const words = key.replace(/[-_]+/g, " ").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
-const MARGIN = 8;
-const GAP = 6;
-const POPOVER_WIDTH = 320;
-
-export interface Placement {
-  left: number;
-  top: number;
-}
-
-/** The popover's width: its own 320px, or less where the viewport or the panel it sits in is narrower. */
-export function popoverWidth(viewportWidth: number, within?: { left: number; right: number }): number {
-  const room = within ? within.right - within.left : Infinity;
-  return Math.max(0, Math.min(POPOVER_WIDTH, viewportWidth - MARGIN * 2, room - MARGIN * 2));
-}
-
-/**
- * Where a popover goes, in viewport coordinates: under its chip when it fits,
- * above when it only fits there, and always inside the viewport. The left edge
- * follows the chip. It is kept inside `within` (the panel the chip sits in)
- * when the popover fits there, and inside the viewport otherwise.
- */
-export function placePopover(
-  anchor: { left: number; top: number; bottom: number },
-  size: { width: number; height: number },
-  viewport: { width: number; height: number },
-  within?: { left: number; right: number },
-): Placement {
-  const fromViewport = { min: MARGIN, max: Math.max(MARGIN, viewport.width - size.width - MARGIN) };
-  const fromPanel = within ? { min: Math.max(MARGIN, within.left + MARGIN), max: Math.min(fromViewport.max, within.right - size.width - MARGIN) } : fromViewport;
-  const range = fromPanel.max >= fromPanel.min ? fromPanel : fromViewport;
-  const left = Math.min(Math.max(anchor.left, range.min), range.max);
-  const below = anchor.bottom + GAP;
-  const above = anchor.top - GAP - size.height;
-  const fitsBelow = below + size.height <= viewport.height - MARGIN;
-  const top = fitsBelow || above < MARGIN ? below : above;
-  return { left, top: Math.min(Math.max(top, MARGIN), Math.max(MARGIN, viewport.height - size.height - MARGIN)) };
 }
 
 const CHIP_STYLE: CSSProperties = {
@@ -55,26 +17,29 @@ const CHIP_STYLE: CSSProperties = {
   cursor: "pointer",
 };
 
+/**
+ * The description sits in the flow, on its own line under the chips it belongs to, so it pushes what follows down instead of covering it:
+ * a second chip is always reachable, with a mouse or a finger as well as the keyboard.
+ */
 const POPOVER_STYLE: CSSProperties = {
-  position: "fixed",
-  zIndex: 70, // above the consent banner (60)
-  width: `min(${POPOVER_WIDTH}px, calc(100vw - ${MARGIN * 2}px))`,
+  flex: "0 0 100%",
+  maxWidth: 360,
   boxSizing: "border-box",
   background: "var(--popover, var(--bp-panel))",
   color: "var(--foreground)",
   border: "1px solid var(--bp-hair)",
   borderRadius: 12,
   padding: 12,
-  boxShadow: "0 12px 32px rgb(0 0 0 / 0.35)",
   font: "400 13px/1.5 var(--font-body)",
 };
 
 type ElementRef<T extends HTMLElement> = { current: T | null };
 
-/** Gives the popover its width and returns the height it then has: the text wraps to the width, so the width comes first. */
-function heightAtWidth(element: HTMLElement, width: number): number {
-  element.style.width = `${width}px`;
-  return element.offsetHeight;
+/** Whether a press at `target` is outside the chip and its description, and not on another chip (that chip's own click handles it, see below). */
+function pressIsOutside(target: Element, button: ElementRef<HTMLButtonElement>, popover: ElementRef<HTMLDivElement>): boolean {
+  // Closing on a press on another chip would move that chip (the description above it goes) before its click lands.
+  if (target.closest?.("[data-control-chip]")) return false;
+  return !button.current?.contains(target) && !popover.current?.contains(target);
 }
 
 /** While `open`: Esc closes and gives focus back to the chip, and a press outside the chip and the popover closes. */
@@ -87,8 +52,7 @@ function useDismiss(open: boolean, onOpenChange: (open: boolean) => void, button
       button.current?.focus();
     };
     const onPointer = (event: PointerEvent): void => {
-      const target = event.target as Node;
-      if (!button.current?.contains(target) && !popover.current?.contains(target)) onOpenChange(false);
+      if (pressIsOutside(event.target as Element, button, popover)) onOpenChange(false);
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointer);
@@ -99,32 +63,16 @@ function useDismiss(open: boolean, onOpenChange: (open: boolean) => void, button
   }, [open, onOpenChange, button, popover]);
 }
 
-/** Where the open popover goes, kept inside the viewport as it resizes or scrolls; null while closed. */
-function usePlacement(open: boolean, button: ElementRef<HTMLButtonElement>, popover: ElementRef<HTMLDivElement>): (Placement & { width: number }) | null {
-  const [placement, setPlacement] = useState<(Placement & { width: number }) | null>(null);
-  useLayoutEffect(() => {
-    if (!open || !button.current || !popover.current) return;
-    const place = (): void => {
-      const anchor = button.current!.getBoundingClientRect();
-      const panel = button.current!.closest("[data-popover-bounds]")?.getBoundingClientRect();
-      const width = popoverWidth(window.innerWidth, panel);
-      const size = { width, height: heightAtWidth(popover.current!, width) };
-      setPlacement({ ...placePopover(anchor, size, { width: window.innerWidth, height: window.innerHeight }, panel), width });
-    };
-    place();
-    window.addEventListener("resize", place);
-    window.addEventListener("scroll", place, true);
-    return () => {
-      window.removeEventListener("resize", place);
-      window.removeEventListener("scroll", place, true);
-    };
-  }, [open, button, popover]);
-  return open ? placement : null;
+/** When the description opens it is brought into view if it opened below the edge of what scrolls. */
+function useReveal(open: boolean, popover: ElementRef<HTMLDivElement>): void {
+  useEffect(() => {
+    if (open) popover.current?.scrollIntoView?.({ block: "nearest" });
+  }, [open, popover]);
 }
 
 /**
- * A control as a small chip. It is a button: click, tap, Enter or Space open a
- * popover with the control's description from the model and its key. Esc, a
+ * A control as a small chip. It is a button: click, tap, Enter or Space open
+ * a description under the chips, with the control's description from the model and its key. Esc, a
  * click outside or another chip closes it, and Esc gives focus back to the chip.
  */
 export function ControlChip({
@@ -141,13 +89,14 @@ export function ControlChip({
   const popover = useRef<HTMLDivElement>(null);
   const label = controlLabel(control.key);
   useDismiss(open, onOpenChange, button, popover);
-  const placement = usePlacement(open, button, popover);
+  useReveal(open, popover);
 
   return (
     <>
       <button
         ref={button}
         type="button"
+        data-control-chip
         style={CHIP_STYLE}
         aria-expanded={open}
         aria-controls={popoverId}
@@ -155,20 +104,7 @@ export function ControlChip({
       >
         {label}
       </button>
-      <div
-        ref={popover}
-        id={popoverId}
-        role="region"
-        aria-label={label}
-        hidden={!open}
-        style={{
-          ...POPOVER_STYLE,
-          ...(placement ? { width: placement.width } : {}),
-          left: placement?.left ?? 0,
-          top: placement?.top ?? 0,
-          visibility: placement ? "visible" : "hidden",
-        }}
-      >
+      <div ref={popover} id={popoverId} role="region" aria-label={label} hidden={!open} style={POPOVER_STYLE}>
         {control.description ? <div>{control.description}</div> : null}
         <code style={{ display: "block", marginTop: control.description ? 8 : 0, font: "500 11px/1.4 var(--font-mono)", color: "var(--foreground-muted)" }}>
           {control.key}

@@ -17,18 +17,23 @@ export function groupByRateSource(part: ArchPartData): Array<{ source: ArchRateS
   return RATE_GROUPS.map((group) => ({ ...group, edges: part.edges.filter((e) => e.rate?.source === group.source) })).filter((group) => group.edges.length > 0);
 }
 
+/**
+ * One connection: its pair, its rate and a line of basis. The basis is cut at two lines; a tap (or a click) on the row shows the whole of it,
+ * and another hides it again. A mouse also gets the whole text as a tooltip.
+ */
 function Row({ edge, part }: { edge: ArchEdgeData; part: ArchPartData }): ReactNode {
+  const [open, setOpen] = useState(false);
   const label = (id: string): string => part.nodes.find((n) => n.id === id)?.label ?? id;
   const rate = edge.rate!;
   return (
-    <li className="bp-traffic-sheet__row" data-edge={edge.id} data-source={rate.source}>
-      <span className="bp-traffic-sheet__pair">
-        {label(edge.a)} → {label(edge.b)}
-      </span>
-      <span className="bp-traffic-sheet__rate">{rateWords(rate)}</span>
-      <span className="bp-traffic-sheet__basis" title={rate.basis}>
-        {rate.basis}
-      </span>
+    <li className="bp-traffic-sheet__row" data-edge={edge.id} data-source={rate.source} data-open={open || undefined}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} title={rate.basis}>
+        <span className="bp-traffic-sheet__pair">
+          {label(edge.a)} → {label(edge.b)}
+        </span>
+        <span className="bp-traffic-sheet__rate">{rateWords(rate)}</span>
+        <span className="bp-traffic-sheet__basis">{rate.basis}</span>
+      </button>
     </li>
   );
 }

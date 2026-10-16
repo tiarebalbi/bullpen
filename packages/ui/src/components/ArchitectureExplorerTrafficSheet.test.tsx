@@ -70,6 +70,22 @@ describe("DetailsSheet", () => {
     expect(rows[0]).toHaveTextContent("Load test.");
   });
 
+  it("expands a row's whole basis on a tap and hides it again on the next, and keeps the full text as the tooltip", () => {
+    const { container } = sheet([edge("m1", { source: "measured", basis: "A long basis that runs past two lines on a phone and is cut there." })]);
+    fireEvent.click(screen.getByRole("button", { name: "Traffic", hidden: true }));
+    const row = container.querySelector("li[data-edge=m1]")!;
+    const button = row.querySelector("button")!;
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(button).toHaveAttribute("title", "A long basis that runs past two lines on a phone and is cut there.");
+    expect(row).not.toHaveAttribute("data-open");
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(row).toHaveAttribute("data-open");
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(row).not.toHaveAttribute("data-open");
+  });
+
   it("explains the three labels in the traffic intro", () => {
     const { container } = sheet([edge("i1", {})]);
     fireEvent.click(screen.getByRole("button", { name: "Traffic", hidden: true }));

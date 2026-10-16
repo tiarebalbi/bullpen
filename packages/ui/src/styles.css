@@ -683,11 +683,23 @@ html[data-consent-open] body {
   padding: 0;
 }
 .bp-traffic-sheet__row {
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-traffic-sheet__row > button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 2px var(--space-3);
+  width: 100%;
   padding: var(--space-2) 0;
-  border-top: 1px solid var(--bp-hair);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.bp-traffic-sheet__row > button:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
 }
 .bp-traffic-sheet__pair {
   font: 600 13px/1.4 var(--font-body);
@@ -705,6 +717,11 @@ html[data-consent-open] body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.bp-traffic-sheet__row[data-open] .bp-traffic-sheet__basis {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
 }
 
 .bp-edge-panel {
