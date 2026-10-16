@@ -233,7 +233,9 @@ test.describe("Architecture Explorer", () => {
     await scrubber.getByRole("button", { name: "PART 2" }).click();
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
-    const panel = architecture.getByLabel("Details");
+    // The side panel keeps a summary; what changed is in the sheet its button opens.
+    await architecture.getByLabel("Details").getByRole("button", { name: "What changed" }).click();
+    const panel = page.getByRole("dialog", { name: /in detail/ });
     await expect(panel.getByText(/^\+?\s*Market Data Service$/)).toBeVisible();
     await expect(panel.getByText("Bullpen Database")).toBeVisible();
     await expect(panel.getByText("Price Snapshot Service (moved into Market Data Service)")).toBeVisible();
@@ -350,9 +352,11 @@ async function openPart2Panel(page: Page): Promise<Locator> {
   await page.goto("/");
   const architecture = page.locator("#architecture");
   await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 2" }).click();
-  const panel = architecture.getByLabel("Details");
-  await expect(panel.getByText("What changed in Part 2")).toBeVisible();
-  return panel;
+  const side = architecture.getByLabel("Details");
+  await expect(side.getByText("What changed in Part 2")).toBeVisible();
+  // What changed is in the bottom sheet the panel's button opens: the tests below read it there.
+  await side.getByRole("button", { name: "What changed" }).click();
+  return page.getByRole("dialog", { name: /in detail/ });
 }
 
 for (const viewport of [
@@ -416,11 +420,14 @@ for (const viewport of [
       await panel.getByRole("button", { name: "App boundaries" }).first().click();
       await expect(page.getByRole("region", { name: "App boundaries" })).toBeVisible();
 
-      await panel.getByRole("button", { name: "Call budget" }).click();
+      // The open popover can sit over the next chip in the wider sheet, so the second chip is reached by keyboard, as a keyboard reader would.
+      await panel.getByRole("button", { name: "Call budget" }).focus();
+      await page.keyboard.press("Enter");
       await expect(page.getByRole("region", { name: "Call budget" })).toBeVisible();
       await expect(page.getByRole("region", { name: "App boundaries" })).toHaveCount(0);
 
-      await page.locator("#architecture h2").first().click();
+      // A press outside the popover but inside the sheet: outside the sheet it would close the sheet, which is its own test.
+      await panel.locator(".bp-traffic-sheet__head").click({ position: { x: 6, y: 6 } });
       await expect(page.getByRole("region", { name: "Call budget" })).toHaveCount(0);
     });
 
@@ -460,13 +467,19 @@ test.describe("What changed in Part 2 fits its panel at 1440x900", () => {
     }
   });
 
-  test("with the banner dismissed, the panel's content fits within its height, and the panel within the viewport", async ({ page }) => {
-    const panel = await openPart2Panel(page);
-    const metrics = await panel.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, height: el.getBoundingClientRect().height }));
+  test("the side panel is kept to the diagram's height, and nothing in it is cut off", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 2" }).click();
+    const side = architecture.getByLabel("Details");
+    await expect(side.getByText("What changed in Part 2")).toBeVisible();
+    const canvas = (await architecture.locator(".bp-arch-explorer__canvas").boundingBox())!;
+    const metrics = await side.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, height: el.getBoundingClientRect().height }));
+    expect(metrics.height).toBeLessThanOrEqual(canvas.height + 1);
     expect(metrics.scroll).toBeLessThanOrEqual(metrics.client + 1);
-    // With the descriptions inline the panel was about 980px tall; as chips it is well under the viewport.
-    expect(metrics.height).toBeLessThan(900);
   });
+;
 });
 
 for (const viewport of [

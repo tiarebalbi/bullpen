@@ -18,18 +18,22 @@ const BUILT_BEFORE = EDGES.filter((id) => part2.edges.some((e) => e.id === id));
 const BUILT = content.status === "built";
 const moving = BUILT ? test : test.skip;
 
-async function open(page: Page, part = 3): Promise<void> {
+async function open(page: Page, part = 3, url = "/"): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ symbol: "BTC-USD", price: 1, changePercent: 0, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString() }) }));
-  await page.goto("/");
-  await page.locator("#architecture").getByRole("group", { name: "Series part" }).getByRole("button", { name: `PART ${part}` }).click();
+  await page.goto(url);
+  // On the landing the explorer sits in #architecture with its own scrubber; on /architecture the one scrubber is the page's.
+  const scrubberScope = url === "/" ? page.locator("#architecture") : page;
+  await scrubberScope.getByRole("group", { name: "Series part" }).getByRole("button", { name: `PART ${part}` }).click();
   await page.waitForTimeout(1200);
 }
-const pulses = (page: Page) => page.locator("#architecture [data-testid=edge-pulses]");
+const pulses = (page: Page) => page.locator("[data-testid=edge-pulses]");
+const scopeOf = (page: Page, url: string) => (url === "/" ? page.locator("#architecture") : page.getByRole("tabpanel"));
 const pulsingEdges = async (page: Page): Promise<string[]> => (await pulses(page).evaluateAll((els) => els.map((e) => e.getAttribute("data-edge")!))).sort();
-async function shot(page: Page, name: string, width: number): Promise<void> {
+async function shot(page: Page, name: string, width: number, whole = false): Promise<void> {
   if (!shotDir) return;
   mkdirSync(shotDir, { recursive: true });
-  await page.locator("#architecture .react-flow").screenshot({ path: join(shotDir, `traffic-${name}-${width}.png`) });
+  const target = whole ? page : page.locator("#architecture .react-flow");
+  await target.screenshot({ path: join(shotDir, `traffic-${name}-${width}.png`) });
 }
 
 for (const viewport of [
@@ -43,7 +47,7 @@ for (const viewport of [
       await open(page);
       expect(await pulsingEdges(page)).toEqual([...EDGES].sort());
       for (const edge of content.edges) {
-        const group = page.locator(`#architecture [data-testid=edge-pulses][data-edge="${edge.id}"]`);
+        const group = page.locator(`[data-testid=edge-pulses][data-edge="${edge.id}"]`);
         await expect(group).toHaveAttribute("data-source", edge.rate.source);
         expect(Number(await group.getAttribute("data-pulses"))).toBeGreaterThanOrEqual(1);
         expect(await group.locator("circle").count()).toBe(Number(await group.getAttribute("data-pulses")));
@@ -53,7 +57,7 @@ for (const viewport of [
 
     moving("a busier line carries more pulses than a quiet one, and the daily cron's carries one", async ({ page }) => {
       await open(page);
-      const count = async (id: string) => Number(await page.locator(`#architecture [data-testid=edge-pulses][data-edge="${id}"]`).getAttribute("data-pulses"));
+      const count = async (id: string) => Number(await page.locator(`[data-testid=edge-pulses][data-edge="${id}"]`).getAttribute("data-pulses"));
       expect(await count("trading-app-to-trading-schema")).toBeGreaterThan(await count("reader-to-landing"));
       expect(await count("reader-to-landing")).toBeGreaterThan(await count("market-data-to-crypto-provider"));
       expect(await count("market-data-to-crypto-provider")).toBeGreaterThan(await count("daily-cron-to-market-data"));
@@ -64,7 +68,7 @@ for (const viewport of [
       await open(page);
       for (const id of ["reader-to-landing", "trading-app-to-trading-schema", "market-data-to-stock-provider"]) {
         const [pathD, ends] = await page.evaluate((edgeId) => {
-          const group = document.querySelector(`#architecture [data-testid=edge-pulses][data-edge="${edgeId}"]`)!;
+          const group = document.querySelector(`[data-testid=edge-pulses][data-edge="${edgeId}"]`)!;
           const motion = group.querySelector("animateMotion")!.getAttribute("path")!;
           return [motion, motion.match(/-?[\d.]+/g)!.map(Number)] as const;
         }, id);
@@ -101,7 +105,7 @@ for (const viewport of [
       await open(page);
       await page.locator("#architecture").getByRole("switch", { name: "Data ownership" }).click();
       await page.waitForTimeout(500);
-      const fill = (id: string) => page.locator(`#architecture [data-testid=edge-pulses][data-edge="${id}"] circle`).first().evaluate((c) => (c as SVGElement).style.fill);
+      const fill = (id: string) => page.locator(`[data-testid=edge-pulses][data-edge="${id}"] circle`).first().evaluate((c) => (c as SVGElement).style.fill);
       const trading = await fill("trading-app-to-prices-v1");
       expect(trading).toMatch(/oklch/);
       expect(await fill("trading-app-to-trading-schema")).toBe(trading);
@@ -161,16 +165,130 @@ for (const viewport of [
       await expect(page.locator("#architecture section[aria-label=Traffic] li")).toHaveCount(EDGES.length);
     });
 
-    moving("the panel lists every connection with its rate and source, and marks the illustrative ones", async ({ page }) => {
+    for (const where of [{ name: "the landing", url: "/" }, { name: "the architecture page", url: "/architecture" }]) {
+      test(`${where.name}: the side panel has one Traffic details button, and no longer lists the traffic`, async ({ page }) => {
+        await open(page, 3, where.url);
+        const panel = scopeOf(page, where.url).getByLabel("Details");
+        await expect(panel.getByRole("button", { name: "Traffic details" })).toHaveCount(1);
+        await expect(panel.locator("section[aria-label=Traffic]")).toHaveCount(0);
+        await expect(page.locator("dialog.bp-traffic-sheet")).not.toBeVisible();
+      });
+
+      test(`${where.name}: the button opens the sheet: a title, the three labels explained, the groups in order, and every animated edge`, async ({ page }) => {
+        await open(page, 3, where.url);
+        await page.getByRole("button", { name: "Traffic details" }).click();
+        const sheet = page.getByRole("dialog", { name: /in detail/ });
+        await expect(sheet).toBeVisible();
+        for (const word of ["Measured", "Configured", "Illustrative"]) await expect(sheet.locator(".bp-traffic-sheet__intro")).toContainText(word);
+        const groups = await sheet.locator("section[data-group]").evaluateAll((els) => els.map((e) => e.getAttribute("data-group")));
+        expect(groups).toEqual(["measured", "configured", "illustrative"]);
+        for (const edge of content.edges) {
+          const row = sheet.locator(`li[data-edge="${edge.id}"]`);
+          await expect(row).toHaveCount(1);
+          await expect(row).toHaveAttribute("data-source", edge.rate.source);
+          await expect(row).toContainText("→");
+          // each row sits in the group of its own label
+          expect(await row.evaluate((el) => el.closest("section")!.getAttribute("data-group"))).toBe(edge.rate.source);
+        }
+        // every line that carries pulses is in the sheet
+        if (BUILT) expect(await pulsingEdges(page)).toEqual([...EDGES].sort());
+        await shot(page, "sheet-open", viewport.width, true);
+      });
+
+      test(`${where.name}: the sheet closes on the close button, on Escape and on a click on the overlay, and focus goes back to the button`, async ({ page }) => {
+        await open(page, 3, where.url);
+        const button = page.getByRole("button", { name: "Traffic details" });
+        const sheet = page.getByRole("dialog", { name: /in detail/ });
+        for (const how of ["button", "escape", "overlay"]) {
+          await button.click();
+          await expect(sheet).toBeVisible();
+          await expect(sheet.getByRole("button", { name: "Close the sheet" })).toBeFocused(); // focus moves into the sheet
+          if (how === "button") await sheet.getByRole("button", { name: "Close the sheet" }).click();
+          if (how === "escape") await page.keyboard.press("Escape");
+          if (how === "overlay") await page.mouse.click(viewport.width / 2, 20); // the dimmed page above the sheet
+          await expect(sheet).not.toBeVisible();
+          await expect(button, `after closing with the ${how}`).toBeFocused();
+        }
+      });
+
+      test(`${where.name}: the page behind does not scroll while the sheet is open`, async ({ page }) => {
+        await open(page, 3, where.url);
+        await page.getByRole("button", { name: "Traffic details" }).click();
+        expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
+        await page.getByRole("dialog", { name: /in detail/ }).getByRole("button", { name: "Close the sheet" }).click();
+        await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe("hidden");
+      });
+    }
+
+    test("the side panel is kept to the diagram's height, with a summary and the two buttons that open the rest", async ({ page }) => {
       await open(page);
-      const items = page.locator("#architecture section[aria-label=Traffic] li");
-      await expect(items).toHaveCount(EDGES.length);
-      for (const edge of content.edges) {
-        const item = page.locator(`#architecture section[aria-label=Traffic] li[data-edge="${edge.id}"]`);
-        await expect(item).toHaveAttribute("data-source", edge.rate.source);
-        if (edge.rate.source === "illustrative") await expect(item).toContainText("Illustrative");
-        else await expect(item).toContainText(edge.rate.source);
-      }
+      const canvas = (await page.locator("#architecture .bp-arch-explorer__canvas").boundingBox())!;
+      const panel = page.locator("#architecture").getByLabel("Details");
+      const box = (await panel.boundingBox())!;
+      expect(box.height).toBeLessThanOrEqual(canvas.height + 1);
+      await expect(panel.getByRole("list", { name: "Part 3 at a glance" })).toContainText("added");
+      await expect(panel.getByRole("list", { name: "Part 3 at a glance" })).toContainText("lines with a rate");
+      await expect(panel.getByRole("button", { name: "What changed" })).toBeVisible();
+      await expect(panel.getByRole("button", { name: "Traffic details" })).toBeVisible();
+      // the long lists are not in the panel: they are in the sheet
+      await expect(panel.locator("li[data-edge]")).not.toBeVisible();
+      await shot(page, "side-panel", viewport.width);
+    });
+
+    test("What changed opens the sheet on the changes: the nodes, the controls, the decisions and what week one predicted; the sections switch", async ({ page }) => {
+      await open(page);
+      await page.getByRole("button", { name: "What changed" }).click();
+      const sheet = page.getByRole("dialog", { name: /in detail/ });
+      await expect(sheet.getByRole("button", { name: "What changed", pressed: true })).toBeVisible();
+      // organized in groups under headings, in this order
+      const headings = await sheet.locator("h4").allInnerTexts();
+      expect(headings.map((h) => h.toLowerCase())).toEqual(["services, data and connections", "new nodes and the rules on them", "decisions"]);
+      await expect(sheet.getByText("Market Data Service").first()).toBeVisible();
+      await expect(sheet.getByText("ADR-0013", { exact: false }).first()).toBeVisible();
+      await expect(sheet.getByText("Predicted in week one, not built")).toBeVisible();
+      await sheet.getByRole("button", { name: "Traffic", pressed: false }).click();
+      await expect(sheet.locator("section[data-group=measured]")).toBeVisible();
+      await sheet.getByRole("button", { name: "What changed", pressed: false }).click();
+      await expect(sheet.getByText("Predicted in week one, not built")).toBeVisible();
+      await shot(page, "sheet-changes", viewport.width, true);
+    });
+
+    test("the sheet is at most 70% of the viewport high, pinned to the bottom, and its content scrolls inside it", async ({ page }) => {
+      await open(page);
+      await page.getByRole("button", { name: "Traffic details" }).click();
+      const sheet = page.getByRole("dialog", { name: /in detail/ });
+      const box = (await sheet.boundingBox())!;
+      expect(box.height).toBeLessThanOrEqual(viewport.height * 0.7 + 1);
+      await page.waitForTimeout(500); // the slide has finished
+      const settled = (await sheet.boundingBox())!;
+      expect(Math.abs(settled.y + settled.height - viewport.height)).toBeLessThan(2);
+      expect(box.width).toBeGreaterThanOrEqual(viewport.width - 2);
+      expect(await sheet.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    });
+
+    test("the sheet slides up, and under reduced motion it appears in place with no animation", async ({ page }) => {
+      await open(page);
+      await page.getByRole("button", { name: "Traffic details" }).click();
+      expect(await page.getByRole("dialog", { name: /in detail/ }).evaluate((el) => getComputedStyle(el).animationName)).toBe("bp-sheet-up");
+
+      const reduced = await page.context().newPage();
+      await reduced.emulateMedia({ reducedMotion: "reduce" });
+      await open(reduced);
+      await reduced.getByRole("button", { name: "Traffic details" }).click();
+      expect(await reduced.getByRole("dialog", { name: /in detail/ }).evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+    });
+
+    test("clicking a line opens its own panel with its rate and where the rate comes from, and a node click still wins", async ({ page }) => {
+      await open(page);
+      const edge = content.edges.find((e) => e.id === "trading-app-to-trading-schema")!;
+      await page.locator(`#architecture .react-flow__edge[data-id="${edge.id}"] path.react-flow__edge-interaction`).dispatchEvent("click");
+      const panel = page.locator("#architecture").getByLabel("Details");
+      await expect(panel.getByRole("heading", { name: "Bullpen Trading App → trading schema" })).toBeVisible();
+      await expect(panel.locator(".bp-edge-panel__rate")).toHaveAttribute("data-source", "measured");
+      await expect(panel.locator(".bp-edge-panel__rate")).toContainText("14 a second, measured");
+      await shot(page, "line-panel", viewport.width);
+      await panel.getByRole("button", { name: "Close details" }).click();
+      await expect(panel.getByRole("button", { name: "Traffic details" })).toBeVisible();
     });
   });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactNode } from "react";
-import type { ArchEdgeData, ArchEdgeRate, ArchPartData } from "./ArchitectureExplorer.types.js";
+import type { ArchEdgeData, ArchEdgeRate } from "./ArchitectureExplorer.types.js";
 
 /**
  * Traffic on the connections: pulses that travel along a line in the direction of the request, as many as its rate says. The rate is
@@ -121,27 +121,5 @@ export function TrafficControl({ edges, paused, reduced, onToggle }: TrafficCont
     <button type="button" aria-pressed={paused} onClick={onToggle} style={controlStyle}>
       {paused ? "▶ Play traffic" : "❚❚ Pause traffic"}
     </button>
-  );
-}
-
-/** Every connection of the part with its rate and where the rate comes from, so a figure that is only illustrative is marked as such. */
-export function TrafficPanel({ part }: { part: ArchPartData }): ReactNode {
-  const rated = part.edges.filter((e) => e.rate);
-  if (rated.length === 0) return null;
-  const label = (id: string): string => part.nodes.find((n) => n.id === id)?.label ?? id;
-  return (
-    <section aria-label="Traffic" style={{ marginTop: 16 }}>
-      <h4 style={{ margin: "0 0 8px", font: "600 10.5px/1 var(--font-body)", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--foreground-muted)" }}>Traffic</h4>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
-        {rated.map((e) => (
-          <li key={e.id} data-edge={e.id} data-source={e.rate!.source} style={{ font: "500 12px/1.45 var(--font-body)" }}>
-            <strong style={{ font: "600 12px/1.45 var(--font-body)" }}>
-              {label(e.a)} → {label(e.b)}
-            </strong>
-            <span style={{ display: "block", color: "var(--foreground-muted)" }}>{rateText(e.rate!)}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }

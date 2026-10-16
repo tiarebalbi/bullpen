@@ -565,3 +565,253 @@ html[data-consent-open] body {
   color: var(--foreground-muted);
   font: 700 14px/1 var(--font-body);
 }
+
+/* ─────────────────────────────────────────────
+   Traffic details: the bottom sheet (a native <dialog>) and the clicked-line panel in the architecture explorer
+────────────────────────────────────────────── */
+.bp-arch-explorer .react-flow__edge {
+  cursor: pointer;
+}
+.bp-traffic-sheet__open {
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 10px 16px;
+  background: var(--bp-panel-2);
+  color: var(--foreground);
+  font: 600 13px/1 var(--font-body);
+}
+.bp-traffic-sheet__open:focus-visible,
+.bp-traffic-sheet__close:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.bp-traffic-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--bp-hair);
+  border-bottom: 0;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  background: var(--bp-panel);
+  color: var(--foreground);
+  box-shadow: var(--shadow-ambient);
+  animation: bp-sheet-up 280ms var(--ease-out-expo);
+}
+.bp-traffic-sheet::backdrop {
+  background: oklch(8% 0.03 238 / 0.62);
+}
+.bp-traffic-sheet:not([open]) {
+  display: none;
+}
+@keyframes bp-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-traffic-sheet {
+    animation: none;
+  }
+}
+.bp-traffic-sheet__body {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-5) var(--space-8);
+}
+.bp-traffic-sheet__head {
+  position: sticky;
+  top: calc(-1 * var(--space-5));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--bp-panel);
+  border-bottom: 1px solid var(--bp-hair);
+}
+.bp-traffic-sheet__head h3 {
+  margin: 0;
+  font: 500 20px/1.2 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.bp-traffic-sheet__close {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  background: var(--bp-panel-2);
+  color: var(--foreground);
+  font: 600 15px/1 var(--font-body);
+}
+.bp-traffic-sheet__intro {
+  margin: 0 0 var(--space-4);
+  font: 400 13.5px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-traffic-sheet__intro strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.bp-traffic-sheet section + section {
+  margin-top: var(--space-4);
+}
+.bp-traffic-sheet h4 {
+  margin: 0 0 var(--space-2);
+  font: 600 11px/1.4 var(--font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.bp-traffic-sheet h4 span {
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--foreground-muted);
+}
+.bp-traffic-sheet ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bp-traffic-sheet__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-traffic-sheet__pair {
+  font: 600 13px/1.4 var(--font-body);
+}
+.bp-traffic-sheet__rate {
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+  text-align: right;
+}
+.bp-traffic-sheet__basis {
+  grid-column: 1 / -1;
+  font: 400 12px/1.45 var(--font-body);
+  color: var(--foreground-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bp-edge-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-hair);
+  border-radius: 20px;
+}
+.bp-edge-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-edge-panel__head button {
+  border: 0;
+  background: transparent;
+  color: var(--foreground-muted);
+  cursor: pointer;
+  font: 600 14px/1 var(--font-body);
+}
+.bp-edge-panel__title {
+  margin: var(--space-2) 0 0;
+  font: 500 18px/1.25 var(--font-display);
+}
+.bp-edge-panel__line {
+  margin: 0;
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-edge-panel h4 {
+  margin: var(--space-3) 0 0;
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-edge-panel__rate {
+  margin: 0;
+  font: 400 13px/1.55 var(--font-body);
+}
+
+/* The side panel is kept to the diagram's height (480 px; 360 px when the two stack): what is longer scrolls inside it, and the long
+   lists live in the bottom sheet. */
+.bp-arch-explorer__side {
+  max-height: 480px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+@media (max-width: 900px) {
+  .bp-arch-explorer__side {
+    max-height: 360px;
+  }
+}
+.bp-details-summary {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.bp-details-summary__counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  font: 500 13.5px/1.4 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-details-summary__counts strong {
+  color: var(--foreground);
+  font: 600 14px/1.4 var(--font-mono);
+  margin-right: 4px;
+}
+.bp-details-summary__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.bp-traffic-sheet__nav {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--bp-panel-2);
+}
+.bp-traffic-sheet__nav button {
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--foreground-muted);
+  font: 600 12.5px/1 var(--font-body);
+}
+.bp-traffic-sheet__nav button[aria-pressed="true"] {
+  background: var(--bp-panel);
+  color: var(--foreground);
+  box-shadow: 0 0 0 1px var(--bp-hair);
+}
+.bp-traffic-sheet__nav button:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}

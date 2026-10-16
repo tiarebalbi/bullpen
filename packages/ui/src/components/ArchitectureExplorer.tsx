@@ -15,14 +15,16 @@ import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
 import { fitPaddingOf, flowEdgesOf } from "./ArchitectureExplorerFlowEdges.js";
-import { TrafficControl, TrafficPanel, useTrafficPlayback } from "./ArchitectureExplorerTraffic.js";
+import { EdgePanel, useEdgeSelection } from "./ArchitectureExplorerEdgePanel.js";
+import { TrafficControl, useTrafficPlayback } from "./ArchitectureExplorerTraffic.js";
+import { DetailsSheet } from "./ArchitectureExplorerTrafficSheet.js";
 import { cardNodesOf, groupBounds, groupFlowNodes, groupsToDraw } from "./ArchitectureExplorerGroups.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
-import { PartChanges, partBefore } from "./ArchitectureExplorerChanges.js";
+import { partBefore } from "./ArchitectureExplorerChanges.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup } from "./ArchitectureExplorerGroup.js";
-import type { ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
+import type { ArchEdgeData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
 export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
 
@@ -91,6 +93,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
   const traffic = useTrafficPlayback();
+  const edgeSel = useEdgeSelection();
   const [flowIdx, setFlowIdx] = useState(0);
   const [scrubPlaying, setScrubPlaying] = useState(false);
   const [request, setRequest] = useState<{ on: boolean; idx: number; playing: boolean }>({
@@ -403,6 +406,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
               nodesDraggable={false}
               nodesConnectable={false}
               elementsSelectable={false}
+              onEdgeClick={(_, edge) => edgeSel.select(current.part, edge.id)}
               panOnScroll
               zoomOnScroll={false}
             >
@@ -454,6 +458,8 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           adrHrefs={adrHrefs}
           part={current}
           before={partBefore(partsById, current)}
+          edge={edgeSel.edgeIn(current)}
+          onCloseEdge={edgeSel.clear}
         />
       </div>
 
@@ -740,6 +746,8 @@ function SidePanel({
   adrHrefs,
   part,
   before,
+  edge,
+  onCloseEdge,
 }: {
   node: ArchNodeData | null;
   nodeState: ArchNodeVisualState;
@@ -749,6 +757,9 @@ function SidePanel({
   part: ArchPartData;
   /** The part before `part`, or `part` itself for the first. */
   before: ArchPartData;
+  /** A clicked line, shown when no node is selected. */
+  edge: ArchEdgeData | null;
+  onCloseEdge: () => void;
 }): ReactNode {
   const panelStyle: CSSProperties = {
     background: "var(--bp-panel)",
@@ -761,7 +772,7 @@ function SidePanel({
 
   if (node) {
     return (
-      <aside aria-label="Details" style={panelStyle}>
+      <aside aria-label="Details" className="bp-arch-explorer__side" style={panelStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={eyebrowStyle}>
             {node.kind} · {node.meta}
@@ -806,13 +817,12 @@ function SidePanel({
     );
   }
 
+  if (edge) return <EdgePanel part={part} edge={edge} onClose={onCloseEdge} />;
+
   return (
-    <aside aria-label="Details" data-popover-bounds style={panelStyle}>
+    <aside aria-label="Details" className="bp-arch-explorer__side" data-popover-bounds style={panelStyle}>
       <div style={smallEyebrow}>What changed in Part {part.part}</div>
-      <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
-        <PartChanges part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
-      </div>
-      <TrafficPanel part={part} />
+      <DetailsSheet part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
       </div>

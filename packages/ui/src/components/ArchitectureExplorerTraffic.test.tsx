@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ArchEdgeData, ArchEdgeRate, ArchPartData } from "./ArchitectureExplorer.types.js";
-import { EdgePulses, TRAVEL_SECONDS, TrafficControl, TrafficPanel, busyness, carriesTraffic, perMinute, pulseTiming, rateShort, rateText, rateWords } from "./ArchitectureExplorerTraffic.js";
+import { EdgePulses, TRAVEL_SECONDS, TrafficControl, busyness, carriesTraffic, perMinute, pulseTiming, rateShort, rateText, rateWords } from "./ArchitectureExplorerTraffic.js";
 
 const rate = (over: Partial<ArchEdgeRate> = {}): ArchEdgeRate => ({ count: 6, per: "minute", source: "illustrative", basis: "No production traffic yet.", ...over });
 
@@ -110,28 +110,5 @@ describe("TrafficControl", () => {
     expect(button).toBeDisabled();
     fireEvent.click(button);
     expect(onToggle).not.toHaveBeenCalled();
-  });
-});
-
-describe("TrafficPanel", () => {
-  const part = (edges: ArchEdgeData[]): ArchPartData => ({
-    part: 3, status: "built", summary: "s",
-    nodes: [{ id: "a", label: "Alpha", kind: "app", meta: "m", purpose: "p", x: 0, y: 0 }, { id: "b", label: "Beta", kind: "service", meta: "m", purpose: "p", x: 1, y: 1 }],
-    edges, groups: [], request: { name: "r", steps: [] },
-  });
-
-  it("lists each rated connection with its rate, and marks an illustrative one as illustrative", () => {
-    render(<TrafficPanel part={part([{ id: "e1", a: "a", b: "b", type: "sync", rate: rate() }, { id: "e2", a: "b", b: "a", type: "sync", rate: rate({ count: 14, per: "second", source: "measured", basis: "Load test." }) }])} />);
-    const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(2);
-    expect(items[0]).toHaveTextContent("Alpha → Beta");
-    expect(items[0]).toHaveTextContent("Illustrative, 6 a minute");
-    expect(items[1]).toHaveTextContent("14 a second, measured. Load test.");
-    expect(items[0]).toHaveAttribute("data-source", "illustrative");
-  });
-
-  it("shows nothing for a part whose connections have no rates", () => {
-    const { container } = render(<TrafficPanel part={part([{ id: "e1", a: "a", b: "b", type: "sync" }])} />);
-    expect(container.firstChild).toBeNull();
   });
 });

@@ -60,6 +60,11 @@ function Mark({ tone }: { tone: Tone }): ReactNode {
   );
 }
 
+/** A small heading over a group of rows: nodes, the rules on them, the decisions. The first has no space above it. */
+function Heading({ children, first = false }: { children: string; first?: boolean }): ReactNode {
+  return <h4 style={{ margin: first ? "0 0 2px" : "10px 0 2px", font: "600 10.5px/1 var(--font-body)", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--foreground-muted)" }}>{children}</h4>;
+}
+
 /** The line above the control rows, or the whole panel text when there is nothing to list. */
 function introFor(part: ArchPartData, hasChanges: boolean): string {
   if (part.part === 1) return "Part 1 is the starting point: one deployable, one live symbol.";
@@ -159,6 +164,7 @@ export function PartChanges({
 
   return (
     <>
+      {nodeRows.length > 0 ? <Heading first>Services, data and connections</Heading> : null}
       {nodeRows.map((c) => (
         <div key={c.id} style={{ ...ROW, alignItems: "center" }}>
           <Mark tone={c.tone} />
@@ -166,6 +172,7 @@ export function PartChanges({
         </div>
       ))}
       {structural ? null : <span style={MUTED}>{introFor(part, changes.length > 0)}</span>}
+      {controlRows.length > 0 ? <Heading first={nodeRows.length === 0 && structural}>{structural ? "New nodes and the rules on them" : "Rules on them"}</Heading> : null}
       {controlRows.map((change, i) => (
         <ControlsRow
           key={`${change.nodeId ?? "rel"}-${i}`}
@@ -176,6 +183,7 @@ export function PartChanges({
           setOpenId={setOpenId}
         />
       ))}
+      {adrs.length > 0 ? <Heading>Decisions</Heading> : null}
       {adrs.map((c) => (
         <AdrRow key={c.adr} adr={c.adr} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       ))}
