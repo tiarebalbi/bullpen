@@ -164,3 +164,20 @@ describe("PriceCell — status variants", () => {
     expect(screen.queryByTestId("price-cell-change")).not.toBeInTheDocument();
   });
 });
+
+describe("PriceCell — an end-of-day price", () => {
+  it("shows the close label and no change row for a market-closed price, so no gain or loss is made up", () => {
+    installMatchMedia(false);
+    render(<PriceCell symbol="NVDA" price={182.43} changePercent={0} timestamp={0} now={0} status="market-closed" statusLabel="Close · 16:00 ET" />);
+    expect(screen.getByText("Close · 16:00 ET")).toBeVisible();
+    expect(screen.queryByTestId("price-cell-change")).toBeNull();
+    expect(screen.queryByTestId("price-cell-stale-label")).toBeNull();
+  });
+
+  it("labels a stale end-of-day price with the date it is as of, in words as well as a toned price", () => {
+    installMatchMedia(false);
+    render(<PriceCell symbol="NVDA" price={182.43} changePercent={0} timestamp={0} now={0} status="market-closed" statusLabel="Close · 16:00 ET" stale asOfLabel="Oct 13" />);
+    expect(screen.getByTestId("price-cell-stale-label")).toHaveTextContent("stale · as of Oct 13");
+    expect(screen.getByTestId("price-cell-price")).toHaveStyle({ color: "var(--bp-stale)" });
+  });
+});
