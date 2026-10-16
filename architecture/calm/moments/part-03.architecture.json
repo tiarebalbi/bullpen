@@ -320,6 +320,14 @@
             "landing-app"
           ]
         }
+      },
+      "metadata": {
+        "bullpen:rate": {
+          "count": 6,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+        }
       }
     },
     {
@@ -331,6 +339,14 @@
           "nodes": [
             "trading-app"
           ]
+        }
+      },
+      "metadata": {
+        "bullpen:rate": {
+          "count": 4,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
         }
       }
     },
@@ -349,7 +365,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "synchronous"
+        "interaction": "synchronous",
+        "bullpen:rate": {
+          "count": 4,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "The trading app asks once a minute per open tab; the number of tabs is not known."
+        }
       }
     },
     {
@@ -367,7 +389,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "synchronous"
+        "interaction": "synchronous",
+        "bullpen:rate": {
+          "count": 12,
+          "per": "hour",
+          "source": "configured",
+          "basis": "At most one CoinGecko call every 300 seconds: the route's cache interval (ADR-0005). An upper bound."
+        }
       },
       "controls": {
         "attribution": {
@@ -428,7 +456,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "asynchronous"
+        "interaction": "asynchronous",
+        "bullpen:rate": {
+          "count": 2,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+        }
       }
     },
     {
@@ -446,7 +480,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "asynchronous"
+        "interaction": "asynchronous",
+        "bullpen:rate": {
+          "count": 2,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+        }
       }
     },
     {
@@ -464,7 +504,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "asynchronous"
+        "interaction": "asynchronous",
+        "bullpen:rate": {
+          "count": 2,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+        }
       }
     },
     {
@@ -482,7 +528,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "asynchronous"
+        "interaction": "asynchronous",
+        "bullpen:rate": {
+          "count": 2,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+        }
       }
     },
     {
@@ -500,7 +552,13 @@
       },
       "protocol": "HTTPS",
       "metadata": {
-        "interaction": "synchronous"
+        "interaction": "synchronous",
+        "bullpen:rate": {
+          "count": 10,
+          "per": "day",
+          "source": "configured",
+          "basis": "One call for each of the 10 stock symbols a day, under a cap of 20 a day (ADR-0008)."
+        }
       }
     },
     {
@@ -512,6 +570,15 @@
           "nodes": [
             "market-data-service"
           ]
+        }
+      },
+      "metadata": {
+        "interaction": "asynchronous",
+        "bullpen:rate": {
+          "count": 1,
+          "per": "day",
+          "source": "configured",
+          "basis": "vercel.json: the cron runs `0 23 * * *` UTC, once a day."
         }
       }
     },
@@ -531,7 +598,13 @@
       "protocol": "HTTPS",
       "metadata": {
         "interaction": "synchronous",
-        "via": "the /api/price rewrite"
+        "via": "the /api/price rewrite",
+        "bullpen:rate": {
+          "count": 6,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "The price strip asks once a minute per open tab; the number of tabs is not known."
+        }
       }
     },
     {
@@ -551,7 +624,13 @@
       "metadata": {
         "role": "trading_owner",
         "access": "read/write",
-        "label": "trading_owner · read/write"
+        "label": "trading_owner · read/write",
+        "bullpen:rate": {
+          "count": 14,
+          "per": "second",
+          "source": "measured",
+          "basis": "Measured in the load test, not from users: 8 writers made 417 buys in 30 s (contention.md, the N = 0 cell). Each buy is one write transaction."
+        }
       }
     },
     {
@@ -571,7 +650,13 @@
       "metadata": {
         "role": "trading_owner",
         "access": "read only",
-        "label": "trading_owner · read only"
+        "label": "trading_owner · read only",
+        "bullpen:rate": {
+          "count": 14,
+          "per": "second",
+          "source": "measured",
+          "basis": "Measured in the load test, not from users: each of the 417 buys in 30 s reads one price through prices_v1 (contention.md)."
+        }
       }
     },
     {
@@ -591,7 +676,13 @@
       "metadata": {
         "role": "market_data_owner",
         "access": "write",
-        "label": "market_data_owner · write"
+        "label": "market_data_owner · write",
+        "bullpen:rate": {
+          "count": 10,
+          "per": "day",
+          "source": "configured",
+          "basis": "The daily ingest stores one quote for each of the 10 stock symbols."
+        }
       }
     },
     {

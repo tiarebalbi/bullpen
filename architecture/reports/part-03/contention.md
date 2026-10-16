@@ -12,7 +12,7 @@
 > 2,000-account run (about 1.7 GB for each full-ranking cell, several cells). Launch includes 500 GB of transfer a month, then $0.10 a
 > GB; compute stays at 0.25 CU with scale-to-zero at 5 minutes. Nothing about the measurements changed, but the cost did: this week's
 > Neon cost is no longer zero (`cost.md`). The transfer budget stays in force at 10% of what remains; with the upgrade, `--remaining-mb`
-> is 500 GB minus what was used before it, and what was used before it was at most the Free plan's 5 GB.
+> is 500,000 MB (the new billing period started on 2026-10-16, so what was used in it is about nothing).
 
 Date: 2026-10-16T12:39:10Z. Neon production branch of the Bullpen project, Postgres 18.6, database `neondb`, through the pooled host as
 `trading_owner`. Client: my laptop, Node v26.11.1, `pg` over the public internet, so every statement carries a round trip

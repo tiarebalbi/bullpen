@@ -94,6 +94,16 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     expect(parseArchitecturePart(JSON.stringify({ ...base, flow: "right", edges: [{ ...base.edges[0], caption: "x" }], groups: [{ id: "g", label: "G", nodeIds: ["a"], nodeId: "b" }] }), "t.json").flow).toBe("right");
   });
 
+  it("rejects a rate that is not a positive count per a unit of time with a source and a basis", () => {
+    const base = { part: 1, status: "built", summary: "S", nodes: [{ id: "a", label: "A", kind: "app", meta: "M", purpose: "P", x: 0, y: 0 }, { id: "b", label: "B", kind: "app", meta: "M", purpose: "P", x: 1, y: 1 }], groups: [], request: { name: "R", steps: [{ edge: "e", caption: "c", detail: "d" }] } };
+    const edge = (rate: unknown) => JSON.stringify({ ...base, edges: [{ id: "e", a: "a", b: "b", type: "sync", rate }] });
+    const good = { count: 3, per: "minute", source: "illustrative", basis: "No traffic yet." };
+    expect(parseArchitecturePart(edge(good), "t.json").edges[0]!.rate).toEqual(good);
+    for (const bad of [{ ...good, count: 0 }, { ...good, count: "3" }, { ...good, per: "week" }, { ...good, source: "guessed" }, { ...good, basis: "" }, "fast", null]) {
+      expect(() => parseArchitecturePart(edge(bad), "t.json"), JSON.stringify(bad)).toThrow(/invalid "rate"/);
+    }
+  });
+
   it("throws on an invalid node kind", () => {
     const malformed = JSON.stringify({
       part: 1,
@@ -257,7 +267,7 @@ describe("parseArchitecturePart: the fields Part 3 adds", () => {
 describe("Part 3's explorer content is the moment, drawn", () => {
   const moment = JSON.parse(readFileSync(join(calmDir, "moments", "part-03.architecture.json"), "utf8")) as {
     nodes: Array<{ "unique-id": string; metadata?: Record<string, unknown> }>;
-    relationships: Array<{ "unique-id": string; protocol?: string; metadata?: { label?: string }; "relationship-type": { "composed-of"?: { container: string; nodes: string[] } } }>;
+    relationships: Array<{ "unique-id": string; protocol?: string; metadata?: Record<string, unknown> & { label?: string }; "relationship-type": { "composed-of"?: { container: string; nodes: string[] } } }>;
   };
   const part3 = loadArchitectureParts(architectureDir, plannedDir).find((p) => p.part === 3)!;
 
@@ -283,6 +293,31 @@ describe("Part 3's explorer content is the moment, drawn", () => {
     expect(part3.flow).toBe("right");
     expect(part3.edges.find((e) => e.id === "landing-to-market-data")!.caption).toBe("/api/price (rewrite)");
     expect(part3.edges.filter((e) => e.caption).map((e) => e.id)).toEqual(["landing-to-market-data"]);
+  });
+
+  it("gives every connection of Part 3 a rate with a source and a basis, and says the same as the moment's bullpen:rate", () => {
+    const fromMoment = Object.fromEntries(moment.relationships.filter((r) => r.metadata?.["bullpen:rate"]).map((r) => [r["unique-id"], r.metadata!["bullpen:rate"]]));
+    const fromContent = Object.fromEntries(part3.edges.map((e) => [e.id, e.rate]));
+    for (const edge of part3.edges) {
+      expect(edge.rate, `${edge.id} has a rate`).toBeDefined();
+      expect(["measured", "configured", "illustrative"], edge.id).toContain(edge.rate!.source);
+      expect(edge.rate!.basis.length, `${edge.id} says where its rate comes from`).toBeGreaterThan(20);
+    }
+    expect(fromContent).toEqual(fromMoment);
+  });
+
+  it("marks as measured only a rate that was measured: the two connections the load test drove, and says so in the basis", () => {
+    const bySource = (source: string) => part3.edges.filter((e) => e.rate?.source === source).map((e) => e.id).sort();
+    expect(bySource("measured")).toEqual(["trading-app-to-prices-v1", "trading-app-to-trading-schema"]);
+    for (const id of bySource("measured")) expect(part3.edges.find((e) => e.id === id)!.rate!.basis).toMatch(/load test/);
+    expect(bySource("configured")).toEqual(["daily-cron-to-market-data", "market-data-to-crypto-provider", "market-data-to-market-data-schema", "market-data-to-stock-provider"]);
+  });
+
+  it("makes the daily cron's connection asynchronous, once a day", () => {
+    const cron = part3.edges.find((e) => e.id === "daily-cron-to-market-data")!;
+    expect(cron.type).toBe("async");
+    expect(cron.rate).toMatchObject({ count: 1, per: "day", source: "configured" });
+    expect(moment.relationships.find((r) => r["unique-id"] === "daily-cron-to-market-data")!.metadata!.interaction).toBe("asynchronous");
   });
 
   it("labels each database connection with the role and access the moment gives it, and no other", () => {

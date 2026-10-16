@@ -195,89 +195,173 @@
       "id": "reader-to-landing",
       "a": "reader",
       "b": "landing-app",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 6,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
     },
     {
       "id": "player-to-trading-app",
       "a": "player",
       "b": "trading-app",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
     },
     {
       "id": "daily-cron-to-market-data",
       "a": "daily-ingest-cron",
       "b": "market-data-service",
-      "type": "sync"
+      "type": "async",
+      "rate": {
+        "count": 1,
+        "per": "day",
+        "source": "configured",
+        "basis": "vercel.json: the cron runs `0 23 * * *` UTC, once a day."
+      }
     },
     {
       "id": "landing-to-market-data",
       "a": "landing-app",
       "b": "market-data-service",
       "type": "sync",
-      "caption": "/api/price (rewrite)"
+      "caption": "/api/price (rewrite)",
+      "rate": {
+        "count": 6,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The price strip asks once a minute per open tab; the number of tabs is not known."
+      }
     },
     {
       "id": "trading-app-to-market-data",
       "a": "trading-app",
       "b": "market-data-service",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The trading app asks once a minute per open tab; the number of tabs is not known."
+      }
     },
     {
       "id": "market-data-to-crypto-provider",
       "a": "market-data-service",
       "b": "market-data-provider",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 12,
+        "per": "hour",
+        "source": "configured",
+        "basis": "At most one CoinGecko call every 300 seconds: the route's cache interval (ADR-0005). An upper bound."
+      }
     },
     {
       "id": "market-data-to-stock-provider",
       "a": "market-data-service",
       "b": "stock-data-provider",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 10,
+        "per": "day",
+        "source": "configured",
+        "basis": "One call for each of the 10 stock symbols a day, under a cap of 20 a day (ADR-0008)."
+      }
     },
     {
       "id": "trading-app-to-trading-schema",
       "a": "trading-app",
       "b": "schema-trading",
       "type": "sync",
-      "label": "trading_owner · read/write"
+      "label": "trading_owner · read/write",
+      "rate": {
+        "count": 14,
+        "per": "second",
+        "source": "measured",
+        "basis": "Measured in the load test, not from users: 8 writers made 417 buys in 30 s (contention.md, the N = 0 cell). Each buy is one write transaction."
+      }
     },
     {
       "id": "trading-app-to-prices-v1",
       "a": "trading-app",
       "b": "prices-v1",
       "type": "sync",
-      "label": "trading_owner · read only"
+      "label": "trading_owner · read only",
+      "rate": {
+        "count": 14,
+        "per": "second",
+        "source": "measured",
+        "basis": "Measured in the load test, not from users: each of the 417 buys in 30 s reads one price through prices_v1 (contention.md)."
+      }
     },
     {
       "id": "market-data-to-market-data-schema",
       "a": "market-data-service",
       "b": "schema-market-data",
       "type": "sync",
-      "label": "market_data_owner · write"
+      "label": "market_data_owner · write",
+      "rate": {
+        "count": 10,
+        "per": "day",
+        "source": "configured",
+        "basis": "The daily ingest stores one quote for each of the 10 stock symbols."
+      }
     },
     {
       "id": "landing-to-google-analytics",
       "a": "landing-app",
       "b": "google-analytics",
-      "type": "async"
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
     },
     {
       "id": "landing-to-microsoft-clarity",
       "a": "landing-app",
       "b": "microsoft-clarity",
-      "type": "async"
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
     },
     {
       "id": "trading-app-to-google-analytics",
       "a": "trading-app",
       "b": "google-analytics",
-      "type": "async"
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
     },
     {
       "id": "trading-app-to-microsoft-clarity",
       "a": "trading-app",
       "b": "microsoft-clarity",
-      "type": "async"
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
     }
   ],
   "groups": [

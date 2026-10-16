@@ -130,6 +130,27 @@ function checkEdgeLabel(e: Record<string, unknown>, sourceLabel: string): void {
       throw new Error(`${sourceLabel}: edge "${e.id}" has an empty or non-string "${key}"`);
     }
   }
+  checkRate(e, sourceLabel);
+}
+
+const RATE_UNITS = new Set(["second", "minute", "hour", "day"]);
+const RATE_SOURCES = new Set(["measured", "configured", "illustrative"]);
+
+const isCount = (n: unknown): boolean => typeof n === "number" && n > 0;
+const isText = (t: unknown): boolean => typeof t === "string" && t.length > 0;
+
+/** A rate is a positive count per a unit of time, where it comes from, and a sentence saying how. */
+function isRate(r: unknown): boolean {
+  if (typeof r !== "object" || r === null) return false;
+  const rate = r as Record<string, unknown>;
+  return isCount(rate.count) && RATE_UNITS.has(String(rate.per)) && RATE_SOURCES.has(String(rate.source)) && isText(rate.basis);
+}
+
+/** An edge's optional `rate` must be one. */
+function checkRate(e: Record<string, unknown>, sourceLabel: string): void {
+  if (e.rate !== undefined && !isRate(e.rate)) {
+    throw new Error(`${sourceLabel}: edge "${e.id}" has an invalid "rate" (a positive count, per second, minute, hour or day, a source of measured, configured or illustrative, and a basis)`);
+  }
 }
 
 /** The part's optional `flow` is "down" or "right", and a group that is a node (`nodeId`) names a node of the part. */
