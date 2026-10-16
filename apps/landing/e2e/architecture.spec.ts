@@ -92,7 +92,7 @@ test.describe("Architecture Explorer", () => {
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 4" }).click();
 
-    await architecture.getByRole("button", { name: "Orders Service, Service" }).click();
+    await architecture.getByRole("button", { name: "Order Saga, Infra" }).click();
     const panel = architecture.getByLabel("Details");
     await expect(panel.getByText("ADR pending: written before this part ships.")).toBeVisible();
   });
@@ -152,7 +152,7 @@ test.describe("Architecture Explorer", () => {
     // canvas panel, which also includes the legend and its own padding).
     const canvasBox = (await architecture.locator(".react-flow").boundingBox())!;
 
-    for (const name of ["Leaderboard Service, Service", "Ledger Service, Service", "Stock data provider, External"]) {
+    for (const name of ["Market Open Queue, Infra", "Order Saga, Infra", "Bullpen Trading App, App"]) {
       const box = await architecture.getByRole("button", { name }).boundingBox();
       expect(box, `${name} should be in the DOM`).not.toBeNull();
       expect(box!.x, `${name} left edge within canvas`).toBeGreaterThanOrEqual(canvasBox.x);
@@ -167,9 +167,9 @@ test.describe("Architecture Explorer", () => {
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 4" }).click();
 
-    // "Orders Service" is new to Part 4's prediction: ghosted, dashed, tagged PLANNED.
-    const ordersService = architecture.getByRole("button", { name: "Orders Service, Service" });
-    await expect(ordersService.getByText("PLANNED")).toBeVisible();
+    // "Order Saga" is new to Part 4's plan: ghosted, dashed, tagged PLANNED.
+    const orderSaga = architecture.getByRole("button", { name: "Order Saga, Infra" });
+    await expect(orderSaga.getByText("PLANNED")).toBeVisible();
 
     // "Bullpen Trading App" already exists in the real, built Part 1: never ghosted.
     const tradingApp = architecture.getByRole("button", { name: "Bullpen Trading App, App" });
@@ -213,6 +213,8 @@ test.describe("Architecture Explorer", () => {
       }
     }
 
+    // Let the node-settling animation and fitView's transition finish before measuring.
+    await page.waitForTimeout(1200);
     await expectGroupContainsMembers();
 
     // The bug this regresses: the group rect was a separately
@@ -222,6 +224,7 @@ test.describe("Architecture Explorer", () => {
     // container resizes) -- it drifted away from its member nodes. Real
     // React Flow parent/child nodes (sub-flows) share that transform.
     await page.setViewportSize({ width: 1000, height: 900 });
+    await page.waitForTimeout(1200);
     await expectGroupContainsMembers();
   });
 

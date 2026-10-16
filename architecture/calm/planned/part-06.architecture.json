@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "bullpen-part-06",
   "name": "Bullpen — Part 6 (planned)",
-  "description": "Prediction, not yet built, and the retrospective part of the series: a Leaderboard Service ranks players within leagues. The stock data provider proposed in Part 3 (Alpha Vantage, pending written permission — see ADR-0008) carries forward unchanged; no payments provider is part of this plan. Part 6 of the actual series will compare this prediction against what really shipped.",
+  "description": "Prediction, not yet built, and the retrospective part of the series. The leaderboard stays the materialized view built in Part 3; no payments provider is part of this plan. Part 6 of the actual series compares this prediction with what really shipped.",
   "metadata": {
     "status": "planned",
     "part": 6
@@ -26,44 +26,22 @@
       "name": "Bullpen Landing",
       "description": "The public landing site with the architecture timeline explorer, now covering all six parts.",
       "metadata": {
-        "capabilities": ["architecture-timeline-explorer"]
+        "capabilities": [
+          "architecture-timeline-explorer"
+        ]
       }
     },
     {
       "unique-id": "trading-app",
       "node-type": "webclient",
       "name": "Bullpen Trading App",
-      "description": "The trading app where players trade, view leagues, and check the leaderboard."
+      "description": "The trading app where players view prices and submit paper trade orders. It owns orders, the ledger, positions and the leaderboard view in the trading schema."
     },
     {
-      "unique-id": "prices-service",
-      "node-type": "service",
-      "name": "Prices Service",
-      "description": "Owns live price snapshots, sourced from the stock data provider proposed since Part 3."
-    },
-    {
-      "unique-id": "prices-db",
-      "node-type": "database",
-      "name": "Prices Database",
-      "description": "Neon Postgres database owned solely by the Prices Service."
-    },
-    {
-      "unique-id": "market-history-service",
-      "node-type": "service",
-      "name": "Market History Service",
-      "description": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database."
-    },
-    {
-      "unique-id": "market-history-db",
-      "node-type": "database",
-      "name": "Market History Database",
-      "description": "Neon Postgres database owned solely by the Market History Service."
-    },
-    {
-      "unique-id": "orders-service",
-      "node-type": "service",
-      "name": "Orders Service",
-      "description": "Accepts paper trade order requests and publishes them onto the market-open queue."
+      "unique-id": "order-saga-workflow",
+      "node-type": "workflow-engine",
+      "name": "Order Saga",
+      "description": "Durable workflow driving each queued order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together."
     },
     {
       "unique-id": "market-open-queue",
@@ -72,28 +50,22 @@
       "description": "Buffers the burst of order requests at market open so the Order Saga consumes them at a sustainable rate."
     },
     {
-      "unique-id": "order-saga-workflow",
-      "node-type": "workflow-engine",
-      "name": "Order Saga",
-      "description": "Durable workflow orchestrating each queued order: price lookup, balance check, fill, and ledger update."
-    },
-    {
-      "unique-id": "ledger-service",
+      "unique-id": "market-data-service",
       "node-type": "service",
-      "name": "Ledger Service",
-      "description": "Owns player balances and positions; the source of truth the Leaderboard Service ranks against."
-    },
-    {
-      "unique-id": "leaderboard-service",
-      "node-type": "service",
-      "name": "Leaderboard Service",
-      "description": "Ranks players within leagues from ledger balances and positions; leagues are groups of players competing over the same period."
+      "name": "Market Data Service",
+      "description": "The single owner of market data: both providers (stocks end of day, crypto) and both call budgets. It serves the public price route and the daily ingest. It is a boundary inside one release, not an independently deployed microservice."
     },
     {
       "unique-id": "market-data-provider",
       "node-type": "external-system",
-      "name": "Stock data provider",
-      "description": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display — see ADR-0008. Carried forward unchanged from Part 3."
+      "name": "CoinGecko",
+      "description": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use, which forbid public display of their data (see issue #6, ADR-0005, docs/data-sources.md)."
+    },
+    {
+      "unique-id": "stock-data-provider",
+      "node-type": "external-system",
+      "name": "Alpha Vantage",
+      "description": "External market-data API for U.S. stock prices: end of day, one request per symbol, fetched once a day by the Market Data service within a daily call budget (ADR-0008)."
     }
   ],
   "relationships": [
@@ -103,7 +75,9 @@
       "relationship-type": {
         "interacts": {
           "actor": "reader",
-          "nodes": ["landing-app"]
+          "nodes": [
+            "landing-app"
+          ]
         }
       }
     },
@@ -113,151 +87,101 @@
       "relationship-type": {
         "interacts": {
           "actor": "player",
-          "nodes": ["trading-app"]
+          "nodes": [
+            "trading-app"
+          ]
         }
       }
     },
     {
-      "unique-id": "trading-app-to-prices",
-      "description": "Trading app requests a live price snapshot for a symbol.",
+      "unique-id": "trading-app-to-queue",
+      "description": "Trading app publishes each accepted order onto the market-open queue.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "prices-service" }
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "market-open-queue"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "trading-app-to-history",
-      "description": "Trading app requests historical price/candle data for a symbol.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "market-history-service" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "trading-app-to-orders",
-      "description": "Trading app submits a paper trade order request.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "orders-service" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "trading-app-to-leaderboard",
-      "description": "Trading app requests the current league leaderboard.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "leaderboard-service" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "orders-to-queue",
-      "description": "Orders Service publishes each accepted order onto the market-open queue.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "orders-service" },
-          "destination": { "node": "market-open-queue" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "asynchronous" }
+      "metadata": {
+        "interaction": "asynchronous"
+      }
     },
     {
       "unique-id": "queue-to-saga",
       "description": "Order saga consumes queued orders at a sustainable rate.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "market-open-queue" },
-          "destination": { "node": "order-saga-workflow" }
+          "source": {
+            "node": "market-open-queue"
+          },
+          "destination": {
+            "node": "order-saga-workflow"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "asynchronous" }
+      "metadata": {
+        "interaction": "asynchronous"
+      }
     },
     {
-      "unique-id": "saga-to-prices",
-      "description": "Order saga consults the Prices Service for the fill price.",
+      "unique-id": "trading-app-to-market-data",
+      "description": "Trading app requests a live price for a symbol: GET /api/price/<symbol>, rewritten to the Market Data service.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "order-saga-workflow" },
-          "destination": { "node": "prices-service" }
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "market-data-service"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
+      "metadata": {
+        "interaction": "synchronous"
+      }
     },
     {
-      "unique-id": "saga-to-ledger",
-      "description": "Order saga updates the player's balance and positions once a trade fills.",
+      "unique-id": "market-data-to-crypto-provider",
+      "description": "The Market Data service fetches a crypto price from CoinGecko, after reserving a call against its budget.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "order-saga-workflow" },
-          "destination": { "node": "ledger-service" }
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "market-data-provider"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
+      "metadata": {
+        "interaction": "synchronous"
+      }
     },
     {
-      "unique-id": "leaderboard-to-ledger",
-      "description": "Leaderboard Service reads player balances and positions to compute rankings.",
+      "unique-id": "market-data-to-stock-provider",
+      "description": "The Market Data service fetches each stock's end-of-day price once a day, after reserving a call against the daily budget.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "leaderboard-service" },
-          "destination": { "node": "ledger-service" }
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "stock-data-provider"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "prices-to-prices-db",
-      "description": "Prices Service persists and reads live price snapshots.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "prices-service" },
-          "destination": { "node": "prices-db" }
-        }
-      },
-      "protocol": "JDBC"
-    },
-    {
-      "unique-id": "history-to-history-db",
-      "description": "Market History Service persists and reads historical price/candle data.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "market-history-service" },
-          "destination": { "node": "market-history-db" }
-        }
-      },
-      "protocol": "JDBC"
-    },
-    {
-      "unique-id": "prices-to-market-data",
-      "description": "Prices Service calls out to the external market-data provider for the current price.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "prices-service" },
-          "destination": { "node": "market-data-provider" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
+      "metadata": {
+        "interaction": "synchronous"
+      }
     }
   ]
 }

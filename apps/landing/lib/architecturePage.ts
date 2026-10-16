@@ -226,7 +226,7 @@ function buildServices(part: number, input: ArchitecturePageInput): ServicesView
   const planned: PlannedServiceView[] =
     selected && selected.status === "planned"
       ? selected.nodes
-          .filter((n) => (n.kind === "app" || n.kind === "service") && !builtIds.has(n.id))
+          .filter((n) => (n.kind === "app" || n.kind === "service" || n.kind === "infra") && !builtIds.has(n.id))
           .map((n) => ({
             id: n.id,
             name: n.label,

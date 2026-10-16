@@ -113,8 +113,12 @@ describe("buildArchitecturePage, from the real repo", () => {
 
     it("adds the planned services for a planned part, with the part they arrive in", () => {
       expect(page.services[3]!.planned).toEqual([]); // Part 3 is built as written: it predicts nothing more
-      const orders = page.services[5]!.planned.find((s) => s.name === "Orders Service");
-      expect(orders?.arrives).toBe(4);
+      const saga = page.services[5]!.planned.find((s) => s.name === "Order Saga");
+      expect(saga?.arrives).toBe(4);
+      // The current plan has no Prices or Market History service and no separate Orders or Ledger service.
+      const planned = page.services[5]!.planned.map((s) => s.name);
+      expect(planned).toEqual(["Order Saga", "Market Open Queue"]);
+      expect(planned.filter((name) => /Prices|History|Orders|Ledger/.test(name))).toEqual([]);
       expect(page.services[3]!.built.map((s) => s.name)).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service"]);
     });
 

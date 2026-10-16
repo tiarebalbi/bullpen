@@ -146,7 +146,7 @@ for (const viewport of [
       // Services: the planned services appear beside what runs today
       await tab(page, "Services").click();
       await expect(panel(page).getByRole("heading", { name: "Planned for Part 4" })).toBeVisible();
-      await expect(panel(page).getByRole("heading", { name: "Orders Service" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "Order Saga" })).toBeVisible();
 
       // Flows: the same request, marked as a prediction
       await tab(page, "Flows").click();

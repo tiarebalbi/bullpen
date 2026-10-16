@@ -1,7 +1,7 @@
 {
   "part": 5,
   "status": "planned",
-  "summary": "Prediction, not yet built: handling the market-open burst and making cost visible. A queue absorbs the order spike so the saga processes it at a sustainable rate.",
+  "summary": "Prediction, not yet built: a queue absorbs the market-open burst, and the bill becomes visible on the map.",
   "nodes": [
     {
       "id": "reader",
@@ -36,61 +36,19 @@
       "label": "Bullpen Trading App",
       "kind": "app",
       "meta": "Next.js",
-      "purpose": "The trading app where players view prices and history and submit paper trade orders.",
+      "purpose": "The trading app where players view prices and submit paper trade orders. It owns orders, the ledger, positions and the leaderboard view in the trading schema.",
       "x": 480,
       "y": 220,
       "costNote": "Planned"
     },
     {
-      "id": "prices-service",
-      "label": "Prices Service",
-      "kind": "service",
-      "meta": "Serverless",
-      "purpose": "Owns live price snapshots, consulted by the order saga at fill time.",
-      "x": 220,
-      "y": 400,
-      "db": true,
-      "costNote": "Planned"
-    },
-    {
-      "id": "prices-db",
-      "label": "Prices Database",
-      "kind": "data",
-      "meta": "Neon Postgres",
-      "purpose": "Neon Postgres database owned solely by the Prices Service.",
-      "x": 220,
-      "y": 560,
-      "costNote": "Planned"
-    },
-    {
-      "id": "market-history-service",
-      "label": "Market History Service",
-      "kind": "service",
-      "meta": "Serverless",
-      "purpose": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database.",
-      "x": 460,
-      "y": 400,
-      "db": true,
-      "costNote": "Planned"
-    },
-    {
-      "id": "market-history-db",
-      "label": "Market History Database",
-      "kind": "data",
-      "meta": "Neon Postgres",
-      "purpose": "Neon Postgres database owned solely by the Market History Service.",
-      "x": 460,
-      "y": 560,
-      "costNote": "Planned"
-    },
-    {
-      "id": "orders-service",
-      "label": "Orders Service",
-      "kind": "service",
-      "meta": "Serverless",
-      "purpose": "Accepts paper trade order requests and publishes them onto the market-open queue instead of starting the saga directly.",
+      "id": "order-saga-workflow",
+      "label": "Order Saga",
+      "kind": "infra",
+      "meta": "Workflow",
+      "purpose": "Durable workflow driving each queued order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together.",
       "x": 700,
-      "y": 340,
+      "y": 620,
       "costNote": "Planned"
     },
     {
@@ -104,60 +62,104 @@
       "costNote": "Planned"
     },
     {
-      "id": "order-saga-workflow",
-      "label": "Order Saga",
-      "kind": "infra",
-      "meta": "Workflow",
-      "purpose": "Durable workflow orchestrating each queued order: price lookup, balance check, fill, and ledger update.",
-      "x": 700,
-      "y": 620,
-      "costNote": "Planned"
-    },
-    {
-      "id": "ledger-service",
-      "label": "Ledger Service",
+      "id": "market-data-service",
+      "label": "Market Data Service",
       "kind": "service",
-      "meta": "Serverless",
-      "purpose": "Owns player balances and positions as an independent data boundary.",
-      "x": 700,
-      "y": 760,
-      "db": true,
-      "costNote": "Planned"
+      "meta": "Vercel Service",
+      "purpose": "Replaces the Price Snapshot Service: the CoinGecko price route moved into it. It owns both providers and both call budgets, and is the only writer of the market_data schema. A boundary in one release, not an independently deployed microservice.",
+      "x": 220,
+      "y": 400,
+      "adrs": [
+        "ADR-0004",
+        "ADR-0013"
+      ],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "market-data-provider",
-      "label": "Stock data provider",
+      "label": "CoinGecko",
       "kind": "ext",
-      "meta": "Pending",
-      "purpose": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display.",
-      "x": 220,
-      "y": 720,
-      "costNote": "Planned"
+      "meta": "Demo API",
+      "purpose": "Crypto prices. Called only by the Market Data service, inside a monthly call budget, with the key in a header.",
+      "x": 40,
+      "y": 560,
+      "adrs": [
+        "ADR-0005"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "stock-data-provider",
+      "label": "Alpha Vantage",
+      "kind": "ext",
+      "meta": "End of day",
+      "purpose": "U.S. stock prices, end of day, one request per symbol, fetched once a day by the Market Data service inside a daily call budget.",
+      "x": 400,
+      "y": 560,
+      "adrs": [
+        "ADR-0008"
+      ],
+      "costNote": "Free tier"
     }
   ],
   "edges": [
-    { "id": "reader-to-landing", "a": "reader", "b": "landing-app", "type": "sync" },
-    { "id": "player-to-trading-app", "a": "player", "b": "trading-app", "type": "sync" },
-    { "id": "trading-app-to-prices", "a": "trading-app", "b": "prices-service", "type": "sync" },
-    { "id": "trading-app-to-history", "a": "trading-app", "b": "market-history-service", "type": "sync" },
-    { "id": "trading-app-to-orders", "a": "trading-app", "b": "orders-service", "type": "sync" },
-    { "id": "orders-to-queue", "a": "orders-service", "b": "market-open-queue", "type": "async" },
-    { "id": "queue-to-saga", "a": "market-open-queue", "b": "order-saga-workflow", "type": "async" },
-    { "id": "saga-to-prices", "a": "order-saga-workflow", "b": "prices-service", "type": "sync" },
-    { "id": "saga-to-ledger", "a": "order-saga-workflow", "b": "ledger-service", "type": "sync" },
-    { "id": "prices-to-market-data", "a": "prices-service", "b": "market-data-provider", "type": "sync" },
-    { "id": "prices-to-prices-db", "a": "prices-service", "b": "prices-db", "type": "sync" },
-    { "id": "history-to-history-db", "a": "market-history-service", "b": "market-history-db", "type": "sync" }
+    {
+      "id": "reader-to-landing",
+      "a": "reader",
+      "b": "landing-app",
+      "type": "sync"
+    },
+    {
+      "id": "player-to-trading-app",
+      "a": "player",
+      "b": "trading-app",
+      "type": "sync"
+    },
+    {
+      "id": "trading-app-to-queue",
+      "a": "trading-app",
+      "b": "market-open-queue",
+      "type": "async"
+    },
+    {
+      "id": "queue-to-saga",
+      "a": "market-open-queue",
+      "b": "order-saga-workflow",
+      "type": "async"
+    },
+    {
+      "id": "trading-app-to-market-data",
+      "a": "trading-app",
+      "b": "market-data-service",
+      "type": "sync"
+    },
+    {
+      "id": "market-data-to-crypto-provider",
+      "a": "market-data-service",
+      "b": "market-data-provider",
+      "type": "sync"
+    },
+    {
+      "id": "market-data-to-stock-provider",
+      "a": "market-data-service",
+      "b": "stock-data-provider",
+      "type": "sync"
+    }
   ],
   "groups": [],
   "request": {
     "name": "an order, at market open",
     "steps": [
-      { "edge": "trading-app-to-orders", "caption": "Submit", "detail": "Player submits a paper trade order from the ticket." },
-      { "edge": "orders-to-queue", "caption": "Queue it", "detail": "Orders Service publishes the request onto the market-open queue instead of starting the saga directly." },
-      { "edge": "queue-to-saga", "caption": "Consume", "detail": "The Order Saga picks up queued orders at a sustainable rate." },
-      { "edge": "saga-to-prices", "caption": "Price", "detail": "The saga asks the Prices Service for the current price." },
-      { "edge": "saga-to-ledger", "caption": "Reserve, fill and settle", "detail": "The saga updates balances and positions through the Ledger Service." }
+      {
+        "edge": "trading-app-to-queue",
+        "caption": "Queue it",
+        "detail": "The trading app publishes the request onto the market-open queue instead of starting the saga directly."
+      },
+      {
+        "edge": "queue-to-saga",
+        "caption": "Consume",
+        "detail": "The Order Saga picks up queued orders at a sustainable rate; each step is one transaction in the trading schema."
+      }
     ]
   }
 }
