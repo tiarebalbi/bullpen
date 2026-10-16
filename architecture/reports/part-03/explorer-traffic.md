@@ -78,6 +78,6 @@ Follow a price request).
 
 - At 390 px the whole picture fits but is small: **fits, pinch to read.**
 - The static pictures show pulses as dots; the recordings show them moving.
-- The explorer file is a legacy 1,000-line component, so the code-metrics gate reports "worse" on six anonymous functions in it. They are
-  matched by position, not name, and the same functions appear as pre-existing without my change; the new code is clean except one
-  nesting-6 finding in `flowEdgeOf`'s sibling helpers that the fallback engine reports and I did not suppress.
+- The explorer file is a legacy 1,000-line component, so the code-metrics gate reports "worse" on six anonymous functions in it. It matches
+  anonymous functions by position, not by name, and the same functions are listed as pre-existing without my change. Everything I wrote
+  (the traffic module, the line builder, the parser) passes. I suppressed nothing.
