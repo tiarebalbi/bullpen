@@ -82,8 +82,16 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     expect(parts.find((p) => p.part === 1)!.groups).toEqual([]);
     expect(parts.find((p) => p.part === 3)!.groups).toEqual([
       { id: "vercel-project", label: "One Vercel project, shared release", nodeIds: ["trading-app", "market-data-service"] },
-      { id: "neon-database", label: "One Neon database", nodeIds: ["bullpen-database", "schema-trading", "schema-market-data", "prices-v1"] },
+      { id: "neon-database", label: "One Neon database", nodeIds: ["schema-trading", "schema-market-data", "prices-v1"], nodeId: "bullpen-database" },
     ]);
+  });
+
+  it("rejects a flow that is not down or right, a caption that is empty, and a box for a node that is not there", () => {
+    const base = { part: 1, status: "built", summary: "S", nodes: [{ id: "a", label: "A", kind: "app", meta: "M", purpose: "P", x: 0, y: 0 }, { id: "b", label: "B", kind: "app", meta: "M", purpose: "P", x: 1, y: 1 }], edges: [{ id: "e", a: "a", b: "b", type: "sync" }], groups: [], request: { name: "R", steps: [{ edge: "e", caption: "c", detail: "d" }] } };
+    expect(() => parseArchitecturePart(JSON.stringify({ ...base, flow: "up" }), "t.json")).toThrow(/"flow" must be "down" or "right"/);
+    expect(() => parseArchitecturePart(JSON.stringify({ ...base, edges: [{ ...base.edges[0], caption: "" }] }), "t.json")).toThrow(/empty or non-string "caption"/);
+    expect(() => parseArchitecturePart(JSON.stringify({ ...base, groups: [{ id: "g", label: "G", nodeIds: ["a"], nodeId: "ghost" }] }), "t.json")).toThrow(/box for a node "ghost"/);
+    expect(parseArchitecturePart(JSON.stringify({ ...base, flow: "right", edges: [{ ...base.edges[0], caption: "x" }], groups: [{ id: "g", label: "G", nodeIds: ["a"], nodeId: "b" }] }), "t.json").flow).toBe("right");
   });
 
   it("throws on an invalid node kind", () => {
@@ -265,8 +273,16 @@ describe("Part 3's explorer content is the moment, drawn", () => {
 
   it("boxes the database with the schemas the moment says it is composed of", () => {
     const composed = moment.relationships.map((r) => r["relationship-type"]["composed-of"]).find(Boolean)!;
-    const box = part3.groups.find((g) => g.nodeIds.includes(composed.container))!;
-    expect(box.nodeIds.sort()).toEqual([composed.container, ...composed.nodes].sort());
+    // The box is the database: it names the container as the node it stands for, and holds the schemas around it.
+    const box = part3.groups.find((g) => g.nodeId === composed.container)!;
+    expect([...box.nodeIds].sort()).toEqual([...composed.nodes].sort());
+    expect(box.nodeIds).not.toContain(composed.container);
+  });
+
+  it("reads Part 3 left to right, and captions the landing's line to Market Data with what travels on it", () => {
+    expect(part3.flow).toBe("right");
+    expect(part3.edges.find((e) => e.id === "landing-to-market-data")!.caption).toBe("/api/price (rewrite)");
+    expect(part3.edges.filter((e) => e.caption).map((e) => e.id)).toEqual(["landing-to-market-data"]);
   });
 
   it("labels each database connection with the role and access the moment gives it, and no other", () => {

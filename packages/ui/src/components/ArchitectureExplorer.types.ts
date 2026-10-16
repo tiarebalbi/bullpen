@@ -31,6 +31,8 @@ export interface ArchEdgeData {
   type: ArchEdgeType;
   /** Written on the connection when the "Data ownership" toggle is on: the database role and what it may do. */
   label?: string;
+  /** Written on the connection always: what travels over it, e.g. "/api/price (rewrite)". */
+  caption?: string;
   carried?: true;
   builtIn?: string;
 }
@@ -39,6 +41,11 @@ export interface ArchGroupData {
   id: string;
   label: string;
   nodeIds: string[];
+  /**
+   * The node this box is: a database, drawn as the box around its schemas, not as a card of its own. The node stays in the part's
+   * nodes (the model has it), the box stands for it, and selecting the box's label selects it.
+   */
+  nodeId?: string;
 }
 
 export interface ArchRequestStep {
@@ -77,6 +84,11 @@ export interface ArchPartData {
   part: number;
   status: "built" | "planned";
   summary: string;
+  /**
+   * Which way the part's picture reads. "down" (the default) joins a node's bottom to the next one's top. "right" lays the part out
+   * left to right and joins each connection at the sides of the two nodes that face each other.
+   */
+  flow?: "down" | "right";
   nodes: ArchNodeData[];
   edges: ArchEdgeData[];
   groups: ArchGroupData[];

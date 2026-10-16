@@ -1,6 +1,7 @@
 {
   "part": 3,
   "status": "planned",
+  "flow": "right",
   "summary": "What runs at the end of Part 3: a Market Data service beside the trading app in one Vercel project, and one Neon database with a schema and role per owner. Week one predicted two services with two databases; the build kept one owner per transaction instead.",
   "nodes": [
     {
@@ -10,7 +11,7 @@
       "meta": "Visitor",
       "purpose": "A blog reader exploring Bullpen's architecture timeline on the landing site.",
       "x": 40,
-      "y": 40
+      "y": 680
     },
     {
       "id": "player",
@@ -18,8 +19,8 @@
       "kind": "actor",
       "meta": "Visitor",
       "purpose": "Sees live crypto and end-of-day stock prices and the leaderboard. Accounts and orders arrive in Part 4.",
-      "x": 320,
-      "y": 40
+      "x": 40,
+      "y": 560
     },
     {
       "id": "daily-ingest-cron",
@@ -27,8 +28,8 @@
       "kind": "infra",
       "meta": "Vercel cron",
       "purpose": "Vercel's scheduler: once a day after the U.S. close it calls the Market Data service's ingest, with a secret.",
-      "x": 600,
-      "y": 40,
+      "x": 40,
+      "y": 170,
       "adrs": [
         "ADR-0004",
         "ADR-0013"
@@ -40,8 +41,8 @@
       "kind": "app",
       "meta": "Static",
       "purpose": "The public landing site with the architecture timeline explorer.",
-      "x": 40,
-      "y": 220,
+      "x": 300,
+      "y": 680,
       "adrs": [
         "ADR-0003",
         "ADR-0006",
@@ -55,8 +56,8 @@
       "kind": "app",
       "meta": "Next.js",
       "purpose": "The trading app. It owns orders, the ledger, positions and the leaderboard view in the trading schema, and shows end-of-day stock prices read through prices_v1.",
-      "x": 320,
-      "y": 220,
+      "x": 560,
+      "y": 560,
       "adrs": [
         "ADR-0001",
         "ADR-0003",
@@ -71,8 +72,8 @@
       "kind": "service",
       "meta": "Vercel Service",
       "purpose": "Replaces the Price Snapshot Service: the CoinGecko price route moved into it. It owns both providers and both call budgets, and is the only writer of the market_data schema. A boundary in one release, not an independently deployed microservice.",
-      "x": 600,
-      "y": 220,
+      "x": 560,
+      "y": 170,
       "adrs": [
         "ADR-0004",
         "ADR-0013"
@@ -88,8 +89,8 @@
       "kind": "ext",
       "meta": "Demo API",
       "purpose": "Crypto prices. Called only by the Market Data service, inside a monthly call budget, with the key in a header.",
-      "x": 880,
-      "y": 160,
+      "x": 1220,
+      "y": 30,
       "adrs": [
         "ADR-0005"
       ],
@@ -101,8 +102,8 @@
       "kind": "ext",
       "meta": "End of day",
       "purpose": "U.S. stock prices, end of day, one request per symbol, fetched once a day by the Market Data service inside a daily call budget.",
-      "x": 880,
-      "y": 300,
+      "x": 1220,
+      "y": 120,
       "adrs": [
         "ADR-0008"
       ],
@@ -114,8 +115,8 @@
       "kind": "ext",
       "meta": "Analytics",
       "purpose": "Page views and a short list of events, only after the visitor accepts.",
-      "x": 40,
-      "y": 400,
+      "x": 1220,
+      "y": 680,
       "adrs": [
         "ADR-0010"
       ],
@@ -127,8 +128,8 @@
       "kind": "ext",
       "meta": "Recordings",
       "purpose": "Heatmaps and session recordings, only after the visitor accepts.",
-      "x": 40,
-      "y": 560,
+      "x": 1220,
+      "y": 770,
       "adrs": [
         "ADR-0010"
       ],
@@ -140,8 +141,8 @@
       "kind": "data",
       "meta": "Schema · trading_owner",
       "purpose": "Accounts, orders, the ledger, positions and the leaderboard view. Orders and the ledger are written in one transaction.",
-      "x": 320,
-      "y": 420,
+      "x": 920,
+      "y": 460,
       "adrs": [
         "ADR-0012"
       ],
@@ -153,8 +154,8 @@
       "kind": "data",
       "meta": "Schema · market_data_owner",
       "purpose": "Quotes, the provider call ledger, and the view prices_v1.",
-      "x": 600,
-      "y": 420,
+      "x": 920,
+      "y": 270,
       "adrs": [
         "ADR-0012",
         "ADR-0013"
@@ -167,8 +168,8 @@
       "kind": "data",
       "meta": "View · read-only",
       "purpose": "The price contract: symbol, price, as-of time, source and a stale flag. The only thing outside market_data that trading may read.",
-      "x": 460,
-      "y": 580,
+      "x": 920,
+      "y": 365,
       "adrs": [
         "ADR-0012"
       ],
@@ -180,8 +181,8 @@
       "kind": "data",
       "meta": "Neon Postgres",
       "purpose": "One Neon project and one database, with a schema and a plain role per owner.",
-      "x": 460,
-      "y": 740,
+      "x": 920,
+      "y": 270,
       "adrs": [
         "ADR-0012",
         "ADR-0014"
@@ -212,7 +213,8 @@
       "id": "landing-to-market-data",
       "a": "landing-app",
       "b": "market-data-service",
-      "type": "sync"
+      "type": "sync",
+      "caption": "/api/price (rewrite)"
     },
     {
       "id": "trading-app-to-market-data",
@@ -291,11 +293,11 @@
       "id": "neon-database",
       "label": "One Neon database",
       "nodeIds": [
-        "bullpen-database",
         "schema-trading",
         "schema-market-data",
         "prices-v1"
-      ]
+      ],
+      "nodeId": "bullpen-database"
     }
   ],
   "request": {

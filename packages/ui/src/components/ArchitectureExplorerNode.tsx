@@ -18,6 +18,8 @@ export interface ArchFlowNodeData extends Record<string, unknown> {
   showData: boolean;
   /** Hue of the node's owner while the "Data ownership" toggle is on: the node is tinted by who owns it. */
   ownerHue?: number;
+  /** "right": the node takes a connection on any of its four sides. Otherwise one in at the top and one out at the bottom. */
+  flow?: "down" | "right";
   onSelect: (id: string) => void;
 }
 
@@ -40,7 +42,7 @@ const NODE_HEIGHT = 60;
  * design's external-system treatment.
  */
 export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNode {
-  const { node, visualState, ghosted, reduced, dimmed, touched, showData, ownerHue, onSelect } = data as ArchFlowNodeData;
+  const { node, visualState, ghosted, reduced, dimmed, touched, showData, ownerHue, flow, onSelect } = data as ArchFlowNodeData;
   const isExternal = node.kind === "ext";
   const hot = selected || touched;
   const removed = visualState === "removed";
@@ -92,7 +94,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
       className={animClass}
       style={{ position: "relative" }}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      {flow === "right" ? <SideHandles type="target" /> : <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />}
       <div style={boxStyle}>
         {ghosted ? (
           <span
@@ -168,7 +170,25 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
           {node.id}_db
         </div>
       ) : null}
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+      {flow === "right" ? <SideHandles type="source" /> : <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />}
     </div>
+  );
+}
+
+const SIDES: Array<[string, Position]> = [
+  ["top", Position.Top],
+  ["right", Position.Right],
+  ["bottom", Position.Bottom],
+  ["left", Position.Left],
+];
+
+/** A handle on every side, named `<s|t>-<side>`, so a connection can leave and arrive at whichever sides face each other. */
+function SideHandles({ type }: { type: "source" | "target" }): ReactNode {
+  return (
+    <>
+      {SIDES.map(([side, position]) => (
+        <Handle key={side} id={`${type === "source" ? "s" : "t"}-${side}`} type={type} position={position} style={{ opacity: 0 }} />
+      ))}
+    </>
   );
 }

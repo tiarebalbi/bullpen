@@ -5,6 +5,10 @@ import type { NodeProps } from "@xyflow/react";
 
 export interface ArchFlowGroupData extends Record<string, unknown> {
   label: string;
+  /** Set when the box is a node (a database): the label then selects it. */
+  nodeId?: string;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
 const boxStyle: CSSProperties = {
@@ -25,23 +29,35 @@ const boxStyle: CSSProperties = {
  * nodes are positioned relative to this node's own top-left corner.
  */
 export function ArchitectureExplorerGroup({ data }: NodeProps): ReactNode {
-  const { label } = data as ArchFlowGroupData;
+  const { label, nodeId, selected, onSelect } = data as ArchFlowGroupData;
+  const labelStyle: CSSProperties = {
+    position: "absolute",
+    // A box that is a node (a database) is entered from its left side by labelled lines, so its title sits at the right.
+    ...(nodeId ? { right: 14 } : { left: 14 }),
+    top: 8,
+    font: "600 9.5px/1 var(--font-body)",
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    color: selected ? "var(--ember)" : "var(--foreground-muted)",
+  };
   return (
     <div style={boxStyle}>
-      <span
-        className="bp-arch-group__label"
-        style={{
-          position: "absolute",
-          left: 14,
-          top: 8,
-          font: "600 9.5px/1 var(--font-body)",
-          letterSpacing: "0.18em",
-          textTransform: "uppercase",
-          color: "var(--foreground-muted)",
-        }}
-      >
-        {label}
-      </span>
+      {nodeId && onSelect ? (
+        <button
+          type="button"
+          className="bp-arch-group__label"
+          aria-label={`${label}, Data`}
+          aria-pressed={selected}
+          onClick={() => onSelect(nodeId)}
+          style={{ ...labelStyle, background: "transparent", border: 0, padding: 0, cursor: "pointer", pointerEvents: "auto" }}
+        >
+          {label}
+        </button>
+      ) : (
+        <span className="bp-arch-group__label" style={labelStyle}>
+          {label}
+        </span>
+      )}
     </div>
   );
 }

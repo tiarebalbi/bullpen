@@ -93,6 +93,7 @@ export function parseArchitecturePart(content: string, sourceLabel: string): Arc
     checkEdgeLabel(e, sourceLabel);
   }
 
+  checkLayout(data as Record<string, unknown>, groups, nodeIds, sourceLabel);
   checkRequest(request, "request", sourceLabel, edgeIds);
   const { requests } = data as Record<string, unknown>;
   if (requests !== undefined) {
@@ -122,10 +123,25 @@ function checkNodeLinks(nodes: Record<string, unknown>[], nodeIds: Set<string>, 
   }
 }
 
-/** An edge's optional `label` is a non-empty string. */
+/** An edge's optional `label` (shown with the data toggle) and `caption` (always shown) are non-empty strings. */
 function checkEdgeLabel(e: Record<string, unknown>, sourceLabel: string): void {
-  if (e.label !== undefined && (typeof e.label !== "string" || e.label.length === 0)) {
-    throw new Error(`${sourceLabel}: edge "${e.id}" has an empty or non-string "label"`);
+  for (const key of ["label", "caption"] as const) {
+    if (e[key] !== undefined && (typeof e[key] !== "string" || e[key].length === 0)) {
+      throw new Error(`${sourceLabel}: edge "${e.id}" has an empty or non-string "${key}"`);
+    }
+  }
+}
+
+/** The part's optional `flow` is "down" or "right", and a group that is a node (`nodeId`) names a node of the part. */
+function checkLayout(data: Record<string, unknown>, groups: unknown[], nodeIds: Set<string>, sourceLabel: string): void {
+  if (data.flow !== undefined && data.flow !== "down" && data.flow !== "right") {
+    throw new Error(`${sourceLabel}: "flow" must be "down" or "right"`);
+  }
+  for (const entry of groups) {
+    const g = entry as Record<string, unknown>;
+    if (g.nodeId !== undefined && (typeof g.nodeId !== "string" || !nodeIds.has(g.nodeId))) {
+      throw new Error(`${sourceLabel}: group "${String(g.id)}" is a box for a node "${String(g.nodeId)}" that is not in "nodes"`);
+    }
   }
 }
 
