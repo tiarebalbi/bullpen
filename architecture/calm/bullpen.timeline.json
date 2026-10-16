@@ -1,6 +1,6 @@
 {
   "$schema": "https://calm.finos.org/release/1.2/meta/calm-timeline.json",
-  "current-moment": "part-02",
+  "current-moment": "part-03",
   "moments": [
     {
       "unique-id": "part-01",
@@ -64,7 +64,8 @@
         "planned-architecture": "planned/part-03.architecture.json",
         "planned-name": "Part 3 (planned) — Data ownership and the first split",
         "planned-description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database, and a stock data provider appears as an external system."
-      }
+      },
+      "valid-from": "9999-12-31"
     },
     {
       "unique-id": "part-04",

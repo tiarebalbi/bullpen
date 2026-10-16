@@ -13,9 +13,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
     expect(parts).toHaveLength(6);
     expect(parts.map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
-    // Parts 1 and 2 are built; 3 to 6 are predictions.
-    expect(parts.slice(0, 2).map((p) => p.status)).toEqual(["built", "built"]);
-    for (const part of parts.slice(2)) {
+    // Parts 1 to 3 are built; 4 to 6 are the plan.
+    expect(parts.slice(0, 3).map((p) => p.status)).toEqual(["built", "built", "built"]);
+    for (const part of parts.slice(3)) {
       expect(part.status).toBe("planned");
     }
     for (const part of parts) {
@@ -90,7 +90,7 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     const base = { part: 1, status: "built", summary: "S", nodes: [{ id: "a", label: "A", kind: "app", meta: "M", purpose: "P", x: 0, y: 0 }, { id: "b", label: "B", kind: "app", meta: "M", purpose: "P", x: 1, y: 1 }], edges: [{ id: "e", a: "a", b: "b", type: "sync" }], groups: [], request: { name: "R", steps: [{ edge: "e", caption: "c", detail: "d" }] } };
     expect(() => parseArchitecturePart(JSON.stringify({ ...base, flow: "up" }), "t.json")).toThrow(/"flow" must be "down" or "right"/);
     expect(() => parseArchitecturePart(JSON.stringify({ ...base, edges: [{ ...base.edges[0], caption: "" }] }), "t.json")).toThrow(/empty or non-string "caption"/);
-    expect(() => parseArchitecturePart(JSON.stringify({ ...base, groups: [{ id: "g", label: "G", nodeIds: ["a"], nodeId: "ghost" }] }), "t.json")).toThrow(/box for a node "ghost"/);
+    expect(() => parseArchitecturePart(JSON.stringify({ ...base, groups: [{ id: "g", label: "G", nodeIds: ["a"], nodeId: 7 }] }), "t.json")).toThrow(/"nodeId" that is not a node id/);
     expect(parseArchitecturePart(JSON.stringify({ ...base, flow: "right", edges: [{ ...base.edges[0], caption: "x" }], groups: [{ id: "g", label: "G", nodeIds: ["a"], nodeId: "b" }] }), "t.json").flow).toBe("right");
   });
 
@@ -117,22 +117,38 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     expect(() => parseArchitecturePart(malformed, "test.json")).toThrow(/invalid "kind"/);
   });
 
-  it("carries the built analytics nodes and edges into every planned part that does not name them (4 to 6), and nothing else", () => {
+  it("carries what Part 3 built, and what Part 1 built and still runs, into every planned part that does not name it (4 to 6), and nothing else", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    // Part 3 draws the analytics nodes itself, so it carries nothing.
+    // Parts 1 to 3 draw their own nodes, so they carry nothing.
     for (const own of parts.slice(0, 3)) expect(own.nodes.some((n) => n.carried)).toBe(false);
     for (const part of parts.slice(3)) {
-      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["google-analytics", "microsoft-clarity"]);
+      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "prices-v1", "schema-market-data", "schema-trading"]);
       expect(part.edges.filter((e) => e.carried).map((e) => e.id).sort()).toEqual([
+        "daily-cron-to-market-data",
         "landing-to-google-analytics",
+        "landing-to-market-data",
         "landing-to-microsoft-clarity",
+        "market-data-to-market-data-schema",
         "trading-app-to-google-analytics",
         "trading-app-to-microsoft-clarity",
+        "trading-app-to-prices-v1",
+        "trading-app-to-trading-schema",
       ]);
-      // Copied from Part 2, the latest built moment, but first built in Part 1 (ADR-0010, ADR-0011).
+      // Copied from Part 3, the latest built moment; each is labelled with the moment that first built it (ADR-0010, ADR-0011).
       for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried)) {
-        expect(item.builtIn).toBe("part-01");
+        expect(item.builtIn, item.id).toBe(/google-analytics|microsoft-clarity/.test(item.id) ? "part-01" : "part-03");
       }
+    }
+  });
+
+  it("draws the Vercel box and the database box in every later part, around nodes it carries forward from Part 3", () => {
+    const parts = loadArchitectureParts(architectureDir, plannedDir);
+    for (const part of parts.slice(3)) {
+      expect(part.flow, `Part ${part.part} reads left to right like Part 3`).toBe("right");
+      expect(part.groups.map((g) => g.id)).toEqual(["vercel-project", "neon-database"]);
+      const database = part.groups.find((g) => g.id === "neon-database")!;
+      expect(database.nodeId).toBe("bullpen-database");
+      for (const id of database.nodeIds) expect(part.nodes.find((n) => n.id === id)?.carried, `${id} is carried`).toBe(true);
     }
   });
 
@@ -143,9 +159,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     }
   });
 
-  it("keeps the carried copy of a node equal to what the latest built moment, Part 2, has, labelled as first built in Part 1", () => {
+  it("keeps the carried copy of a node equal to what the latest built moment, Part 3, has, labelled as first built in Part 1", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    const built = parts[1]!.nodes.find((n) => n.id === "google-analytics")!;
+    const built = parts[2]!.nodes.find((n) => n.id === "google-analytics")!;
     const carried = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
     expect({ ...carried, x: 0, y: 0 }).toEqual({ ...built, x: 0, y: 0, carried: true, builtIn: "part-01" });
   });
@@ -191,7 +207,8 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
 
     it("gives Part 1 and every planned part no changes, and nothing at all without the calm directory", () => {
       const withCalm = loadArchitectureParts(architectureDir, plannedDir, calmDir);
-      for (const part of withCalm.filter((p) => p.part !== 2)) expect(part.changes).toBeUndefined();
+      for (const part of withCalm.filter((p) => p.part !== 2 && p.part !== 3)) expect(part.changes).toBeUndefined();
+      expect(withCalm[2]!.changes?.length).toBeGreaterThan(0);
       for (const part of loadArchitectureParts(architectureDir, plannedDir)) expect(part.changes).toBeUndefined();
     });
   });

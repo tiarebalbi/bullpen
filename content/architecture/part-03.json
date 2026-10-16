@@ -1,6 +1,6 @@
 {
   "part": 3,
-  "status": "planned",
+  "status": "built",
   "flow": "right",
   "summary": "What runs at the end of Part 3: a Market Data service beside the trading app in one Vercel project, and one Neon database with a schema and role per owner. Week one predicted two services with two databases; the build kept one owner per transaction instead.",
   "nodes": [
@@ -129,7 +129,7 @@
       "meta": "Recordings",
       "purpose": "Heatmaps and session recordings, only after the visitor accepts.",
       "x": 1220,
-      "y": 770,
+      "y": 790,
       "adrs": [
         "ADR-0010"
       ],
@@ -142,7 +142,7 @@
       "meta": "Schema · trading_owner",
       "purpose": "Accounts, orders, the ledger, positions and the leaderboard view. Orders and the ledger are written in one transaction.",
       "x": 920,
-      "y": 460,
+      "y": 490,
       "adrs": [
         "ADR-0012"
       ],
@@ -169,7 +169,7 @@
       "meta": "View · read-only",
       "purpose": "The price contract: symbol, price, as-of time, source and a stale flag. The only thing outside market_data that trading may read.",
       "x": 920,
-      "y": 365,
+      "y": 380,
       "adrs": [
         "ADR-0012"
       ],

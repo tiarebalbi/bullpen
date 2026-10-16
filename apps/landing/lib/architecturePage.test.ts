@@ -51,7 +51,8 @@ describe("buildArchitecturePage, from the real repo", () => {
   it("labels the scrubber with the series' real titles and each part's status from its explorer content", () => {
     expect(page.scrubber).toHaveLength(6);
     expect(page.scrubber[1]).toEqual({ part: 2, title: "Architecture as code", status: "built" });
-    expect(page.scrubber[2]!.status).toBe("planned");
+    expect(page.scrubber[2]).toEqual({ part: 3, title: "Who owns the data", status: "built" });
+    expect(page.scrubber[3]!.status).toBe("planned");
   });
 
   describe("services", () => {
@@ -193,7 +194,7 @@ describe("buildArchitecturePage, from the real repo", () => {
     });
 
     it("makes no cache claim for a planned part, and none at all if the route cannot be read", () => {
-      expect(page.flows[3]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
+      expect(page.flows[4]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
       const unread = buildArchitecturePage({
         parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
         series: loadSeries(join(repoRoot, "content", "series.json")),
@@ -205,8 +206,9 @@ describe("buildArchitecturePage, from the real repo", () => {
       expect(unread.flows[2]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
     });
 
-    it("marks a predicted flow as planned", () => {
-      expect(page.flows[3]!.planned).toBe(true);
+    it("marks a planned part's flow as planned, and a built part's as not", () => {
+      expect(page.flows[3]!.planned).toBe(false);
+      expect(page.flows[4]!.planned).toBe(true);
     });
   });
 

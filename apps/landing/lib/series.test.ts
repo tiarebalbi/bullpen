@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { INTRODUCED_MAX_LENGTH, TITLE_MAX_LENGTH, formatPublishDate, parseSeries } from "./series.js";
+import { INTRODUCED_MAX_LENGTH, PUBLISH_DATE_PLACEHOLDER, TITLE_MAX_LENGTH, formatPublishDate, parseSeries } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 
@@ -23,9 +23,11 @@ describe("parseSeries", () => {
       url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
       date: "2026-10-11",
     });
-    expect(parts[2]).toMatchObject({ part: 3, status: "next", url: "", date: null });
+    // Part 3 is published, with its post's address; until the owner writes the day in, its date is the placeholder, read as no date yet.
+    expect(parts[2]).toMatchObject({ part: 3, status: "published", url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership", date: null });
     expect(parts[2]).toMatchObject({ title: "Who owns the data", introduced: "One owner per transaction, one Market Data service" });
-    for (const part of parts.slice(3)) {
+    expect(parts[3]).toMatchObject({ part: 4, status: "next", url: "", date: null });
+    for (const part of parts.slice(4)) {
       expect(part.status).toBe("planned");
       expect(part.url).toBe("");
       expect(part.date).toBeNull();
@@ -169,5 +171,23 @@ describe("formatPublishDate", () => {
       if (original === undefined) delete process.env.TZ;
       else process.env.TZ = original;
     }
+  });
+
+  describe("the publish-date placeholder", () => {
+    const entry = (overrides: Record<string, unknown>) => JSON.stringify([{ part: 3, title: "Who owns the data", status: "published", url: "https://example.test/post", introduced: "One owner", date: PUBLISH_DATE_PLACEHOLDER, ...overrides }]);
+
+    it("is read as no date yet for a published part, so the card shows none and nothing false is published", () => {
+      const [part] = parseSeries(entry({}));
+      expect(part).toMatchObject({ status: "published", url: "https://example.test/post", date: null });
+    });
+
+    it("is refused for a part that is not published", () => {
+      expect(() => parseSeries(entry({ status: "next", url: "" }))).toThrow(/placeholder but is "next"/);
+    });
+
+    it("still takes a real date, and still refuses a made-up one", () => {
+      expect(parseSeries(entry({ date: "2026-10-18" }))[0]).toMatchObject({ date: "2026-10-18" });
+      expect(() => parseSeries(entry({ date: "soon" }))).toThrow(/invalid "date"/);
+    });
   });
 });

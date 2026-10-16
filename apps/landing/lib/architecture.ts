@@ -93,7 +93,7 @@ export function parseArchitecturePart(content: string, sourceLabel: string): Arc
     checkEdgeLabel(e, sourceLabel);
   }
 
-  checkLayout(data as Record<string, unknown>, groups, nodeIds, sourceLabel);
+  checkLayout(data as Record<string, unknown>, groups, sourceLabel);
   checkRequest(request, "request", sourceLabel, edgeIds);
   const { requests } = data as Record<string, unknown>;
   if (requests !== undefined) {
@@ -153,15 +153,27 @@ function checkRate(e: Record<string, unknown>, sourceLabel: string): void {
   }
 }
 
-/** The part's optional `flow` is "down" or "right", and a group that is a node (`nodeId`) names a node of the part. */
-function checkLayout(data: Record<string, unknown>, groups: unknown[], nodeIds: Set<string>, sourceLabel: string): void {
+/** The part's optional `flow` is "down" or "right", and a group that is a node (`nodeId`) names it with a string. */
+function checkLayout(data: Record<string, unknown>, groups: unknown[], sourceLabel: string): void {
   if (data.flow !== undefined && data.flow !== "down" && data.flow !== "right") {
     throw new Error(`${sourceLabel}: "flow" must be "down" or "right"`);
   }
   for (const entry of groups) {
     const g = entry as Record<string, unknown>;
-    if (g.nodeId !== undefined && (typeof g.nodeId !== "string" || !nodeIds.has(g.nodeId))) {
-      throw new Error(`${sourceLabel}: group "${String(g.id)}" is a box for a node "${String(g.nodeId)}" that is not in "nodes"`);
+    if (g.nodeId !== undefined && typeof g.nodeId !== "string") throw new Error(`${sourceLabel}: group "${String(g.id)}" has a "nodeId" that is not a node id`);
+  }
+}
+
+/**
+ * Every node a group names is in the part once the built nodes have been carried in: a later part's group may box nodes the part does
+ * not write itself, because they carry forward from the latest built part.
+ */
+function checkGroupsResolve(parts: ArchPartData[]): void {
+  for (const part of parts) {
+    const ids = new Set(part.nodes.map((n) => n.id));
+    for (const g of part.groups) {
+      const missing = [...g.nodeIds, ...(g.nodeId ? [g.nodeId] : [])].filter((id) => !ids.has(id));
+      if (missing.length > 0) throw new Error(`Part ${part.part}: group "${g.id}" names ${missing.join(", ")}, which is not in the part or carried into it`);
     }
   }
 }
@@ -306,5 +318,6 @@ export function loadArchitectureParts(dirPath: string, plannedDir: string, calmD
   }
   parts.sort((a, b) => a.part - b.part);
   const carried = carryForward(parts, plannedNamesOf(loadPlannedCalmDocs(plannedDir)));
+  checkGroupsResolve(carried);
   return calmDir ? withMomentChanges(carried, plannedDir, calmDir) : carried;
 }

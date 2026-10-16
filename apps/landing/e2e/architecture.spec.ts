@@ -78,9 +78,8 @@ test.describe("Architecture Explorer", () => {
 
     const panel = architecture.getByLabel("Details");
     await expect(panel.getByText("Bullpen Trading App")).toBeVisible();
-    await expect(panel.getByText(/players view live prices/)).toBeVisible();
-    await expect(panel.getByText("ADR-0001")).toBeVisible();
-    await expect(panel.getByText("ADR-0003")).toBeVisible();
+    await expect(panel.getByText(/It owns orders, the ledger, positions and the leaderboard view/)).toBeVisible();
+    for (const adr of ["ADR-0001", "ADR-0003", "ADR-0012", "ADR-0014"]) await expect(panel.getByText(adr)).toBeVisible();
     await expect(panel.getByText("Free tier (Hobby)")).toBeVisible();
 
     await panel.getByRole("button", { name: "Close details" }).click();
@@ -231,30 +230,32 @@ test.describe("Architecture Explorer", () => {
   test("moving from part 2 to part 3 shows what was added and removed", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 2" }).click();
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
     const panel = architecture.getByLabel("Details");
     await expect(panel.getByText(/^\+?\s*Market Data Service$/)).toBeVisible();
     await expect(panel.getByText("Bullpen Database")).toBeVisible();
     await expect(panel.getByText("Price Snapshot Service (moved into Market Data Service)")).toBeVisible();
-    // The old prediction's services were never built, so they are not something Part 3 added.
-    await expect(panel.getByText("Prices Service")).toHaveCount(0);
+    // The old prediction's services were never built, so they are not something Part 3 added: they appear once, under "Predicted, not built".
+    await expect(panel.getByText("Predicted in week one, not built")).toBeVisible();
+    await expect(panel.getByText("Prices Service")).toHaveCount(1);
   });
 
   test("Follow a request plays through steps and can be paused, stepped and exited", async ({ page }) => {
     const architecture = page.locator("#architecture");
     await architecture.getByRole("button", { name: /Follow a price request/i }).click();
 
-    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 3");
+    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 4");
 
-    await architecture.getByRole("button", { name: "Pause" }).click();
-    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 3");
+    await architecture.getByRole("button", { name: "Pause", exact: true }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 4");
 
     await architecture.getByRole("button", { name: "Next step" }).click();
-    await expect(architecture.getByRole("status")).toContainText("STEP 2 OF 3");
+    await expect(architecture.getByRole("status")).toContainText("STEP 2 OF 4");
 
-    await architecture.getByRole("button", { name: "Step 3" }).click();
-    await expect(architecture.getByRole("status")).toContainText("STEP 3 OF 3");
+    await architecture.getByRole("button", { name: "Step 4" }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 4 OF 4");
 
     await architecture.getByRole("button", { name: "Exit" }).click();
     await expect(architecture.getByRole("status")).toHaveCount(0);
@@ -266,11 +267,15 @@ test.describe("Architecture Explorer", () => {
 
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 2" }).click();
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
-    const removedNode = architecture.getByRole("button", { name: "Price Snapshot Service, Service" });
-    await expect(removedNode).toHaveClass(/bp-arch-node--removed-reduced/);
-    await expect(removedNode).not.toHaveClass(/bp-arch-node--removed(?!-reduced)/);
+    // Under reduced motion no node carries a class that moves: only the still ones (`-reduced`) may appear, at any moment of the change.
+    for (const part of ["PART 2", "PART 3", "PART 4", "PART 3"]) {
+      await scrubber.getByRole("button", { name: part }).click();
+      const classes = await architecture.locator(".react-flow__node-archNode [role=button]").evaluateAll((els) => els.map((e) => e.className));
+      for (const className of classes) expect(className, `after moving to ${part}`).not.toMatch(/bp-arch-node--(added|removed)(?!-reduced)|bp-arch-node__(ring|strike)(?!--reduced)/);
+    }
   });
 
   test("Play the series advances through parts on its own and can be paused", async ({ page }) => {
@@ -278,7 +283,8 @@ test.describe("Architecture Explorer", () => {
     await architecture.getByRole("button", { name: "Play the series" }).click();
     await expect(architecture.getByRole("button", { name: "Pause the series" })).toBeVisible();
 
-    await expect(architecture.getByText("Overview · Part 2")).toBeVisible({ timeout: 5000 });
+    // The series opens on its latest built part, Part 3, so the first step on is Part 4.
+    await expect(architecture.getByText("Overview · Part 4")).toBeVisible({ timeout: 5000 });
 
     await architecture.getByRole("button", { name: "Pause the series" }).click();
     await expect(architecture.getByRole("button", { name: "Play the series" })).toBeVisible();
@@ -562,7 +568,7 @@ for (const viewport of [
       const panel = architecture.getByLabel("Details");
       await expect(panel.getByText("Built in Part 1; still running in this plan.")).toBeVisible();
       await expect(panel.getByText(/Built in Part 2/)).toHaveCount(0);
-      await expect(panel.getByText(/Page views and a few events from both apps/)).toBeVisible();
+      await expect(panel.getByText(/Page views and a short list of events/)).toBeVisible();
       await expect(panel.getByText("ADR-0010")).toBeVisible();
       await expect(panel.getByText("ADR pending: written before this part ships.")).toHaveCount(0);
     });

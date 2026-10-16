@@ -5,6 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const POST_1 = "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026";
 const POST_2 = "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember";
+const POST_3 = "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership";
 
 async function mockPrice(page: Page): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) =>
@@ -59,7 +60,7 @@ for (const viewport of [
         };
         const lime = resolve("var(--lime-glow)", "backgroundColor");
         const limeForeground = resolve("var(--lime-glow-foreground)", "color");
-        return [1, 2].map((part) => {
+        return [1, 2, 3].map((part) => {
           const style = getComputedStyle(document.querySelector(`.bp-series-grid > li:nth-child(${part}) .bp-chip`)!);
           return { background: style.backgroundColor, color: style.color, lime, limeForeground };
         });
@@ -70,25 +71,35 @@ for (const viewport of [
       }
     });
 
-    test("Part 3 is next: the Next chip, no date and no link", async ({ page }) => {
+    test("Part 3 is published and links its post, with no date until the day is written in", async ({ page }) => {
       const part3 = card(page, 3);
       await expect(part3).toContainText("Part 3");
-      await expect(part3.locator(".bp-chip")).toHaveText("Next");
-      await expect(part3).toContainText("Not yet published");
-      await expect(part3.getByRole("link")).toHaveCount(0);
+      await expect(part3.locator(".bp-chip")).toHaveText("Published");
+      await expect(part3.getByRole("link")).toHaveAttribute("href", POST_3);
+      await expect(part3).not.toContainText("Not yet published");
+      await expect(part3).not.toContainText("PUBLISH_DATE_PLACEHOLDER");
+      await expect(part3).not.toContainText(/Invalid|NaN/);
     });
 
-    test("Parts 4 to 6 are planned, with no date and no link", async ({ page }) => {
-      for (const part of [4, 5, 6]) {
+    test("Part 4 is next: the Next chip, no date and no link", async ({ page }) => {
+      const part4 = card(page, 4);
+      await expect(part4).toContainText("Part 4");
+      await expect(part4.locator(".bp-chip")).toHaveText("Next");
+      await expect(part4).toContainText("Not yet published");
+      await expect(part4.getByRole("link")).toHaveCount(0);
+    });
+
+    test("Parts 5 and 6 are planned, with no date and no link", async ({ page }) => {
+      for (const part of [5, 6]) {
         await expect(card(page, part).locator(".bp-chip")).toHaveText("Planned");
         await expect(card(page, part)).toContainText("Not yet published");
         await expect(card(page, part).getByRole("link")).toHaveCount(0);
       }
     });
 
-    test("the two posts are the only links out of the series cards", async ({ page }) => {
+    test("the three posts are the only links out of the series cards", async ({ page }) => {
       const hrefs = await page.locator(".bp-series-grid a").evaluateAll((anchors) => anchors.map((a) => a.getAttribute("href")));
-      expect(hrefs).toEqual([POST_1, POST_2]);
+      expect(hrefs).toEqual([POST_1, POST_2, POST_3]);
     });
   });
 }

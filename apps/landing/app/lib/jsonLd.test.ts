@@ -30,6 +30,13 @@ describe("buildJsonLd: home", () => {
     expect(validateJsonLd(buildJsonLd("home", real)).valid).toBe(true);
   });
 
+  it("lists a published part only once it has a date: Part 3 waits for the publish-date placeholder to be replaced", () => {
+    const parts = [...real];
+    expect(real.find((p) => p.part === 3)).toMatchObject({ status: "published", date: null });
+    expect(parts.length).toBe(6);
+    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(2);
+  });
+
   it("lists Parts 1 and 2 with each post's real headline, URL and date", () => {
     expect(seriesNode(real).hasPart).toEqual([
       {

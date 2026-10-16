@@ -182,3 +182,25 @@ for (const viewport of [
     }
   });
 }
+
+// The parts after Part 3 carry its nodes and keep its grid, so a line in them runs through no card it is not joined to either.
+for (const part of [4, 5, 6]) {
+  test(`Part ${part} keeps Part 3's grid: no line passes through a card it is not joined to`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.route("**/api/price/BTC-USD", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ symbol: "BTC-USD", price: 1, changePercent: 0, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString() }) }));
+    await page.goto("/");
+    await page.locator("#architecture").getByRole("group", { name: "Series part" }).getByRole("button", { name: `PART ${part}` }).click();
+    await page.waitForTimeout(1500);
+    const own = JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "content", "architecture", `part-0${part}.json`), "utf8")) as { edges: Array<{ id: string; a: string; b: string }> };
+    const ends = new Map([...content.edges, ...own.edges].map((e) => [e.id, e]));
+    const g = await geometry(page);
+    const problems: string[] = [];
+    for (const [id, points] of Object.entries(g.edges)) {
+      const edge = ends.get(id)!;
+      for (const [nodeId, r] of Object.entries(g.nodes)) {
+        if (nodeId !== edge.a && nodeId !== edge.b && points.some((p) => inside(p, r))) problems.push(`${id} runs through ${nodeId}`);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+}

@@ -250,14 +250,14 @@ test.describe("Architecture page, desktop", () => {
   test("Flows: playback steps forward and back", async ({ page }) => {
     await page.goto("/architecture#flows");
     const playback = panel(page).getByRole("group", { name: "Playback" });
-    await expect(playback).toContainText("STEP 1 OF 4");
+    await expect(playback).toContainText("STEP 1 OF 5");
 
     await playback.getByRole("button", { name: "Next step" }).click();
-    await expect(playback).toContainText("STEP 2 OF 4");
+    await expect(playback).toContainText("STEP 2 OF 5");
     await expect(panel(page).getByRole("button", { name: /Ask for a quote/ })).toHaveAttribute("aria-current", "step");
 
     await playback.getByRole("button", { name: "Previous step" }).click();
-    await expect(playback).toContainText("STEP 1 OF 4");
+    await expect(playback).toContainText("STEP 1 OF 5");
   });
 
   test("Rules: every rule with the snapshot's result, and the commit it ran for", async ({ page }) => {

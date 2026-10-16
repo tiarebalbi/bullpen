@@ -1,6 +1,7 @@
 {
   "part": 5,
   "status": "planned",
+  "flow": "right",
   "summary": "Prediction, not yet built: a queue absorbs the market-open burst, and the bill becomes visible on the map.",
   "nodes": [
     {
@@ -10,7 +11,7 @@
       "meta": "Visitor",
       "purpose": "A blog reader exploring Bullpen's architecture timeline on the landing site.",
       "x": 40,
-      "y": 40
+      "y": 680
     },
     {
       "id": "player",
@@ -18,8 +19,8 @@
       "kind": "actor",
       "meta": "Visitor",
       "purpose": "A registered player who places paper trade orders, including at market open.",
-      "x": 480,
-      "y": 40
+      "x": 40,
+      "y": 560
     },
     {
       "id": "landing-app",
@@ -27,8 +28,8 @@
       "kind": "app",
       "meta": "Static",
       "purpose": "The public landing site with the architecture timeline explorer.",
-      "x": 40,
-      "y": 220,
+      "x": 300,
+      "y": 680,
       "costNote": "Planned"
     },
     {
@@ -37,8 +38,8 @@
       "kind": "app",
       "meta": "Next.js",
       "purpose": "The trading app where players view prices and submit paper trade orders. It owns orders, the ledger, positions and the leaderboard view in the trading schema.",
-      "x": 480,
-      "y": 220,
+      "x": 560,
+      "y": 560,
       "costNote": "Planned"
     },
     {
@@ -47,8 +48,8 @@
       "kind": "infra",
       "meta": "Workflow",
       "purpose": "Durable workflow driving each queued order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together.",
-      "x": 700,
-      "y": 620,
+      "x": 560,
+      "y": 950,
       "costNote": "Planned"
     },
     {
@@ -57,8 +58,8 @@
       "kind": "infra",
       "meta": "Queue",
       "purpose": "Buffers the burst of order requests at market open (Vercel Queues or equivalent) so the Order Saga consumes them at a sustainable rate rather than falling over.",
-      "x": 700,
-      "y": 480,
+      "x": 560,
+      "y": 830,
       "costNote": "Planned"
     },
     {
@@ -67,8 +68,8 @@
       "kind": "service",
       "meta": "Vercel Service",
       "purpose": "Replaces the Price Snapshot Service: the CoinGecko price route moved into it. It owns both providers and both call budgets, and is the only writer of the market_data schema. A boundary in one release, not an independently deployed microservice.",
-      "x": 220,
-      "y": 400,
+      "x": 560,
+      "y": 170,
       "adrs": [
         "ADR-0004",
         "ADR-0013"
@@ -81,8 +82,8 @@
       "kind": "ext",
       "meta": "Demo API",
       "purpose": "Crypto prices. Called only by the Market Data service, inside a monthly call budget, with the key in a header.",
-      "x": 40,
-      "y": 560,
+      "x": 1220,
+      "y": 30,
       "adrs": [
         "ADR-0005"
       ],
@@ -94,8 +95,8 @@
       "kind": "ext",
       "meta": "End of day",
       "purpose": "U.S. stock prices, end of day, one request per symbol, fetched once a day by the Market Data service inside a daily call budget.",
-      "x": 400,
-      "y": 560,
+      "x": 1220,
+      "y": 120,
       "adrs": [
         "ADR-0008"
       ],
@@ -107,13 +108,25 @@
       "id": "reader-to-landing",
       "a": "reader",
       "b": "landing-app",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 6,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
     },
     {
       "id": "player-to-trading-app",
       "a": "player",
       "b": "trading-app",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
     },
     {
       "id": "trading-app-to-queue",
@@ -131,22 +144,59 @@
       "id": "trading-app-to-market-data",
       "a": "trading-app",
       "b": "market-data-service",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The trading app asks once a minute per open tab; the number of tabs is not known."
+      }
     },
     {
       "id": "market-data-to-crypto-provider",
       "a": "market-data-service",
       "b": "market-data-provider",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 12,
+        "per": "hour",
+        "source": "configured",
+        "basis": "At most one CoinGecko call every 300 seconds: the route's cache interval (ADR-0005). An upper bound."
+      }
     },
     {
       "id": "market-data-to-stock-provider",
       "a": "market-data-service",
       "b": "stock-data-provider",
-      "type": "sync"
+      "type": "sync",
+      "rate": {
+        "count": 10,
+        "per": "day",
+        "source": "configured",
+        "basis": "One call for each of the 10 stock symbols a day, under a cap of 20 a day (ADR-0008)."
+      }
     }
   ],
-  "groups": [],
+  "groups": [
+    {
+      "id": "vercel-project",
+      "label": "One Vercel project, shared release",
+      "nodeIds": [
+        "trading-app",
+        "market-data-service"
+      ]
+    },
+    {
+      "id": "neon-database",
+      "label": "One Neon database",
+      "nodeIds": [
+        "schema-trading",
+        "schema-market-data",
+        "prices-v1"
+      ],
+      "nodeId": "bullpen-database"
+    }
+  ],
   "request": {
     "name": "an order, at market open",
     "steps": [

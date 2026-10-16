@@ -101,7 +101,7 @@ export function SeriesCard({
         }}
       >
         <span style={{ font: "500 11.5px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>
-          {date && dateLabel ? dateLabel : "Not yet published"}
+          {date && dateLabel ? dateLabel : status === "published" ? "" : "Not yet published"}
         </span>
         {href ? (
           <a
