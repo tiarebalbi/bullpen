@@ -62,8 +62,8 @@ Ledger write p95 with no refresh running: 669 ms; during back-to-back refreshes:
 
 ## After: 200 accounts, the top 50 and the caller's row a read, 15-second cells
 
-**Not run yet.** Neon suspended the compute on 2026-10-16 for network transfer, and nothing runs against it until the allowance resets
-and the project owner says so. What is ready is the run, its estimate and its refusal.
+**Run on 2026-10-16, after the compute was released** (Launch plan; `--remaining-mb 500000`, so the 10% rule allowed 50,000 MB and the
+estimate of 185.6 MB passed). One run, run id `34633b01`, 200 accounts x 5 positions.
 
 **Three variables change between "before" and "after", not one:** the dataset (2,000 accounts to 200), the rows per read (2,000 to
 at most 51: the top 50 and the caller's own row) and the duration of a cell (30 s to 15 s). The new table therefore shows what the
@@ -93,24 +93,48 @@ estimate: 200 accounts, 15 s cells, 8 writers, 10 reads a second per reader, 51 
   refresh phase, with refreshes      0.6 MB
   refresh phase, without             0.6 MB
   setup 0.0 MB; whole run 185.6 MB
-Within budget: estimated 185.6 MB, 10% of the 5000.0 MB remaining is 500.0 MB.
+Within budget: estimated 185.6 MB, 10% of the 500000.0 MB remaining is 50000.0 MB.
 ```
 
 The estimate assumes one reader reads 10 times a second (measured at 12 for 20 rows) and prices a read at 175 bytes a row, 250 bytes of
-framing and a 10% wire overhead. The run's measured bytes will be recorded in this table beside each estimate, once it has run:
+framing and a 10% wire overhead. Output of the run, verbatim:
+
+```
+batch: 200 accounts, 1000 positions; 8 writers; 15 s per cell; reads are the top 50 and the caller's row
 
 | N readers | Read path | Ledger write p50 / p95 | Leaderboard read p95 | Bytes per read | Bytes per cell, measured (estimated) |
 |---|---|---|---|---|---|
-| 0 | none (baseline) | pending | n/a | n/a | pending (0.6 MB) |
-| 10 | computed on read | pending | pending | pending (10.1 KB) | pending (15.7 MB) |
-| 10 | materialized view | pending | pending | pending (10.1 KB) | pending (15.7 MB) |
-| 50 | computed on read | pending | pending | pending (10.1 KB) | pending (76.3 MB) |
-| 50 | materialized view | pending | pending | pending (10.1 KB) | pending (76.3 MB) |
+| 0 | none (baseline) | 550 ms / 575 ms | n/a | n/a | 0.4 MB (0.6 MB) |
+| 10 | computed on read | 578 ms / 632 ms | 209 ms | 8.6 KB | 7.4 MB (15.7 MB) |
+| 10 | materialized view | 552 ms / 603 ms | 359 ms | 9.5 KB | 4.4 MB (15.7 MB) |
+| 50 | computed on read | 706 ms / 1007 ms | 810 ms | 8.2 KB | 22.9 MB (76.3 MB) |
+| 50 | materialized view | 550 ms / 613 ms | 353 ms | 8.7 KB | 20.1 MB (76.3 MB) |
 
-Your estimate was about 70 MB for the N = 50 cell and about 250 MB for the run; mine is 76 MB and 185 MB. The script reports the
-measured value beside both after the run.
+Refresh (CONCURRENTLY), 200 accounts: 36 refreshes, duration p50 424 ms, p95 455 ms
+Ledger write p95 with no refresh running: 618 ms; during back-to-back refreshes: 573 ms
 
-## What the table says, and what it does not
+Bytes moved: setup 0.0 MB, whole run 56.2 MB measured against 185.6 MB estimated.
+Cleaned up: removed 200 accounts (with their orders, ledger entries and positions) and 5 quotes of run 34633b01.
+```
+
+**Measured against both estimates.** N = 50 cell: 22.9 MB computed on read and 20.1 MB from the view, against my 76.3 MB and your about 70 MB.
+Whole run: 56.2 MB, against my 185.6 MB and your about 250 MB. Both estimates were high, by about three times, for one reason: they assumed a
+reader reads 10 times a second, and a reader here waited for each answer, so 50 readers made 2,792 and 2,312 reads in 15 seconds, about 3.7 and
+3.1 a second each. The bytes per read were close (8.2 to 9.5 KB measured, 10.1 KB estimated). These are bytes counted by the script on
+the client; I have not seen the Neon console's figure for the run, so that one is yours to read.
+
+## What the new table says
+
+- Baseline 550 ms p50 / 575 ms p95 for a buy, as before (545 ms).
+- N = 50 computed on read: ledger write p95 1,007 ms; from the view, 613 ms, within 40 ms of the baseline. Read p95 810 ms against 353 ms.
+  With a quarter of the rows a read, the view's write cost at N = 50 is back at the baseline; the computed path is still about 430 ms slower
+  at p95, and it also completed fewer writes (170 against 219 in 15 s).
+- At N = 10 the two paths are not distinguishable on writes (632 and 603 ms p95). Read p95 was lower computed on read (209 ms) than from the view
+  (359 ms) in this run, the opposite of the "before" run (204 against 115 ms); a one-run difference of that size in either direction is not evidence.
+- Refresh: 36 back-to-back refreshes, p50 424 ms, p95 455 ms. Ledger write p95 573 ms during them against 618 ms with none running: no measurable cost.
+- One run, 15-second cells, 200 accounts: differences under about 200 ms are noise. This table does not replace the diagnosis below.
+
+## What the "before" table says, and what it does not
 
 - With nobody reading, a buy costs about 545 ms at p50 from here. That is the baseline.
 - At N = 10 neither path moves the writes much; the view serves the same readers faster (read p95 115 ms against 204 ms).
