@@ -36,7 +36,7 @@ for (const viewport of [
 
       await expect(page.getByTestId("price-cell-price")).toHaveText("65,432.10");
 
-      const credit = page.getByRole("link", { name: "Powered by CoinGecko" });
+      const credit = page.getByRole("link", { name: "Powered by CoinGecko" }).first();
       await expect(credit).toBeVisible();
       await expect(credit).toHaveAttribute("href", "https://www.coingecko.com/en/api");
     });

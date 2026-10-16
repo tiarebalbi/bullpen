@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────
-   Bullpen trading app: page composition. Tokens and components come from @bullpen/ui (imported in layout.tsx before
-   this file); this file holds only layout.
+   Bullpen trading app: page composition. Tokens and the terminal's own frame (header, watchlist, main, rail) come from
+   @bullpen/ui (imported in layout.tsx before this file); this file holds only what is particular to this page.
 ────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
@@ -17,110 +17,62 @@ a {
 }
 
 .bp-app {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: var(--space-8) var(--space-4) var(--space-14);
-}
-.bp-app__header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-8);
-}
-.bp-app__header h1 {
-  margin: 0;
-  font: 500 var(--fs-h1) / 1.05 var(--font-display);
-  letter-spacing: -0.035em;
-}
-.bp-app__header p {
-  margin: 0;
-  font: 600 11px/1 var(--font-body);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--foreground-muted);
-}
-.bp-app__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
+  padding: var(--space-4) var(--space-4) var(--space-6);
 }
 @media (min-width: 64rem) {
-  .bp-app__grid {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    align-items: start;
+  .bp-app {
+    padding: var(--space-6) var(--space-6) var(--space-10);
   }
 }
 
-.bp-stock-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-}
-.bp-stock-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+.bp-terminal__chip {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--bp-hair);
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  font: 600 12.5px/1 var(--font-body);
 }
-.bp-stock-row:first-child {
-  border-top: 0;
-}
-.bp-stock-row__name {
-  font: 600 15px/1.3 var(--font-body);
-}
-.bp-stock-row__note {
-  display: block;
-  font: 500 12px/1.4 var(--font-mono);
-  color: var(--foreground-muted);
-}
-.bp-leaderboard-list > li + li,
-.bp-leaderboard-list > li:not(:first-child) {
-  border-top: 1px solid var(--bp-hair);
-}
-.bp-leaderboard__status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-.bp-leaderboard__failed {
-  margin: 0 0 var(--space-4);
-  font: 500 12px/1.4 var(--font-mono);
-  color: var(--foreground-muted);
-}
-.bp-price-ticker {
+.bp-detail {
   display: flex;
   align-items: center;
   gap: var(--space-4);
   flex-wrap: wrap;
   margin-bottom: var(--space-4);
 }
-.bp-stock-prices__credit {
-  margin: var(--space-4) 0 0;
-  font: 500 12px/1.5 var(--font-body);
+.bp-detail__note {
+  margin: 0 0 var(--space-4);
+  font: 500 13px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-leaderboard__failed {
+  margin: 0 0 var(--space-4);
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-leaderboard__more {
+  margin: var(--space-3) 0 0;
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-leaderboard-list > li:not(:first-child) {
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-credit,
+.bp-web-footer {
+  font: 500 12px/1.6 var(--font-body);
   color: var(--foreground-muted);
 }
 .bp-web-footer {
-  max-width: 72rem;
+  max-width: 96rem;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-4) var(--space-10);
-  font: 500 12px/1.6 var(--font-body);
-  color: var(--foreground-muted);
+  padding: var(--space-4) var(--space-4) calc(var(--space-10) + 4rem);
 }
 .bp-web-footer p {
   margin: 0 0 var(--space-2);
 }
-.bp-stock-prices__closed {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: 600 10.5px/1.4 var(--font-body);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--foreground-muted);
+@media (min-width: 64rem) {
+  .bp-web-footer {
+    padding: var(--space-4) var(--space-6) var(--space-10);
+  }
 }

@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { ConnectionIndicator, EmptyState, ErrorState, LeaderboardList, LeaderboardRow, Panel, Skeleton, formatTime, useNow } from "@bullpen/ui";
+import type { ReactNode } from "react";
+import { ConnectionIndicator, EmptyState, LeaderboardList, LeaderboardRow, Panel, Skeleton, formatTime, useNow } from "@bullpen/ui";
 import type { LeaderboardSnapshot } from "@bullpen/contracts";
-
-const POLL_INTERVAL_MS = 60_000;
-
-type FetchState = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; snapshot: LeaderboardSnapshot };
+import type { Polled } from "../lib/usePolled.js";
+import { Unavailable } from "./Unavailable.js";
 
 /** "3 min ago", "45 s ago": the age the page shows next to the as-of time. */
 export function ageLabel(ageMs: number): string {
@@ -14,35 +12,10 @@ export function ageLabel(ageMs: number): string {
   return seconds < 90 ? `${seconds} s ago` : `${Math.round(seconds / 60)} min ago`;
 }
 
-export function Leaderboard(): ReactNode {
-  const [state, setState] = useState<FetchState>({ status: "loading" });
+export function Leaderboard({ polled }: { polled: Polled<LeaderboardSnapshot> }): ReactNode {
   const now = useNow();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load(): Promise<void> {
-      try {
-        const response = await fetch("/api/leaderboard");
-        if (!response.ok) {
-          const body = (await response.json().catch(() => ({}))) as { error?: string };
-          if (!cancelled) setState({ status: "error", message: body.error ?? "Leaderboard unavailable." });
-          return;
-        }
-        const snapshot = (await response.json()) as LeaderboardSnapshot;
-        if (!cancelled) setState({ status: "ok", snapshot });
-      } catch {
-        if (!cancelled) setState({ status: "error", message: "Leaderboard unavailable." });
-      }
-    }
-    void load();
-    const id = setInterval(() => void load(), POLL_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  if (state.status === "loading") {
+  if (polled.status === "loading") {
     return (
       <Panel title="Leaderboard" aside={<ConnectionIndicator status="reconnecting" detail="loading" />}>
         <div style={{ display: "grid", gap: 14 }} aria-hidden="true">
@@ -53,19 +26,20 @@ export function Leaderboard(): ReactNode {
       </Panel>
     );
   }
-  if (state.status === "error") {
+  if (polled.status === "error") {
     return (
       <Panel title="Leaderboard">
-        <ErrorState title="Leaderboard unavailable" description={state.message} />
+        <Unavailable httpStatus={polled.httpStatus} title="Leaderboard unavailable" message={polled.message} what="The ranking and its players" />
       </Panel>
     );
   }
 
-  const { snapshot } = state;
+  const snapshot = polled.data;
   const asOf = new Date(snapshot.asOf).getTime();
   // Age as the viewer sees it: the server's age at response time, then the time since, so it keeps counting between polls.
   const age = Math.max(snapshot.ageMs, now - asOf);
   const failedAt = snapshot.lastFailure ? new Date(snapshot.lastFailure.at).getTime() : null;
+  const hidden = snapshot.total - snapshot.rows.length;
 
   return (
     <Panel title="Leaderboard" aside={<ConnectionIndicator status={snapshot.stale ? "stale" : "live"} detail={`as of ${formatTime(asOf)} · ${ageLabel(age)}`} />}>
@@ -77,11 +51,14 @@ export function Leaderboard(): ReactNode {
       {snapshot.rows.length === 0 ? (
         <EmptyState title="No players yet" description="The ranking appears here once the first account has a position or cash to count." />
       ) : (
-        <LeaderboardList label="Players ranked by equity">
-          {snapshot.rows.map((row) => (
-            <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} />
-          ))}
-        </LeaderboardList>
+        <>
+          <LeaderboardList label="Players ranked by equity">
+            {snapshot.rows.map((row) => (
+              <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} />
+            ))}
+          </LeaderboardList>
+          {hidden > 0 ? <p className="bp-leaderboard__more">Showing the top {snapshot.rows.length} of {snapshot.total} players.</p> : null}
+        </>
       )}
     </Panel>
   );
