@@ -117,6 +117,15 @@
     "note": "Neon Free plan project count. Bullpen uses one project and one database, with a schema and a role per transactional owner (ADR-0012)."
   },
   {
+    "service": "neon",
+    "metric": "network_transfer",
+    "allowance": 5,
+    "unit": "GB/project/month",
+    "source_url": "https://neon.com/docs/introduction/plans",
+    "checked_on": "2026-10-16",
+    "note": "Neon Free plan: 5 GB of network transfer per project per month. When it is used up, Neon suspends the compute until the allowance resets. Added on 2026-10-16, the day it was used up: the project's compute was suspended after my contention runs read the full leaderboard (about 1.7 GB per cell). The figure and the page were checked by the project owner on 2026-10-16."
+  },
+  {
     "service": "upstash-redis",
     "metric": "data_size",
     "allowance": 256,

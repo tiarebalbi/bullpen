@@ -1,5 +1,13 @@
 # Contention: what a leaderboard read costs a ledger write
 
+> **2026-10-16: Neon suspended the project's compute.** The project had used 100% of its 5 GB monthly network transfer on the Free
+> plan, mostly from the runs in this file: each full-ranking cell moved about 1.7 GB (2,000 accounts read whole, about 190 reads a
+> second for 30 seconds), and I ran several. The runs below are the measurements I have; no further run touches Neon until the
+> allowance resets. The cause is my measurement design, not the product: the page never reads 2,000 rows (the route now caps a read
+> at the top 50 plus the caller's row, `leaderboard-payload.md`), and every measurement script now estimates its transfer before it
+> starts and refuses a run that would pass a share of what is left (`scripts/transfer-budget.ts`). A cold-start run that was
+> under way against the preview was stopped at the same time, after 6 of its 10 rounds, and kept nothing.
+
 Date: 2026-10-16T12:39:10Z. Neon production branch of the Bullpen project, Postgres 18.6, database `neondb`, through the pooled host as
 `trading_owner`. Client: my laptop, Node v26.11.1, `pg` over the public internet, so every statement carries a round trip
 of tens of milliseconds that a function in the same region would not. Compare rows with each other, not with a production p95.

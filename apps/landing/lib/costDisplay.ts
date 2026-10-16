@@ -57,6 +57,7 @@ const METRIC_LABELS: Record<string, string> = {
   storage: "Storage",
   compute: "Compute",
   data_size: "Data size",
+  network_transfer: "Network transfer",
   monthly_commands: "Monthly commands",
   monthly_bandwidth: "Monthly bandwidth",
   metrics_active_series: "Active metric series",
