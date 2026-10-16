@@ -40,5 +40,5 @@ roles -> OK 2 row(s) [{"rolname":"market_data_owner","rolsuper":false,"rolbypass
 - `GET /api/stock-prices` returns no rows: no stock price has been ingested for a closed trading day yet. The ingest I called
   on the preview at 12:37 UTC asked for today's date, and the provider had not published it (`notYetPublished: ["AAPL","MSFT"]`),
   as designed. The after-close run is recorded in `deploy-topology.md`.
-- `GET /api/leaderboard` returns no rows while the test accounts are not in the view; it is stale by design until the next
-  refresh.
+- `GET /api/leaderboard` returned no rows at 12:37 UTC, with `stale: true` (its last refresh was 13 minutes old). The contention run that
+  followed wrote 2,000 marked test accounts; the cleanup removes them, and the final report shows the leaderboard empty again.
