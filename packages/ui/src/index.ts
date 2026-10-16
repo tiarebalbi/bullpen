@@ -46,6 +46,18 @@ export type {
   ArchPrediction,
 } from "./components/ArchitectureExplorer.js";
 
+export { TerminalHeader, TerminalShell } from "./components/TerminalShell.js";
+export type { TerminalHeaderProps, TerminalShellProps } from "./components/TerminalShell.js";
+
+export { WatchlistRow, WatchlistSection } from "./components/WatchlistRow.js";
+export type { WatchlistRowProps, WatchlistSectionProps } from "./components/WatchlistRow.js";
+
+export { OrderTicketLocked, TradeBarLocked } from "./components/OrderTicketLocked.js";
+export type { OrderTicketLockedProps } from "./components/OrderTicketLocked.js";
+
+export { useTheme } from "./lib/useTheme.js";
+export type { Theme } from "./lib/useTheme.js";
+
 export { LeaderboardList, LeaderboardRow } from "./components/LeaderboardRow.js";
 export type { LeaderboardListProps, LeaderboardRowProps } from "./components/LeaderboardRow.js";
 

@@ -283,3 +283,285 @@ html[data-consent-open] body {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ─────────────────────────────────────────────
+   Terminal — the trading app's frame (Bullpen Terminal.dc.html)
+   A header across the top, then watchlist | main | order ticket. Under 64rem the three stack in that order and
+   the trade bar is pinned to the bottom (Bullpen Mobile Trading.dc.html).
+────────────────────────────────────────────── */
+.bp-terminal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 96rem;
+  margin: 0 auto;
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 40rem;
+}
+.bp-terminal[data-has-bar] {
+  padding-bottom: 5.5rem;
+}
+.bp-terminal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--bp-hair);
+}
+.bp-terminal__brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.bp-terminal__brand h1 {
+  margin: 0;
+  font: 500 22px/1 var(--font-display);
+  letter-spacing: -0.03em;
+}
+.bp-terminal__brand span {
+  font: 500 12px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-terminal__header-aside {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.bp-terminal__watchlist,
+.bp-terminal__main,
+.bp-terminal__rail {
+  min-width: 0;
+  padding: var(--space-5);
+}
+.bp-terminal__watchlist,
+.bp-terminal__main {
+  border-bottom: 1px solid var(--bp-hair);
+}
+.bp-terminal__main {
+  display: grid;
+  gap: var(--space-5);
+  align-content: start;
+}
+/* On a phone the trade bar is the ticket, so the rail's copy of it is not shown as well. */
+.bp-terminal[data-has-bar] .bp-terminal__rail {
+  display: none;
+}
+.bp-terminal__bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  background: var(--bp-panel);
+  border-top: 1px solid var(--bp-hair);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 64rem) {
+  .bp-terminal {
+    grid-template-columns: 19.5rem minmax(0, 1fr) 20.5rem;
+    grid-template-areas:
+      "header header header"
+      "watchlist main rail";
+  }
+  .bp-terminal[data-has-bar] {
+    padding-bottom: 0;
+  }
+  .bp-terminal__header { grid-area: header; }
+  .bp-terminal__watchlist { grid-area: watchlist; border-bottom: 0; border-right: 1px solid var(--bp-hair); }
+  .bp-terminal__main { grid-area: main; border-bottom: 0; }
+  .bp-terminal__rail { grid-area: rail; border-left: 1px solid var(--bp-hair); }
+  .bp-terminal[data-has-bar] .bp-terminal__rail { display: block; }
+  .bp-terminal__bar { display: none; }
+}
+
+/* Watchlist */
+.bp-watchlist__section + .bp-watchlist__section {
+  margin-top: var(--space-5);
+}
+.bp-watchlist__title {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  font: 600 10.5px/1.4 var(--font-body);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-watchlist__title span:last-child {
+  font: 500 11px/1.4 var(--font-mono);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bp-watchlist__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--bp-dur-hover) ease, border-color var(--bp-dur-hover) ease;
+}
+.bp-watchlist__row:hover {
+  background: var(--bp-panel-2);
+}
+.bp-watchlist__row[aria-pressed="true"] {
+  background: var(--bp-panel-2);
+  border-color: var(--bp-hair);
+}
+.bp-watchlist__row:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.bp-watchlist__who,
+.bp-watchlist__what {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.bp-watchlist__what {
+  text-align: right;
+  justify-items: end;
+}
+.bp-watchlist__symbol {
+  font: 600 14px/1.3 var(--font-body);
+}
+.bp-watchlist__detail,
+.bp-watchlist__status {
+  font: 500 11px/1.35 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-watchlist__price {
+  font: 500 14px/1.3 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bp-watchlist__price[data-stale] {
+  color: var(--bp-stale);
+}
+
+/* Order ticket (off) */
+.bp-ticket {
+  display: grid;
+  gap: var(--space-4);
+}
+.bp-ticket__fields {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.bp-ticket__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--bp-panel-2);
+}
+.bp-ticket__tabs button {
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--foreground-muted);
+  font: 600 13px/1 var(--font-body);
+}
+.bp-ticket__tabs--small button {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.bp-ticket__field {
+  display: grid;
+  gap: var(--space-2);
+}
+.bp-ticket__field span,
+.bp-ticket__sums dt {
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-ticket__field input {
+  border: 0;
+  border-bottom: 1px solid var(--bp-hair);
+  background: transparent;
+  padding: 8px 0;
+  color: var(--foreground-muted);
+  font: 500 16px/1.2 var(--font-mono);
+}
+.bp-ticket__sums {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.bp-ticket__sums div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.bp-ticket__sums dd {
+  margin: 0;
+  font: 500 13px/1.3 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-ticket__cta,
+.bp-tradebar button:last-child {
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 13px 18px;
+  background: var(--bp-panel-2);
+  color: var(--foreground-muted);
+  font: 700 14px/1 var(--font-body);
+}
+.bp-ticket__tabs button:disabled,
+.bp-ticket__cta:disabled,
+.bp-tradebar button:disabled,
+.bp-ticket__field input:disabled {
+  cursor: not-allowed;
+}
+.bp-ticket__why {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--foreground-muted);
+  border-radius: var(--radius-lg);
+  font: 500 13px/1.5 var(--font-body);
+  color: var(--foreground);
+}
+
+/* Trade bar (phone) */
+.bp-tradebar {
+  display: grid;
+  gap: var(--space-2);
+}
+.bp-tradebar p {
+  margin: 0;
+  font: 500 12px/1.4 var(--font-body);
+  color: var(--foreground-muted);
+  text-align: center;
+}
+.bp-tradebar div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.bp-tradebar button {
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 14px 18px;
+  background: var(--bp-panel-2);
+  color: var(--foreground-muted);
+  font: 700 14px/1 var(--font-body);
+}

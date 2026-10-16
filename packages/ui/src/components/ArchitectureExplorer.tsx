@@ -19,9 +19,9 @@ import { boxNodeIdsOf, groupBounds, groupFlowNodes, groupsToDraw } from "./Archi
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
 import { PartChanges, partBefore } from "./ArchitectureExplorerChanges.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
-import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
-import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
-import type { ArchGroupData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
+import { ArchitectureExplorerEdge } from "./ArchitectureExplorerEdge.js";
+import { ArchitectureExplorerGroup } from "./ArchitectureExplorerGroup.js";
+import type { ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
 export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
 
