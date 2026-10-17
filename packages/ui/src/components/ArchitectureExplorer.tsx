@@ -14,14 +14,19 @@ import { latestBuiltPart } from "../lib/latestBuiltPart.js";
 import { useControllablePart } from "../lib/useControllablePart.js";
 import { useReducedMotion } from "../lib/useReducedMotion.js";
 import { useReportPartMoves } from "../lib/useReportPartMoves.js";
+import { fitPaddingOf, flowEdgesOf } from "./ArchitectureExplorerFlowEdges.js";
+import { EdgePanel, useEdgeSelection } from "./ArchitectureExplorerEdgePanel.js";
+import { TrafficControl, useTrafficPlayback } from "./ArchitectureExplorerTraffic.js";
+import { DetailsSheet } from "./ArchitectureExplorerTrafficSheet.js";
+import { cardNodesOf, groupBounds, groupFlowNodes, groupsToDraw } from "./ArchitectureExplorerGroups.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
-import { PartChanges, partBefore } from "./ArchitectureExplorerChanges.js";
+import { partBefore } from "./ArchitectureExplorerChanges.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
-import { ArchitectureExplorerEdge, type ArchFlowEdgeData } from "./ArchitectureExplorerEdge.js";
-import { ArchitectureExplorerGroup, type ArchFlowGroupData } from "./ArchitectureExplorerGroup.js";
-import type { ArchGroupData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
+import { ArchitectureExplorerEdge } from "./ArchitectureExplorerEdge.js";
+import { ArchitectureExplorerGroup } from "./ArchitectureExplorerGroup.js";
+import type { ArchEdgeData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
-export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange } from "./ArchitectureExplorer.types.js";
+export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
 
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
@@ -50,23 +55,13 @@ export interface ArchitectureExplorerProps {
 
 const NODE_TYPES = { archNode: ArchitectureExplorerNode, archGroup: ArchitectureExplorerGroup };
 const EDGE_TYPES = { archEdge: ArchitectureExplorerEdge };
-const GROUP_NODE_WIDTH = 176;
-const GROUP_NODE_HEIGHT = 60;
-const GROUP_PAD = 24;
-
-/** Bounding box (in the same absolute coordinate space as node.x/y) around a group's real member nodes. */
-function groupBounds(group: ArchGroupData, nodesById: Map<string, ArchNodeData>): { x: number; y: number; width: number; height: number } | null {
-  const members = group.nodeIds.map((id) => nodesById.get(id)).filter((n): n is ArchNodeData => Boolean(n));
-  if (members.length === 0) return null;
-  const x0 = Math.min(...members.map((n) => n.x)) - GROUP_PAD;
-  const y0 = Math.min(...members.map((n) => n.y)) - GROUP_PAD - 16;
-  const x1 = Math.max(...members.map((n) => n.x + GROUP_NODE_WIDTH)) + GROUP_PAD;
-  const y1 = Math.max(...members.map((n) => n.y + GROUP_NODE_HEIGHT)) + GROUP_PAD;
-  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
-}
+/** A wide picture (a part that reads left to right) has to fit a phone's width whole, so it may zoom out further than a tall one. */
+const MIN_ZOOM = 0.1;
 
 const REQUEST_STEP_MS = 1900;
 const SCRUB_PLAY_MS = 2400;
+/** One hue per owner while the "Data ownership" toggle is on, in the order the nodes name their owners. */
+const OWNER_HUES = [65, 250, 150, 320];
 const REMOVE_ANIM_MS = 940;
 
 function diffNodeState(node: ArchNodeData, prevNodesById: Map<string, ArchNodeData>, currIds: Set<string>): ArchNodeVisualState {
@@ -97,6 +92,9 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   const [showQuanta, setShowQuanta] = useState(true);
   const [showType, setShowType] = useState(true);
   const [showData, setShowData] = useState(false);
+  const traffic = useTrafficPlayback();
+  const edgeSel = useEdgeSelection();
+  const [flowIdx, setFlowIdx] = useState(0);
   const [scrubPlaying, setScrubPlaying] = useState(false);
   const [request, setRequest] = useState<{ on: boolean; idx: number; playing: boolean }>({
     on: false,
@@ -113,6 +111,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     // Leaving a part ends its playback, and drops a selection that part does not have.
     onArrive: (next) => {
       setRequest({ on: false, idx: 0, playing: false });
+      setFlowIdx(0);
       setSelectedId((id) => (id && partsById.get(next)?.nodes.some((n) => n.id === id) ? id : null));
     },
   });
@@ -172,7 +171,14 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     setRequest({ on: false, idx: 0, playing: false });
   }, []);
 
-  const requestSteps = current.request.steps;
+  const flows = useMemo(() => [current.request, ...(current.requests ?? [])], [current]);
+  const activeFlow = flows[Math.min(flowIdx, flows.length - 1)]!;
+  const requestSteps = activeFlow.steps;
+  // Who owns what, while the "Data ownership" toggle is on: each owner gets its own hue, in the order the nodes name them.
+  const ownerHues = useMemo(() => {
+    const owners = [...new Set(current.nodes.map((n) => n.owner).filter((id): id is string => Boolean(id)))];
+    return new Map(owners.map((id, i): [string, number] => [id, OWNER_HUES[i % OWNER_HUES.length]!]));
+  }, [current]);
 
   const toggleRequestPlay = useCallback(() => {
     setRequest((r) => {
@@ -272,27 +278,11 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     return set;
   }, [request, requestSteps, current.edges]);
 
-  const groups = useMemo(() => (showQuanta ? current.groups : []), [showQuanta, current.groups]);
+  const fitPadding = fitPaddingOf(current);
+  const groups = useMemo(() => groupsToDraw(current.groups, showQuanta), [showQuanta, current.groups]);
 
   const nodesById = useMemo(() => new Map(displayNodes.map((n) => [n.id, n])), [displayNodes]);
-  const groupNodes: Node[] = useMemo(() => {
-    const out: Node[] = [];
-    for (const g of groups) {
-      const bounds = groupBounds(g, nodesById);
-      if (!bounds) continue;
-      out.push({
-        id: g.id,
-        type: "archGroup",
-        position: { x: bounds.x, y: bounds.y },
-        style: { width: bounds.width, height: bounds.height },
-        draggable: false,
-        selectable: false,
-        zIndex: -1,
-        data: { label: g.label } satisfies ArchFlowGroupData,
-      });
-    }
-    return out;
-  }, [groups, nodesById]);
+  const groupNodes: Node[] = useMemo(() => groupFlowNodes(groups, nodesById, selectedId, setSelectedId), [groups, nodesById, selectedId]);
   const parentByNodeId = useMemo(() => {
     const map = new Map<string, { id: string; x: number; y: number }>();
     for (const g of groups) {
@@ -306,9 +296,10 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   // Group containers must precede their members in the array -- React Flow
   // requires a parent node to already be known when it processes a child
   // that references it via parentId.
+  const cardNodes = cardNodesOf(displayNodes, current.groups);
   const flowNodes: Node[] = [
     ...groupNodes,
-    ...displayNodes.map((n) => {
+    ...cardNodes.map((n) => {
       const parent = parentByNodeId.get(n.id);
       return {
         id: n.id,
@@ -325,30 +316,15 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           dimmed: Boolean(selectedId) && selectedId !== n.id && !(request.on && touchedIds.has(n.id)),
           touched: request.on && touchedIds.has(n.id),
           showData,
+          ownerHue: n.owner ? ownerHues.get(n.owner) : undefined,
+          flow: current.flow,
           onSelect: setSelectedId,
         } satisfies ArchFlowNodeData,
       };
     }),
   ];
 
-  const flowEdges: Edge[] = displayEdges.map((e) => {
-    const ghosted = current.status === "planned" && current.edges.some((ce) => ce.id === e.id) && !builtEdgeIds.has(e.id);
-    const onPath = Boolean(activeStep && activeStep.edge === e.id);
-    return {
-      id: e.id,
-      source: activeStep?.reverse && onPath ? e.b : e.a,
-      target: activeStep?.reverse && onPath ? e.a : e.b,
-      type: "archEdge",
-      data: {
-        type: e.type,
-        ghosted,
-        onPath,
-        dimmed: request.on ? !onPath : false,
-        showType,
-        reduced,
-      } satisfies ArchFlowEdgeData,
-    };
-  });
+  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, nodesById, activeStep, requestOn: request.on, showData, showType, reduced, paused: traffic.paused, ownerHues });
 
   // React Flow's `fitView` prop only fits once, on mount (for whichever
   // part happened to be initial). Without this, scrubbing to a part whose
@@ -357,7 +333,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
   // just dimmed. Refit whenever the part or the quanta grouping (which
   // changes the layout's effective bounds) changes.
   useEffect(() => {
-    fitView({ padding: 0.25, duration: reduced ? 0 : 500 });
+    fitView({ padding: fitPadding, duration: reduced ? 0 : 500 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [part, showQuanta, fitView]);
 
@@ -381,7 +357,15 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           onSync={setShowType}
           onData={setShowData}
         />
+        <TrafficControl edges={current.edges} paused={traffic.paused} reduced={reduced} onToggle={traffic.toggle} />
       </div>
+
+      {showData && ownerHues.size > 0 ? (
+        <OwnerLegend
+          owners={[...ownerHues].map(([id, hue]) => ({ id, hue, label: current.nodes.find((n) => n.id === id)?.label ?? id }))}
+          note="Each schema takes its owner's colour. The label on a connection is the database role that uses it, and what it may do."
+        />
+      ) : null}
 
       {hideScrubber ? null : (
         <MomentScrubber
@@ -416,11 +400,13 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
               nodeTypes={NODE_TYPES}
               edgeTypes={EDGE_TYPES}
               fitView
-              fitViewOptions={{ padding: 0.25 }}
+              fitViewOptions={{ padding: fitPadding }}
+              minZoom={MIN_ZOOM}
               proOptions={{ hideAttribution: true }}
               nodesDraggable={false}
               nodesConnectable={false}
               elementsSelectable={false}
+              onEdgeClick={(_, edge) => edgeSel.select(current.part, edge.id)}
               panOnScroll
               zoomOnScroll={false}
             >
@@ -472,11 +458,19 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           adrHrefs={adrHrefs}
           part={current}
           before={partBefore(partsById, current)}
+          edge={edgeSel.edgeIn(current)}
+          onCloseEdge={edgeSel.clear}
         />
       </div>
 
       <FollowRequestBar
-        requestName={current.request.name}
+        requestName={activeFlow.name}
+        flowNames={flows.map((flow) => flow.name)}
+        flowIdx={Math.min(flowIdx, flows.length - 1)}
+        onFlow={(i) => {
+          stopRequest();
+          setFlowIdx(i);
+        }}
         on={request.on}
         idx={request.idx}
         playing={request.playing}
@@ -512,6 +506,20 @@ function chipStyle(status: "built" | "planned"): CSSProperties {
     color: status === "built" ? "var(--bp-gain)" : "var(--foreground-muted)",
     border: status === "built" ? "0" : "1px dashed var(--foreground-muted)",
   };
+}
+
+function OwnerLegend({ owners, note }: { owners: Array<{ id: string; hue: number; label: string }>; note: string }): ReactNode {
+  return (
+    <div data-testid="owner-legend" style={{ marginTop: 12, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center", font: "500 12.5px/1.4 var(--font-body)", color: "var(--foreground-muted)" }}>
+      {owners.map((owner) => (
+        <span key={owner.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--foreground)" }}>
+          <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 9999, background: `oklch(66% 0.14 ${owner.hue})` }} />
+          {owner.label}
+        </span>
+      ))}
+      <span>{note}</span>
+    </div>
+  );
 }
 
 function Toggles({
@@ -738,6 +746,8 @@ function SidePanel({
   adrHrefs,
   part,
   before,
+  edge,
+  onCloseEdge,
 }: {
   node: ArchNodeData | null;
   nodeState: ArchNodeVisualState;
@@ -747,6 +757,9 @@ function SidePanel({
   part: ArchPartData;
   /** The part before `part`, or `part` itself for the first. */
   before: ArchPartData;
+  /** A clicked line, shown when no node is selected. */
+  edge: ArchEdgeData | null;
+  onCloseEdge: () => void;
 }): ReactNode {
   const panelStyle: CSSProperties = {
     background: "var(--bp-panel)",
@@ -759,7 +772,7 @@ function SidePanel({
 
   if (node) {
     return (
-      <aside aria-label="Details" style={panelStyle}>
+      <aside aria-label="Details" className="bp-arch-explorer__side" style={panelStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={eyebrowStyle}>
             {node.kind} · {node.meta}
@@ -804,12 +817,12 @@ function SidePanel({
     );
   }
 
+  if (edge) return <EdgePanel part={part} edge={edge} onClose={onCloseEdge} />;
+
   return (
-    <aside aria-label="Details" data-popover-bounds style={panelStyle}>
+    <aside aria-label="Details" className="bp-arch-explorer__side" data-popover-bounds style={panelStyle}>
       <div style={smallEyebrow}>What changed in Part {part.part}</div>
-      <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
-        <PartChanges part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
-      </div>
+      <DetailsSheet part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
       </div>
@@ -826,6 +839,9 @@ const smallEyebrow: CSSProperties = {
 
 function FollowRequestBar({
   requestName,
+  flowNames,
+  flowIdx,
+  onFlow,
   on,
   idx,
   playing,
@@ -838,6 +854,10 @@ function FollowRequestBar({
   onStepTo,
 }: {
   requestName: string;
+  /** The names of every request this part can follow; a chooser shows when there is more than one. */
+  flowNames: string[];
+  flowIdx: number;
+  onFlow: (index: number) => void;
   on: boolean;
   idx: number;
   playing: boolean;
@@ -862,6 +882,30 @@ function FollowRequestBar({
         gap: 14,
       }}
     >
+      {!on && flowNames.length > 1 ? (
+        <div role="radiogroup" aria-label="Request to follow" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {flowNames.map((name, i) => (
+            <button
+              key={name}
+              type="button"
+              role="radio"
+              aria-checked={i === flowIdx}
+              onClick={() => onFlow(i)}
+              style={{
+                border: 0,
+                cursor: "pointer",
+                padding: "8px 12px",
+                borderRadius: 9999,
+                background: i === flowIdx ? "color-mix(in oklch, var(--ember) 22%, var(--surface-sunken))" : "var(--surface-sunken)",
+                color: "var(--foreground)",
+                font: "600 12px/1 var(--font-body)",
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {!on ? (
         <>
           <button

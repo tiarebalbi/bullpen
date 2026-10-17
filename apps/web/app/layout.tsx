@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@bullpen/ui/styles.css";
+import "./web.css";
 import { join } from "node:path";
 import { resolveAnalyticsConfig } from "@bullpen/ui/analytics-config";
+import { THEME_INIT_SCRIPT } from "@bullpen/ui/theme-init";
 import { AnalyticsHost } from "./components/AnalyticsHost.js";
 import { Footer } from "./components/Footer.js";
 import { loadCurrentPart } from "./lib/currentPart.js";
@@ -14,13 +16,14 @@ const PRODUCTION_URL = "https://bullpen-web-nine.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(PRODUCTION_URL),
-  title: "Bullpen trading app — live BTC-USD",
-  description: "Live BTC-USD price for Bullpen, a paper-trading league built in public for the series Architecting Software in 2026.",
+  title: "Bullpen trading app — live BTC-USD and end-of-day stocks",
+  description: "Live BTC-USD and end-of-day U.S. stock prices for Bullpen, a paper-trading league built in public for the series Architecting Software in 2026.",
   alternates: {
     canonical: "/",
   },
-  // No content here is worth ranking yet -- one live price, no league to
-  // join until Part 3. Revisit once there's something real to index.
+  // No content here is worth ranking yet -- two kinds of price and a
+  // leaderboard with no players until accounts arrive in Part 4. Revisit
+  // once there's something real to index.
   robots: { index: false },
 };
 
@@ -36,7 +39,12 @@ const currentPart = loadCurrentPart(join(process.cwd(), "..", ".."));
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the inline script puts the saved (or default dark) theme on <html> before first paint, which the server
+    // cannot know: an expected, narrow mismatch, not a bug to silence broadly.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
         {children}
         <Footer />

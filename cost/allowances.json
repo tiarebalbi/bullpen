@@ -92,11 +92,11 @@
   {
     "service": "neon",
     "metric": "storage",
-    "allowance": 0.5,
+    "allowance": 1,
     "unit": "GB/project",
     "source_url": "https://neon.com/docs/introduction/plans",
-    "checked_on": "2026-09-25",
-    "note": "Neon Free plan storage allowance per project."
+    "checked_on": "2026-10-13",
+    "note": "Neon Free plan Postgres storage per project (20 GB across all projects). The 2026-09-25 reading was 0.5 GB; the plans page now says 1 GB."
   },
   {
     "service": "neon",
@@ -104,8 +104,53 @@
     "allowance": 100,
     "unit": "CU-hours/project/month",
     "source_url": "https://neon.com/docs/introduction/plans",
-    "checked_on": "2026-09-25",
-    "note": "Neon's docs note this is enough to run a 0.25 CU compute for 400 hours/month."
+    "checked_on": "2026-10-13",
+    "note": "Neon Free plan: 100 CU-hours per project per month, enough for a 0.25 CU compute for 400 hours. Computes suspend after 5 minutes of inactivity and this cannot be disabled on Free. Autoscaling goes up to 2 CU."
+  },
+  {
+    "service": "neon",
+    "metric": "projects",
+    "allowance": 100,
+    "unit": "projects",
+    "source_url": "https://neon.com/docs/introduction/plans",
+    "checked_on": "2026-10-13",
+    "note": "Neon Free plan project count. Bullpen uses one project and one database, with a schema and a role per transactional owner (ADR-0012)."
+  },
+  {
+    "service": "neon",
+    "metric": "network_transfer",
+    "allowance": 5,
+    "unit": "GB/project/month",
+    "source_url": "https://neon.com/docs/introduction/plans",
+    "checked_on": "2026-10-16",
+    "note": "Neon Free plan: 5 GB of network transfer per project per month. When it is used up, Neon suspends the compute until the allowance resets. Added on 2026-10-16, the day it was used up: the project's compute was suspended after my contention runs read the full leaderboard (about 1.7 GB per cell). The figure and the page were checked by the project owner on 2026-10-16. Superseded on 2026-10-16: the project moved to the Launch plan (service neon-launch), which includes 500 GB. Kept as the record of the allowance that was used up."
+  },
+  {
+    "service": "neon-launch",
+    "metric": "network_transfer",
+    "allowance": 500,
+    "unit": "GB/project/month",
+    "source_url": "https://neon.com/pricing",
+    "checked_on": "2026-10-16",
+    "note": "Neon Launch plan: 500 GB of network transfer a month included, then $0.10 per GB. In force from 2026-10-16, when the Free plan's 5 GB was used up by the 2,000-account contention run."
+  },
+  {
+    "service": "neon-launch",
+    "metric": "compute_rate",
+    "allowance": 0.106,
+    "unit": "USD per CU-hour",
+    "source_url": "https://neon.com/pricing",
+    "checked_on": "2026-10-16",
+    "note": "Neon Launch plan: compute is billed at $0.106 per CU-hour. Compute stays fixed at 0.25 CU, with scale-to-zero on at 5 minutes."
+  },
+  {
+    "service": "neon-launch",
+    "metric": "storage_rate",
+    "allowance": 0.35,
+    "unit": "USD per GB-month",
+    "source_url": "https://neon.com/pricing",
+    "checked_on": "2026-10-16",
+    "note": "Neon Launch plan: storage is billed at $0.35 per GB-month."
   },
   {
     "service": "upstash-redis",
@@ -203,7 +248,16 @@
     "allowance": 25,
     "unit": "calls/day",
     "source_url": "https://www.alphavantage.co/premium/",
-    "checked_on": "2026-09-26",
-    "note": "Free tier daily call limit, end-of-day data only. See ADR-0008 (Proposed, not Accepted): the free key's terms license 'personal, non-commercial use' and written permission for Bullpen's public display was requested from premium@alphavantage.co on 2026-09-26, still pending. Finnhub is under evaluation as a possible second source (permission requested 2026-09-25, not used until granted, not named on any public page)."
+    "checked_on": "2026-10-13",
+    "note": "Free key's daily call limit, end-of-day data only. One symbol per GLOBAL_QUOTE request. The call budget caps Bullpen's own calls at 20 a day (ADR-0008, ADR-0013). A 5-a-minute limit is reported by secondary sources only and is unconfirmed."
+  },
+  {
+    "service": "vercel-services",
+    "metric": "service_requests",
+    "allowance": 1000000,
+    "unit": "requests/month",
+    "source_url": "https://vercel.com/docs/services/pricing",
+    "checked_on": "2026-10-13",
+    "note": "Vercel Services is in Beta. A service request is one call from one service to another over a binding; requests from the public internet are not service requests. Compute is billed like Vercel Functions, so Active CPU and provisioned memory draw on the Hobby allowances above."
   }
 ]

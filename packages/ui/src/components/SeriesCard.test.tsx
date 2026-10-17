@@ -42,6 +42,13 @@ describe("SeriesCard", () => {
     expect(link).toHaveAttribute("href", "https://tiarebalbi.com/part-1");
   });
 
+  it("shows the link but no date, and not 'Not yet published', for a published part whose date is not written in yet", () => {
+    render(<SeriesCard part={3} title="Who owns the data" status="published" introduced="X" date={null} href="https://tiarebalbi.com/part-3" />);
+    expect(screen.getByText("Published")).toBeInTheDocument();
+    expect(screen.queryByText("Not yet published")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See it →" })).toHaveAttribute("href", "https://tiarebalbi.com/part-3");
+  });
+
   describe("the status chip, as the design draws it", () => {
     const styleOf = (label: string) => screen.getByText(label).getAttribute("style") ?? "";
 

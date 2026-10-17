@@ -1,0 +1,78 @@
+/* ─────────────────────────────────────────────
+   Bullpen trading app: page composition. Tokens and the terminal's own frame (header, watchlist, main, rail) come from
+   @bullpen/ui (imported in layout.tsx before this file); this file holds only what is particular to this page.
+────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+a {
+  color: inherit;
+}
+
+.bp-app {
+  padding: var(--space-4) var(--space-4) var(--space-6);
+}
+@media (min-width: 64rem) {
+  .bp-app {
+    padding: var(--space-6) var(--space-6) var(--space-10);
+  }
+}
+
+.bp-terminal__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  font: 600 12.5px/1 var(--font-body);
+}
+.bp-detail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.bp-detail__note {
+  margin: 0 0 var(--space-4);
+  font: 500 13px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-leaderboard__failed {
+  margin: 0 0 var(--space-4);
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-leaderboard__more {
+  margin: var(--space-3) 0 0;
+  font: 500 12px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-leaderboard-list > li:not(:first-child) {
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-credit,
+.bp-web-footer {
+  font: 500 12px/1.6 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-web-footer {
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) calc(var(--space-10) + 4rem);
+}
+.bp-web-footer p {
+  margin: 0 0 var(--space-2);
+}
+@media (min-width: 64rem) {
+  .bp-web-footer {
+    padding: var(--space-4) var(--space-6) var(--space-10);
+  }
+}

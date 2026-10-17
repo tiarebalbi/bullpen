@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 Clarified 2026-10-10: `builtIn` is where the item was first built, the check enforces both rules, and the week-one predictions live at the tag `predictions-week-1`.
 

@@ -25,7 +25,7 @@ export const ADL_RULE = {
 const KNOWN_ADL_RULES: readonly string[] = Object.values(ADL_RULE);
 
 /** The forms a check enforces by reading the rule itself, whatever it names. */
-const ENFORCED_FORMS = new Set<AdlRule["form"]["form"]>(["dependent-on", "no-dependency-on", "secret"]);
+const ENFORCED_FORMS = new Set<AdlRule["form"]["form"]>(["dependent-on", "no-dependency-on", "secret", "owner-writes", "reads-through"]);
 
 /** `structure.adl:<line>` for the ASSERT that states `ruleText`, or plain `structure.adl` if it is not stated or the file cannot be read. */
 export function citeAdl(repoRoot: string, ruleText: string): string {

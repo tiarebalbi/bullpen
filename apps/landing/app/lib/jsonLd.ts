@@ -84,7 +84,8 @@ function nodesFor(page: JsonLdPage, parts: SeriesPart[]): object[] {
 
 function seriesNode(parts: SeriesPart[]): object {
   const published = parts
-    .filter((part) => part.status === "published")
+    // A post with no date yet (the publish placeholder) is not listed: a BlogPosting needs the day it was published.
+    .filter((part) => part.status === "published" && part.date !== null)
     .sort((a, b) => a.part - b.part)
     .map((part) => ({
       "@type": "BlogPosting",

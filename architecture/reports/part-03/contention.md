@@ -1,0 +1,224 @@
+# Contention: what a leaderboard read costs a ledger write
+
+> **2026-10-16: Neon suspended the project's compute.** The project had used 100% of its 5 GB monthly network transfer on the Free
+> plan, mostly from the runs in this file: each full-ranking cell moved about 1.7 GB (2,000 accounts read whole, about 190 reads a
+> second for 30 seconds), and I ran several. The runs below are the measurements I have; no further run touches Neon until the
+> allowance resets. The cause is my measurement design, not the product: the page never reads 2,000 rows (the route now caps a read
+> at the top 50 plus the caller's row, `leaderboard-payload.md`), and every measurement script now estimates its transfer before it
+> starts and refuses a run that would pass a share of what is left (`scripts/transfer-budget.ts`). A cold-start run that was
+> under way against the preview was stopped at the same time, after 6 of its 10 rounds, and kept nothing.
+>
+> **2026-10-16, later the same day: the project moved to Neon's Launch plan**, because the Free plan's transfer was used up by the
+> 2,000-account run (about 1.7 GB for each full-ranking cell, several cells). Launch includes 500 GB of transfer a month, then $0.10 a
+> GB; compute stays at 0.25 CU with scale-to-zero at 5 minutes. Nothing about the measurements changed, but the cost did: this week's
+> Neon cost is no longer zero (`cost.md`). The transfer budget stays in force at 10% of what remains; with the upgrade, `--remaining-mb`
+> is 500,000 MB (the new billing period started on 2026-10-16, so what was used in it is about nothing).
+
+Date: 2026-10-16T12:39:10Z. Neon production branch of the Bullpen project, Postgres 18.6, database `neondb`, through the pooled host as
+`trading_owner`. Client: my laptop, Node v26.11.1, `pg` over the public internet, so every statement carries a round trip
+of tens of milliseconds that a function in the same region would not. Compare rows with each other, not with a production p95.
+
+**Compute is fixed at 0.25 CU on production.** It does not scale up for this run.
+
+**Batch size:** 2,000 accounts (50 from a smoke run of the same script, 1,950 from this one), each holding 5 positions, so 10,000
+positions; **this is the "before" run, with a whole-ranking read and 30-second cells;** the ledger grew from 160 rows by every measured buy. Prices are 5 test symbols with source `test`.
+
+## What I ran
+
+```
+DATABASE_URL_TRADING=<owner URL> DATABASE_URL_MARKET_DATA=<owner URL> \
+  pnpm --filter @bullpen/fitness-checks db:measure-contention -- --accounts 2000 --seconds 30 --writers 8
+```
+
+8 writers buy 1 unit of a test symbol on a random account in a loop (`placeMarketBuy`, the real transaction). N readers loop on
+the read path, each cell for 30 seconds. "Computed on read" is `computeLeaderboardOnRead`, the ranking query over the source
+tables; "materialized view" is `readLeaderboardRows`, a select from `trading.leaderboard_mv`. The script is
+`architecture/fitness/scripts/measure-contention.ts`; every row it wrote carries the test marker and is removed by
+`db:cleanup-test-data`.
+
+That command ran the first version of the script, which read the whole ranking and took `--accounts` and `--seconds` as written. The script in the
+repo now reads the capped payload, defaults to 200 accounts and 15 seconds, cleans up after itself, and has the transfer budget; see "After".
+The `--diagnose` mode used for the diagnosis below was part of that earlier version, and its output is kept below as it ran.
+
+## Before: 2,000 accounts, the whole ranking a read, 30-second cells
+
+Dataset 2,000 accounts x 5 positions. Payload: every read returned the whole ranking, 2,000 rows, about 345 KB. Duration: 30 s a cell.
+Bytes moved: about 1.7 GB for each N = 50 cell (measured on the client from the rows received; the connection meter below did not exist yet).
+
+```
+batch: 1950 accounts, 9750 positions, 160 ledger rows before; 8 writers; 30 s per cell
+
+| N readers | Read path | Ledger write p50 / p95 | Leaderboard read p95 | Writes | Reads |
+|---|---|---|---|---|---|
+| 0 | none (baseline) | 545 ms / 878 ms | n/a | 417 | 0 |
+| 10 | computed on read | 589 ms / 628 ms | 204 ms | 409 | 1859 |
+| 10 | materialized view | 600 ms / 660 ms | 115 ms | 376 | 2906 |
+| 50 | computed on read | 1003 ms / 1275 ms | 958 ms | 238 | 2255 |
+| 50 | materialized view | 853 ms / 1005 ms | 365 ms | 280 | 6281 |
+
+Refresh (CONCURRENTLY), 1950 accounts: 70 refreshes, duration p50 421 ms, p95 506 ms
+Ledger write p95 with no refresh running: 669 ms; during back-to-back refreshes: 617 ms
+```
+
+## After: 200 accounts, the top 50 and the caller's row a read, 15-second cells
+
+**Run on 2026-10-16, after the compute was released** (Launch plan; `--remaining-mb 500000`, so the 10% rule allowed 50,000 MB and the
+estimate of 185.6 MB passed). One run, run id `34633b01`, 200 accounts x 5 positions.
+
+**Three variables change between "before" and "after", not one:** the dataset (2,000 accounts to 200), the rows per read (2,000 to
+at most 51: the top 50 and the caller's own row) and the duration of a cell (30 s to 15 s). The new table therefore shows what the
+page will actually do and how cheap measuring it is; it is not an experiment that isolates one cause. The cause of the N = 50
+slowdown was isolated above, with the top-20 cell, which changed only rows per read.
+
+Command:
+
+```
+DATABASE_URL_TRADING=<owner URL> DATABASE_URL_MARKET_DATA=<owner URL> \
+  pnpm --filter @bullpen/fitness-checks db:measure-contention -- --remaining-mb <left this month, from the Neon dashboard>
+```
+
+The script seeds once, runs all cells (N = 0, 10, 50, both read paths), cleans up once, and every row it writes is test-marked
+(handle `zz-test-contention-<run id>-…`, quotes with source `test`). Before it starts it prints the estimate below and refuses if
+the run would pass 10% of `--remaining-mb` (`--max-share` changes that), or if `--remaining-mb` is not given. After it runs it prints
+measured bytes next to each estimate. The estimate, from `--estimate-only` (no database needed):
+
+```
+estimate: 200 accounts, 15 s cells, 8 writers, 10 reads a second per reader, 51 rows a read
+  per read: 10.1 KB
+  0 readers, baseline                0.6 MB
+  10 readers, computed on read       15.7 MB
+  10 readers, materialized view      15.7 MB
+  50 readers, computed on read       76.3 MB
+  50 readers, materialized view      76.3 MB
+  refresh phase, with refreshes      0.6 MB
+  refresh phase, without             0.6 MB
+  setup 0.0 MB; whole run 185.6 MB
+Within budget: estimated 185.6 MB, 10% of the 500000.0 MB remaining is 50000.0 MB.
+```
+
+The estimate assumes one reader reads 10 times a second (measured at 12 for 20 rows) and prices a read at 175 bytes a row, 250 bytes of
+framing and a 10% wire overhead. Output of the run, verbatim:
+
+```
+batch: 200 accounts, 1000 positions; 8 writers; 15 s per cell; reads are the top 50 and the caller's row
+
+| N readers | Read path | Ledger write p50 / p95 | Leaderboard read p95 | Bytes per read | Bytes per cell, measured (estimated) |
+|---|---|---|---|---|---|
+| 0 | none (baseline) | 550 ms / 575 ms | n/a | n/a | 0.4 MB (0.6 MB) |
+| 10 | computed on read | 578 ms / 632 ms | 209 ms | 8.6 KB | 7.4 MB (15.7 MB) |
+| 10 | materialized view | 552 ms / 603 ms | 359 ms | 9.5 KB | 4.4 MB (15.7 MB) |
+| 50 | computed on read | 706 ms / 1007 ms | 810 ms | 8.2 KB | 22.9 MB (76.3 MB) |
+| 50 | materialized view | 550 ms / 613 ms | 353 ms | 8.7 KB | 20.1 MB (76.3 MB) |
+
+Refresh (CONCURRENTLY), 200 accounts: 36 refreshes, duration p50 424 ms, p95 455 ms
+Ledger write p95 with no refresh running: 618 ms; during back-to-back refreshes: 573 ms
+
+Bytes moved: setup 0.0 MB, whole run 56.2 MB measured against 185.6 MB estimated.
+Cleaned up: removed 200 accounts (with their orders, ledger entries and positions) and 5 quotes of run 34633b01.
+```
+
+**Measured against both estimates.** N = 50 cell: 22.9 MB computed on read and 20.1 MB from the view, against my 76.3 MB and your about 70 MB.
+Whole run: 56.2 MB, against my 185.6 MB and your about 250 MB. Both estimates were high, by about three times, for one reason: they assumed a
+reader reads 10 times a second, and a reader here waited for each answer, so 50 readers made 2,792 and 2,312 reads in 15 seconds, about 3.7 and
+3.1 a second each. The bytes per read were close (8.2 to 9.5 KB measured, 10.1 KB estimated). These are bytes counted by the script on
+the client; I have not seen the Neon console's figure for the run, so that one is yours to read.
+
+## What the new table says
+
+- Baseline 550 ms p50 / 575 ms p95 for a buy, as before (545 ms).
+- N = 50 computed on read: ledger write p95 1,007 ms; from the view, 613 ms, within 40 ms of the baseline. Read p95 810 ms against 353 ms.
+  With a quarter of the rows a read, the view's write cost at N = 50 is back at the baseline; the computed path is still about 430 ms slower
+  at p95, and it also completed fewer writes (170 against 219 in 15 s).
+- At N = 10 the two paths are not distinguishable on writes (632 and 603 ms p95). Read p95 was lower computed on read (209 ms) than from the view
+  (359 ms) in this run, the opposite of the "before" run (204 against 115 ms); a one-run difference of that size in either direction is not evidence.
+- Refresh: 36 back-to-back refreshes, p50 424 ms, p95 455 ms. Ledger write p95 573 ms during them against 618 ms with none running: no measurable cost.
+- One run, 15-second cells, 200 accounts: differences under about 200 ms are noise. This table does not replace the diagnosis below.
+
+## What the "before" table says, and what it does not
+
+- With nobody reading, a buy costs about 545 ms at p50 from here. That is the baseline.
+- At N = 10 neither path moves the writes much; the view serves the same readers faster (read p95 115 ms against 204 ms).
+- At N = 50 both paths slow the writes, the view less (write p95 1,005 ms against 1,275 ms computed on read; read p95 365 ms against
+  958 ms). I first read this as 50 readers sharing 0.25 CU with the writers. **The diagnosis below shows that reading was not
+  supported by the data**, and this table alone cannot say why N = 50 is slower.
+- A refresh takes about 420 ms (p95 506 ms) for 2,000 accounts. Ledger write p95 during back-to-back refreshes was 617 ms against 669 ms with
+  none running: within the noise of a 30-second cell, so I found no measurable cost of the refresh itself.
+- Each cell is 30 seconds and one run. The N = 0 row's p95 (878 ms) is higher than two of the cells with readers: differences under about
+  200 ms between cells are not evidence.
+
+## Diagnosing the N = 50 slowdown
+
+Question: is the slowdown CPU on the 0.25 CU compute, connection or pool queueing, or lock waits? I reran the baseline and the N = 50 view
+cell with sampling, and added one cell that changes only how much each read returns. While each cell ran, a separate connection sampled
+`pg_stat_activity` for the role's sessions every 250 ms (state and wait event), `EXPLAIN (ANALYZE)` timed a leaderboard read on the server about
+every second, and the script recorded its own pool queue and Node's event-loop delay. Command:
+
+```
+pnpm --filter @bullpen/fitness-checks db:measure-contention -- --accounts 2000 --seconds 30 --writers 8 --diagnose
+```
+
+Output, verbatim (the same 2,000 accounts; 6,634 ledger rows before the first cell):
+
+```
+batch: 2000 accounts, 10000 positions, 6634 ledger rows before; 8 writers; 30 s per cell
+
+
+### 0 readers, 8 writers, 30 s
+client: ledger write p50 / p95 544 ms / 574 ms (439); leaderboard read p95 n/a (0)
+server: leaderboard read executes in p50 1.16 ms / p95 1.59 ms (EXPLAIN ANALYZE, 22 samples); planning p50 0.07 ms
+this machine: Node event-loop delay p50 11.0 ms / p95 11.2 ms / max 16.2 ms; 0 rows per read, 0 rows a second received
+sessions of this role, 88 samples: active avg 0.0, max 1; our pool: max 8 connections, max 0 callers waiting for one
+what those sessions were in (sample counts):
+    2683  idle | Client | ClientRead
+     566  idle in transaction | Client | ClientRead
+       4  active | CPU or running | -
+       3  idle in transaction | CPU or running | -
+
+### 50 readers, the whole ranking (2,000 rows a read), 8 writers, 30 s
+client: ledger write p50 / p95 1135 ms / 1535 ms (213); leaderboard read p95 463 ms (5650)
+server: leaderboard read executes in p50 1.18 ms / p95 15.30 ms (EXPLAIN ANALYZE, 17 samples); planning p50 0.04 ms
+this machine: Node event-loop delay p50 10.2 ms / p95 11.5 ms / max 22.4 ms; 2000 rows per read, 376667 rows a second received
+sessions of this role, 66 samples: active avg 1.7, max 8; our pool: max 58 connections, max 0 callers waiting for one
+what those sessions were in (sample counts):
+    2209  idle | Client | ClientRead
+     437  idle in transaction | Client | ClientRead
+     110  active | CPU or running | -
+       3  active | IPC | SyncRep
+       2  idle | CPU or running | -
+       2  active | Lock | transactionid
+
+### 50 readers, the top 20 rows a read, 8 writers, 30 s
+client: ledger write p50 / p95 553 ms / 648 ms (428); leaderboard read p95 101 ms (17965)
+server: leaderboard read executes in p50 1.21 ms / p95 4.53 ms (EXPLAIN ANALYZE, 22 samples); planning p50 0.03 ms
+this machine: Node event-loop delay p50 10.2 ms / p95 11.0 ms / max 15.6 ms; 20 rows per read, 11977 rows a second received
+sessions of this role, 86 samples: active avg 0.9, max 11; our pool: max 58 connections, max 0 callers waiting for one
+what those sessions were in (sample counts):
+    3304  idle | Client | ClientRead
+     569  idle in transaction | Client | ClientRead
+      72  idle | CPU or running | -
+      69  active | CPU or running | -
+       4  active | IPC | SyncRep
+       1  none | CPU or running | -
+       1  idle in transaction | CPU or running | -
+       1  active | Lock | transactionid
+       1  active | Client | ClientRead
+```
+
+What the evidence points to:
+
+| Candidate | What I captured | Verdict |
+|---|---|---|
+| Lock waits | `Lock / transactionid` in 2 of 2,763 session samples in the full-ranking cell, 1 of 4,022 in the top-20 cell | not it: two writers picked the same random account now and then |
+| Pool queueing on my side | my pool never had a caller waiting (max 0), 58 connections for 58 loops | not it |
+| CPU on the 0.25 CU compute | a read executes in 1.2 ms at p50 on the server in every cell (p95 4.5 to 15 ms under load); active sessions averaged 1.7 of 58; and with the top 20 rows, 600 reads a second (three times the full-ranking rate) left ledger write p95 at 648 ms against 574 ms idle | not the limit at this load; the server is mostly idle |
+| Bytes moved | the slow cell received 376,667 rows a second (about 1.7 GB in 30 seconds); the cell that sent 20 rows a read did not slow the writes at all, with three times as many reads | **this is what changes between the cells** |
+| My machine's event loop | event-loop delay p95 11 ms in all three cells (the timer's own resolution is 10 ms) | not it |
+
+So the 1,005 ms (and 1,461 to 1,535 ms in the reruns) comes from reading the whole ranking 190 times a second, and not from the database
+doing more work. The data does not say which hop carries the cost: my network link, or Neon's proxy and pooler on the way, since both
+move the same bytes and I have no counter on either. It also does not say what a read of the whole ranking costs in production, where a
+page reads a page of rows, not 2,000, and where the readers' bytes do not cross my laptop's connection.
+
+What I take from it for the post: the claim that stands is "no reader waits for a refresh, and a read costs the server about a
+millisecond". The claim I cannot make is that 50 concurrent readers of 2,000 rows cost a ledger write nothing. They did not, and the cause I can
+rule out is the compute, not the one I can name.

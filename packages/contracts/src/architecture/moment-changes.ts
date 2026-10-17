@@ -1,7 +1,8 @@
 /**
  * What a built moment added to the previous built one that the explorer's
- * node diff cannot show: controls on nodes and relationships that were already
- * there, and the ADRs the timeline links to the moment. Pure, like the carry
+ * node diff cannot show: controls (on nodes and relationships that were already
+ * there, and on new ones, which carry their own), and the ADRs the timeline
+ * links to the moment. Pure, like the carry
  * (ADR-0011): the landing's loader derives it from the CALM documents and the
  * timeline, so nothing is written by hand and nothing can drift from them.
  */
@@ -36,9 +37,9 @@ export function adrIdOfFile(file: string): string | null {
   return match ? `ADR-${match[1]}` : null;
 }
 
+/** The controls `after` has that `before` did not. A node or relationship that is new has all of its own: its row shows them beside "added". */
 function addedControls(before: Controlled | undefined, after: Controlled): ControlChange[] {
-  if (!before) return []; // a new node or relationship is reported as added, not as a list of controls
-  const had = new Set(Object.keys(before.controls ?? {}));
+  const had = new Set(Object.keys(before?.controls ?? {}));
   const added = Object.entries(after.controls ?? {}).filter(([key]) => !had.has(key));
   return added.map(([key, control]) => (control.description ? { key, description: control.description } : { key }));
 }

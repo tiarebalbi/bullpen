@@ -44,8 +44,8 @@ test.describe("Decisions", () => {
     await expect(row.locator(".bp-decisions-row__meta")).toHaveText("Part 1");
     await expect(row.getByText("Accepted")).toBeVisible();
 
-    // ADR-0004 is reserved but not written -- must not appear.
-    await expect(decisions.getByText("ADR-0004")).toHaveCount(0);
+    // ADR-0004, the deploy topology, is written now and listed like the others.
+    await expect(decisions.locator(".bp-decisions-row", { hasText: "ADR-0004" })).toHaveCount(1);
   });
 
   test("clicking a row opens the modal with the ADR's full body", async ({ page }) => {

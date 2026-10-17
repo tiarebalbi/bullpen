@@ -24,16 +24,25 @@
   "boundaries": {
     "tags": {
       "landing": {
-        "dependencies": { "allow": ["ui", "contracts"], "deny": ["trading-app"] }
+        "dependencies": { "allow": ["ui", "contracts"], "deny": ["trading-app", "market-data-service", "trading", "market-data"] }
       },
       "trading-app": {
-        "dependencies": { "allow": ["ui", "contracts"], "deny": ["landing"] }
+        "dependencies": { "allow": ["ui", "contracts", "trading"], "deny": ["landing", "market-data-service", "market-data"] }
       },
       "ui": {
-        "dependencies": { "deny": ["landing", "trading-app"] }
+        "dependencies": { "deny": ["landing", "trading-app", "market-data-service"] }
       },
       "contracts": {
-        "dependencies": { "deny": ["landing", "trading-app"] }
+        "dependencies": { "deny": ["landing", "trading-app", "market-data-service"] }
+      },
+      "trading": {
+        "dependencies": { "deny": ["market-data"] }
+      },
+      "market-data": {
+        "dependencies": { "deny": ["trading"] }
+      },
+      "market-data-service": {
+        "dependencies": { "allow": ["contracts", "market-data"], "deny": ["landing", "trading-app", "ui", "trading"] }
       }
     }
   }

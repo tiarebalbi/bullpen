@@ -47,9 +47,9 @@ describe("the recorded decisions", () => {
     expect(adr).toContain("4. **Runtime fit**");
   });
 
-  it("ADR-0009 is Proposed, belongs to Part 2, and records all the incidents with UTC times", () => {
+  it("ADR-0009 is Accepted, belongs to Part 2, and records all the incidents with UTC times", () => {
     const adr = read("architecture/adr/0009-guardrails-enforced-not-requested.md");
-    expect(adr).toMatch(/## Status\n\nProposed\n/);
+    expect(adr).toMatch(/## Status\n\nAccepted\n/);
     expect(adr).toMatch(/## Part\n\n2\n/);
     for (const fact of ["PR #10", "#12", "44a27ec", "e6c0f77", "2a957ad", "e7e7e8f", "#14", "#15", "UTC"]) expect(adr).toContain(fact);
   });

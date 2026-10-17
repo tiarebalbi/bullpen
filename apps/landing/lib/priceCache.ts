@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const ROUTE = join("apps", "web", "app", "api", "price", "[symbol]", "route.ts");
+const ROUTE = join("apps", "market-data", "src", "price.ts");
 const REVALIDATE = /export const REVALIDATE_SECONDS = (\d+);/;
 
 /**
  * How long the price route caches an upstream CoinGecko answer, read from the
- * route's own `REVALIDATE_SECONDS` (the same constant the budget check models
+ * price module's own `REVALIDATE_SECONDS` (the same constant the budget check models
  * call volume from), or null if it cannot be read. A page that says "cached
  * for 300 seconds" says it because the code says it.
  */

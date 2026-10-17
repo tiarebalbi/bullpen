@@ -117,11 +117,34 @@ function Playback({
 }
 
 /**
- * One real flow per part: the request the explorer follows, drawn as a
- * sequence. Sync arrows are solid (the caller waits); async arrows are
- * dashed. Mount it with `key={part}` so a new part starts from step one.
+ * The requests a part offers, one at a time: a chooser when there is more than one (a price request next
+ * to a buy), then the chosen request drawn as a sequence. Mount it with `key={part}` so a new part starts
+ * from the first request.
  */
-export function FlowsTab({ part, flow }: { part: number; flow: FlowView }): ReactNode {
+export function FlowsTab({ part, flows }: { part: number; flows: FlowView[] }): ReactNode {
+  const [choice, setChoice] = useState(0);
+  const flow = flows[Math.min(choice, flows.length - 1)]!;
+  return (
+    <>
+      {flows.length > 1 ? (
+        <div role="radiogroup" aria-label="Request to follow" className="bp-ap-flowchoice" style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "0 0 16px" }}>
+          {flows.map((candidate, i) => (
+            <button key={candidate.name} type="button" role="radio" aria-checked={i === choice} onClick={() => setChoice(i)}>
+              {candidate.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <FlowPanel key={flow.name} part={part} flow={flow} />
+    </>
+  );
+}
+
+/**
+ * One real flow: the request the explorer follows, drawn as a sequence. Sync arrows
+ * are solid (the caller waits); async arrows are dashed.
+ */
+function FlowPanel({ part, flow }: { part: number; flow: FlowView }): ReactNode {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const last = flow.steps.length - 1;

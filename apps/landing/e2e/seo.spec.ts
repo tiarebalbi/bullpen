@@ -127,11 +127,11 @@ test.describe("SEO metadata", () => {
     }
   });
 
-  test("the footer data line names CoinGecko and points to Part 3 for U.S. stocks, not a named provider", async ({ page }) => {
+  test("the footer data line names CoinGecko, says U.S. stocks are end of day, and names no stock provider", async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
     const footer = page.locator("footer");
-    await expect(footer).toContainText("Market data: crypto by CoinGecko. U.S. stocks arrive in Part 3.");
+    await expect(footer).toContainText("Market data: crypto by CoinGecko. U.S. stocks are end of day.");
     await expect(footer).not.toContainText("Alpaca");
     await expect(footer).not.toContainText("Alpha Vantage");
   });

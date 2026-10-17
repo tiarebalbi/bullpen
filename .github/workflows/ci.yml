@@ -11,6 +11,20 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    # A real Postgres for the data-ownership tests: real roles, real grants.
+    # Throwaway: it lives for this job and holds no data worth keeping.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -45,6 +59,13 @@ jobs:
       - name: guardrail tests (always)
         run: pnpm --filter @bullpen/fitness-checks test
 
+      # Not under --affected for the same reason as check:arch: an app-only
+      # change that breaks a grant must still fail here.
+      - name: database tests (always)
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+        run: pnpm --filter @bullpen/fitness-checks test:db:ci
+
       - name: Upload Playwright report (on failure)
         if: failure()
         uses: actions/upload-artifact@v7.0.1
@@ -72,6 +93,13 @@ jobs:
           -p architecture/calm/bullpen.pattern.json
           --strict -f junit -o calm-part-02-result.xml
 
+      - name: calm validate (Part 3 model)
+        run: >
+          npx --yes @finos/calm-cli@1.60.1 validate
+          -a architecture/calm/moments/part-03.architecture.json
+          -p architecture/calm/bullpen.pattern.json
+          --strict -f junit -o calm-part-03-result.xml
+
       - name: calm validate (timeline)
         run: >
           npx --yes @finos/calm-cli@1.60.1 validate
@@ -86,6 +114,7 @@ jobs:
           path: |
             calm-result.xml
             calm-part-02-result.xml
+            calm-part-03-result.xml
             calm-timeline-result.xml
 
   # Every commit in the PR must carry the repo identity and no Co-Authored-By

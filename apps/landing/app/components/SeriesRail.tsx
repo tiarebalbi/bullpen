@@ -11,8 +11,8 @@ export function SeriesRail({ parts }: { parts: SeriesPart[] }): ReactNode {
           <h2 id="series-heading">Six parts, one system</h2>
         </div>
         <p className="bp-series-intro">
-          Each part changes the architecture for a reason you can see: a new service, a split
-          database, an event where there used to be a call.
+          Each part changes the architecture for a reason you can see: a new service, a new data
+          owner, an event where there used to be a call.
         </p>
       </div>
       <ol className="bp-series-grid">

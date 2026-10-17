@@ -35,6 +35,8 @@ export type AssertForm =
   | { form: "dependent-on"; subject: string; targets: string[] }
   | { form: "no-dependency-on"; subject: string; targets: string[] }
   | { form: "secret"; directory: string; secret: string }
+  | { form: "owner-writes"; owner: string; objects: string[] }
+  | { form: "reads-through"; reader: string; schema: string; through: string }
   | { form: "free" };
 
 export interface AdlRule {
@@ -104,12 +106,16 @@ const ASSERT_LINE = /^ASSERT\((.+)\)(\s*)$/;
 const OLD_HEADER = /^(ADL:|TYPE\s)/;
 const DEPENDENCY_ASSERT = /^(.+?) (IS DEPENDENT ON|HAS NO DEPENDENCY ON) (.+)$/;
 const SECRET_ASSERT = /^ONLY (\S+) READS (\S+)$/;
+const OWNER_WRITES_ASSERT = /^ONLY (\S+) WRITES (\S+(?: AND \S+)*)$/;
+const READS_THROUGH_ASSERT = /^(\S+) READS (\S+) ONLY THROUGH (\S+)$/;
 
 /** Longest phrase first, so `ONLY THROUGH` is one keyword and not `ONLY` followed by a word. */
 const KEYWORDS = [
   "IS DEPENDENT ON",
   "HAS NO DEPENDENCY ON",
   "ONLY THROUGH",
+  "WRITES",
+  "AND",
   "DESCRIPTION",
   "CATEGORY",
   "COMPONENTS",
@@ -224,11 +230,25 @@ function dependencyForm(label: string, line: number, match: RegExpExecArray, def
   return { form: verb === "IS DEPENDENT ON" ? "dependent-on" : "no-dependency-on", subject, targets };
 }
 
+function requireDefined(label: string, line: number, name: string, definedNames: Set<string>): void {
+  if (!definedNames.has(name)) throw new AdlParseError(label, line, `"${name}" is not a DEFINEd COMPONENT or LIBRARY.`);
+}
+
 function formOf(label: string, line: number, text: string, definedNames: Set<string>): AssertForm {
   const dependency = DEPENDENCY_ASSERT.exec(text);
   if (dependency) return dependencyForm(label, line, dependency, definedNames);
   const secret = SECRET_ASSERT.exec(text);
   if (secret) return { form: "secret", directory: secret[1]!, secret: secret[2]! };
+  const writes = OWNER_WRITES_ASSERT.exec(text);
+  if (writes) {
+    requireDefined(label, line, writes[1]!, definedNames);
+    return { form: "owner-writes", owner: writes[1]!, objects: writes[2]!.split(" AND ") };
+  }
+  const reads = READS_THROUGH_ASSERT.exec(text);
+  if (reads) {
+    requireDefined(label, line, reads[1]!, definedNames);
+    return { form: "reads-through", reader: reads[1]!, schema: reads[2]!, through: reads[3]! };
+  }
   return { form: "free" };
 }
 

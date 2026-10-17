@@ -78,9 +78,8 @@ test.describe("Architecture Explorer", () => {
 
     const panel = architecture.getByLabel("Details");
     await expect(panel.getByText("Bullpen Trading App")).toBeVisible();
-    await expect(panel.getByText(/players view live prices/)).toBeVisible();
-    await expect(panel.getByText("ADR-0001")).toBeVisible();
-    await expect(panel.getByText("ADR-0003")).toBeVisible();
+    await expect(panel.getByText(/It owns orders, the ledger, positions and the leaderboard view/)).toBeVisible();
+    for (const adr of ["ADR-0001", "ADR-0003", "ADR-0012", "ADR-0014"]) await expect(panel.getByText(adr)).toBeVisible();
     await expect(panel.getByText("Free tier (Hobby)")).toBeVisible();
 
     await panel.getByRole("button", { name: "Close details" }).click();
@@ -90,9 +89,9 @@ test.describe("Architecture Explorer", () => {
   test("a node with no recorded ADR yet shows the pending copy", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
-    await scrubber.getByRole("button", { name: "PART 3" }).click();
+    await scrubber.getByRole("button", { name: "PART 4" }).click();
 
-    await architecture.getByRole("button", { name: "Prices Service, Service" }).click();
+    await architecture.getByRole("button", { name: "Order Saga, Infra" }).click();
     const panel = architecture.getByLabel("Details");
     await expect(panel.getByText("ADR pending: written before this part ships.")).toBeVisible();
   });
@@ -108,14 +107,26 @@ test.describe("Architecture Explorer", () => {
     await expect(architecture.getByText("Synchronous", { exact: true })).toBeHidden();
   });
 
-  test("the data-ownership toggle reveals a database pill on nodes that own data", async ({ page }) => {
+  test("the data-ownership toggle shows who owns each schema, and what each database role may do", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
-    await expect(architecture.getByText("prices-service_db")).toBeHidden();
-    await architecture.getByRole("switch", { name: "Data ownership" }).click();
-    await expect(architecture.getByText("prices-service_db")).toBeVisible();
+    const toggle = architecture.getByRole("switch", { name: "Data ownership" });
+    await expect(architecture.getByTestId("owner-legend")).toHaveCount(0);
+    await expect(architecture.getByText("trading_owner · read/write")).toHaveCount(0);
+
+    await toggle.click();
+    const legend = architecture.getByTestId("owner-legend");
+    await expect(legend).toContainText("Bullpen Trading App");
+    await expect(legend).toContainText("Market Data Service");
+    for (const label of ["trading_owner · read/write", "trading_owner · read only", "market_data_owner · write"]) {
+      await expect(architecture.getByText(label), label).toBeVisible();
+    }
+
+    await toggle.click();
+    await expect(architecture.getByTestId("owner-legend")).toHaveCount(0);
+    await expect(architecture.getByText("market_data_owner · write")).toHaveCount(0);
   });
 
   test("scrubbing to a part with more nodes than the initial one refits the viewport, not just the DOM", async ({ page }) => {
@@ -140,7 +151,7 @@ test.describe("Architecture Explorer", () => {
     // canvas panel, which also includes the legend and its own padding).
     const canvasBox = (await architecture.locator(".react-flow").boundingBox())!;
 
-    for (const name of ["Leaderboard Service, Service", "Ledger Service, Service", "Stock data provider, External"]) {
+    for (const name of ["Market Open Queue, Infra", "Order Saga, Infra", "Bullpen Trading App, App"]) {
       const box = await architecture.getByRole("button", { name }).boundingBox();
       expect(box, `${name} should be in the DOM`).not.toBeNull();
       expect(box!.x, `${name} left edge within canvas`).toBeGreaterThanOrEqual(canvasBox.x);
@@ -153,26 +164,27 @@ test.describe("Architecture Explorer", () => {
   test("a planned part ghosts nodes and edges the built system doesn't have yet", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
-    await scrubber.getByRole("button", { name: "PART 3" }).click();
+    await scrubber.getByRole("button", { name: "PART 4" }).click();
 
-    // "Prices Service" is new to Part 3's prediction: ghosted, dashed, tagged PLANNED.
-    const pricesService = architecture.getByRole("button", { name: "Prices Service, Service" });
-    await expect(pricesService.getByText("PLANNED")).toBeVisible();
+    // "Order Saga" is new to Part 4's plan: ghosted, dashed, tagged PLANNED.
+    const orderSaga = architecture.getByRole("button", { name: "Order Saga, Infra" });
+    await expect(orderSaga.getByText("PLANNED")).toBeVisible();
 
     // "Bullpen Trading App" already exists in the real, built Part 1: never ghosted.
     const tradingApp = architecture.getByRole("button", { name: "Bullpen Trading App, App" });
     await expect(tradingApp.getByText("PLANNED")).toHaveCount(0);
   });
 
-  test("the quanta toggle groups a db-owning service with the database it owns", async ({ page }) => {
+  test("the quanta toggle draws the box around what ships in one release", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
     const toggle = architecture.getByRole("switch", { name: "Group by quanta" });
     await expect(toggle).toHaveAttribute("aria-checked", "true");
-    const groupLabel = architecture.locator(".bp-arch-group__label", { hasText: "Prices Service" });
+    const groupLabel = architecture.locator(".bp-arch-group__label", { hasText: "One Vercel project, shared release" });
     await expect(groupLabel).toBeVisible();
+    await expect(architecture.locator(".bp-arch-group__label", { hasText: "One Neon database" })).toBeVisible();
 
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-checked", "false");
@@ -184,9 +196,9 @@ test.describe("Architecture Explorer", () => {
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
-    const groupRect = architecture.locator(".bp-arch-group__label", { hasText: "Prices Service" }).locator("..");
-    const service = architecture.getByRole("button", { name: "Prices Service, Service" });
-    const database = architecture.getByRole("button", { name: "Prices Database, Data" });
+    const groupRect = architecture.locator(".bp-arch-group__label", { hasText: "One Vercel project, shared release" }).locator("..");
+    const service = architecture.getByRole("button", { name: "Market Data Service, Service" });
+    const database = architecture.getByRole("button", { name: "Bullpen Trading App, App" });
 
     async function expectGroupContainsMembers() {
       const groupBox = (await groupRect.boundingBox())!;
@@ -200,6 +212,8 @@ test.describe("Architecture Explorer", () => {
       }
     }
 
+    // Let the node-settling animation and fitView's transition finish before measuring.
+    await page.waitForTimeout(1200);
     await expectGroupContainsMembers();
 
     // The bug this regresses: the group rect was a separately
@@ -209,33 +223,41 @@ test.describe("Architecture Explorer", () => {
     // container resizes) -- it drifted away from its member nodes. Real
     // React Flow parent/child nodes (sub-flows) share that transform.
     await page.setViewportSize({ width: 1000, height: 900 });
+    await page.waitForTimeout(1200);
     await expectGroupContainsMembers();
   });
 
   test("moving from part 2 to part 3 shows what was added and removed", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 2" }).click();
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
-    const panel = architecture.getByLabel("Details");
-    await expect(panel.getByText("Prices Service")).toBeVisible();
-    await expect(panel.getByText("Price Snapshot Service")).toBeVisible();
+    // The side panel keeps a summary; what changed is in the sheet its button opens.
+    await architecture.getByLabel("Details").getByRole("button", { name: "What changed" }).click();
+    const panel = page.getByRole("dialog", { name: /in detail/ });
+    await expect(panel.getByText(/^\+?\s*Market Data Service$/)).toBeVisible();
+    await expect(panel.getByText("Bullpen Database")).toBeVisible();
+    await expect(panel.getByText("Price Snapshot Service (moved into Market Data Service)")).toBeVisible();
+    // The old prediction's services were never built, so they are not something Part 3 added: they appear once, under "Predicted, not built".
+    await expect(panel.getByText("Predicted in week one, not built")).toBeVisible();
+    await expect(panel.getByText("Prices Service")).toHaveCount(1);
   });
 
   test("Follow a request plays through steps and can be paused, stepped and exited", async ({ page }) => {
     const architecture = page.locator("#architecture");
     await architecture.getByRole("button", { name: /Follow a price request/i }).click();
 
-    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 3");
+    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 4");
 
-    await architecture.getByRole("button", { name: "Pause" }).click();
-    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 3");
+    await architecture.getByRole("button", { name: "Pause", exact: true }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 4");
 
     await architecture.getByRole("button", { name: "Next step" }).click();
-    await expect(architecture.getByRole("status")).toContainText("STEP 2 OF 3");
+    await expect(architecture.getByRole("status")).toContainText("STEP 2 OF 4");
 
-    await architecture.getByRole("button", { name: "Step 3" }).click();
-    await expect(architecture.getByRole("status")).toContainText("STEP 3 OF 3");
+    await architecture.getByRole("button", { name: "Step 4" }).click();
+    await expect(architecture.getByRole("status")).toContainText("STEP 4 OF 4");
 
     await architecture.getByRole("button", { name: "Exit" }).click();
     await expect(architecture.getByRole("status")).toHaveCount(0);
@@ -247,11 +269,15 @@ test.describe("Architecture Explorer", () => {
 
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 2" }).click();
     await scrubber.getByRole("button", { name: "PART 3" }).click();
 
-    const removedNode = architecture.getByRole("button", { name: "Price Snapshot Service, Service" });
-    await expect(removedNode).toHaveClass(/bp-arch-node--removed-reduced/);
-    await expect(removedNode).not.toHaveClass(/bp-arch-node--removed(?!-reduced)/);
+    // Under reduced motion no node carries a class that moves: only the still ones (`-reduced`) may appear, at any moment of the change.
+    for (const part of ["PART 2", "PART 3", "PART 4", "PART 3"]) {
+      await scrubber.getByRole("button", { name: part }).click();
+      const classes = await architecture.locator(".react-flow__node-archNode [role=button]").evaluateAll((els) => els.map((e) => e.className));
+      for (const className of classes) expect(className, `after moving to ${part}`).not.toMatch(/bp-arch-node--(added|removed)(?!-reduced)|bp-arch-node__(ring|strike)(?!--reduced)/);
+    }
   });
 
   test("Play the series advances through parts on its own and can be paused", async ({ page }) => {
@@ -259,7 +285,8 @@ test.describe("Architecture Explorer", () => {
     await architecture.getByRole("button", { name: "Play the series" }).click();
     await expect(architecture.getByRole("button", { name: "Pause the series" })).toBeVisible();
 
-    await expect(architecture.getByText("Overview · Part 2")).toBeVisible({ timeout: 5000 });
+    // The series opens on its latest built part, Part 3, so the first step on is Part 4.
+    await expect(architecture.getByText("Overview · Part 4")).toBeVisible({ timeout: 5000 });
 
     await architecture.getByRole("button", { name: "Pause the series" }).click();
     await expect(architecture.getByRole("button", { name: "Play the series" })).toBeVisible();
@@ -325,9 +352,11 @@ async function openPart2Panel(page: Page): Promise<Locator> {
   await page.goto("/");
   const architecture = page.locator("#architecture");
   await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 2" }).click();
-  const panel = architecture.getByLabel("Details");
-  await expect(panel.getByText("What changed in Part 2")).toBeVisible();
-  return panel;
+  const side = architecture.getByLabel("Details");
+  await expect(side.getByText("What changed in Part 2")).toBeVisible();
+  // What changed is in the bottom sheet the panel's button opens: the tests below read it there.
+  await side.getByRole("button", { name: "What changed" }).click();
+  return page.getByRole("dialog", { name: /in detail/ });
 }
 
 for (const viewport of [
@@ -386,17 +415,44 @@ for (const viewport of [
       await expect(chip).toHaveAttribute("aria-expanded", "false");
     });
 
-    test("opening a second chip closes the first, and a press outside closes the open one", async ({ page }) => {
+    test("opening a second chip with the mouse closes the first, and a press outside closes the open one", async ({ page }) => {
       const panel = await openPart2Panel(page);
       await panel.getByRole("button", { name: "App boundaries" }).first().click();
       await expect(page.getByRole("region", { name: "App boundaries" })).toBeVisible();
 
+      // The description sits in the flow, under the chips, so the next chip is still there to click.
       await panel.getByRole("button", { name: "Call budget" }).click();
       await expect(page.getByRole("region", { name: "Call budget" })).toBeVisible();
       await expect(page.getByRole("region", { name: "App boundaries" })).toHaveCount(0);
 
-      await page.locator("#architecture h2").first().click();
+      // A press outside the popover but inside the sheet: outside the sheet it would close the sheet, which is its own test.
+      await panel.locator(".bp-traffic-sheet__head").click({ position: { x: 6, y: 6 } });
       await expect(page.getByRole("region", { name: "Call budget" })).toHaveCount(0);
+    });
+
+    test("opening a second chip with the keyboard closes the first", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await panel.getByRole("button", { name: "App boundaries" }).first().click();
+      await expect(page.getByRole("region", { name: "App boundaries" })).toBeVisible();
+      await panel.getByRole("button", { name: "Call budget" }).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("region", { name: "Call budget" })).toBeVisible();
+      await expect(page.getByRole("region", { name: "App boundaries" })).toHaveCount(0);
+    });
+
+    test("an open description covers no chip: every chip is still at its place on the screen's hit test", async ({ page }) => {
+      const panel = await openPart2Panel(page);
+      await panel.getByRole("button", { name: "App boundaries" }).first().click();
+      const popover = page.getByRole("region", { name: "App boundaries" });
+      const popoverBox = (await popover.boundingBox())!;
+      for (const name of CHIPS) {
+        const chips = panel.getByRole("button", { name });
+        for (let i = 0; i < (await chips.count()); i++) {
+          const box = (await chips.nth(i).boundingBox())!;
+          const overlaps = box.x < popoverBox.x + popoverBox.width && box.x + box.width > popoverBox.x && box.y < popoverBox.y + popoverBox.height && box.y + box.height > popoverBox.y;
+          expect(overlaps, `${name} #${i} is not under the open description`).toBe(false);
+        }
+      }
     });
 
     test("keeps every popover fully inside the viewport", async ({ page }) => {
@@ -435,13 +491,19 @@ test.describe("What changed in Part 2 fits its panel at 1440x900", () => {
     }
   });
 
-  test("with the banner dismissed, the panel's content fits within its height, and the panel within the viewport", async ({ page }) => {
-    const panel = await openPart2Panel(page);
-    const metrics = await panel.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, height: el.getBoundingClientRect().height }));
+  test("the side panel is kept to the diagram's height, and nothing in it is cut off", async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    const architecture = page.locator("#architecture");
+    await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 2" }).click();
+    const side = architecture.getByLabel("Details");
+    await expect(side.getByText("What changed in Part 2")).toBeVisible();
+    const canvas = (await architecture.locator(".bp-arch-explorer__canvas").boundingBox())!;
+    const metrics = await side.evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, height: el.getBoundingClientRect().height }));
+    expect(metrics.height).toBeLessThanOrEqual(canvas.height + 1);
     expect(metrics.scroll).toBeLessThanOrEqual(metrics.client + 1);
-    // With the descriptions inline the panel was about 980px tall; as chips it is well under the viewport.
-    expect(metrics.height).toBeLessThan(900);
   });
+;
 });
 
 for (const viewport of [
@@ -487,7 +549,7 @@ for (const viewport of [
       await page.goto("/");
     });
 
-    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 3 on", async ({ page }) => {
+    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 4 on", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
 
@@ -498,8 +560,8 @@ for (const viewport of [
         for (const name of ANALYTICS_CARDS) {
           const card = architecture.getByRole("button", { name: new RegExp(`^${name}`) });
           await expect(card, `${name} in Part ${part}`).toHaveCount(1);
-          // Part 2 is built and has the cards itself; Parts 3 to 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
-          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 3 ? 1 : 0);
+          // Parts 2 and 3 draw the cards themselves; Parts 4 to 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
+          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 4 ? 1 : 0);
           await expect(card.getByText("Built in Part 2")).toHaveCount(0);
           // Built, not predicted: never ghosted.
           await expect(card.getByText("PLANNED")).toHaveCount(0);
@@ -510,9 +572,9 @@ for (const viewport of [
       }
     });
 
-    test("Part 3's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
+    test("Part 4's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
       const architecture = page.locator("#architecture");
-      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 3" }).click();
+      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 4" }).click();
 
       const card = architecture.getByRole("button", { name: /^Google Analytics 4, External/ });
       await expect(card.getByText("Built in Part 1")).toBeVisible();
@@ -543,7 +605,7 @@ for (const viewport of [
       const panel = architecture.getByLabel("Details");
       await expect(panel.getByText("Built in Part 1; still running in this plan.")).toBeVisible();
       await expect(panel.getByText(/Built in Part 2/)).toHaveCount(0);
-      await expect(panel.getByText(/Page views and a few events from both apps/)).toBeVisible();
+      await expect(panel.getByText(/Page views and a short list of events/)).toBeVisible();
       await expect(panel.getByText("ADR-0010")).toBeVisible();
       await expect(panel.getByText("ADR pending: written before this part ships.")).toHaveCount(0);
     });

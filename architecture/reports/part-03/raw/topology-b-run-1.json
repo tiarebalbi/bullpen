@@ -1,0 +1,35 @@
+{
+  "sha": "48467f626c041958eba11620942ff3103efb26a6",
+  "pushedAt": "2026-10-13T17:08:21.097Z",
+  "measuredAt": "2026-10-13T17:09:16.613Z",
+  "deployments": [
+    {
+      "project": "bullpen-web",
+      "id": "dpl_HSDcSJABeL9qJnNCnen1Lhhk9Uqc",
+      "url": "bullpen-a52m9bipy-tiare-balbis-projects.vercel.app",
+      "state": "READY",
+      "target": "preview",
+      "pushedToCreatedMs": 8024,
+      "queuedMs": 4010,
+      "buildMs": 27608,
+      "pushedToReadyMs": 39642,
+      "createdAt": "2026-10-13T17:08:29.121Z",
+      "buildingAt": "2026-10-13T17:08:33.131Z",
+      "readyAt": "2026-10-13T17:09:00.739Z"
+    },
+    {
+      "project": "bullpen-landing",
+      "id": "dpl_FMEFinFMge11jBNL1S4jxWcZ7CPC",
+      "url": "bullpen-landing-741ss7lhi-tiare-balbis-projects.vercel.app",
+      "state": "CANCELED",
+      "target": "preview",
+      "pushedToCreatedMs": 8093,
+      "queuedMs": 35300,
+      "buildMs": 8425,
+      "pushedToReadyMs": 51818,
+      "createdAt": "2026-10-13T17:08:29.190Z",
+      "buildingAt": "2026-10-13T17:09:04.490Z",
+      "readyAt": "2026-10-13T17:09:12.915Z"
+    }
+  ]
+}

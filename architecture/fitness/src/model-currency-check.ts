@@ -8,9 +8,9 @@ const CHECK = "model currency";
 const TIMELINE = "architecture/calm/bullpen.timeline.json";
 const DATA_SOURCES = "docs/data-sources.md";
 
-/** Recorded in ADR-0009 (there is no ADL line for it: it is about the model matching the decisions). */
+/** Recorded in ADR-0009, and made status-aware by ADR-0016 (there is no ADL line for it: it is about the model matching the decisions). */
 export const EXTERNAL_SYSTEM_RULE =
-  "every external system in a CALM moment is decided in an ADR Decision or listed as in use or proposed in docs/data-sources.md";
+  "every external system in a CALM moment is decided in an Accepted ADR's Decision or listed as in use in docs/data-sources.md";
 export const ADR_LINKED_RULE = "every ADR is linked from the timeline moment of its part";
 export const CONTROL_POINTER_RULE = "every CALM control that names the check enforcing it points at a file that exists";
 
@@ -94,28 +94,36 @@ const quotedIn = (text: string, name: string): boolean =>
   [...text.matchAll(/["“]([^"”]+)["”]/g)].some((quoted) => mentions(quoted[1]!, name));
 
 interface Decisions {
-  /** Units that can make a system decided, tagged with how they count. */
+  /** Units that can make a system decided, tagged with how they count. Only an Accepted ADR's Decision, or an "in use" entry, is here. */
   decided: Array<Unit & { heading: boolean }>;
+  /** Units that would decide a system if their decision were accepted: a Proposed ADR's Decision, a "proposed" entry. They authorize nothing. */
+  undecided: Array<Unit & { heading: boolean; status: string; adr?: string }>;
   /** Units that only ever show a system was turned down. */
   turnedDown: Unit[];
   adrs: Array<{ id: string; file: string; part: number | null }>;
 }
 
 function readDecisions(repoRoot: string): Decisions {
-  const decisions: Decisions = { decided: [], turnedDown: [], adrs: [] };
+  const decisions: Decisions = { decided: [], undecided: [], turnedDown: [], adrs: [] };
 
   const adrDir = join(repoRoot, "architecture", "adr");
   if (existsSync(adrDir)) {
     for (const file of readdirSync(adrDir).filter((name) => name.endsWith(".md")).sort()) {
       const sections = sectionsOf(readFileSync(join(adrDir, file), "utf8"), "##");
       const id = `ADR-${file.slice(0, 4)}`;
+      const status = (sections.find((s) => s.heading.toLowerCase() === "status")?.body.trim().split(/\s+/)[0] ?? "").toLowerCase();
       const partText = sections.find((s) => s.heading.toLowerCase() === "part")?.body.trim();
       const part = partText && /^\d+$/.test(partText) ? Number(partText) : null;
       decisions.adrs.push({ id, file: `architecture/adr/${file}`, part });
 
       for (const section of sections) {
         const kind = section.heading.toLowerCase();
-        if (kind === "decision") for (const unit of unitsOf(section.body, `${id} Decision`)) decisions.decided.push({ ...unit, heading: false });
+        if (kind === "decision") {
+          for (const unit of unitsOf(section.body, `${id} Decision`)) {
+            if (status === "accepted") decisions.decided.push({ ...unit, heading: false });
+            else decisions.undecided.push({ ...unit, heading: false, status: status || "without a status", adr: id });
+          }
+        }
         if (kind === "alternatives") decisions.turnedDown.push(...unitsOf(section.body, `${id} Alternatives`));
       }
     }
@@ -125,31 +133,41 @@ function readDecisions(repoRoot: string): Decisions {
   if (existsSync(sourcesPath)) {
     for (const section of sectionsOf(readFileSync(sourcesPath, "utf8"), "##")) {
       const rejected = /\brejected\b/i.test(section.heading);
+      const proposed = /\bproposed\b/i.test(section.heading);
       const source = `${DATA_SOURCES} (${section.heading})`;
       const units = [{ text: section.heading, source }, ...unitsOf(section.body, source)];
       if (rejected) decisions.turnedDown.push(...units);
+      else if (proposed) units.forEach((unit, index) => decisions.undecided.push({ ...unit, heading: index === 0, status: "proposed" }));
       else units.forEach((unit, index) => decisions.decided.push({ ...unit, heading: index === 0 }));
     }
   }
   return decisions;
 }
 
-type Standing = { kind: "decided" } | { kind: "rejected"; source: string } | { kind: "unrecorded" };
+type Standing = { kind: "decided" } | { kind: "undecided"; source: string; status: string; adr?: string } | { kind: "rejected"; source: string } | { kind: "unrecorded" };
 
 /**
- * Whether `name` is decided. Counts: an ADR Decision that does not say it was
- * turned down; a provider listed under its own docs/data-sources.md heading
- * as chosen or proposed; a quoted label the decision records define (a
- * generic placeholder such as "Stock data provider"). Does not count: a
- * mention in an ADR's Alternatives, a section headed "rejected", an
- * incidental mention in prose, or a sentence that says it is not used.
+ * Whether `name` is decided. Counts: the Decision of an Accepted ADR, when it
+ * does not say the system was turned down; a provider listed under its own
+ * docs/data-sources.md heading as in use; a quoted label the decision records
+ * define (a generic placeholder such as "Stock data provider"). Does not
+ * count: a Proposed ADR's Decision or a "proposed" entry (the model may not
+ * name what is still undecided), a mention in an ADR's Alternatives, a
+ * section headed "rejected", an incidental mention in prose, or a sentence
+ * that says it is not used. ADR-0016.
  */
 function standingOf(name: string, decisions: Decisions): Standing {
-  const decided = decisions.decided.some((unit) => {
+  const counts = (unit: Unit & { heading: boolean }): boolean => {
     if (!mentions(unit.text, name) || NEGATION.test(unit.text)) return false;
     return unit.heading || unit.source.endsWith("Decision") || quotedIn(unit.text, name);
-  });
-  if (decided) return { kind: "decided" };
+  };
+  // A provider an ADR decides is decided by that ADR's status alone: an in-use docs entry cannot stand in for a Proposed one.
+  if (decisions.decided.some((unit) => unit.source.endsWith("Decision") && counts(unit))) return { kind: "decided" };
+  const pendingAdr = decisions.undecided.find((unit) => unit.adr !== undefined && counts(unit));
+  if (pendingAdr) return { kind: "undecided", source: pendingAdr.source, status: pendingAdr.status, adr: pendingAdr.adr };
+  if (decisions.decided.some(counts)) return { kind: "decided" };
+  const pending = decisions.undecided.find(counts);
+  if (pending) return { kind: "undecided", source: pending.source, status: pending.status, adr: pending.adr };
 
   const evidence = [...decisions.turnedDown, ...decisions.decided.filter((unit) => NEGATION.test(unit.text))].find((unit) => mentions(unit.text, name));
   return evidence ? { kind: "rejected", source: evidence.source } : { kind: "unrecorded" };
@@ -189,6 +207,28 @@ const librariesOf = (node: CalmNode): string[] => {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 };
 
+function describeStanding(label: string, name: string, standing: Exclude<Standing, { kind: "decided" }>): Pick<Violation, "why" | "fix"> {
+  if (standing.kind === "undecided") {
+    const decision = standing.adr ? `${standing.adr} decides, but ${standing.adr} is ${standing.status}` : `${standing.source} lists only as ${standing.status}`;
+    return {
+      why: `${label}, which ${decision}: only an Accepted decision authorizes the model, so ${name} is still undecided (ADR-0016).`,
+      fix: standing.adr
+        ? `Accept ${standing.adr} before the model names ${name}, or rename the node to a provider that is decided.`
+        : `Record ${name} as in use in ${DATA_SOURCES} once it is decided, or rename the node to a provider that is.`,
+    };
+  }
+  if (standing.kind === "rejected") {
+    return {
+      why: `${label}, which ${standing.source} records only as turned down (ADR-0009).`,
+      fix: `Rename the node to the provider that was chosen, or write a new ADR that reverses the rejection before the model names it.`,
+    };
+  }
+  return {
+    why: `${label}, which no Accepted ADR Decision and no in-use entry in ${DATA_SOURCES} records (ADR-0009).`,
+    fix: `Record the decision first (an Accepted ADR Decision, or an in-use entry in ${DATA_SOURCES}), or rename the node to the provider that is decided.`,
+  };
+}
+
 function checkExternalSystems(repoRoot: string, decisions: Decisions): Violation[] {
   const violations: Violation[] = [];
   for (const file of calmFiles(repoRoot)) {
@@ -198,19 +238,7 @@ function checkExternalSystems(repoRoot: string, decisions: Decisions): Violation
       const standing = standingOf(node.name, decisions);
       if (standing.kind === "decided") continue;
       const label = `Node "${node["unique-id"]}" is the external system "${node.name}"`;
-      violations.push({
-        check: CHECK,
-        rule: EXTERNAL_SYSTEM_RULE,
-        where: file,
-        why:
-          standing.kind === "rejected"
-            ? `${label}, which ${standing.source} records only as turned down (ADR-0009).`
-            : `${label}, which no ADR Decision and no entry in ${DATA_SOURCES} records as in use or proposed (ADR-0009).`,
-        fix:
-          standing.kind === "rejected"
-            ? `Rename the node to the provider that was chosen, or write a new ADR that reverses the rejection before the model names it.`
-            : `Record the decision first (an ADR Decision, or a chosen/proposed entry in ${DATA_SOURCES}), or rename the node to the provider that is decided.`,
-      });
+      violations.push({ check: CHECK, rule: EXTERNAL_SYSTEM_RULE, where: file, ...describeStanding(label, node.name, standing) });
     }
   }
   return violations;
@@ -293,32 +321,46 @@ function checkAdrLinks(repoRoot: string, decisions: Decisions, timeline: Timelin
   return violations;
 }
 
-function checkAdlMapping(repoRoot: string, entries: AdlEntry[], timeline: Timeline | undefined, currentMoment: string | undefined): Violation[] {
-  const momentId = currentMoment ?? timeline?.["current-moment"];
-  const moment = timeline?.moments?.find((m) => m["unique-id"] === momentId);
-  const detailed = moment?.details?.["detailed-architecture"];
-  if (!momentId || !moment || !detailed) {
+/**
+ * The latest built moment: the highest-numbered `moments/part-0N.architecture.json`.
+ * The ADL describes the code on this branch, so it is held to the moment that
+ * describes this branch, which can be ahead of the timeline's `current-moment`
+ * (the pointer to what is published). ADR-0015.
+ */
+export function latestBuiltMoment(repoRoot: string): { momentId: string; file: string } | undefined {
+  const dir = join(repoRoot, "architecture", "calm", "moments");
+  if (!existsSync(dir)) return undefined;
+  const found = readdirSync(dir)
+    .map((name) => ({ name, match: /^part-(\d+)\.architecture\.json$/.exec(name) }))
+    .filter((entry): entry is { name: string; match: RegExpExecArray } => entry.match !== null)
+    .sort((a, b) => Number(b.match[1]) - Number(a.match[1]))[0];
+  return found ? { momentId: `part-${found.match[1]}`, file: `architecture/calm/moments/${found.name}` } : undefined;
+}
+
+function checkAdlMapping(repoRoot: string, entries: AdlEntry[]): Violation[] {
+  const latest = latestBuiltMoment(repoRoot);
+  if (!latest) {
     return [
       {
         check: CHECK,
         rule: ADL_RULE.componentsMapped,
-        where: TIMELINE,
-        why: `The timeline's current moment "${momentId ?? "(none)"}" has no detailed architecture to map the ADL onto (${citeAdl(repoRoot, ADL_RULE.componentsMapped)}).`,
-        fix: `Set "current-moment" in ${TIMELINE} to a moment that has a detailed-architecture file.`,
+        where: "architecture/calm/moments",
+        why: `There is no built moment to map the ADL onto (${citeAdl(repoRoot, ADL_RULE.componentsMapped)}).`,
+        fix: `Add architecture/calm/moments/part-0N.architecture.json for the part this branch builds.`,
       },
     ];
   }
-
-  const file = `architecture/calm/${detailed}`;
+  const momentId = latest.momentId;
+  const file = latest.file;
   const doc = readJson<CalmDoc>(repoRoot, file);
   if (!doc) {
     return [
       {
         check: CHECK,
         rule: ADL_RULE.componentsMapped,
-        where: TIMELINE,
+        where: file,
         why: `Moment ${momentId} points at ${file}, which does not exist (${citeAdl(repoRoot, ADL_RULE.componentsMapped)}).`,
-        fix: `Restore ${file}, or correct the moment's detailed-architecture.`,
+        fix: `Restore ${file}.`,
       },
     ];
   }
@@ -378,16 +420,16 @@ function checkAdlMapping(repoRoot: string, entries: AdlEntry[], timeline: Timeli
  * must be decided, every ADR must be linked from its part's moment, and the
  * ADL and the current moment must describe the same components.
  *
- * `currentMoment` overrides the timeline's own `current-moment`, so the
- * tests can ask "would this still hold if Part 2 were current?".
+ * The ADL is held to the latest built moment in `moments/`, not to the
+ * timeline's `current-moment` (ADR-0015).
  */
-export function checkModelCurrency(repoRoot: string, entries: AdlEntry[], options: { currentMoment?: string } = {}): Violation[] {
+export function checkModelCurrency(repoRoot: string, entries: AdlEntry[]): Violation[] {
   const decisions = readDecisions(repoRoot);
   const timeline = readJson<Timeline>(repoRoot, TIMELINE);
   return [
     ...checkExternalSystems(repoRoot, decisions),
     ...checkControlPointers(repoRoot),
     ...checkAdrLinks(repoRoot, decisions, timeline),
-    ...checkAdlMapping(repoRoot, entries, timeline, options.currentMoment),
+    ...checkAdlMapping(repoRoot, entries),
   ];
 }
