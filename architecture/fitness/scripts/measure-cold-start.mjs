@@ -27,9 +27,14 @@ async function authenticate() {
 let counter = 0;
 async function timed(route) {
   const started = performance.now();
-  const res = await fetch(`${base}${route}?m=${Date.now()}-${counter++}`, { headers: { cookie } });
-  await res.arrayBuffer();
-  return { status: res.status, ms: Math.round(performance.now() - started) };
+  try {
+    const res = await fetch(`${base}${route}?m=${Date.now()}-${counter++}`, { headers: { cookie } });
+    await res.arrayBuffer();
+    return { status: res.status, ms: Math.round(performance.now() - started) };
+  } catch (error) {
+    // A dropped connection is a failed request, counted as one; it must not end a three-hour run that keeps its numbers only at the end.
+    return { status: 0, ms: Math.round(performance.now() - started), error: error?.cause?.code ?? "fetch failed" };
+  }
 }
 const percentile = (xs, p) => {
   const sorted = [...xs].sort((a, b) => a - b);
@@ -43,9 +48,11 @@ for (let round = 1; round <= ROUNDS; round++) {
   for (const route of ROUTES) {
     const bucket = samples[route];
     const cold = await timed(route);
+    console.error(`  ${route} cold ${cold.status} ${cold.ms} ms${cold.error ? ` (${cold.error})` : ""}`);
     if (cold.status === 200) bucket.cold.push(cold.ms); else bucket.failures++;
     for (let i = 0; i < 3; i++) {
       const warm = await timed(route);
+      console.error(`  ${route} warm ${warm.status} ${warm.ms} ms${warm.error ? ` (${warm.error})` : ""}`);
       if (warm.status === 200) bucket.warm.push(warm.ms); else bucket.failures++;
     }
   }

@@ -22,11 +22,27 @@ I report it, I do not warm the routes to hide it.
 Plan: 10 cold samples per route, 20 minutes apart (30 warm samples per route), against one fixed preview deployment of this
 branch, not the branch alias, so a later push cannot swap the deployment under the run.
 
-## Status: not measured
+## Result: targets met, with fewer samples than planned
 
-A run of the plan above started against a fixed preview deployment at 12:44 UTC on 2026-10-16. It was stopped after round 6 of 10
-(about 15:00 UTC), when Neon suspended the project's compute for network transfer. The script prints its results only when it
-finishes, so the stopped run kept no numbers, and I have none to report. Nothing in this file is a measurement. The run starts again
-after the allowance resets and the project owner says so; the targets above are unchanged. Each request of a cold round reads the
-database through `/api/leaderboard`, which is now capped at 50 rows plus the caller's own, so a round moves about 10 KB, not the
-whole ranking.
+Run on 2026-10-16/17 against the fixed preview deployment of `b6224a2`, 10 rounds, each after at least 20 minutes without a request.
+Timings are from my laptop (time to the last byte), in milliseconds.
+
+| Route | Cold n | Cold p50 | Cold p95 | Warm n | Warm p50 | Warm p95 | Target met |
+|---|---|---|---|---|---|---|---|
+| `/api/price/BTC-USD` | 9 of 10 | 1,908 (target 2,000) | 2,361 (target 3,000) | 24 of 30 | 150 (target 400) | 162 (target 900) | yes, all four |
+| `/api/leaderboard` | 8 of 10 | 1,013 (target 2,000) | 2,048 (target 3,000) | 29 of 30 | 141 (target 300) | 270 (target 800) | yes, all four |
+
+Cold samples, price: 1898, 1972, 1675, 1908, 2015, 2153, 1834, 1871, 2361. Leaderboard: 1048, 1001, 1013, 2048, 1243, 946, 1037, 990.
+
+**The run did not collect the planned 10 cold / 30 warm samples.** Requests that failed on my side are not in the table: 7 for the price route and 3 for the
+leaderboard, each a dropped or stalled connection from the laptop (`ECONNRESET`, `ETIMEDOUT`, `UND_ERR_HEADERS_TIMEOUT`). Several stalled for
+8 to 16 minutes before failing, which is what a laptop going to sleep looks like, and rounds 4, 5, 7 and 9 ran late for the same reason. No request
+returned an HTTP error status. A later gap only lengthens the idle time before a cold request, which is within "at least 20 minutes", but it means the
+rounds were not 20 minutes apart. A cold sample that arrives as fast as a warm one is kept as it is; none did.
+
+**An earlier attempt of the same plan stopped in round 2** on an uncaught `ECONNRESET` and kept no numbers, because the script printed only at the end. I changed
+the script so a failed request is counted as a failure instead of ending the run, and it now logs every sample; the targets and the plan are unchanged.
+The attempt before that one was stopped by Neon suspending the compute (see `contention.md`).
+
+The cold figures are around 1 to 2 seconds here, so a cold request to the price route (which does not read the database) is slower than one to the leaderboard
+(which does); I do not have the cause and have not tried to find one.
