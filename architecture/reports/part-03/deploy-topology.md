@@ -2,7 +2,7 @@
 
 Status: (a) and (b) measured. (c) separate projects: not run, not approved.
 
-Compute: the database is fixed at 0.25 CU on production. Nothing in this table touches the database; deploy
+Compute: the database's compute could scale up to 2 CU on production (`SHOW max_connections` returned 901 on 2026-10-13 and 2026-10-19). Nothing in this table touches the database; deploy
 times do not depend on it.
 
 Date: 2026-10-13. Hobby plan, one concurrent build. Versions: Vercel CLI 53.2.0, Node v26.11.1, pnpm 12.6.0,

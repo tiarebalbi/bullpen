@@ -141,7 +141,7 @@
     "unit": "USD per CU-hour",
     "source_url": "https://neon.com/pricing",
     "checked_on": "2026-10-16",
-    "note": "Neon Launch plan: compute is billed at $0.106 per CU-hour. Compute stays fixed at 0.25 CU, with scale-to-zero on at 5 minutes."
+    "note": "Neon Launch plan: compute is billed at $0.106 per CU-hour. Compute can scale up to 2 CU (max_connections 901 on 2026-10-13 and 2026-10-19), with scale-to-zero at 5 minutes."
   },
   {
     "service": "neon-launch",

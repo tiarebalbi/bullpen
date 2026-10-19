@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { ArchEdgeData, ArchEdgeRate, ArchPartData } from "./ArchitectureExplorer.types.js";
+import type { ArchEdgeData, ArchEdgeRate } from "./ArchitectureExplorer.types.js";
 import { EdgePulses, TRAVEL_SECONDS, TrafficControl, busyness, carriesTraffic, perMinute, pulseTiming, rateShort, rateText, rateWords } from "./ArchitectureExplorerTraffic.js";
 
 const rate = (over: Partial<ArchEdgeRate> = {}): ArchEdgeRate => ({ count: 6, per: "minute", source: "illustrative", basis: "No production traffic yet.", ...over });

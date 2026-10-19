@@ -10,12 +10,23 @@ afterwards. This table holds what I could read myself today, from the database a
 | Alpha Vantage calls, peak day, previews | 4 (2026-10-16) | cap 5 | `market_data.provider_calls`, `alphavantage:non-production`, read after the ingest of 2026-10-16 (1 on 2026-10-13) |
 | CoinGecko calls, October to date | 14, all from previews | 10,000 a month | `market_data.provider_calls`, `coingecko:non-production` |
 | Neon storage | 12 MB | 1 GB per project | `pg_database_size` on the production branch |
-| Neon compute | pending (dashboard, after 2026-10-18) | 100 CU-hours a month | compute is fixed at 0.25 CU; I can only say it did not scale |
+| Neon compute | pending (dashboard, after 2026-10-18) | 100 CU-hours a month | the compute could scale up to 2 CU (`SHOW max_connections` returned 901 on the production branch on 2026-10-13 and again on 2026-10-19 (`neon-roles.md`)), so I cannot say it stayed small; the dashboard shows the CU-hours |
 | Vercel function invocations, edge requests, active CPU, deployments | pending (Hobby usage page, after 2026-10-18) | see `cost/allowances.json` | not readable from here |
 | Vercel Services requests | pending (Hobby usage page, after 2026-10-18) | 1,000,000 a month | not readable from here |
 
-Rows in the database at the time: 2,000 test accounts and 5,338 ledger rows, all from the contention run; removed by
-`db:cleanup-test-data` at the end (counts in the final report). 10 quotes are on file.
+Test rows in the database before the cleanup: 2,000 test accounts and 8,794 ledger rows, from the 2,000-account contention run. The cleanup
+ran on production on 2026-10-19: a dry run first, then the real run, which removed what the dry run counted.
+
+| Removed by `db:cleanup-test-data` | Dry run | Real run |
+|---|---|---|
+| accounts | 2,000 | 2,000 |
+| orders | 4,397 | 4,397 |
+| ledger rows | 8,794 | 8,794 |
+| positions | 10,000 | 10,000 |
+| test quotes (source `test`) | 25 | 25 |
+
+The leaderboard view was then refreshed, and `/api/leaderboard` (read on the preview, which reads the production database) answered
+`{"rows":[],"total":0,...,"stale":false}`: no `zz-test` account is left. The `AAPL` and `MSFT` quotes from the 2026-10-16 ingest and the provider call ledger were not touched.
 
 **Total in USD: pending, and no longer zero for Neon.** On 2026-10-16 the project moved from Neon's Free plan to the Launch plan, because the Free
 plan's 5 GB of network transfer was used up by the 2,000-account contention run. Launch includes 500 GB of transfer a month, then

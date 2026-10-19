@@ -1,5 +1,5 @@
 import type { MarketDataConfig } from "./config/index.js";
-import { isAuthorized, runStockIngest, type IngestDeps, type IngestSummary } from "./ingest.js";
+import { isAuthorized, type IngestDeps, type IngestSummary } from "./ingest.js";
 import { STOCK_SYMBOLS } from "./symbols.js";
 
 export interface CronDeps {

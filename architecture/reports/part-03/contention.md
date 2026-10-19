@@ -10,7 +10,7 @@
 >
 > **2026-10-16, later the same day: the project moved to Neon's Launch plan**, because the Free plan's transfer was used up by the
 > 2,000-account run (about 1.7 GB for each full-ranking cell, several cells). Launch includes 500 GB of transfer a month, then $0.10 a
-> GB; compute stays at 0.25 CU with scale-to-zero at 5 minutes. Nothing about the measurements changed, but the cost did: this week's
+> GB; the compute is billed per CU-hour and suspends after 5 minutes idle (its size is not fixed: see the correction below). Nothing about the measurements changed, but the cost did: this week's
 > Neon cost is no longer zero (`cost.md`). The transfer budget stays in force at 10% of what remains; with the upgrade, `--remaining-mb`
 > is 500,000 MB (the new billing period started on 2026-10-16, so what was used in it is about nothing).
 
@@ -18,7 +18,7 @@ Date: 2026-10-16T12:39:10Z. Neon production branch of the Bullpen project, Postg
 `trading_owner`. Client: my laptop, Node v26.11.1, `pg` over the public internet, so every statement carries a round trip
 of tens of milliseconds that a function in the same region would not. Compare rows with each other, not with a production p95.
 
-**Compute is fixed at 0.25 CU on production.** It does not scale up for this run.
+**Compute size on production: not fixed, and not recorded during the run.** An earlier version of this file said the compute was fixed at 0.25 CU. That was wrong: `SHOW max_connections` returned 901 on the production branch on 2026-10-13 and again on 2026-10-19 (`neon-roles.md`), a value Neon sets from the compute's size, and 901 is what a compute that can scale up to 2 CU reports. So the compute could scale up to 2 CU during every run here, and I did not record what it scaled to. I changed no Neon setting. The measured numbers below are unchanged.
 
 **Batch size:** 2,000 accounts (50 from a smoke run of the same script, 1,950 from this one), each holding 5 positions, so 10,000
 positions; **this is the "before" run, with a whole-ranking read and 30-second cells;** the ledger grew from 160 rows by every measured buy. Prices are 5 test symbols with source `test`.
@@ -139,7 +139,7 @@ the client; I have not seen the Neon console's figure for the run, so that one i
 - With nobody reading, a buy costs about 545 ms at p50 from here. That is the baseline.
 - At N = 10 neither path moves the writes much; the view serves the same readers faster (read p95 115 ms against 204 ms).
 - At N = 50 both paths slow the writes, the view less (write p95 1,005 ms against 1,275 ms computed on read; read p95 365 ms against
-  958 ms). I first read this as 50 readers sharing 0.25 CU with the writers. **The diagnosis below shows that reading was not
+  958 ms). I first read this as 50 readers sharing a small compute with the writers. **The diagnosis below shows that reading was not
   supported by the data**, and this table alone cannot say why N = 50 is slower.
 - A refresh takes about 420 ms (p95 506 ms) for 2,000 accounts. Ledger write p95 during back-to-back refreshes was 617 ms against 669 ms with
   none running: within the noise of a 30-second cell, so I found no measurable cost of the refresh itself.
@@ -148,7 +148,7 @@ the client; I have not seen the Neon console's figure for the run, so that one i
 
 ## Diagnosing the N = 50 slowdown
 
-Question: is the slowdown CPU on the 0.25 CU compute, connection or pool queueing, or lock waits? I reran the baseline and the N = 50 view
+Question: is the slowdown CPU on the compute (which could scale up to 2 CU; its size during the run was not recorded), connection or pool queueing, or lock waits? I reran the baseline and the N = 50 view
 cell with sampling, and added one cell that changes only how much each read returns. While each cell ran, a separate connection sampled
 `pg_stat_activity` for the role's sessions every 250 ms (state and wait event), `EXPLAIN (ANALYZE)` timed a leaderboard read on the server about
 every second, and the script recorded its own pool queue and Node's event-loop delay. Command:
@@ -210,7 +210,7 @@ What the evidence points to:
 |---|---|---|
 | Lock waits | `Lock / transactionid` in 2 of 2,763 session samples in the full-ranking cell, 1 of 4,022 in the top-20 cell | not it: two writers picked the same random account now and then |
 | Pool queueing on my side | my pool never had a caller waiting (max 0), 58 connections for 58 loops | not it |
-| CPU on the 0.25 CU compute | a read executes in 1.2 ms at p50 on the server in every cell (p95 4.5 to 15 ms under load); active sessions averaged 1.7 of 58; and with the top 20 rows, 600 reads a second (three times the full-ranking rate) left ledger write p95 at 648 ms against 574 ms idle | not the limit at this load; the server is mostly idle |
+| CPU on the compute (up to 2 CU; size not recorded) | a read executes in 1.2 ms at p50 on the server in every cell (p95 4.5 to 15 ms under load); active sessions averaged 1.7 of 58; and with the top 20 rows, 600 reads a second (three times the full-ranking rate) left ledger write p95 at 648 ms against 574 ms idle | not the limit at this load; the server is mostly idle |
 | Bytes moved | the slow cell received 376,667 rows a second (about 1.7 GB in 30 seconds); the cell that sent 20 rows a read did not slow the writes at all, with three times as many reads | **this is what changes between the cells** |
 | My machine's event loop | event-loop delay p95 11 ms in all three cells (the timer's own resolution is 10 ms) | not it |
 
