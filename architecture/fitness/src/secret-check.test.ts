@@ -44,7 +44,7 @@ describe("checkSecretContainment", () => {
     expect(entryPoint!.form.form).toBe("free");
   });
 
-  it("passes the real repo: the key is read in apps/web/app/api/price and nowhere else", () => {
+  it("passes the real repo: the key is read in apps/market-data/src and nowhere else", () => {
     expect(checkSecretContainment(realRepoRoot)).toEqual([]);
   });
 });

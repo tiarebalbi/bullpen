@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./styles.css": "./src/styles.css",
-    "./analytics-config": "./src/analytics/config.ts"
+    "./analytics-config": "./src/analytics/config.ts",
+    "./theme-init": "./src/lib/themeInit.ts"
   },
   "scripts": {
     "lint": "eslint .",

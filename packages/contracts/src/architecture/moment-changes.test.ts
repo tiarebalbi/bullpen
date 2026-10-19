@@ -48,9 +48,22 @@ describe("momentChanges", () => {
     expect(momentChanges(PART_2, PART_2, [], [])).toEqual([]);
   });
 
-  it("leaves a new node's controls to its row as an added node", () => {
+  it("lists a new node's own controls on its row, so the explorer shows them beside the added node", () => {
     const next: CalmChangeDoc = { nodes: [...PART_1.nodes!, { "unique-id": "new", name: "New", controls: { c: control("x") } }], relationships: PART_1.relationships };
+    expect(momentChanges(PART_1, next, [], [])).toEqual([{ kind: "controls", target: "New", nodeId: "new", controls: [{ key: "c", description: "x" }] }]);
+  });
+
+  it("lists nothing for a new node that has no controls", () => {
+    const next: CalmChangeDoc = { nodes: [...PART_1.nodes!, { "unique-id": "bare", name: "Bare" }], relationships: PART_1.relationships };
     expect(momentChanges(PART_1, next, [], [])).toEqual([]);
+  });
+
+  it("lists a new relationship's own controls too", () => {
+    const next: CalmChangeDoc = {
+      nodes: PART_1.nodes,
+      relationships: [...PART_1.relationships!, { "unique-id": "app-to-svc", controls: { guard: control("A guard.") }, "relationship-type": { connects: { source: { node: "app" }, destination: { node: "svc" } } } }],
+    };
+    expect(momentChanges(PART_1, next, [], [])).toEqual([{ kind: "controls", target: "The App → The Service", controls: [{ key: "guard", description: "A guard." }] }]);
   });
 
   it("does not repeat an ADR the previous moment links", () => {

@@ -1,6 +1,17 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render as baseRender, screen, within } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { ArchitectureExplorer, type ArchPartData } from "./ArchitectureExplorer.js";
+
+/**
+ * The side panel keeps a summary and holds the rest in a bottom sheet (a <dialog>), which jsdom cannot open with showModal(). These tests are
+ * about what the sheet says, so it is opened by its attribute, the way the browser leaves it open.
+ */
+const render = (ui: ReactElement) => {
+  const result = baseRender(ui);
+  document.querySelectorAll("dialog").forEach((d) => d.setAttribute("open", ""));
+  return result;
+};
 
 function installMatchMedia(matches = false): void {
   Object.defineProperty(window, "matchMedia", {

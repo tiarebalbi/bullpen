@@ -160,7 +160,7 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
             }}
           />
         ) : null}
-        {tab === "flows" ? <FlowsTab key={part} part={part} flow={data.flows[part]!} /> : null}
+        {tab === "flows" ? <FlowsTab key={part} part={part} flows={[data.flows[part]!, ...(data.moreFlows[part] ?? [])]} /> : null}
         {tab === "data" ? <DataTab part={part} data={data.data[part]!} preview={data.data[3]!} onJump={select} /> : null}
         {tab === "decisions" ? <DecisionsTab part={part} adrs={adrs} /> : null}
         {tab === "rules" ? <RulesTab part={part} cards={ruleCards} data={rules} adl={adl} /> : null}

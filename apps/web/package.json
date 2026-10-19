@@ -15,7 +15,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "@bullpen/ui": "workspace:*",
-    "@bullpen/contracts": "workspace:*"
+    "@bullpen/contracts": "workspace:*",
+    "@bullpen/db-trading": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

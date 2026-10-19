@@ -28,7 +28,7 @@ describe("checkBudget", () => {
     const [violation] = checkBudget(60, ALLOWANCES);
     expect(violation!.why).toContain("43200");
     expect(violation!.why).toContain("60s");
-    expect(violation!.where).toBe("apps/web/app/api/price/[symbol]/route.ts");
+    expect(violation!.where).toBe("apps/market-data/src/price.ts");
   });
 
   it("fails clearly when the allowance entry is missing", () => {

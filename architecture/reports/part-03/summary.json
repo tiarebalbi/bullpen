@@ -1,0 +1,295 @@
+{
+  "schema": 2,
+  "part": 3,
+  "generatedAt": "2026-10-13T16:28:46.703Z",
+  "commit": "7bf8a5d7e768c18209ac62e99ebc07fdcde05ccf",
+  "dirty": true,
+  "ref": "post-03-data",
+  "source": "local",
+  "passed": true,
+  "checks": [
+    {
+      "id": "check-arch",
+      "name": "check:arch",
+      "command": "pnpm check:arch",
+      "passed": true,
+      "summary": "check:arch passed: 10 checks held, 38 rules enforced",
+      "raw": "check-arch.txt",
+      "rules": [
+        {
+          "id": "every-directory-under-apps-and-packages-is-defined",
+          "rule": "every directory under apps and packages is DEFINED",
+          "check": "structure",
+          "passed": true
+        },
+        {
+          "id": "every-defined-component-and-library-exists-as-a-directory",
+          "rule": "every DEFINED COMPONENT and LIBRARY exists as a directory",
+          "check": "structure",
+          "passed": true
+        },
+        {
+          "id": "landing-is-dependent-on-ui-contracts",
+          "rule": "Landing IS DEPENDENT ON UI, Contracts",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-app-is-dependent-on-ui-contracts-trading",
+          "rule": "Trading App IS DEPENDENT ON UI, Contracts, trading",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-service-is-dependent-on-contracts-market-data",
+          "rule": "Market Data Service IS DEPENDENT ON Contracts, market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "landing-has-no-dependency-on-trading-app",
+          "rule": "Landing HAS NO DEPENDENCY ON Trading App",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-app-has-no-dependency-on-landing",
+          "rule": "Trading App HAS NO DEPENDENCY ON Landing",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "ui-has-no-dependency-on-landing-trading-app",
+          "rule": "UI HAS NO DEPENDENCY ON Landing, Trading App",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "contracts-has-no-dependency-on-landing-trading-app",
+          "rule": "Contracts HAS NO DEPENDENCY ON Landing, Trading App",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-service-has-no-dependency-on-landing-trading-app-ui",
+          "rule": "Market Data Service HAS NO DEPENDENCY ON Landing, Trading App, UI",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "landing-has-no-dependency-on-market-data-service",
+          "rule": "Landing HAS NO DEPENDENCY ON Market Data Service",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-app-has-no-dependency-on-market-data-service",
+          "rule": "Trading App HAS NO DEPENDENCY ON Market Data Service",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "ui-has-no-dependency-on-market-data-service",
+          "rule": "UI HAS NO DEPENDENCY ON Market Data Service",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "contracts-has-no-dependency-on-market-data-service",
+          "rule": "Contracts HAS NO DEPENDENCY ON Market Data Service",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-app-has-no-dependency-on-market-data",
+          "rule": "Trading App HAS NO DEPENDENCY ON market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-service-has-no-dependency-on-trading",
+          "rule": "Market Data Service HAS NO DEPENDENCY ON trading",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-has-no-dependency-on-market-data",
+          "rule": "trading HAS NO DEPENDENCY ON market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-has-no-dependency-on-trading",
+          "rule": "market-data HAS NO DEPENDENCY ON trading",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "landing-has-no-dependency-on-trading-market-data",
+          "rule": "Landing HAS NO DEPENDENCY ON trading, market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "components-use-libraries-only-through-their-package-entry-point",
+          "rule": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point",
+          "check": "entry-point imports",
+          "passed": true
+        },
+        {
+          "id": "only-apps-market-data-src-reads-coingecko-demo-api-key",
+          "rule": "ONLY apps/market-data/src READS COINGECKO_DEMO_API_KEY",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-market-data-src-reads-alpha-vantage-api-key",
+          "rule": "ONLY apps/market-data/src READS ALPHA_VANTAGE_API_KEY",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-market-data-src-reads-cron-secret",
+          "rule": "ONLY apps/market-data/src READS CRON_SECRET",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-market-data-src-db-reads-database-url-market-data",
+          "rule": "ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-trading-reads-database-url-trading",
+          "rule": "ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "every-defined-component-and-library-maps-to-a-node-in-the-current-calm-moment",
+          "rule": "every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "id": "every-webclient-and-service-node-in-the-current-calm-moment-maps-to-a-defined-entry",
+          "rule": "every webclient and service node in the current CALM moment maps to a DEFINED entry",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "id": "every-external-system-in-a-calm-moment-is-decided-in-an-accepted-adr-s-decision-or-listed-as-in-use-in-docs-data-sources-md",
+          "rule": "every external system in a CALM moment is decided in an Accepted ADR's Decision or listed as in use in docs/data-sources.md",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "id": "every-adr-is-linked-from-the-timeline-moment-of-its-part",
+          "rule": "every ADR is linked from the timeline moment of its part",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "id": "every-calm-control-that-names-the-check-enforcing-it-points-at-a-file-that-exists",
+          "rule": "every CALM control that names the check enforcing it points at a file that exists",
+          "check": "model currency",
+          "passed": true
+        },
+        {
+          "id": "only-market-data-writes-market-data",
+          "rule": "ONLY market-data WRITES market_data",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
+          "id": "trading-reads-market-data-only-through-market-data-prices-v1",
+          "rule": "trading READS market_data ONLY THROUGH market_data.prices_v1",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
+          "id": "only-trading-writes-trading-orders-and-trading-ledger",
+          "rule": "ONLY trading WRITES trading.orders AND trading.ledger",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
+          "id": "a-migration-in-one-owner-s-folder-touches-only-that-owner-s-schema",
+          "rule": "a migration in one owner's folder touches only that owner's schema",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
+          "id": "modeled-monthly-coingecko-calls-stay-within-90-of-the-demo-plan-s-monthly-allowance",
+          "rule": "modeled monthly CoinGecko calls stay within 90% of the Demo plan's monthly allowance",
+          "check": "budget",
+          "passed": true
+        },
+        {
+          "id": "every-explorer-node-and-edge-exists-in-its-calm-document-and-every-calm-node-appears-in-the-explorer",
+          "rule": "every explorer node and edge exists in its CALM document, and every CALM node appears in the explorer",
+          "check": "explorer consistency",
+          "passed": true
+        },
+        {
+          "id": "no-file-in-the-repo-contains-the-repo-author-s-email-address",
+          "rule": "no file in the repo contains the repo author's email address",
+          "check": "email in files",
+          "passed": true
+        },
+        {
+          "id": "every-adl-assert-is-enforced-by-a-check-and-every-enforced-rule-is-still-in-the-adl",
+          "rule": "every ADL ASSERT is enforced by a check, and every enforced rule is still in the ADL",
+          "check": "rule coverage",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "turbo-boundaries",
+      "name": "turbo boundaries",
+      "command": "pnpm exec turbo boundaries",
+      "passed": true,
+      "summary": "• turbo 2.11.4",
+      "raw": "turbo-boundaries.txt",
+      "rules": []
+    },
+    {
+      "id": "calm-part-01",
+      "name": "calm validate (part-01)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/part-01.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-part-01.json",
+      "rules": []
+    },
+    {
+      "id": "calm-part-02",
+      "name": "calm validate (part-02)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/part-02.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-part-02.json",
+      "rules": []
+    },
+    {
+      "id": "calm-part-03",
+      "name": "calm validate (part-03)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/part-03.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-part-03.json",
+      "rules": []
+    },
+    {
+      "id": "calm-timeline",
+      "name": "calm validate (timeline)",
+      "command": "npx @finos/calm-cli@1.60.1 validate --timeline architecture/calm/bullpen.timeline.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-timeline.json",
+      "rules": []
+    }
+  ]
+}

@@ -151,7 +151,7 @@ for (const viewport of [
       await banner(page).getByRole("button", { name: "Accept" }).click();
       await expect.poll(() => hits.some((h) => h.includes("gtag/js"))).toBe(true);
 
-      const credit = page.getByRole("link", { name: "Powered by CoinGecko" });
+      const credit = page.getByRole("link", { name: "Powered by CoinGecko" }).first();
       await credit.evaluate((el) => el.addEventListener("click", (e) => e.preventDefault()));
       await credit.click();
       const outbound = (await dataLayer(page)).find((c) => c[0] === "event" && c[1] === "outbound_click");

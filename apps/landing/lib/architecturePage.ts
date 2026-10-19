@@ -10,6 +10,8 @@ export const CHECK_NAME_BY_FILE: Record<string, string> = {
   "architecture/fitness/src/boundaries-check.ts": "turbo boundaries",
   "architecture/fitness/src/imports-check.ts": "entry-point imports",
   "architecture/fitness/src/secret-check.ts": "secret containment",
+  "architecture/fitness/src/model-currency-check.ts": "model currency",
+  "architecture/fitness/src/data-ownership-check.ts": "data ownership",
   "architecture/fitness/src/budget-check.ts": "budget",
   "architecture/fitness/src/explorer-consistency-check.ts": "explorer consistency",
 };
@@ -102,6 +104,8 @@ export interface ArchitecturePageData {
   scrubber: ScrubberPart[];
   services: Record<number, ServicesView>;
   flows: Record<number, FlowView>;
+  /** The requests a part offers beyond its first, in order: a buy next to a price request. */
+  moreFlows: Record<number, FlowView[]>;
   data: Record<number, DataView>;
 }
 
@@ -109,7 +113,10 @@ export interface ArchitecturePageInput {
   parts: ArchPartData[];
   series: Array<{ part: number; title: string }>;
   calm: Map<number, CalmDocView>;
+  /** The rules of the ADL as it is now: the code on this branch, which the latest built part describes. */
   adlRules: string[];
+  /** The rules each earlier part was held to, from its committed snapshot, keyed by part. An earlier part's moment names paths the live ADL has since moved on from. */
+  ruleHistory?: Map<number, string[]>;
   snapshot: RulesSnapshot | null;
   /** The price route's cache interval, from its own code: shown on the fetch step of a built part's flow. */
   cacheSeconds: number | null;
@@ -129,6 +136,11 @@ function controlRules(controls: CalmControl[], snapshot: RulesSnapshot | null): 
   return rules;
 }
 
+/** A node owns a directory it runs from; a service also owns the directories under its own (its `src`, its `config`). */
+function ownsDirectory(node: CalmNodeView, directory: string): boolean {
+  return directory === node.path || (node.type === "service" && directory.startsWith(`${node.path}/`));
+}
+
 /** What a service owns, from the moment (where it runs from, what it ships) and the ADL (a secret only it may read). */
 function ownedThings(node: CalmNodeView, adlRules: string[]): string[] {
   const owns: string[] = [];
@@ -136,7 +148,7 @@ function ownedThings(node: CalmNodeView, adlRules: string[]): string[] {
   if (node.libraries.length > 0) owns.push(`Ships ${node.libraries.join(" and ")}`);
   for (const rule of adlRules) {
     const secret = SECRET_RULE.exec(rule);
-    if (secret && node.path && secret[1] === node.path) owns.push(`The only code that reads ${secret[2]}`);
+    if (secret && node.path && ownsDirectory(node, secret[1]!)) owns.push(`The only code that reads ${secret[2]}`);
   }
   return owns;
 }
@@ -187,6 +199,18 @@ function builtPartFor(part: number, calm: Map<number, CalmDocView>): number {
   return 1;
 }
 
+/**
+ * The rules a built part is held to: the live ADL for the latest built part, and for an earlier one the
+ * snapshot of the first part at or after it that was snapshotted (Part 1 had no snapshot of its own, and its
+ * rules were Part 2's). Without a snapshot there is nothing older to read, so the live ADL stands.
+ */
+function rulesFor(builtPart: number, input: ArchitecturePageInput): string[] {
+  const latest = Math.max(...[...input.calm].filter(([, doc]) => doc.origin === "moments").map(([part]) => part));
+  if (builtPart >= latest || !input.ruleHistory) return input.adlRules;
+  const snapshotted = [...input.ruleHistory.keys()].filter((part) => part >= builtPart && part < latest).sort((a, b) => a - b)[0];
+  return snapshotted === undefined ? input.adlRules : input.ruleHistory.get(snapshotted)!;
+}
+
 function buildServices(part: number, input: ArchitecturePageInput): ServicesView {
   const builtPart = builtPartFor(part, input.calm);
   const doc = input.calm.get(builtPart);
@@ -195,14 +219,14 @@ function buildServices(part: number, input: ArchitecturePageInput): ServicesView
 
   const built = doc.nodes
     .filter((node) => node.type === "webclient" || node.type === "service")
-    .map((node) => buildService(node, doc, content, input.adlRules, input.snapshot));
+    .map((node) => buildService(node, doc, content, rulesFor(builtPart, input), input.snapshot));
 
   const builtIds = new Set(doc.nodes.map((n) => n.id));
   const selected = input.parts.find((p) => p.part === part);
   const planned: PlannedServiceView[] =
     selected && selected.status === "planned"
       ? selected.nodes
-          .filter((n) => (n.kind === "app" || n.kind === "service") && !builtIds.has(n.id))
+          .filter((n) => (n.kind === "app" || n.kind === "service" || n.kind === "infra") && !builtIds.has(n.id))
           .map((n) => ({
             id: n.id,
             name: n.label,
@@ -217,9 +241,9 @@ function buildServices(part: number, input: ArchitecturePageInput): ServicesView
 type RawStep = Omit<FlowStepView, "n">;
 
 /** The request starts where an actor opens the app the first step leaves from. */
-function openingStep(content: ArchPartData, doc: CalmDocView | undefined): RawStep | null {
+function openingStep(content: ArchPartData, request: ArchPartData["request"], doc: CalmDocView | undefined): RawStep | null {
   const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
-  const first = content.request.steps[0];
+  const first = request.steps[0];
   const firstEdge = first ? content.edges.find((e) => e.id === first.edge) : undefined;
   if (!firstEdge) return null;
   const opening = content.edges.find((e) => nodeById.get(e.a)?.kind === "actor" && e.b === firstEdge.a);
@@ -232,10 +256,10 @@ function openingStep(content: ArchPartData, doc: CalmDocView | undefined): RawSt
 }
 
 /** The part's own request steps, with the cache note on the call out to the provider of a built part. */
-function requestSteps(content: ArchPartData, cacheSeconds: number | null): RawStep[] {
+function requestSteps(content: ArchPartData, request: ArchPartData["request"], cacheSeconds: number | null): RawStep[] {
   const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
   const steps: RawStep[] = [];
-  for (const step of content.request.steps) {
+  for (const step of request.steps) {
     const edge = content.edges.find((e) => e.id === step.edge);
     if (!edge) continue;
     // The call out to the provider is the one the cache sits on. A planned part makes no such claim.
@@ -257,25 +281,33 @@ function laneFor(id: string, nodeById: Map<string, ArchPartData["nodes"][number]
   return { id, label: node?.label ?? id, meta: node?.meta ?? "" };
 }
 
-function buildFlow(content: ArchPartData, doc: CalmDocView | undefined, cacheSeconds: number | null): FlowView {
+function buildFlow(content: ArchPartData, request: ArchPartData["request"], doc: CalmDocView | undefined, cacheSeconds: number | null): FlowView {
   const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
-  const opening = openingStep(content, doc);
-  const raw = [...(opening ? [opening] : []), ...requestSteps(content, cacheSeconds)];
+  const opening = openingStep(content, request, doc);
+  const raw = [...(opening ? [opening] : []), ...requestSteps(content, request, cacheSeconds)];
 
   const laneIds = [...new Set(raw.flatMap((step) => [step.from, step.to]))];
   return {
-    name: content.request.name,
+    name: request.name,
     planned: content.status === "planned",
     lanes: laneIds.map((id) => laneFor(id, nodeById)),
     steps: raw.map((step, index) => ({ n: index + 1, ...step })),
   };
 }
 
-/** The service a database hangs off: the service on the other end of an edge that touches it. */
+/** The service on the other end of an edge that touches the database, if any. */
+function adjacentService(db: ArchPartData["nodes"][number], content: ArchPartData): string | null {
+  const byId = new Map(content.nodes.map((n) => [n.id, n]));
+  const ends = content.edges.filter((e) => e.a === db.id || e.b === db.id).map((e) => (e.a === db.id ? e.b : e.a));
+  const service = ends.map((id) => byId.get(id)).find((n) => n && n.kind === "service");
+  return service ? service.label : null;
+}
+
+/** The node that owns a database: the one the content names as its `owner`, else the service next to it. */
 function ownerLabel(db: ArchPartData["nodes"][number], content: ArchPartData): string | null {
-  const nodeById = new Map(content.nodes.map((n) => [n.id, n]));
-  const neighbours = content.edges.filter((e) => e.a === db.id || e.b === db.id).map((e) => nodeById.get(e.a === db.id ? e.b : e.a));
-  return neighbours.find((n) => n?.kind === "service")?.label ?? null;
+  const owner = db.owner ? content.nodes.find((n) => n.id === db.owner) : undefined;
+  if (db.owner) return owner ? owner.label : null;
+  return adjacentService(db, content);
 }
 
 function databaseView(db: ArchPartData["nodes"][number], content: ArchPartData): DatabaseView {
@@ -291,16 +323,20 @@ function buildData(content: ArchPartData): DataView {
 export function buildArchitecturePage(input: ArchitecturePageInput): ArchitecturePageData {
   const services: Record<number, ServicesView> = {};
   const flows: Record<number, FlowView> = {};
+  const moreFlows: Record<number, FlowView[]> = {};
   const data: Record<number, DataView> = {};
   for (const content of input.parts) {
     services[content.part] = buildServices(content.part, input);
-    flows[content.part] = buildFlow(content, input.calm.get(content.part), input.cacheSeconds);
+    const doc = input.calm.get(content.part);
+    flows[content.part] = buildFlow(content, content.request, doc, input.cacheSeconds);
+    moreFlows[content.part] = (content.requests ?? []).map((request) => buildFlow(content, request, doc, input.cacheSeconds));
     data[content.part] = buildData(content);
   }
   return {
     scrubber: input.parts.map((p) => ({ part: p.part, title: input.series.find((s) => s.part === p.part)?.title ?? `Part ${p.part}`, status: p.status })),
     services,
     flows,
+    moreFlows,
     data,
   };
 }

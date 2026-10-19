@@ -16,6 +16,10 @@ export interface ArchFlowNodeData extends Record<string, unknown> {
   dimmed: boolean;
   touched: boolean;
   showData: boolean;
+  /** Hue of the node's owner while the "Data ownership" toggle is on: the node is tinted by who owns it. */
+  ownerHue?: number;
+  /** "right": the node takes a connection on any of its four sides. Otherwise one in at the top and one out at the bottom. */
+  flow?: "down" | "right";
   onSelect: (id: string) => void;
 }
 
@@ -38,7 +42,7 @@ const NODE_HEIGHT = 60;
  * design's external-system treatment.
  */
 export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNode {
-  const { node, visualState, ghosted, reduced, dimmed, touched, showData, onSelect } = data as ArchFlowNodeData;
+  const { node, visualState, ghosted, reduced, dimmed, touched, showData, ownerHue, flow, onSelect } = data as ArchFlowNodeData;
   const isExternal = node.kind === "ext";
   const hot = selected || touched;
   const removed = visualState === "removed";
@@ -47,8 +51,8 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     width: NODE_WIDTH,
     height: NODE_HEIGHT,
     borderRadius: node.kind === "data" ? 26 : 10,
-    background: isExternal ? "var(--background)" : hot ? "color-mix(in oklch, var(--ember) 14%, var(--surface-elevated))" : "var(--surface-elevated)",
-    border: hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
+    background: showData && ownerHue !== undefined && !hot ? `color-mix(in oklch, var(--surface-elevated) 82%, oklch(66% 0.14 ${ownerHue}))` : isExternal ? "var(--background)" : hot ? "color-mix(in oklch, var(--ember) 14%, var(--surface-elevated))" : "var(--surface-elevated)",
+    border: showData && ownerHue !== undefined && !hot ? `1.5px solid oklch(66% 0.14 ${ownerHue})` : hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
     padding: "8px 14px",
     boxSizing: "border-box",
     display: "flex",
@@ -90,7 +94,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
       className={animClass}
       style={{ position: "relative" }}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      {flow === "right" ? <SideHandles type="target" /> : <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />}
       <div style={boxStyle}>
         {ghosted ? (
           <span
@@ -166,7 +170,25 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
           {node.id}_db
         </div>
       ) : null}
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+      {flow === "right" ? <SideHandles type="source" /> : <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />}
     </div>
+  );
+}
+
+const SIDES: Array<[string, Position]> = [
+  ["top", Position.Top],
+  ["right", Position.Right],
+  ["bottom", Position.Bottom],
+  ["left", Position.Left],
+];
+
+/** A handle on every side, named `<s|t>-<side>`, so a connection can leave and arrive at whichever sides face each other. */
+function SideHandles({ type }: { type: "source" | "target" }): ReactNode {
+  return (
+    <>
+      {SIDES.map(([side, position]) => (
+        <Handle key={side} id={`${type === "source" ? "s" : "t"}-${side}`} type={type} position={position} style={{ opacity: 0 }} />
+      ))}
+    </>
   );
 }

@@ -98,7 +98,7 @@ test.describe("SEO metadata", () => {
     expect(result.valid).toBe(true);
   });
 
-  test("JSON-LD lists exactly two parts of the series, Parts 1 and 2, each with its headline, URL and date", async ({ page }) => {
+  test("JSON-LD lists exactly the three published parts of the series, Parts 1 to 3, each with its headline, URL and date", async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
     const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { "@graph": Array<Record<string, unknown>> };
@@ -116,6 +116,12 @@ test.describe("SEO metadata", () => {
         url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
         datePublished: "2026-10-11",
       },
+      {
+        "@type": "BlogPosting",
+        headline: "Database per Service Is Free Now. That Is Not a Reason to Use It",
+        url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership",
+        datePublished: "2026-10-19",
+      },
     ]);
   });
 
@@ -127,11 +133,11 @@ test.describe("SEO metadata", () => {
     }
   });
 
-  test("the footer data line names CoinGecko and points to Part 3 for U.S. stocks, not a named provider", async ({ page }) => {
+  test("the footer data line names CoinGecko, says U.S. stocks are end of day, and names no stock provider", async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
     const footer = page.locator("footer");
-    await expect(footer).toContainText("Market data: crypto by CoinGecko. U.S. stocks arrive in Part 3.");
+    await expect(footer).toContainText("Market data: crypto by CoinGecko. U.S. stocks are end of day.");
     await expect(footer).not.toContainText("Alpaca");
     await expect(footer).not.toContainText("Alpha Vantage");
   });

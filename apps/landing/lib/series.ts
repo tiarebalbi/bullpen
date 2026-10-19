@@ -29,6 +29,11 @@ export interface SeriesPart {
 
 const VALID_STATUS = new Set<string>(["published", "next", "planned"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+/**
+ * What `date` holds in `content/series.json` between the publish commit and the day the post goes out. It is read as "no date yet":
+ * the card shows no date and the JSON-LD names none, so an unamended merge publishes nothing false.
+ */
+export const PUBLISH_DATE_PLACEHOLDER = "PUBLISH_DATE_PLACEHOLDER";
 
 // The design's series card has room for two lines of title and two lines
 // of "Introduced" text before it breaks the card layout -- these budgets
@@ -69,6 +74,23 @@ function checkHeadline(headline: unknown, where: string): asserts headline is st
   }
 }
 
+/**
+ * The entry's date, checked against its url and status: a real date (YYYY-MM-DD) or null, a published part has both url and date (or the
+ * placeholder, read as no date yet), and an unpublished part has neither. Returns the date to keep: the placeholder becomes null.
+ */
+function checkDate(date: unknown, url: string, status: string, where: string): string | null {
+  const placeholder = date === PUBLISH_DATE_PLACEHOLDER;
+  if (placeholder && status !== "published") throw new Error(`${where} has the publish-date placeholder but is "${status}" -- only a published part can wait for its date`);
+  if (!placeholder && date !== null && (typeof date !== "string" || !DATE_PATTERN.test(date))) {
+    throw new Error(`${where} has an invalid "date" (expected null, "YYYY-MM-DD" or ${PUBLISH_DATE_PLACEHOLDER}, got ${JSON.stringify(date)})`);
+  }
+  if (url === "" && date !== null) throw new Error(`${where} has a "date" but no "url" -- unpublished parts must have both null/empty`);
+  if (url !== "" && date === null) throw new Error(`${where} has a "url" but no "date" -- published parts must record when`);
+  if (status === "published" && url === "") throw new Error(`${where} is "published" but has no "url" and "date" -- a published part links its post and says when`);
+  if (status !== "published" && url !== "") throw new Error(`${where} is "${status}" but has a "url" and "date" -- only a published part has them`);
+  return placeholder ? null : (date as string | null);
+}
+
 function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string): SeriesPart {
   if (typeof entry !== "object" || entry === null) {
     throw new Error(`${sourceLabel}: entry ${index} is not an object`);
@@ -105,25 +127,9 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
       `${sourceLabel}: entry ${index} (part ${part}) has an "introduced" line of ${introduced.length} characters, over the ${INTRODUCED_MAX_LENGTH}-character card budget: ${JSON.stringify(introduced)}`,
     );
   }
-  if (date !== null && (typeof date !== "string" || !DATE_PATTERN.test(date))) {
-    throw new Error(
-      `${sourceLabel}: entry ${index} (part ${part}) has an invalid "date" (expected null or "YYYY-MM-DD", got ${JSON.stringify(date)})`,
-    );
-  }
-  if (url === "" && date !== null) {
-    throw new Error(`${sourceLabel}: entry ${index} (part ${part}) has a "date" but no "url" -- unpublished parts must have both null/empty`);
-  }
-  if (url !== "" && date === null) {
-    throw new Error(`${sourceLabel}: entry ${index} (part ${part}) has a "url" but no "date" -- published parts must record when`);
-  }
-  if (status === "published" && url === "") {
-    throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is "published" but has no "url" and "date" -- a published part links its post and says when`);
-  }
-  if (status !== "published" && url !== "") {
-    throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is "${status}" but has a "url" and "date" -- only a published part has them`);
-  }
+  const checkedDate = checkDate(date, url, status, `${sourceLabel}: entry ${index} (part ${part})`);
 
-  return { part, title, ...(headline === undefined ? {} : { headline }), status: status as SeriesStatus, url, introduced, date: date as string | null };
+  return { part, title, ...(headline === undefined ? {} : { headline }), status: status as SeriesStatus, url, introduced, date: checkedDate };
 }
 
 /**

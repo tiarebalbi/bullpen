@@ -9,7 +9,7 @@ export function Footer(): ReactNode {
         I&rsquo;m building Bullpen in public as the working example for my series{" "}
         <em>Architecting Software in 2026</em>. Paper trading. Play money. Not investment advice.
       </p>
-      <p>Market data: crypto by CoinGecko. U.S. stocks arrive in Part 3.</p>
+      <p>Market data: crypto by CoinGecko. U.S. stocks are end of day.</p>
       <p className="bp-footer__legal">
         <Link href="/privacy">Privacy</Link>
         <span aria-hidden="true"> · </span>

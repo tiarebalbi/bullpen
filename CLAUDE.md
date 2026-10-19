@@ -10,8 +10,9 @@ Software in 2026*, one part a week.
 - `architecture/adl/structure.adl` — the structural rules the codebase must hold to. One parser
   (`architecture/fitness/src/adl.ts`) reads it; the landing app reads the JSON `adl:emit` writes.
 - `architecture/calm/` — the system's shape over time. `architecture/calm/moments/` is what
-  was built; `architecture/calm/planned/` is each part's prediction (never edit it: Part 6
-  compares it with reality); `architecture/calm/bullpen.timeline.json` links each moment to
+  was built; `architecture/calm/planned/` is the current plan for the parts not built yet
+  (ADR-0011); the `predictions-week-1` tag holds week one's predictions and is never
+  moved, and Part 6 compares them with reality; `architecture/calm/bullpen.timeline.json` links each moment to
   its ADRs.
 - `architecture/fitness/` — the checks that enforce the ADL, run via `check:arch`.
 - `architecture/reports/part-0N/` — the rules snapshot for each part.

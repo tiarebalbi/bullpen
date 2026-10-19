@@ -1,7 +1,7 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { carryForward, momentChanges, momentIdOfPart, plannedNamesOf, type CalmChangeDoc, type CalmIds } from "@bullpen/contracts/architecture";
-import type { ArchGroupData, ArchNodeData, ArchPartData } from "@bullpen/ui";
+import type { ArchGroupData, ArchNodeData, ArchPartData, ArchPrediction } from "@bullpen/ui";
 
 const VALID_KIND = new Set(["actor", "app", "service", "data", "infra", "ext"]);
 const VALID_EDGE_TYPE = new Set(["sync", "async"]);
@@ -72,6 +72,7 @@ export function parseArchitecturePart(content: string, sourceLabel: string): Arc
       throw new Error(`${sourceLabel}: node "${n.id}" is missing numeric "x"/"y" positions`);
     }
   }
+  checkNodeLinks(nodes as Record<string, unknown>[], nodeIds, sourceLabel);
 
   const edgeIds = new Set<string>();
   for (const [index, entry] of edges.entries()) {
@@ -89,26 +90,15 @@ export function parseArchitecturePart(content: string, sourceLabel: string): Arc
     if (typeof e.type !== "string" || !VALID_EDGE_TYPE.has(e.type)) {
       throw new Error(`${sourceLabel}: edge "${e.id}" has an invalid "type" (${JSON.stringify(e.type)})`);
     }
+    checkEdgeLabel(e, sourceLabel);
   }
 
-  const req = request as Record<string, unknown>;
-  if (typeof req.name !== "string" || req.name.length === 0) {
-    throw new Error(`${sourceLabel}: "request.name" must be a non-empty string`);
-  }
-  if (!Array.isArray(req.steps) || req.steps.length === 0) {
-    throw new Error(`${sourceLabel}: "request.steps" must be a non-empty array`);
-  }
-  for (const [index, entry] of (req.steps as unknown[]).entries()) {
-    const s = entry as Record<string, unknown>;
-    if (typeof s.edge !== "string" || !edgeIds.has(s.edge)) {
-      throw new Error(`${sourceLabel}: request step ${index} references an edge id not present in "edges"`);
-    }
-    if (typeof s.caption !== "string" || s.caption.length === 0) {
-      throw new Error(`${sourceLabel}: request step ${index} is missing a non-empty "caption"`);
-    }
-    if (typeof s.detail !== "string" || s.detail.length === 0) {
-      throw new Error(`${sourceLabel}: request step ${index} is missing a non-empty "detail"`);
-    }
+  checkLayout(data as Record<string, unknown>, groups, sourceLabel);
+  checkRequest(request, "request", sourceLabel, edgeIds);
+  const { requests } = data as Record<string, unknown>;
+  if (requests !== undefined) {
+    if (!Array.isArray(requests)) throw new Error(`${sourceLabel}: "requests" must be an array`);
+    requests.forEach((entry, index) => checkRequest(entry, `requests[${index}]`, sourceLabel, edgeIds));
   }
 
   const parsed = data as ArchPartData;
@@ -116,6 +106,100 @@ export function parseArchitecturePart(content: string, sourceLabel: string): Arc
     parsed.groups = deriveOwnershipGroups(parsed.nodes, parsed.edges);
   }
   return parsed;
+}
+
+/** A node's optional `owner` names another node in the part, and `replaces` names node ids. */
+function checkNodeLinks(nodes: Record<string, unknown>[], nodeIds: Set<string>, sourceLabel: string): void {
+  for (const n of nodes) {
+    if (n.owner !== undefined && (typeof n.owner !== "string" || n.owner === n.id)) {
+      throw new Error(`${sourceLabel}: node "${n.id}" has an invalid "owner" (a node id other than its own)`);
+    }
+    if (typeof n.owner === "string" && !nodeIds.has(n.owner)) {
+      throw new Error(`${sourceLabel}: node "${n.id}" names an owner "${n.owner}" that is not in "nodes"`);
+    }
+    if (n.replaces !== undefined && (!Array.isArray(n.replaces) || n.replaces.some((id) => typeof id !== "string"))) {
+      throw new Error(`${sourceLabel}: node "${n.id}" has an invalid "replaces" (expected node ids)`);
+    }
+  }
+}
+
+/** An edge's optional `label` (shown with the data toggle) and `caption` (always shown) are non-empty strings. */
+function checkEdgeLabel(e: Record<string, unknown>, sourceLabel: string): void {
+  for (const key of ["label", "caption"] as const) {
+    if (e[key] !== undefined && (typeof e[key] !== "string" || e[key].length === 0)) {
+      throw new Error(`${sourceLabel}: edge "${e.id}" has an empty or non-string "${key}"`);
+    }
+  }
+  checkRate(e, sourceLabel);
+}
+
+const RATE_UNITS = new Set(["second", "minute", "hour", "day"]);
+const RATE_SOURCES = new Set(["measured", "configured", "illustrative"]);
+
+const isCount = (n: unknown): boolean => typeof n === "number" && n > 0;
+const isText = (t: unknown): boolean => typeof t === "string" && t.length > 0;
+
+/** A rate is a positive count per a unit of time, where it comes from, and a sentence saying how. */
+function isRate(r: unknown): boolean {
+  if (typeof r !== "object" || r === null) return false;
+  const rate = r as Record<string, unknown>;
+  return isCount(rate.count) && RATE_UNITS.has(String(rate.per)) && RATE_SOURCES.has(String(rate.source)) && isText(rate.basis);
+}
+
+/** An edge's optional `rate` must be one. */
+function checkRate(e: Record<string, unknown>, sourceLabel: string): void {
+  if (e.rate !== undefined && !isRate(e.rate)) {
+    throw new Error(`${sourceLabel}: edge "${e.id}" has an invalid "rate" (a positive count, per second, minute, hour or day, a source of measured, configured or illustrative, and a basis)`);
+  }
+}
+
+/** The part's optional `flow` is "down" or "right", and a group that is a node (`nodeId`) names it with a string. */
+function checkLayout(data: Record<string, unknown>, groups: unknown[], sourceLabel: string): void {
+  if (data.flow !== undefined && data.flow !== "down" && data.flow !== "right") {
+    throw new Error(`${sourceLabel}: "flow" must be "down" or "right"`);
+  }
+  for (const entry of groups) {
+    const g = entry as Record<string, unknown>;
+    if (g.nodeId !== undefined && typeof g.nodeId !== "string") throw new Error(`${sourceLabel}: group "${String(g.id)}" has a "nodeId" that is not a node id`);
+  }
+}
+
+/**
+ * Every node a group names is in the part once the built nodes have been carried in: a later part's group may box nodes the part does
+ * not write itself, because they carry forward from the latest built part.
+ */
+function checkGroupsResolve(parts: ArchPartData[]): void {
+  for (const part of parts) {
+    const ids = new Set(part.nodes.map((n) => n.id));
+    for (const g of part.groups) {
+      const missing = [...g.nodeIds, ...(g.nodeId ? [g.nodeId] : [])].filter((id) => !ids.has(id));
+      if (missing.length > 0) throw new Error(`Part ${part.part}: group "${g.id}" names ${missing.join(", ")}, which is not in the part or carried into it`);
+    }
+  }
+}
+
+/** A named request: a name and steps, each a caption and a detail on an edge that exists. */
+function checkRequest(value: unknown, where: string, sourceLabel: string, edgeIds: Set<string>): void {
+  if (typeof value !== "object" || value === null) throw new Error(`${sourceLabel}: "${where}" must be an object`);
+  const req = value as Record<string, unknown>;
+  if (typeof req.name !== "string" || req.name.length === 0) {
+    throw new Error(`${sourceLabel}: "${where}.name" must be a non-empty string`);
+  }
+  if (!Array.isArray(req.steps) || req.steps.length === 0) {
+    throw new Error(`${sourceLabel}: "${where}.steps" must be a non-empty array`);
+  }
+  for (const [index, entry] of (req.steps as unknown[]).entries()) {
+    const s = entry as Record<string, unknown>;
+    if (typeof s.edge !== "string" || !edgeIds.has(s.edge)) {
+      throw new Error(`${sourceLabel}: ${where} step ${index} references an edge id not present in "edges"`);
+    }
+    if (typeof s.caption !== "string" || s.caption.length === 0) {
+      throw new Error(`${sourceLabel}: ${where} step ${index} is missing a non-empty "caption"`);
+    }
+    if (typeof s.detail !== "string" || s.detail.length === 0) {
+      throw new Error(`${sourceLabel}: ${where} step ${index} is missing a non-empty "detail"`);
+    }
+  }
 }
 
 /**
@@ -164,6 +248,31 @@ function readCalmDoc(calmDir: string, moment: TimelineMoment | undefined): CalmC
   return file ? (JSON.parse(readFileSync(join(calmDir, file), "utf8")) as CalmChangeDoc) : undefined;
 }
 
+const PREDICTION_TAG = "predictions-week-1";
+const PREDICTION_TAG_URL = `https://github.com/tiarebalbi/bullpen/tree/${PREDICTION_TAG}`;
+
+interface PlannedDoc {
+  nodes?: Array<{ "unique-id": string; name?: string; "node-type"?: string }>;
+}
+
+/**
+ * What the week-one prediction for `part` named that the built moment does not have: the planned moment's
+ * nodes (actors aside) whose id is not in the built one. Derived from the two CALM documents, so it cannot
+ * drift from them. Null when the part has no prediction or built everything it predicted.
+ */
+export function predictionOfPart(part: number, plannedDir: string, calmDir: string): ArchPrediction | null {
+  const plannedFile = join(plannedDir, `part-${String(part).padStart(2, "0")}.architecture.json`);
+  const builtFile = join(calmDir, "moments", `part-${String(part).padStart(2, "0")}.architecture.json`);
+  if (!existsSync(plannedFile) || !existsSync(builtFile)) return null;
+  const planned = JSON.parse(readFileSync(plannedFile, "utf8")) as PlannedDoc;
+  const built = JSON.parse(readFileSync(builtFile, "utf8")) as PlannedDoc;
+  const builtIds = new Set((built.nodes ?? []).map((n) => n["unique-id"]));
+  const notBuilt = (planned.nodes ?? [])
+    .filter((n) => n["node-type"] !== "actor" && !builtIds.has(n["unique-id"]))
+    .map((n) => ({ id: n["unique-id"], label: n.name ?? n["unique-id"] }));
+  return notBuilt.length > 0 ? { tag: PREDICTION_TAG, tagUrl: PREDICTION_TAG_URL, notBuilt } : null;
+}
+
 function changesOfPart(part: ArchPartData, previous: ArchPartData | undefined, moments: Map<string, TimelineMoment>, calmDir: string): ArchPartData {
   if (part.status !== "built" || previous?.status !== "built") return part;
   const prevMoment = moments.get(momentIdOfPart(previous.part));
@@ -176,15 +285,20 @@ function changesOfPart(part: ArchPartData, previous: ArchPartData | undefined, m
 
 /**
  * Attaches to each built part what its moment added to the previous built one
- * beyond the node diff: controls on existing nodes and connections, and the
- * ADRs the timeline links to it. Read from the CALM documents the timeline
+ * beyond the node diff: controls on nodes and connections, and the ADRs the
+ * timeline links to it; and, when the part had a week-one prediction, what that
+ * prediction named and the part did not build. Read from the CALM documents the timeline
  * names, so it is derived, never written by hand. Part 1, and any part whose
  * previous moment is not built, get none.
  */
-function withMomentChanges(parts: ArchPartData[], calmDir: string): ArchPartData[] {
+function withMomentChanges(parts: ArchPartData[], plannedDir: string, calmDir: string): ArchPartData[] {
   const timeline = JSON.parse(readFileSync(join(calmDir, "bullpen.timeline.json"), "utf8")) as { moments?: TimelineMoment[] };
   const moments = new Map((timeline.moments ?? []).map((m) => [m["unique-id"], m]));
-  return parts.map((part) => changesOfPart(part, parts.find((p) => p.part === part.part - 1), moments, calmDir));
+  return parts.map((part) => {
+    const withChanges = changesOfPart(part, parts.find((p) => p.part === part.part - 1), moments, calmDir);
+    const prediction = part.status === "built" ? predictionOfPart(part.part, plannedDir, calmDir) : null;
+    return prediction ? { ...withChanges, prediction } : withChanges;
+  });
 }
 
 /**
@@ -204,5 +318,6 @@ export function loadArchitectureParts(dirPath: string, plannedDir: string, calmD
   }
   parts.sort((a, b) => a.part - b.part);
   const carried = carryForward(parts, plannedNamesOf(loadPlannedCalmDocs(plannedDir)));
-  return calmDir ? withMomentChanges(carried, calmDir) : carried;
+  checkGroupsResolve(carried);
+  return calmDir ? withMomentChanges(carried, plannedDir, calmDir) : carried;
 }

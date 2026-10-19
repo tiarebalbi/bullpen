@@ -89,7 +89,8 @@ test.describe("every page in the sitemap", () => {
   test("home hasPart headlines match content/series.json", async ({ request }) => {
     const [graph] = jsonLdGraphs(await (await request.get("/", { headers: { Host: PRODUCTION_HOST } })).text());
     const hasPart = graph!["@graph"].find((node) => node["@type"] === "CreativeWorkSeries")!.hasPart as Array<{ headline: string; url: string }>;
-    const published = series.filter((p) => p.status === "published").sort((a, b) => a.part - b.part);
+    // A published part with no date yet (the placeholder) is left out of hasPart: a BlogPosting needs the day it was published.
+    const published = series.filter((p) => p.status === "published" && p.date !== null).sort((a, b) => a.part - b.part);
     expect(hasPart.map((p) => p.headline)).toEqual(published.map((p) => p.headline ?? p.title));
     expect(hasPart.map((p) => p.url)).toEqual(published.map((p) => p.url));
   });

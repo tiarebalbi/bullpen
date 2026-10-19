@@ -10,6 +10,10 @@ export interface ArchNodeData {
   y: number;
   /** Renders a small database pill under the node when the "Data ownership" toggle is on. */
   db?: boolean;
+  /** The id of the node that owns this one (a schema's owning service): the "Data ownership" toggle colours it by owner. */
+  owner?: string;
+  /** Ids of earlier nodes this one took over, so "What changed" says they moved here instead of calling them removed. */
+  replaces?: string[];
   adrs?: string[];
   costNote?: string;
   /** Not this part's prediction but a built part's: it carried forward, still running (ADR-0011). */
@@ -20,11 +24,29 @@ export interface ArchNodeData {
 
 export type ArchEdgeType = "sync" | "async";
 
+/** Where a rate comes from. Only "measured" is a measurement; "configured" is a setting; "illustrative" says only that the edge is used. */
+export type ArchRateSource = "measured" | "configured" | "illustrative";
+
+/** How often something travels over a connection, as the part's CALM moment states it (`bullpen:rate`). */
+export interface ArchEdgeRate {
+  count: number;
+  per: "second" | "minute" | "hour" | "day";
+  source: ArchRateSource;
+  /** Where the figure comes from, in a sentence. */
+  basis: string;
+}
+
 export interface ArchEdgeData {
   id: string;
   a: string;
   b: string;
   type: ArchEdgeType;
+  /** Written on the connection when the "Data ownership" toggle is on: the database role and what it may do. */
+  label?: string;
+  /** Written on the connection always: what travels over it, e.g. "/api/price (rewrite)". */
+  caption?: string;
+  /** How often something travels over it, and where that figure comes from. Drives the traffic animation. */
+  rate?: ArchEdgeRate;
   carried?: true;
   builtIn?: string;
 }
@@ -33,6 +55,11 @@ export interface ArchGroupData {
   id: string;
   label: string;
   nodeIds: string[];
+  /**
+   * The node this box is: a database, drawn as the box around its schemas, not as a card of its own. The node stays in the part's
+   * nodes (the model has it), the box stands for it, and selecting the box's label selects it.
+   */
+  nodeId?: string;
 }
 
 export interface ArchRequestStep {
@@ -59,14 +86,31 @@ export type ArchChange =
   | { kind: "controls"; target: string; nodeId?: string; controls: ArchControlChange[] }
   | { kind: "adr"; adr: string };
 
+/** What the week-one prediction named that the part did not build, derived from its planned moment. */
+export interface ArchPrediction {
+  /** The tag the predictions are kept at. */
+  tag: string;
+  tagUrl: string;
+  notBuilt: Array<{ id: string; label: string }>;
+}
+
 export interface ArchPartData {
   part: number;
   status: "built" | "planned";
   summary: string;
+  /**
+   * Which way the part's picture reads. "down" (the default) joins a node's bottom to the next one's top. "right" lays the part out
+   * left to right and joins each connection at the sides of the two nodes that face each other.
+   */
+  flow?: "down" | "right";
   nodes: ArchNodeData[];
   edges: ArchEdgeData[];
   groups: ArchGroupData[];
   request: ArchRequestData;
+  /** Further requests to follow beyond `request`, such as a buy next to a price request. */
+  requests?: ArchRequestData[];
+  /** Derived by the loader for a built part that had a prediction; absent otherwise. */
+  prediction?: ArchPrediction;
   /** Derived by the loader from the part's moment and the previous built one; absent for Part 1 and planned parts. */
   changes?: ArchChange[];
 }

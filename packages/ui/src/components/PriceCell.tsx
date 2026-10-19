@@ -61,6 +61,13 @@ export interface PriceCellProps {
   staleAfterMs?: number;
   decimals?: number;
   className?: string;
+  /**
+   * An end-of-day price is stale by the caller's own rule (its provider-day has passed), not by a tick's age. With status
+   * "market-closed" this tones the price and adds the stale label, so staleness never rests on colour alone.
+   */
+  stale?: boolean;
+  /** What the stale label says the price is "as of" when it is a date, not a time: "Oct 15". */
+  asOfLabel?: string;
 }
 
 export function PriceCell({
@@ -74,6 +81,8 @@ export function PriceCell({
   staleAfterMs = STALE_AFTER_MS_DEFAULT,
   decimals = 2,
   className,
+  stale = false,
+  asOfLabel,
 }: PriceCellProps): ReactNode {
   const reduced = useReducedMotion();
   const now = useNow(nowProp);
@@ -83,7 +92,7 @@ export function PriceCell({
     return <LoadingCell className={className} />;
   }
 
-  const isStale = status === "live" && now - timestamp > staleAfterMs;
+  const isStale = (status === "live" && now - timestamp > staleAfterMs) || (status === "market-closed" && stale);
   // Design line 267: a reconnecting quote's price renders in the same
   // stale tone as an aged one, even though it isn't stale by timestamp.
   const priceInStaleTone = isStale || status === "reconnecting";
@@ -110,7 +119,7 @@ export function PriceCell({
 
       <StatusRow status={status} statusLabel={statusLabel} changePercent={changePercent} reduced={reduced} />
 
-      {isStale ? <StaleLabel timestamp={timestamp} /> : null}
+      {isStale ? <StaleLabel timestamp={timestamp} asOfLabel={asOfLabel} /> : null}
 
       <span role="status" aria-live="polite" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
         {announce}
@@ -187,11 +196,11 @@ function StatusRow({
   );
 }
 
-function StaleLabel({ timestamp }: { timestamp: number }): ReactNode {
+function StaleLabel({ timestamp, asOfLabel }: { timestamp: number; asOfLabel?: string }): ReactNode {
   return (
     <div data-testid="price-cell-stale-label" style={ROW_STYLE_MUTED_SM}>
       <ClockIcon />
-      stale {"·"} as of {formatTime(timestamp)}
+      stale {"·"} as of {asOfLabel ?? formatTime(timestamp)}
     </div>
   );
 }

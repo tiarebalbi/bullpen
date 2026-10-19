@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Violation } from "./violation.js";
 
-const ROUTE_RELATIVE_PATH = "apps/web/app/api/price/[symbol]/route.ts";
+const ROUTE_RELATIVE_PATH = "apps/market-data/src/price.ts";
 const ALLOWANCES_RELATIVE_PATH = "cost/allowances.json";
 const REVALIDATE_PATTERN = /export const REVALIDATE_SECONDS = (\d+);/;
 
@@ -24,7 +24,7 @@ export interface AllowanceEntry {
 }
 
 /**
- * Reads apps/web's real price route source and extracts its actual
+ * Reads the Market Data service's real price module source and extracts its actual
  * configured REVALIDATE_SECONDS constant -- never an assumed or hardcoded
  * value, matching this fitness-check package's other checks (real fs
  * reads against the real repo). Throws a plain Error if the route or the

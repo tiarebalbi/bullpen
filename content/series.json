@@ -20,15 +20,16 @@
   {
     "part": 3,
     "title": "Who owns the data",
-    "status": "next",
-    "url": "",
-    "date": null,
-    "introduced": "Orders and Ledger split, and a queue"
+    "headline": "Database per Service Is Free Now. That Is Not a Reason to Use It",
+    "status": "published",
+    "url": "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership",
+    "date": "2026-10-19",
+    "introduced": "One owner per transaction, one Market Data service"
   },
   {
     "part": 4,
     "title": "The order saga",
-    "status": "planned",
+    "status": "next",
     "url": "",
     "date": null,
     "introduced": "Fills, cancels and retries"

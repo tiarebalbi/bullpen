@@ -139,22 +139,23 @@ for (const viewport of [
       await expect(panel(page)).toContainText("Overview · Part 1");
 
       // Overview
-      await toPart(page, 3);
-      await expect(panel(page)).toContainText("Overview · Part 3");
+      await toPart(page, 4);
+      await expect(panel(page)).toContainText("Overview · Part 4");
       await expect(panel(page).getByText("Planned", { exact: true }).first()).toBeVisible();
 
       // Services: the planned services appear beside what runs today
       await tab(page, "Services").click();
-      await expect(panel(page).getByRole("heading", { name: "Planned for Part 3" })).toBeVisible();
-      await expect(panel(page).getByRole("heading", { name: "Prices Service" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 4" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "Order Saga" })).toBeVisible();
 
       // Flows: the same request, marked as a prediction
       await tab(page, "Flows").click();
       await expect(panel(page).getByText("Preview · planned")).toBeVisible();
 
       // Data: reached from Part 3
+      await toPart(page, 3);
       await tab(page, "Data").click();
-      await expect(panel(page).getByRole("heading", { name: "One owner per database" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "One owner per schema" })).toBeVisible();
 
       // Decisions: Part 3's ADR is in the list now
       await tab(page, "Decisions").click();
@@ -173,17 +174,20 @@ for (const viewport of [
       await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(0);
       await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0009" })).toHaveCount(0);
       await tab(page, "Services").click();
-      await expect(panel(page).getByRole("heading", { name: "Planned for Part 3" })).toHaveCount(0);
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 4" })).toHaveCount(0);
     });
 
 
-    test("Jump to Part 3 moves the scrubber and the Data tab shows the planned databases", async ({ page }) => {
+    test("Jump to Part 3 moves the scrubber and the Data tab shows the database and each schema with its owner", async ({ page }) => {
       await open(page, "data", 1);
       await panel(page).getByRole("button", { name: "Jump to Part 3" }).click();
 
       await expect(scrubber(page).getByRole("button", { name: "PART 3" })).toHaveAttribute("aria-current", "step");
-      await expect(panel(page).getByRole("heading", { name: "One owner per database" })).toBeVisible();
-      await expect(panel(page).getByRole("heading", { name: "Prices Database" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "One owner per schema" })).toBeVisible();
+      for (const name of ["Bullpen Database", "trading schema", "market_data schema", "market_data.prices_v1"]) {
+        await expect(panel(page).getByRole("heading", { name })).toBeVisible();
+      }
+      await expect(panel(page).getByRole("heading", { name: "Prices Database" })).toHaveCount(0);
       await expect(panel(page).getByText("Not reached")).toHaveCount(0);
     });
   });
@@ -246,21 +250,21 @@ test.describe("Architecture page, desktop", () => {
   test("Flows: playback steps forward and back", async ({ page }) => {
     await page.goto("/architecture#flows");
     const playback = panel(page).getByRole("group", { name: "Playback" });
-    await expect(playback).toContainText("STEP 1 OF 4");
+    await expect(playback).toContainText("STEP 1 OF 5");
 
     await playback.getByRole("button", { name: "Next step" }).click();
-    await expect(playback).toContainText("STEP 2 OF 4");
+    await expect(playback).toContainText("STEP 2 OF 5");
     await expect(panel(page).getByRole("button", { name: /Ask for a quote/ })).toHaveAttribute("aria-current", "step");
 
     await playback.getByRole("button", { name: "Previous step" }).click();
-    await expect(playback).toContainText("STEP 1 OF 4");
+    await expect(playback).toContainText("STEP 1 OF 5");
   });
 
   test("Rules: every rule with the snapshot's result, and the commit it ran for", async ({ page }) => {
     await open(page, "rules", 2);
 
     await expect(panel(page)).toContainText(/Snapshot for Part \d, commit [0-9a-f]{7}/);
-    await expect(panel(page).locator(".bp-rule-card")).toHaveCount(7);
+    await expect(panel(page).locator(".bp-rule-card")).toHaveCount(8);
     const row = panel(page).locator("tr", { hasText: "UI HAS NO DEPENDENCY ON Landing, Trading App" });
     await expect(row).toContainText(/pass|fail/);
     await expect(row).not.toContainText("Arrives in Part");

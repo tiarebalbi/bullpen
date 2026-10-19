@@ -19,6 +19,7 @@ describe("check:arch on the real repo", () => {
       "entry-point imports",
       "secret containment",
       "model currency",
+      "data ownership",
       "budget",
       "explorer consistency",
       "email in files",

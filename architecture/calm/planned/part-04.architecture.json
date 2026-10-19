@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "bullpen-part-04",
   "name": "Bullpen — Part 4 (planned)",
-  "description": "Prediction, not yet built: placing a paper trade becomes a multi-step order saga, carried forward on top of Part 3's data split. An Orders Service accepts trade requests, a workflow engine orchestrates the saga (price lookup, balance check, fill, ledger update), and a Ledger Service owns player balances and positions as its own data boundary.",
+  "description": "Prediction, not yet built: placing a paper trade becomes a durable order saga that drives each order to a fill, a cancel or a retry. Orders and the ledger stay together: every step is one transaction in the trading schema, owned by the Trading App. Market data, the Bullpen Database and the daily cron carry forward from Part 3.",
   "metadata": {
     "status": "planned",
     "part": 4
@@ -26,62 +26,40 @@
       "name": "Bullpen Landing",
       "description": "The public landing site with the architecture timeline explorer.",
       "metadata": {
-        "capabilities": ["architecture-timeline-explorer"]
+        "capabilities": [
+          "architecture-timeline-explorer"
+        ]
       }
     },
     {
       "unique-id": "trading-app",
       "node-type": "webclient",
       "name": "Bullpen Trading App",
-      "description": "The trading app where players view prices and history and submit paper trade orders."
-    },
-    {
-      "unique-id": "prices-service",
-      "node-type": "service",
-      "name": "Prices Service",
-      "description": "Owns live price snapshots, consulted by the order saga at fill time."
-    },
-    {
-      "unique-id": "prices-db",
-      "node-type": "database",
-      "name": "Prices Database",
-      "description": "Neon Postgres database owned solely by the Prices Service."
-    },
-    {
-      "unique-id": "market-history-service",
-      "node-type": "service",
-      "name": "Market History Service",
-      "description": "Serves historical price/candle queries independently of live snapshots, with its own write path and own database."
-    },
-    {
-      "unique-id": "market-history-db",
-      "node-type": "database",
-      "name": "Market History Database",
-      "description": "Neon Postgres database owned solely by the Market History Service."
-    },
-    {
-      "unique-id": "orders-service",
-      "node-type": "service",
-      "name": "Orders Service",
-      "description": "Accepts paper trade order requests from the trading app and starts an order saga for each one."
+      "description": "The trading app where players view prices and submit paper trade orders. It owns orders, the ledger, positions and the leaderboard view in the trading schema."
     },
     {
       "unique-id": "order-saga-workflow",
       "node-type": "workflow-engine",
       "name": "Order Saga",
-      "description": "Durable workflow orchestrating each order: price lookup, balance check, fill, and ledger update, with compensation if any step fails."
+      "description": "Durable workflow driving each order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together; compensation covers a step that fails."
     },
     {
-      "unique-id": "ledger-service",
+      "unique-id": "market-data-service",
       "node-type": "service",
-      "name": "Ledger Service",
-      "description": "Owns player balances and positions as an independent data boundary, updated only by the order saga."
+      "name": "Market Data Service",
+      "description": "The single owner of market data: both providers (stocks end of day, crypto) and both call budgets. It serves the public price route and the daily ingest. It is a boundary inside one release, not an independently deployed microservice."
     },
     {
       "unique-id": "market-data-provider",
       "node-type": "external-system",
-      "name": "Stock data provider",
-      "description": "External market-data API for U.S. stock prices. Alpha Vantage is proposed (free tier, end of day), pending written permission for public display — see ADR-0008."
+      "name": "CoinGecko",
+      "description": "CoinGecko's free Demo API (api.coingecko.com), called for BTC-USD price snapshots. Chosen after a Coinbase-based design was ruled out by Coinbase's Terms of Use, which forbid public display of their data (see issue #6, ADR-0005, docs/data-sources.md)."
+    },
+    {
+      "unique-id": "stock-data-provider",
+      "node-type": "external-system",
+      "name": "Alpha Vantage",
+      "description": "External market-data API for U.S. stock prices: end of day, one request per symbol, fetched once a day by the Market Data service within a daily call budget (ADR-0008)."
     }
   ],
   "relationships": [
@@ -91,7 +69,9 @@
       "relationship-type": {
         "interacts": {
           "actor": "reader",
-          "nodes": ["landing-app"]
+          "nodes": [
+            "landing-app"
+          ]
         }
       }
     },
@@ -101,115 +81,83 @@
       "relationship-type": {
         "interacts": {
           "actor": "player",
-          "nodes": ["trading-app"]
+          "nodes": [
+            "trading-app"
+          ]
         }
       }
     },
     {
-      "unique-id": "trading-app-to-prices",
-      "description": "Trading app requests a live price snapshot for a symbol.",
+      "unique-id": "trading-app-to-saga",
+      "description": "Trading app starts an order saga for each accepted order.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "prices-service" }
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "order-saga-workflow"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
+      "metadata": {
+        "interaction": "asynchronous"
+      }
     },
     {
-      "unique-id": "trading-app-to-history",
-      "description": "Trading app requests historical price/candle data for a symbol.",
+      "unique-id": "trading-app-to-market-data",
+      "description": "Trading app requests a live price for a symbol: GET /api/price/<symbol>, rewritten to the Market Data service.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "market-history-service" }
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "market-data-service"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
+      "metadata": {
+        "interaction": "synchronous"
+      }
     },
     {
-      "unique-id": "trading-app-to-orders",
-      "description": "Trading app submits a paper trade order request.",
+      "unique-id": "market-data-to-crypto-provider",
+      "description": "The Market Data service fetches a crypto price from CoinGecko, after reserving a call against its budget.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "trading-app" },
-          "destination": { "node": "orders-service" }
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "market-data-provider"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
+      "metadata": {
+        "interaction": "synchronous"
+      }
     },
     {
-      "unique-id": "orders-to-saga",
-      "description": "Orders Service starts an order saga for each accepted order.",
+      "unique-id": "market-data-to-stock-provider",
+      "description": "The Market Data service fetches each stock's end-of-day price once a day, after reserving a call against the daily budget.",
       "relationship-type": {
         "connects": {
-          "source": { "node": "orders-service" },
-          "destination": { "node": "order-saga-workflow" }
+          "source": {
+            "node": "market-data-service"
+          },
+          "destination": {
+            "node": "stock-data-provider"
+          }
         }
       },
       "protocol": "HTTPS",
-      "metadata": { "interaction": "asynchronous" }
-    },
-    {
-      "unique-id": "saga-to-prices",
-      "description": "Order saga consults the Prices Service for the fill price.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "order-saga-workflow" },
-          "destination": { "node": "prices-service" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "saga-to-ledger",
-      "description": "Order saga updates the player's balance and positions once a trade fills.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "order-saga-workflow" },
-          "destination": { "node": "ledger-service" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "prices-to-market-data",
-      "description": "Prices Service calls out to the external market-data provider for the current price.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "prices-service" },
-          "destination": { "node": "market-data-provider" }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": { "interaction": "synchronous" }
-    },
-    {
-      "unique-id": "prices-to-prices-db",
-      "description": "Prices Service persists and reads live price snapshots.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "prices-service" },
-          "destination": { "node": "prices-db" }
-        }
-      },
-      "protocol": "JDBC"
-    },
-    {
-      "unique-id": "history-to-history-db",
-      "description": "Market History Service persists and reads historical price/candle data.",
-      "relationship-type": {
-        "connects": {
-          "source": { "node": "market-history-service" },
-          "destination": { "node": "market-history-db" }
-        }
-      },
-      "protocol": "JDBC"
+      "metadata": {
+        "interaction": "synchronous"
+      }
     }
   ]
 }
