@@ -39,6 +39,8 @@ rolname              rolsuper  rolbypassrls  neon_superuser
 SHOW max_connections: 901
 ```
 
+Read again on the production branch on 2026-10-19 at 10:39 UTC, as `market_data_owner`, with `SHOW max_connections`: `901`.
+
 ## Denials, connected as each runtime role
 
 Read-only statements, run with each role's own credentials against the pooled host:

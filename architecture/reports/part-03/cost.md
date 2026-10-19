@@ -7,7 +7,7 @@ afterwards. This table holds what I could read myself today, from the database a
 | Resource | Used | Allowance | Where I read it |
 |---|---|---|---|
 | Alpha Vantage calls, peak day, production | 0 | 25 a day (cap 20) | `market_data.provider_calls`: no `alphavantage` row exists |
-| Alpha Vantage calls, peak day, previews | 2 (2026-10-16) | cap 5 | `market_data.provider_calls`, `alphavantage:non-production` (1 more on 2026-10-13) |
+| Alpha Vantage calls, peak day, previews | 4 (2026-10-16) | cap 5 | `market_data.provider_calls`, `alphavantage:non-production`, read after the ingest of 2026-10-16 (1 on 2026-10-13) |
 | CoinGecko calls, October to date | 14, all from previews | 10,000 a month | `market_data.provider_calls`, `coingecko:non-production` |
 | Neon storage | 12 MB | 1 GB per project | `pg_database_size` on the production branch |
 | Neon compute | pending (dashboard, after 2026-10-18) | 100 CU-hours a month | compute is fixed at 0.25 CU; I can only say it did not scale |

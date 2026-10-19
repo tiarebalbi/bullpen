@@ -98,7 +98,7 @@ test.describe("SEO metadata", () => {
     expect(result.valid).toBe(true);
   });
 
-  test("JSON-LD lists exactly two parts of the series, Parts 1 and 2, each with its headline, URL and date", async ({ page }) => {
+  test("JSON-LD lists exactly the three published parts of the series, Parts 1 to 3, each with its headline, URL and date", async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
     const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { "@graph": Array<Record<string, unknown>> };
@@ -115,6 +115,12 @@ test.describe("SEO metadata", () => {
         headline: "Architecture as Code Has Three Jobs: Describe, Govern, Remember",
         url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
         datePublished: "2026-10-11",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Database per Service Is Free Now. That Is Not a Reason to Use It",
+        url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership",
+        datePublished: "2026-10-19",
       },
     ]);
   });

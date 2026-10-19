@@ -23,9 +23,9 @@ describe("parseSeries", () => {
       url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
       date: "2026-10-11",
     });
-    // Part 3 is published, with its post's address; until the owner writes the day in, its date is the placeholder, read as no date yet.
-    expect(parts[2]).toMatchObject({ part: 3, status: "published", url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership", date: null });
-    expect(parts[2]).toMatchObject({ title: "Who owns the data", introduced: "One owner per transaction, one Market Data service" });
+    // Part 3 is published, with its post's address and its publish date.
+    expect(parts[2]).toMatchObject({ part: 3, status: "published", url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership", date: "2026-10-19" });
+    expect(parts[2]).toMatchObject({ title: "Who owns the data", headline: "Database per Service Is Free Now. That Is Not a Reason to Use It", introduced: "One owner per transaction, one Market Data service" });
     expect(parts[3]).toMatchObject({ part: 4, status: "next", url: "", date: null });
     for (const part of parts.slice(4)) {
       expect(part.status).toBe("planned");

@@ -24,7 +24,7 @@ pnpm --filter @bullpen/fitness-checks test:db -- --reporter=verbose
 ## Output, verbatim
 
 ```
- RUN  v5.0.2 /Users/tiare/Projetos/@tiarebalbi/blog-posts-poc/bullpen/.claude/worktrees/architecture-as-code-build-61329b/architecture/fitness
+ RUN  v5.0.2 <repo>/architecture/fitness
  ✓ src/db-integration/ownership.int.test.ts > market_data is owned by market_data_owner, trading by trading_owner > denies trading_owner a SELECT from a market_data table 20ms
  ✓ src/db-integration/ownership.int.test.ts > market_data is owned by market_data_owner, trading by trading_owner > lets trading_owner SELECT from market_data.prices_v1, with the stale flag 33ms
  ✓ src/db-integration/ownership.int.test.ts > market_data is owned by market_data_owner, trading by trading_owner > denies trading_owner any write through the price contract 9ms

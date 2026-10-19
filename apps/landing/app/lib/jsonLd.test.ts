@@ -30,14 +30,12 @@ describe("buildJsonLd: home", () => {
     expect(validateJsonLd(buildJsonLd("home", real)).valid).toBe(true);
   });
 
-  it("lists a published part only once it has a date: Part 3 waits for the publish-date placeholder to be replaced", () => {
-    const parts = [...real];
-    expect(real.find((p) => p.part === 3)).toMatchObject({ status: "published", date: null });
-    expect(parts.length).toBe(6);
-    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(2);
+  it("lists the three published parts, each with a date", () => {
+    expect(real.filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"]]);
+    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(3);
   });
 
-  it("lists Parts 1 and 2 with each post's real headline, URL and date", () => {
+  it("lists Parts 1 to 3 with each post's real headline, URL and date", () => {
     expect(seriesNode(real).hasPart).toEqual([
       {
         "@type": "BlogPosting",
@@ -50,6 +48,12 @@ describe("buildJsonLd: home", () => {
         headline: "Architecture as Code Has Three Jobs: Describe, Govern, Remember",
         url: "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember",
         datePublished: "2026-10-11",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Database per Service Is Free Now. That Is Not a Reason to Use It",
+        url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership",
+        datePublished: "2026-10-19",
       },
     ]);
   });

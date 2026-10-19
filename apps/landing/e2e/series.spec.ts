@@ -71,12 +71,13 @@ for (const viewport of [
       }
     });
 
-    test("Part 3 is published and links its post, with no date until the day is written in", async ({ page }) => {
+    test("Part 3 is published, links its post and shows its publish date", async ({ page }) => {
       const part3 = card(page, 3);
       await expect(part3).toContainText("Part 3");
       await expect(part3.locator(".bp-chip")).toHaveText("Published");
       await expect(part3.getByRole("link")).toHaveAttribute("href", POST_3);
       await expect(part3).not.toContainText("Not yet published");
+      await expect(part3).toContainText("Oct 19, 2026");
       await expect(part3).not.toContainText("PUBLISH_DATE_PLACEHOLDER");
       await expect(part3).not.toContainText(/Invalid|NaN/);
     });

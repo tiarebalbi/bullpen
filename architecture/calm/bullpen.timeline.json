@@ -65,7 +65,7 @@
         "planned-name": "Part 3 (planned) — Data ownership and the first split",
         "planned-description": "Prediction: the price-snapshot service splits into a Prices Service and a Market History Service, each with its own Neon Postgres database, and a stock data provider appears as an external system."
       },
-      "valid-from": "9999-12-31"
+      "valid-from": "2026-10-19"
     },
     {
       "unique-id": "part-04",
