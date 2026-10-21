@@ -85,7 +85,7 @@ The choice stands as the baseline only. The comparison with the other drivers is
   the first sweep after that finishes them, but until then nothing finds a stuck order. A cheaper backstop (the same
   route called on every order or status read, or the daily cron) is possible and is not built.
 - Every tick is a function invocation of the Trading App and a trip to Postgres: 5 s is 17,280 a day (about 518,000 in 30
-  days, half of Hobby's 1,000,000), which is why the cadence adapts; idle at 15 minutes is 96 a day. The measured counts, Active
+  days, half of Hobby's 1,000,000), which is why the cadence adapts; idle with a 15-minute ceiling is about 100 a day. The measured counts, Active
   CPU and bytes, and the cost model for the idle ceiling, are in the Decision 1 report.
 - The daemon and the route have to agree on the reply's shape; a contract in `packages/contracts` carries it.
 - Local testing is a Docker run and a test of the ticker with a fake clock and a stub server; a deployed daemon is not

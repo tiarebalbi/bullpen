@@ -1,0 +1,268 @@
+{
+  "at": "2026-10-21T01:40:32.843Z",
+  "host": "darwin/arm64",
+  "node": "v26.12.0",
+  "database": "postgres:17-alpine in Docker on the same machine",
+  "tickInProcess": {
+    "idle": {
+      "ticks": 300,
+      "cpuMsPerTick": 0.277,
+      "statementsPerTick": 6,
+      "wireBytesPerTick": 2481,
+      "wallMsPerTick": 1.913
+    },
+    "fiveOpenOrders": {
+      "ticks": 300,
+      "cpuMsPerTick": 0.846,
+      "statementsPerTick": 11,
+      "wireBytesPerTick": 4566,
+      "wallMsPerTick": 3.322
+    },
+    "note": "CPU is this process's own (the pg driver and the sweep code), not Next's, and not Postgres's. Wire bytes are the Postgres protocol without TLS; Neon's TLS adds a few percent."
+  },
+  "nextServer": {
+    "idle": {
+      "calls": 600,
+      "serverCpuMsPerCall": 1,
+      "responseMsP50": 2.276,
+      "responseMsP95": 2.897,
+      "responseBodyBytes": 149
+    },
+    "fiveOpenOrders": {
+      "calls": 600,
+      "serverCpuMsPerCall": 1.133,
+      "responseMsP50": 3.545,
+      "responseMsP95": 4.641,
+      "responseBodyBytes": 149
+    },
+    "note": "`next start` of the production build on this machine; CPU is the whole process tree by ps (10 ms resolution over the run). Not Vercel's Fluid compute: it is the order of magnitude, not the bill."
+  },
+  "daemonProcess": {
+    "busy": {
+      "seconds": 20,
+      "calls": 500,
+      "daemonCpuMsPerCall": 1.58,
+      "daemonCpuPercentOfOneCore": 3.95
+    },
+    "sleepingCpuMsIn20s": 0,
+    "note": "Plain HTTP to a local proxy, so no TLS (measured separately below). CPU by ps over the run, node's start-up excluded."
+  },
+  "connectionsPerCall": {
+    "callsSixSecondsApart": 3,
+    "connectionsOpened": 3,
+    "note": "Node's fetch keeps an idle connection for 4 s by default, so at the 5 s cadence and slower every call opens a connection."
+  },
+  "clientTlsCost": {
+    "httpKeepAliveCpuMsPerCall": 0.157,
+    "httpsKeepAliveCpuMsPerCall": 0.165,
+    "httpsNewConnectionCpuMsPerCall": 0.734,
+    "httpNewConnectionCpuMsPerCall": 0.246,
+    "note": "The client process's own CPU (user+system) per call to a local server with a self-signed RSA-2048 certificate (verification off). A real certificate chain adds verification work; this is a floor for the HTTPS case."
+  },
+  "detectionLatencyActive": {
+    "trials": 8,
+    "minMs": 556,
+    "p50Ms": 2314,
+    "maxMs": 4856,
+    "allMs": [
+      556,
+      2308,
+      4856,
+      2314,
+      1070,
+      4106,
+      2155,
+      4300
+    ],
+    "note": "Time from an order being past the accept timeout until the daemon's tick moved it out of accepted, with orders already open (so the 5 s cadence). When the daemon is idle the wait is the idle ceiling, computed below, not measured."
+  },
+  "costPerOrder": {
+    "lifecycle": {
+      "orders": 100,
+      "statementsPerOrder": 34.07,
+      "wireBytesPerOrder": 11499,
+      "cpuMsPerOrderInThisProcess": 2.384,
+      "rowsWrittenPerOrder": {
+        "orders": 1,
+        "reservations": 1,
+        "fills": 1,
+        "order_events": 4,
+        "ledger": 2,
+        "positions": 1
+      },
+      "tableAndIndexBytesAddedPerOrder": 4260
+    },
+    "partThreeBuy": {
+      "orders": 100,
+      "statementsPerOrder": 7.07,
+      "wireBytesPerOrder": 2022,
+      "cpuMsPerOrderInThisProcess": 0.354,
+      "rowsWrittenPerOrder": {
+        "orders": 1,
+        "reservations": 0,
+        "fills": 0,
+        "order_events": 0,
+        "ledger": 2,
+        "positions": 1
+      },
+      "tableAndIndexBytesAddedPerOrder": 1229
+    },
+    "note": "Local Postgres, no TLS. The lifecycle row includes one tick for the order; with several orders open a tick is shared between them. Table bytes include indexes and come from pg_total_relation_size after VACUUM FULL, so the page size (8 kB) makes a small run coarse."
+  },
+  "cadenceModel": {
+    "computed": true,
+    "assumptions": {
+      "neonSuspendsAfterMinutes": 5,
+      "computeCu": 0.25,
+      "usdPerCuHour": 0.106,
+      "daysInMonth": 30,
+      "source": "cost/allowances.json (Launch plan, scale-to-zero at 5 minutes) and the ticker's own wait function on a virtual clock"
+    },
+    "rows": [
+      {
+        "scenario": "no order all day",
+        "idleCeilingMinutes": 1,
+        "callsPerDay": 1442,
+        "callsPerMonth": 43260,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "no order all day",
+        "idleCeilingMinutes": 5,
+        "callsPerDay": 292,
+        "callsPerMonth": 8760,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "no order all day",
+        "idleCeilingMinutes": 15,
+        "callsPerDay": 102,
+        "callsPerMonth": 3060,
+        "neonAwakeHoursPerDay": 8.17,
+        "neonCuHoursPerMonth": 61.3,
+        "neonUsdPerMonthForComputeAlone": 6.5
+      },
+      {
+        "scenario": "no order all day",
+        "idleCeilingMinutes": 30,
+        "callsPerDay": 55,
+        "callsPerMonth": 1650,
+        "neonAwakeHoursPerDay": 4.25,
+        "neonCuHoursPerMonth": 31.9,
+        "neonUsdPerMonthForComputeAlone": 3.38
+      },
+      {
+        "scenario": "orders open for one hour a day",
+        "idleCeilingMinutes": 1,
+        "callsPerDay": 2102,
+        "callsPerMonth": 63060,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "orders open for one hour a day",
+        "idleCeilingMinutes": 5,
+        "callsPerDay": 1002,
+        "callsPerMonth": 30060,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "orders open for one hour a day",
+        "idleCeilingMinutes": 15,
+        "callsPerDay": 750,
+        "callsPerMonth": 22500,
+        "neonAwakeHoursPerDay": 8.9,
+        "neonCuHoursPerMonth": 66.8,
+        "neonUsdPerMonthForComputeAlone": 7.08
+      },
+      {
+        "scenario": "orders open for one hour a day",
+        "idleCeilingMinutes": 30,
+        "callsPerDay": 630,
+        "callsPerMonth": 18900,
+        "neonAwakeHoursPerDay": 5.13,
+        "neonCuHoursPerMonth": 38.5,
+        "neonUsdPerMonthForComputeAlone": 4.08
+      },
+      {
+        "scenario": "an order is always open",
+        "idleCeilingMinutes": 1,
+        "callsPerDay": 17280,
+        "callsPerMonth": 518400,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "an order is always open",
+        "idleCeilingMinutes": 5,
+        "callsPerDay": 17280,
+        "callsPerMonth": 518400,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "an order is always open",
+        "idleCeilingMinutes": 15,
+        "callsPerDay": 17280,
+        "callsPerMonth": 518400,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "an order is always open",
+        "idleCeilingMinutes": 30,
+        "callsPerDay": 17280,
+        "callsPerMonth": 518400,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "the route fails all day",
+        "idleCeilingMinutes": 1,
+        "callsPerDay": 1442,
+        "callsPerMonth": 43260,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "the route fails all day",
+        "idleCeilingMinutes": 5,
+        "callsPerDay": 292,
+        "callsPerMonth": 8760,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "the route fails all day",
+        "idleCeilingMinutes": 15,
+        "callsPerDay": 292,
+        "callsPerMonth": 8760,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      },
+      {
+        "scenario": "the route fails all day",
+        "idleCeilingMinutes": 30,
+        "callsPerDay": 292,
+        "callsPerMonth": 8760,
+        "neonAwakeHoursPerDay": 24,
+        "neonCuHoursPerMonth": 180,
+        "neonUsdPerMonthForComputeAlone": 19.08
+      }
+    ]
+  }
+}
