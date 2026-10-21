@@ -75,7 +75,10 @@
       "details": {
         "detailed-architecture": "planned/part-04.architecture.json",
         "required-pattern": "bullpen.pattern.json"
-      }
+      },
+      "adrs": [
+        "architecture/adr/0017-order-lifecycle-as-a-postgres-state-machine.md"
+      ]
     },
     {
       "unique-id": "part-05",

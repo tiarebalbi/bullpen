@@ -76,8 +76,8 @@ export async function placeMarketBuy(pool: Pool, buy: MarketBuy, hooks: BuyHooks
     }
 
     const order = await client.query<{ order_id: string }>(
-      `INSERT INTO trading.orders (account_id, symbol, side, quantity, price, price_as_of, status)
-       VALUES ($1, $2, 'buy', $3, $4, $5, 'filled') RETURNING order_id`,
+      `INSERT INTO trading.orders (account_id, symbol, side, quantity, price, price_as_of, status, filled_qty)
+       VALUES ($1, $2, 'buy', $3, $4, $5, 'filled', $3) RETURNING order_id`,
       [buy.accountId, buy.symbol, buy.quantity, quote.price, quote.as_of],
     );
     const orderId = order.rows[0]!.order_id;
