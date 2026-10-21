@@ -147,9 +147,12 @@ describe("experiment 3: a crash after a side effect and before success is record
     expect(await w.order(order.orderId)).toMatchObject({ status: "accepted" });
     await w.trading.query("UPDATE trading.orders SET updated_at = now() - interval '2 minutes' WHERE order_id = $1", [order.orderId]);
 
-    expect(await sweep(w.trading, venue, new Date())).toMatchObject({ placed: 1, errors: [] });
-    expect(await sweep(w.trading, venue, new Date())).toMatchObject({ placed: 0 });
-    expect(placed).toEqual([order.orderId]);
+    // The sweep reads the whole database, so another test file's accepted orders may be swept too: count this order's own placements.
+    const first = await sweep(w.trading, venue, new Date());
+    expect(first.placed).toBeGreaterThanOrEqual(1);
+    expect(first.errors).toEqual([]);
+    await sweep(w.trading, venue, new Date());
+    expect(placed.filter((id) => id === order.orderId)).toEqual([order.orderId]);
     expect(await w.order(order.orderId)).toMatchObject({ status: "working" });
     expect(await w.buyingPower(accountId)).toBe("8950.00000000");
   });
