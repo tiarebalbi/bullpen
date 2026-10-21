@@ -3,7 +3,7 @@
  * baseline, independent of Workflows: a tick that dies mid-run, and the next tick finishing the work with no duplicate effect.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from "vitest";
-import { CrashError, DerivedVenue, LATE_FILL_WINDOW_MS, bookFill, confirmCancel, dbPriceSource, markWorking, requestCancel, submitOrder, tick, type Boundary, type Hooks } from "@bullpen/db-trading";
+import { CrashError, DerivedVenue, LATE_FILL_WINDOW_MS, MAX_RELEASE_FAILURES, bookFill, confirmCancel, dbPriceSource, markWorking, requestCancel, submitOrder, tick, type Boundary, type Hooks, type Venue } from "@bullpen/db-trading";
 import { validateSweepTick } from "@bullpen/contracts";
 import { world } from "./orders-harness.js";
 
@@ -164,5 +164,29 @@ describe("after an outage: the daemon stopped for days (for example its Active C
     expect(await w.buyingPower(c.accountId)).toBe("10000.00000000");
     // a further tick changes nothing
     expect(await tick(w.trading, venue(), new Date(t0 + 180_000))).toMatchObject({ fills: 0, cancels: 0, placed: 0, cancelRequested: 0, released: 0, errors: 0 });
+  });
+});
+
+describe("a flagged order does not hold the fast cadence", () => {
+  it("a release that keeps failing counts as open until it is flagged, then not: it is retried every tick, but the caller may back off", async () => {
+    const { orderId } = await working();
+    await requestCancel(w.trading, orderId, new Date(Date.now() - 2 * LATE_FILL_WINDOW_MS));
+    await confirmCancel(w.trading, orderId, new Date(Date.now() - 2 * LATE_FILL_WINDOW_MS + 1000));
+    let failing = true;
+    const hooks: Hooks = { at: (b) => { if (failing && b === "release:before-update") throw new Error("connection reset while releasing"); } };
+    const idle: Venue = { place: async () => undefined, cancel: async () => undefined, poll: async () => [] };
+
+    const ticks = [];
+    for (let i = 0; i < MAX_RELEASE_FAILURES + 2; i += 1) ticks.push(await tick(w.trading, idle, new Date(), hooks));
+    // every tick retried the release; the order is flagged on the failure that reaches the limit, and from then on it is not "open"
+    expect(ticks.map((t) => t.releaseFailed)).toEqual([1, 1, 1, 1, 1]);
+    expect(ticks.map((t) => t.open)).toEqual([1, 1, 0, 0, 0]);
+    expect(ticks.map((t) => t.flagged)).toEqual([0, 0, 1, 1, 1]);
+    expect(await w.order(orderId)).toMatchObject({ needs_attention: "release-failing" });
+
+    // once the cause is gone, the next tick releases it and clears the flag
+    failing = false;
+    expect(await tick(w.trading, idle, new Date(), hooks)).toMatchObject({ released: 1, releaseFailed: 0, open: 0, flagged: 0 });
+    expect(await w.order(orderId)).toMatchObject({ needs_attention: null });
   });
 });

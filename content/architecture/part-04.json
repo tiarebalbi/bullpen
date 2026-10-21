@@ -2,7 +2,7 @@
   "part": 4,
   "status": "built",
   "flow": "right",
-  "summary": "What runs at the end of Part 4's build: the order lifecycle as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. A signed-in player can place a market buy from the trading app and watch it move through its states; the sweeper is not switched on in production.",
+  "summary": "What runs at the end of Part 4's build: the order lifecycle as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. A signed-in player can place a market buy from the trading app and watch it move through its states; the sweeper is a Vercel Daemon, declared in vercel.json, that runs in production deployments.",
   "nodes": [
     {
       "id": "reader",
@@ -196,8 +196,8 @@
       "id": "sweeper",
       "label": "Sweeper",
       "kind": "infra",
-      "meta": "Vercel Daemon · not switched on",
-      "purpose": "A daemon whose only job is to call the trading app's sweep route and wait: every 5 seconds while an order is open, backing off to every 60 minutes when none is. It reads no database URL and holds no data. Built and tested locally; the owner switches it on.",
+      "meta": "Vercel Daemon",
+      "purpose": "A daemon whose only job is to call the trading app's sweep route and wait: every 5 seconds while an order is open, backing off to every 60 minutes when none is. It reads no database URL and holds no data. Built and tested locally; declared in vercel.json, it runs in production deployments only.",
       "x": 300,
       "y": 430,
       "adrs": [
@@ -402,7 +402,7 @@
         "count": 12,
         "per": "minute",
         "source": "configured",
-        "basis": "Every 5 seconds while an order is open, backing off to every 60 minutes when none is (ADR-0018, ceiling raised by ADR-0021). The sweeper is not switched on in production."
+        "basis": "Every 5 seconds while an order is open, backing off to every 60 minutes when none is (ADR-0018, ceiling raised by ADR-0021). The sweeper is a Vercel Daemon declared in vercel.json; it runs in production deployments only."
       }
     },
     {

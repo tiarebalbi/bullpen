@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -33,6 +33,9 @@ The sweeper's idle wait doubles from 10 seconds up to 60 minutes, not 15, and no
   Neon is modelled, not measured: the console's CU-hours are the check once a daemon runs.
 - **What it changes for a stuck order.** A player's own requests still move that player's orders (ADR-0017, ADR-0018), so a player never waits for the sweeper. The sweeper is the safety net for an order
   nobody is polling, for example one left behind by a crash, and while nothing is open that net is now checked at most every 60 minutes instead of every 15. When the sweeper finds an open order it returns to 5 seconds.
+- **A flagged order does not hold the fast cadence** (the owner's condition, 2026-10-21). The sweep's `open` count, which is what keeps the sweeper at 5 seconds, excludes orders flagged for a person (a release that kept failing, a cancel nobody
+  confirmed). They are still retried on every tick, so they heal when the cause goes, but at the idle interval: a stuck order cannot keep Neon awake or spend the invocation quota. An order is flagged on the third failed release, so a failing
+  release is retried at 5 seconds at most three times. `flagged` stays in the reply. Test: `orders-tick.int.test.ts`, "a flagged order does not hold the fast cadence".
 - The 15-minute `WORKING_DEADLINE` (a working order with no fillable price is cancelled after it) is a deadline on the order, not the daemon's wait, and is unchanged.
 
 ## Consequences

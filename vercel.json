@@ -16,6 +16,13 @@
       }
     }
   },
+  "daemons": {
+    "sweeper": {
+      "root": "apps/sweeper/",
+      "entrypoint": "Dockerfile",
+      "instances": { "iad1": 1 }
+    }
+  },
   "rewrites": [
     {
       "source": "/api/price/(.*)",

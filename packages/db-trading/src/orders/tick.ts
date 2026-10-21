@@ -5,9 +5,13 @@ import type { Venue } from "./venue.js";
 
 export interface TickResult {
   at: string;
-  /** Orders still open: not terminal, or terminal with a reservation not yet released. Zero lets the caller back off. */
+  /**
+   * Orders that need the fast cadence: not terminal, or terminal with a reservation not yet released, and not flagged. Zero lets the caller back off.
+   * A flagged order (a release that kept failing, a cancel nobody confirmed) is still retried on every tick, but at the idle interval: it must not keep
+   * the compute awake or spend the invocation quota at 5 s.
+   */
   open: number;
-  /** Orders flagged for a person. */
+  /** Open orders flagged for a person; they are not in `open`. */
   flagged: number;
   fills: number;
   cancels: number;
@@ -23,7 +27,7 @@ export async function tick(pool: Pool, venue: Venue, now: Date, hooks: Hooks = {
   const delivered = await pump(pool, venue, now, hooks);
   const swept: SweepResult = await sweep(pool, venue, now, hooks);
   const { rows } = await pool.query<{ open: string; flagged: string }>(
-    `SELECT count(*) FILTER (WHERE o.status IN ('accepted', 'working', 'partially_filled', 'cancel_requested') OR r.released_at IS NULL) AS open,
+    `SELECT count(*) FILTER (WHERE o.needs_attention IS NULL AND (o.status IN ('accepted', 'working', 'partially_filled', 'cancel_requested') OR r.released_at IS NULL)) AS open,
             count(*) FILTER (WHERE o.needs_attention IS NOT NULL AND (o.status IN ('accepted', 'working', 'partially_filled', 'cancel_requested') OR r.released_at IS NULL)) AS flagged
        FROM trading.orders o LEFT JOIN trading.reservations r USING (order_id)
       WHERE o.status IN ('accepted', 'working', 'partially_filled', 'cancel_requested') OR r.released_at IS NULL`,
