@@ -124,4 +124,4 @@ Daemon Active CPU a day, locally: about 37 s at the 5 s cadence all day, 0.22 s 
 - **Neon and Vercel dashboards:** CU-hours, transfer, invocations as billed and Active CPU as billed: not read.
 - **A real exchange:** the venue is a seeded simulator.
 - **Lighthouse for the trading app, and a long browser session at the 3 s cadence:** not run; the cadence is tested as a function.
-- **Two landing end-to-end tests** (`rules-adl.spec.ts`, "a deep link to #structure-adl opens it") failed in two of the last four forced `turbo` runs and passed every time when run alone or through `pnpm run test` in `apps/landing`; I did not change them and did not find the cause.
+- **Two landing end-to-end tests** (`rules-adl.spec.ts`, "a deep link to #structure-adl opens it") failed in two of the last three forced `turbo run lint typecheck test build` runs (and once when `turbo` ran only the landing tests) and passed in the third, and every time when run alone or through `pnpm run test` in `apps/landing`; I did not change them and did not find the cause. The last full run, with all 33 tasks, was green.
