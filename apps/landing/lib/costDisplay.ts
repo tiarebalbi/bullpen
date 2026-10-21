@@ -12,10 +12,9 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
  *  - vercel-services: Part 3's Market Data Service (ADR-0004).
  *  - vercel-workflows: Part 4's order-saga-workflow.
  *  - vercel-queues: Part 5's market-open-queue.
- * upstash-redis, grafana-cloud and aws-lambda never appear in any real
- * committed CALM/architecture/ADR content -- they're tracked in
- * cost/allowances.json ahead of time, but aren't placed in the plan yet,
- * so they get no part number (never invented).
+ *  - grafana-cloud: Part 5, by the owner's decision of 2026-10-20 (no committed CALM node names it yet).
+ * upstash-redis and aws-lambda appear in no CALM, ADR or plan, so they get no part
+ * number and the landing leaves them off (OFF_LANDING_SERVICES in costView.ts); they stay in cost/allowances.json.
  */
 export const SERVICE_ARRIVES_IN_PART: Record<string, number | undefined> = {
   neon: 3,
@@ -24,6 +23,7 @@ export const SERVICE_ARRIVES_IN_PART: Record<string, number | undefined> = {
   "vercel-services": 3,
   "vercel-workflows": 4,
   "vercel-queues": 5,
+  "grafana-cloud": 5,
 };
 
 // "alpha-vantage-free" reads as "Stock data provider", not by name: the

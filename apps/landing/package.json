@@ -21,6 +21,7 @@
     "@bullpen/contracts": "workspace:*"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.63.0",
     "@testing-library/react": "16.3.3",
     "eslint": "10.11.0",

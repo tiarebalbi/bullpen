@@ -140,14 +140,14 @@ test.describe("landing fidelity at 1440px", () => {
 test.describe("landing fidelity at 390px", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("the touched sections (nav, hero, strip, series, architecture, bento) don't cause horizontal overflow", async ({
+  test("the touched sections (nav, hero, strip, series, architecture, status grid, cost) don't cause horizontal overflow", async ({
     page,
   }) => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");
 
     const vw = 390;
-    for (const selector of [".bp-nav", ".bp-hero", ".bp-market-strip", "#series", "#architecture", ".bp-bento"]) {
+    for (const selector of [".bp-nav", ".bp-hero", ".bp-market-strip", "#series", "#architecture", ".bp-status-grid", ".bp-cost-grid"]) {
       const right = await page.locator(selector).evaluate((el) => el.getBoundingClientRect().right);
       expect(right, `${selector} right edge`).toBeLessThanOrEqual(vw + 1);
     }

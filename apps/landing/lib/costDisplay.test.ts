@@ -58,6 +58,7 @@ describe("groupLaterServices", () => {
     expect(neon.arrivesInPart).toBe(3);
     const upstash = grouped.find((g) => g.service === "upstash-redis")!;
     expect(upstash.arrivesInPart).toBeUndefined();
+    expect(grouped.find((g) => g.service === "grafana-cloud")!.arrivesInPart).toBe(5);
   });
 });
 

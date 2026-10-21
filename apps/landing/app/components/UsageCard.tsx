@@ -1,52 +1,36 @@
 import type { ReactNode } from "react";
-import type { AllowanceEntry, UsageSnapshot } from "../../lib/cost.js";
-import { joinUsageWithAllowances } from "../../lib/cost.js";
-import { PART_1_SERVICES, humanUnit, metricLabel, pendingUsageNote, serviceLabel } from "../../lib/costDisplay.js";
+import type { UsageView } from "../../lib/costView.js";
 
 /**
- * Real usage stays 100% pending until week 40 actually happens (see
- * cost/usage/2026-w40.json's own note) -- so this renders no meters at
- * all yet, per the "usage pending, no bars" spec, rather than the
- * design's fictional filled bars (812k/1M, 2.1GB/3GB, ...), which match
- * bullpen.js's sample USAGE array verbatim and were never real Bullpen
- * numbers.
+ * Free-tier usage for what runs today. A row with no reading says "usage pending" and its track stays empty: there is no bar, and no
+ * number, that the snapshot does not hold. The date beside each row is when its allowance was checked.
  */
-export function UsageCard({ allowances, usage }: { allowances: AllowanceEntry[]; usage: UsageSnapshot }): ReactNode {
-  const rows = joinUsageWithAllowances(allowances, usage).filter((row) => PART_1_SERVICES.has(row.allowance.service));
-  const note = pendingUsageNote(usage);
-
+export function UsageCard({ view }: { view: UsageView }): ReactNode {
   return (
-    <section id="cost-usage" className="bp-bento__card" aria-labelledby="cost-usage-heading">
-      <div className="bp-bento__head">
-        <p id="cost-usage-heading" className="bp-eyebrow bp-eyebrow--heading">
+    <section id="cost-usage" className="bp-card bp-card--usage" aria-labelledby="cost-usage-heading">
+      <div className="bp-usage-head">
+        <h2 id="cost-usage-heading" className="bp-eyebrow bp-eyebrow--heading">
           Free-tier usage
-        </p>
-        <span className="bp-bento__meta">
-          {usage.week} · {usage.period.start} – {usage.period.end} · {usage.status}
+        </h2>
+        <span className="bp-usage-head__stamp">
+          {view.week} · {view.period} · {view.status}
         </span>
       </div>
-
-      <div className="bp-usage-rows">
-        {rows.map(({ entry, allowance }) => (
-          <div key={`${entry.service}-${entry.metric}`} className="bp-usage-row">
-            <div className="bp-usage-row__name">
-              <span className="bp-usage-row__service">{serviceLabel(allowance.service)}</span>
-              <span className="bp-usage-row__metric">{metricLabel(entry.metric)}</span>
+      <ul className="bp-usage-list">
+        {view.rows.map((row) => (
+          <li key={row.key} className="bp-usage-line">
+            <div className="bp-usage-line__name">
+              <span className="bp-usage-row__service">{row.service}</span>
+              <span className="bp-usage-row__metric">{row.metric}</span>
             </div>
-            <div className="bp-usage-row__value">
-              {entry.value === null ? (
-                <span className="bp-usage-row__pending">usage pending</span>
-              ) : (
-                <span>
-                  {entry.value.toLocaleString("en-US")} / {allowance.allowance.toLocaleString("en-US")} {humanUnit(allowance.unit)}
-                </span>
-              )}
+            <div className="bp-usage-line__track" aria-hidden="true" />
+            <div className="bp-usage-line__value">
+              <span className={row.measured ? undefined : "bp-usage-row__pending"}>{row.reading}</span>
+              <span className="bp-usage-line__checked">allowance checked {row.checkedOn}</span>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
-
-      {note ? <p className="bp-bento__note">{note}</p> : null}
+      </ul>
     </section>
   );
 }

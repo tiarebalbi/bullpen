@@ -60,19 +60,21 @@ test("landing page renders every section with no console/page errors", async ({ 
   await expect(page.locator("#architecture .react-flow")).toBeVisible();
   await expect(page.locator("#architecture").getByRole("group", { name: "Series part" })).toBeVisible();
 
-  // Decisions: all six real ADRs rendered.
+  // Decisions: the first six real ADRs are listed, and the rest are behind "View all".
   const decisions = page.locator("#decisions");
-  for (const id of ["ADR-0001", "ADR-0002", "ADR-0003", "ADR-0005", "ADR-0006", "ADR-0007"]) {
+  for (const id of ["ADR-0001", "ADR-0002", "ADR-0003", "ADR-0004", "ADR-0005", "ADR-0006"]) {
     await expect(decisions.getByText(id)).toBeVisible();
   }
+  await expect(decisions.getByRole("button", { name: /^View all/ })).toBeVisible();
 
-  // Rules: a card for each # heading of structure.adl plus the CALM and budget cards, each with a
-  // real result chip: the pass or fail the last committed rules snapshot recorded, never a fabricated pass.
-  const ruleCards = page.locator("#rules .bp-rule-card");
-  await expect(ruleCards).toHaveCount(8);
-  for (let i = 0; i < 7; i++) {
-    await expect(ruleCards.nth(i).locator(".bp-rule-card__foot")).toContainText(/pass|fail/);
+  // Rules: a tile for each # heading of structure.adl plus the CALM and budget tiles, each with a real
+  // result chip: the pass or fail the last committed rules snapshot recorded, never a fabricated pass.
+  const ruleTiles = page.locator("#rules ~ .bp-tile");
+  await expect(ruleTiles).toHaveCount(8);
+  for (let i = 0; i < 8; i++) {
+    await expect(ruleTiles.nth(i).locator(".bp-chip")).toHaveText(/pass|fail/);
   }
+  await expect(page.locator("#rules .bp-rules-stat__ratio")).toContainText("/");
 
   // Cost: the honest "usage pending" state, not invented numbers.
   await expect(page.locator("#cost-usage").getByText("usage pending").first()).toBeVisible();
