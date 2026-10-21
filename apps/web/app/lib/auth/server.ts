@@ -25,6 +25,11 @@ export function neonAuth(): Promise<NeonAuth> {
   return instance;
 }
 
+/** The secret that signs the session cookies, for the one place besides `neonAuth` that needs it: the exchange of a sign-in's verifier (verifier.ts). */
+export function authCookieSecret(): string | null {
+  return process.env.NEON_AUTH_COOKIE_SECRET || null;
+}
+
 /** No sign-in on a Vercel preview: its address changes with every deployment and is not a trusted domain of the auth project. */
 export function signInAvailable(): boolean {
   return process.env.VERCEL_ENV !== "preview" && authBaseUrl() !== null && Boolean(process.env.NEON_AUTH_COOKIE_SECRET);
