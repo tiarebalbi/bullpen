@@ -10,7 +10,7 @@ Proposed
 
 ## Summary
 
-A Vercel Daemon ticks an authenticated sweep route; it holds no database credentials and is not switched on without the owner's yes
+A daemon ticks a sweep route; the owner switches it on
 
 ## Part
 
@@ -55,12 +55,17 @@ imports nothing from `trading`. This keeps the ownership rules of ADR-0012 and A
   that each secret is read in one place: `SWEEP_SECRET` for the route, `SWEEPER_TOKEN` for the daemon. Neither is set by
   this change.
 - **Cadence.** The route's reply says how many orders are still open (not terminal, or terminal with an unreleased
-  reservation). While any are, the daemon ticks every 5 seconds. When none are, it backs off, doubling, to 60 seconds.
-  The sweep is not what moves a healthy order: submit, dispatch and the first fill run in the request path. The sweep
-  finds what that path did not finish, so a late start of a tick costs a stuck order seconds, not a lost fill.
+  reservation). While any are, the daemon ticks every 5 seconds. When none are, it backs off, doubling, to **15
+  minutes**; after failures it doubles to 5 minutes. The ceiling is not about the daemon's CPU. Every call reaches Postgres,
+  and Neon suspends the compute only after 5 minutes without activity ([Scale to zero](https://neon.com/docs/introduction/scale-to-zero): fixed on Free; `cost/allowances.json` records 5
+  minutes for this project's Launch plan, and the console shows the setting). A tick every 60 seconds would keep a 0.25 CU compute awake all month: 0.25 CU x 720 h = 180 CU-hours, about
+  $19 at the $0.106 a CU-hour that `cost/allowances.json` records for the Launch plan (computed, not measured). At 15
+  minutes the compute is awake about a third of the time. The sweep is not meant to be what moves a healthy order: the
+  design is that the player's own requests do that (the order ticket's status poll runs the same tick for an open order), so the
+  sweep finds what they did not finish, such as an order whose tab was closed.
 - **Detection times (configured).** accepted with no hand-off: 30 s plus a tick; working with no fill: 15 min plus a
   tick; cancel unconfirmed: re-sent after 10 s, flagged after 5 min; a failed release: retried every tick, flagged
-  after 3 failures. A tick is at most 60 s when idle and 5 s when active.
+  after 3 failures. The wait between ticks is at most 15 min when idle and 5 s when active.
 - **Idempotent jobs.** The sweep is written to be killed at any point and run again; two at once do no harm. The daemon
   handles `SIGTERM` by finishing or abandoning the request in flight and exiting; the next sweep completes the work.
 - **Not switched on without the owner's yes.** This change does not add a `daemons` key to `vercel.json`, so no daemon
@@ -79,8 +84,9 @@ The choice stands as the baseline only. The comparison with the other drivers is
   quota is used up every daemon of the team stops until the first of the month; orders keep their state in Postgres and
   the first sweep after that finishes them, but until then nothing finds a stuck order. A cheaper backstop (the same
   route called on every order or status read, or the daily cron) is possible and is not built.
-- Every tick is a function invocation of the Trading App: 5 s is 17,280 a day (about 518,000 in 30 days, half of Hobby's
-  1,000,000), which is why the cadence adapts. The measured counts and Active CPU are in the Decision 1 report.
+- Every tick is a function invocation of the Trading App and a trip to Postgres: 5 s is 17,280 a day (about 518,000 in 30
+  days, half of Hobby's 1,000,000), which is why the cadence adapts; idle at 15 minutes is 96 a day. The measured counts, Active
+  CPU and bytes, and the cost model for the idle ceiling, are in the Decision 1 report.
 - The daemon and the route have to agree on the reply's shape; a contract in `packages/contracts` carries it.
 - Local testing is a Docker run and a test of the ticker with a fake clock and a stub server; a deployed daemon is not
   tested in previews, because there are none.

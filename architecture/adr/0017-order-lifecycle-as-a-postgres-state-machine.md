@@ -10,7 +10,7 @@ Proposed
 
 ## Summary
 
-Orders move through named states by conditional updates; each step is one transaction in `trading`
+Orders move by conditional updates, one transaction a step
 
 ## Part
 

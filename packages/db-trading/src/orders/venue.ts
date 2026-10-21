@@ -167,3 +167,73 @@ export class SimulatedVenue implements Venue {
     return fill;
   }
 }
+
+const fnv1a = (text: string): number => {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return hash;
+};
+
+export interface DerivedVenueOptions {
+  seed: number;
+  prices: PriceSource;
+  partialRate?: number;
+  maxPriceAgeMs?: number;
+  /** From the cancel request to the venue's confirmation. The effective time is the request time. */
+  ackDelayMs?: number;
+  /** Orders looked at in one poll. */
+  batch?: number;
+}
+
+/**
+ * The same simulator with no memory of its own, so it can run in a function that starts fresh on every tick. What it
+ * knows about an order it reads from the order and its fills: the next fill's id is `<order>:<fills so far>`, its size comes from a
+ * generator seeded by (seed, order, that number), and a cancel is effective at the time it was requested. A tick that dies
+ * and runs again derives the same fill with the same id, which the lifecycle books once.
+ */
+export class DerivedVenue implements Venue {
+  private readonly partialRate: number;
+  private readonly maxPriceAgeMs: number;
+  private readonly ackDelayMs: number;
+  private readonly batch: number;
+
+  constructor(
+    private readonly pool: Pool,
+    private readonly options: DerivedVenueOptions,
+  ) {
+    this.partialRate = options.partialRate ?? 0.1;
+    this.maxPriceAgeMs = options.maxPriceAgeMs ?? MAX_FILL_PRICE_AGE_MS;
+    this.ackDelayMs = options.ackDelayMs ?? 0;
+    this.batch = options.batch ?? 100;
+  }
+
+  async place(): Promise<void> {}
+  async cancel(): Promise<void> {}
+
+  async poll(now: Date): Promise<VenueEvent[]> {
+    const { rows } = await this.pool.query<{ order_id: string; symbol: string; status: string; open_qty: string; cap_price: string; cancel_requested_at: Date | null; fills: string }>(
+      `SELECT o.order_id, o.symbol, o.status, o.open_qty::text, o.cap_price::text, o.cancel_requested_at,
+              (SELECT count(*) FROM trading.fills f WHERE f.order_id = o.order_id) AS fills
+         FROM trading.orders o WHERE o.status IN ('working', 'partially_filled', 'cancel_requested') ORDER BY o.updated_at LIMIT $1`,
+      [this.batch],
+    );
+    const events: VenueEvent[] = [];
+    for (const order of rows) {
+      if (order.status === "cancel_requested") {
+        if (order.cancel_requested_at && now.getTime() >= order.cancel_requested_at.getTime() + this.ackDelayMs) {
+          events.push({ kind: "cancel-ack", orderId: order.order_id, effectiveAt: order.cancel_requested_at });
+        }
+        continue;
+      }
+      const quote = await this.options.prices.latest(order.symbol, now);
+      if (!quote || quote.stale || now.getTime() - quote.asOf.getTime() > this.maxPriceAgeMs || toUnits(quote.price) > toUnits(order.cap_price)) continue;
+      const remaining = toUnits(order.open_qty);
+      if (remaining <= 0n) continue;
+      const rng = seeded(fnv1a(`${this.options.seed}:${order.order_id}:${order.fills}`));
+      const partial = rng() < this.partialRate && remaining > 1n;
+      const size = partial ? 1n + BigInt(Math.floor(rng() * Number(remaining - 1n) * 0.9)) : remaining;
+      events.push({ kind: "fill", fill: { fillId: `${order.order_id}:${order.fills}`, orderId: order.order_id, quantity: fromUnits(size), price: quote.price, executedAt: now } });
+    }
+    return events;
+  }
+}
