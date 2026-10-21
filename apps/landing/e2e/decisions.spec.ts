@@ -42,7 +42,8 @@ test.describe("Decisions", () => {
     await expect(row.locator(".bp-decisions-row__id")).toHaveText("ADR-0001");
     await expect(row.locator(".bp-decisions-row__summary")).toHaveText("Vercel Hobby, Turborepo and TypeScript");
     await expect(row.locator(".bp-decisions-row__meta")).toHaveText("Part 1");
-    await expect(row.getByText("Accepted")).toBeVisible();
+    // An Accepted decision carries no chip; the card says so only for one that is not.
+    await expect(row.locator(".bp-chip")).toHaveCount(0);
 
     // ADR-0004, the deploy topology, is written now and listed like the others.
     await expect(decisions.locator(".bp-decisions-row", { hasText: "ADR-0004" })).toHaveCount(1);

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { joinUsageWithAllowances, parseAllowances, parseUsage } from "./cost.js";
+import { joinUsageWithAllowances, loadLatestUsage, parseAllowances, parseUsage } from "./cost.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 
@@ -76,5 +76,16 @@ describe("joinUsageWithAllowances", () => {
       usage: [{ service: "ghost-service", metric: "ghost-metric", value: null, unit: "x" }],
     };
     expect(() => joinUsageWithAllowances([], usage)).toThrow(/no "ghost-service"\/"ghost-metric" entry/);
+  });
+});
+
+describe("loadLatestUsage", () => {
+  it("reads the snapshot of the latest week in the directory, not a fixed one", () => {
+    const usage = loadLatestUsage(join(repoRoot, "cost", "usage"));
+    expect(usage.week >= "2026-w42").toBe(true);
+  });
+
+  it("throws when the directory has no snapshot", () => {
+    expect(() => loadLatestUsage(join(repoRoot, "cost"))).toThrow(/no usage snapshot/);
   });
 });

@@ -19,12 +19,15 @@ export function DecisionsList({
   adrs,
   closeHash = "",
   rowFilter,
+  compact = false,
 }: {
   adrs: Adr[];
   /** Where closing the modal leaves the URL's hash: nothing on the home page, "#decisions" on the architecture page, where the hash is also the tab. */
   closeHash?: string;
   /** Lists only the decisions this accepts. A decision it hides can still be opened by its link. */
   rowFilter?: (adr: Adr) => boolean;
+  /** The landing card's row: the id, the summary and the part, with a chip only for a decision that is not Accepted. */
+  compact?: boolean;
 }): ReactNode {
   const hash = useLocationHash();
   const openAdr = adrs.find((a) => hash === `#${adrHashId(a.id)}`) ?? null;
@@ -33,19 +36,29 @@ export function DecisionsList({
   return (
     <>
       <div className="bp-decisions-list">
-        {adrs.filter((adr) => rowFilter?.(adr) ?? true).map((adr) => (
-          <a key={adr.id} href={`#${adrHashId(adr.id)}`} className="bp-decisions-row" data-superseded={isSuperseded(adr.status)}>
-            <span className="bp-decisions-row__id">{adr.id}</span>
-            <span className="bp-decisions-row__body">
+        {adrs.filter((adr) => rowFilter?.(adr) ?? true).map((adr) =>
+          compact ? (
+            <a key={adr.id} href={`#${adrHashId(adr.id)}`} className="bp-decisions-row bp-decisions-row--compact" data-superseded={isSuperseded(adr.status)}>
+              <span className="bp-decisions-row__id">{adr.id}</span>
               <span className="bp-decisions-row__summary">{adr.summary}</span>
-              <span className="bp-decisions-row__meta">Part {adr.part}</span>
-            </span>
-            <Chip tone={statusTone(adr.status)}>{adr.status}</Chip>
-            <span className="bp-decisions-row__hint" aria-hidden="true">
-              View →
-            </span>
-          </a>
-        ))}
+              <span className="bp-decisions-row__meta">
+                {adr.status === "Accepted" ? null : <Chip tone={statusTone(adr.status)}>{adr.status}</Chip>} Part {adr.part}
+              </span>
+            </a>
+          ) : (
+            <a key={adr.id} href={`#${adrHashId(adr.id)}`} className="bp-decisions-row" data-superseded={isSuperseded(adr.status)}>
+              <span className="bp-decisions-row__id">{adr.id}</span>
+              <span className="bp-decisions-row__body">
+                <span className="bp-decisions-row__summary">{adr.summary}</span>
+                <span className="bp-decisions-row__meta">Part {adr.part}</span>
+              </span>
+              <Chip tone={statusTone(adr.status)}>{adr.status}</Chip>
+              <span className="bp-decisions-row__hint" aria-hidden="true">
+                View →
+              </span>
+            </a>
+          ),
+        )}
       </div>
 
       <dialog

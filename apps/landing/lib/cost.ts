@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { validateAllowances, validateUsage } from "@bullpen/contracts";
 
 export interface AllowanceEntry {
@@ -89,4 +90,12 @@ export function joinUsageWithAllowances(allowances: AllowanceEntry[], usage: Usa
     }
     return { entry, allowance };
   });
+}
+
+/** The usage snapshot of the latest week in a directory of `YYYY-wNN.json` files, so the page never reads a hard-coded week. */
+export function loadLatestUsage(dir: string): UsageSnapshot {
+  const files = readdirSync(dir).filter((name) => /^\d{4}-w\d{2}\.json$/.test(name)).sort();
+  const latest = files[files.length - 1];
+  if (!latest) throw new Error(`${dir} has no usage snapshot (YYYY-wNN.json)`);
+  return loadUsage(join(dir, latest));
 }
