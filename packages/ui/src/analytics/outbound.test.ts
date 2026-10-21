@@ -5,7 +5,7 @@ describe("outboundHost", () => {
   const here = "bullpen.tiarebalbi.com";
   it("returns only the host of a link to another site", () => {
     expect(outboundHost("https://tiarebalbi.com/en/blog/post?utm=x#top", here)).toBe("tiarebalbi.com");
-    expect(outboundHost("https://bullpen-web-nine.vercel.app/", here)).toBe("bullpen-web-nine.vercel.app");
+    expect(outboundHost("https://bullpen-app.tiarebalbi.com/", here)).toBe("bullpen-app.tiarebalbi.com");
   });
   it("is null for the same site, relative links, fragments and non-web schemes", () => {
     expect(outboundHost("https://bullpen.tiarebalbi.com/privacy", here)).toBeNull();

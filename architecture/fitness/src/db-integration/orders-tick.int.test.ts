@@ -3,7 +3,7 @@
  * baseline, independent of Workflows: a tick that dies mid-run, and the next tick finishing the work with no duplicate effect.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from "vitest";
-import { CrashError, DerivedVenue, LATE_FILL_WINDOW_MS, dbPriceSource, markWorking, requestCancel, submitOrder, tick, type Boundary, type Hooks } from "@bullpen/db-trading";
+import { CrashError, DerivedVenue, LATE_FILL_WINDOW_MS, bookFill, confirmCancel, dbPriceSource, markWorking, requestCancel, submitOrder, tick, type Boundary, type Hooks } from "@bullpen/db-trading";
 import { validateSweepTick } from "@bullpen/contracts";
 import { world } from "./orders-harness.js";
 
@@ -106,5 +106,63 @@ describe("a tick that dies mid-run", () => {
     expect(await w.position(accountId, symbol)).toBe("10.00000000");
     expect(await w.buyingPower(accountId)).toBe("9000.00000000");
     expect(await w.reservation(orderId)).toMatchObject({ spent: "1000.00000000", released: "50.00000000" });
+  });
+});
+
+describe("after an outage: the daemon stopped for days (for example its Active CPU quota ran out)", () => {
+  it("the first ticks afterwards recover every order, release what is held, and leave the account's books balanced and nothing flagged", async () => {
+    const DAYS = "interval '3 days'";
+    const make = async (qty = "10") => {
+      const symbol = w.symbol();
+      await w.price(symbol, "100");
+      const accountId = await w.account("10000");
+      const order = await submitOrder(w.trading, { accountId, symbol, quantity: qty, clientOrderId: `o-${symbol}` });
+      return { accountId, symbol, orderId: order.orderId };
+    };
+    const aged = (orderId: string) => w.trading.query(`UPDATE trading.orders SET updated_at = now() - ${DAYS}, cancel_requested_at = CASE WHEN cancel_requested_at IS NULL THEN NULL ELSE now() - ${DAYS} END WHERE order_id = $1`, [orderId]);
+    const hold = (symbol: string) => w.price(symbol, "110"); // above the 105 ceiling: it cannot fill
+
+    // accepted and never handed to the venue
+    const a = await make();
+    await aged(a.orderId);
+    // working with no fillable price, for days
+    const b = await make();
+    await markWorking(w.trading, b.orderId);
+    await hold(b.symbol);
+    await aged(b.orderId);
+    // cancel requested and never confirmed
+    const c = await make();
+    await markWorking(w.trading, c.orderId);
+    await hold(c.symbol);
+    await requestCancel(w.trading, c.orderId, new Date(Date.now() - 3 * 86_400_000));
+    await aged(c.orderId);
+    // filled, release never ran
+    const d = await make();
+    await markWorking(w.trading, d.orderId);
+    await bookFill(w.trading, { fillId: `${d.orderId}:0`, orderId: d.orderId, quantity: "10", price: "100", executedAt: new Date() });
+    // cancelled, release never ran
+    const e = await make();
+    await markWorking(w.trading, e.orderId);
+    await hold(e.symbol);
+    await requestCancel(w.trading, e.orderId, new Date(Date.now() - 3 * 86_400_000));
+    await confirmCancel(w.trading, e.orderId, new Date(Date.now() - 3 * 86_400_000));
+    await aged(e.orderId);
+
+    const t0 = Date.now();
+    for (const offset of [0, 1_000, 2_000, 60_000, 120_000]) await tick(w.trading, venue(), new Date(t0 + offset));
+
+    expect(await w.order(a.orderId)).toMatchObject({ status: "filled", needs_attention: null });
+    for (const x of [b, c, e]) expect(await w.order(x.orderId)).toMatchObject({ status: "cancelled", cancelled_qty: "10.00000000", needs_attention: null });
+    expect(await w.order(d.orderId)).toMatchObject({ status: "filled" });
+    for (const x of [a, b, c, d, e]) {
+      expect((await w.reservation(x.orderId)).released_at).not.toBeNull();
+      expect(await w.count("fills", x.orderId)).toBe(x.orderId === a.orderId || x.orderId === d.orderId ? 1 : 0);
+    }
+    // what came back: a filled order keeps what it spent, a cancelled one gets everything back
+    expect(await w.buyingPower(a.accountId)).toBe("9000.00000000");
+    expect(await w.buyingPower(b.accountId)).toBe("10000.00000000");
+    expect(await w.buyingPower(c.accountId)).toBe("10000.00000000");
+    // a further tick changes nothing
+    expect(await tick(w.trading, venue(), new Date(t0 + 180_000))).toMatchObject({ fills: 0, cancels: 0, placed: 0, cancelRequested: 0, released: 0, errors: 0 });
   });
 });

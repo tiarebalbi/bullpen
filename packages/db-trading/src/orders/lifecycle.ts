@@ -309,7 +309,7 @@ export async function confirmCancel(pool: Pool, orderId: string, effectiveAt: Da
     const flag = Number(late.rows[0]!.n) > 0 ? "fill-after-cancel-effective" : null;
     const moved = await client.query(
       `UPDATE trading.orders SET status = 'cancelled', cancelled_qty = open_qty, open_qty = 0, cancel_effective_at = $2,
-              needs_attention = COALESCE($4, needs_attention), version = version + 1, updated_at = now()
+              needs_attention = COALESCE($4, CASE WHEN needs_attention = 'cancel-unconfirmed' THEN NULL ELSE needs_attention END), version = version + 1, updated_at = now()
         WHERE order_id = $1 AND version = $3`,
       [orderId, effectiveAt, order.version, flag],
     );

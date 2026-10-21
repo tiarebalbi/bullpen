@@ -16,7 +16,8 @@
     "db:create-roles": "tsx scripts/db-create-roles.ts",
     "db:cleanup-test-data": "tsx scripts/db-cleanup-test-data.ts",
     "db:measure-contention": "tsx scripts/measure-contention.ts",
-    "db:measure-sweeper": "bash scripts/measure-sweeper.sh"
+    "db:measure-sweeper": "bash scripts/measure-sweeper.sh",
+    "db:measure-sweeper-docker": "bash scripts/measure-sweeper-docker.sh"
   },
   "dependencies": {
     "@bullpen/contracts": "workspace:*",

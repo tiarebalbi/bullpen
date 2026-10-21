@@ -1,0 +1,4 @@
+built bullpen-sweeper:measure from apps/sweeper/Dockerfile
+stuck order, container at the 5 s cadence: {"min":1194,"p50":3084,"max":5027,"all":[2722,2415,3084,5027,3155,2500,1194,4155]}
+docker stop (SIGTERM, 30 s grace): stopped in 127 ms, exit code 0; last log line: {"at":"2026-10-21T04:52:17.724Z","outcome":"stopped"}
+stuck order, container idle (ceiling 30 s, accelerated; production's is 15 minutes), ms to be found: [8312,10085,10084]

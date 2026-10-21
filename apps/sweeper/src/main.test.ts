@@ -41,7 +41,11 @@ describe("the sweeper process", () => {
   it("with no configuration, says so once, waits instead of exiting, and stops on SIGTERM", async () => {
     const child = start({});
     const done = exited(child);
-    await new Promise((r) => setTimeout(r, 500));
+    // Only once it has said so is its SIGTERM handler in place: under load a fixed wait is not enough.
+    let said = "";
+    child.stdout!.on("data", (d) => (said += d));
+    for (let i = 0; i < 200 && !said.includes("not-configured"); i += 1) await new Promise((r) => setTimeout(r, 50));
+    expect(said).toContain("not-configured");
     expect(child.exitCode).toBeNull();
     child.kill("SIGTERM");
     const result = await done;

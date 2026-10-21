@@ -110,6 +110,20 @@ a fill row, an event row, two ledger rows and a position update. Workflow events
 | Moving parts it adds | a daemon, a route, a secret, a contract | a topic, a consumer route, per-order messages Postgres does not hold | the Workflow SDK, an outbox and a dispatcher (the handoff cannot commit with Postgres) |
 | Lines of code | 120 lines (`main.ts` 22, `ticker.ts` 98); route and auth 45 lines (`route.ts` 28, `sweepAuth.ts` 17); the sweep and tick 161 lines (`sweep.ts` 118, `tick.ts` 43), plus the two simulated venues, 239 lines in `venue.ts` | not built | not built |
 
+## The container, and what happens when the daemon stops (2026-10-21)
+
+Run as the image it ships in (`apps/sweeper/Dockerfile`) against a local Postgres and the real sweep route (`pnpm --filter @bullpen/fitness-checks db:measure-sweeper-docker`, output in `raw/sweeper-docker-output.txt`, 2026-10-21T04:51Z):
+
+- a stuck order (past the 30 s accept timeout) was found in 1.2 to 5.0 s, median 3.1 s, over 8 trials at the 5 s cadence;
+- with nothing open and the idle ceiling set to 30 s for the run (it is 15 minutes in production), a stuck order was found in 8.3, 10.1 and 10.1 s, always inside the ceiling;
+- `docker stop` (SIGTERM, 30 s grace) stopped the container in 127 ms with exit code 0, so the grace is not the limit; a call in flight is abandoned and the next sweep finishes it.
+
+**When the 10 Active CPU-hour quota runs out**, Vercel stops every daemon of the team until the first of the next month (UTC). Nothing is lost: orders keep their state in Postgres, and until the daemon is back
+nothing finds an order that is stuck, so a stuck order's buying power stays reserved. Whoever restarts it, or the first month's day after, gets the recovery for free: every step of the sweep is conditional on the order's state.
+The test `after an outage: the daemon stopped for days` (`orders-tick.int.test.ts`) ages five orders by three days (never handed to the venue, working with no fillable price, cancel requested and never confirmed, filled with the release never run,
+cancelled with the release never run), runs the ticks that follow, and checks that all five end terminal and released, nothing is flagged (a cancel flagged as unconfirmed is cleared when the venue confirms it), the buying power is what it should be, the
+invariants hold, and one more tick changes nothing. At the measured cost the quota is not what limits the daemon (3.1 % of it at the 5 s cadence all month), so this is the case of another project on the team using it up.
+
 ## Workflows: not built in Part 4, and why (stated explicitly, 2026-10-20)
 
 I did not build Workflows for Part 4 and I did not measure it. The report carries the analytical comparison and the cost model above and nothing
