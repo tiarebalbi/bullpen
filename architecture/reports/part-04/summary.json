@@ -1,8 +1,8 @@
 {
   "schema": 2,
   "part": 4,
-  "generatedAt": "2026-10-21T05:03:58.021Z",
-  "commit": "d48d58a54b8cff597946f8ca93358ce5f2e24e65",
+  "generatedAt": "2026-10-21T05:34:10.936Z",
+  "commit": "1f0561f4a89049ae4dd9245b592a6af5e76bdc64",
   "dirty": true,
   "ref": "post-04-saga",
   "source": "local",
@@ -13,7 +13,7 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 10 checks held, 45 rules enforced",
+      "summary": "check:arch passed: 10 checks held, 47 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
@@ -205,6 +205,18 @@
         {
           "id": "only-apps-sweeper-src-reads-sweeper-token",
           "rule": "ONLY apps/sweeper/src READS SWEEPER_TOKEN",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-auth-reads-neon-auth-base-url",
+          "rule": "ONLY apps/web/app/lib/auth READS NEON_AUTH_BASE_URL",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-auth-reads-neon-auth-cookie-secret",
+          "rule": "ONLY apps/web/app/lib/auth READS NEON_AUTH_COOKIE_SECRET",
           "check": "secret containment",
           "passed": true
         },

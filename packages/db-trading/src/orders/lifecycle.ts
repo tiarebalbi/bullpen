@@ -163,6 +163,15 @@ export async function markWorking(pool: Pool, orderId: string): Promise<boolean>
   });
 }
 
+/** accepted -> rejected: the venue refused the order. Nothing was booked; the reservation is released by the next release step. Idempotent: a repeat, or an order past accepted, changes nothing. */
+export async function rejectOrder(pool: Pool, orderId: string, reason: string): Promise<boolean> {
+  return inTx(pool, async (client) => {
+    const moved = await client.query("UPDATE trading.orders SET status = 'rejected', open_qty = 0, cancelled_qty = quantity, version = version + 1, updated_at = now() WHERE order_id = $1 AND status = 'accepted'", [orderId]);
+    if (moved.rowCount) await event(client, orderId, "rejected", "accepted", "rejected", { reason });
+    return (moved.rowCount ?? 0) > 0;
+  });
+}
+
 // ---- fills --------------------------------------------------------------------------------------------------------
 
 export interface FillEvent {

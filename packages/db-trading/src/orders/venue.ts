@@ -8,10 +8,14 @@ export interface VenueOrder {
   quantity: string;
   capPrice: string;
 }
+/** The venue's "no": the order is rejected with this reason. */
+export interface VenueRefusal {
+  refused: string;
+}
 export type VenueEvent = { kind: "fill"; fill: FillEvent } | { kind: "cancel-ack"; orderId: string; effectiveAt: Date };
 export interface Venue {
-  /** Idempotent: placing a known order again changes nothing. */
-  place(order: VenueOrder, now: Date): Promise<void>;
+  /** Idempotent: placing a known order again changes nothing. A venue that will not take the order says why. */
+  place(order: VenueOrder, now: Date): Promise<void | VenueRefusal>;
   /** Idempotent: the first call fixes the effective time, a repeat only asks for the confirmation again. */
   cancel(orderId: string, now: Date): Promise<void>;
   /** Events that have become deliverable by `now`. Delivery is at-least-once: a lost acknowledgement means the same event again. */
@@ -183,6 +187,8 @@ export interface DerivedVenueOptions {
   ackDelayMs?: number;
   /** Orders looked at in one poll. */
   batch?: number;
+  /** Look at one account's orders only: what a player's own status poll advances. */
+  accountId?: string;
 }
 
 /**
@@ -207,15 +213,18 @@ export class DerivedVenue implements Venue {
     this.batch = options.batch ?? 100;
   }
 
-  async place(): Promise<void> {}
+  /** The venue refuses an order whose symbol has no price at the moment it receives it (the quote was withdrawn after the order was accepted). */
+  async place(order: VenueOrder, now: Date): Promise<void | VenueRefusal> {
+    return (await this.options.prices.latest(order.symbol, now)) ? undefined : { refused: "no-price" };
+  }
   async cancel(): Promise<void> {}
 
   async poll(now: Date): Promise<VenueEvent[]> {
     const { rows } = await this.pool.query<{ order_id: string; symbol: string; status: string; open_qty: string; cap_price: string; cancel_requested_at: Date | null; fills: string }>(
       `SELECT o.order_id, o.symbol, o.status, o.open_qty::text, o.cap_price::text, o.cancel_requested_at,
               (SELECT count(*) FROM trading.fills f WHERE f.order_id = o.order_id) AS fills
-         FROM trading.orders o WHERE o.status IN ('working', 'partially_filled', 'cancel_requested') ORDER BY o.updated_at LIMIT $1`,
-      [this.batch],
+         FROM trading.orders o WHERE o.status IN ('working', 'partially_filled', 'cancel_requested') AND ($2::uuid IS NULL OR o.account_id = $2::uuid) ORDER BY o.updated_at LIMIT $1`,
+      [this.batch, this.options.accountId ?? null],
     );
     const events: VenueEvent[] = [];
     for (const order of rows) {

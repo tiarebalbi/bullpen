@@ -1,5 +1,5 @@
 import type { Pool } from "pg";
-import { CrashError, bookFill, confirmCancel, markWorking, recordReleaseFailure, releaseReservation, requestCancel, type Hooks } from "./lifecycle.js";
+import { CrashError, bookFill, confirmCancel, markWorking, recordReleaseFailure, rejectOrder, releaseReservation, requestCancel, type Hooks } from "./lifecycle.js";
 import type { Venue } from "./venue.js";
 
 export const ACCEPT_TIMEOUT_MS = 30_000;
@@ -21,8 +21,9 @@ export interface SweepResult {
 
 /** Hand one accepted order to the venue and mark it working. Both are idempotent, so the sweep may run this again after a crash between them. */
 export async function dispatchOrder(pool: Pool, venue: Venue, order: { orderId: string; symbol: string; quantity: string; capPrice: string }, now: Date): Promise<void> {
-  await venue.place(order, now);
-  await markWorking(pool, order.orderId);
+  const placed = await venue.place(order, now);
+  if (placed && "refused" in placed) await rejectOrder(pool, order.orderId, placed.refused);
+  else await markWorking(pool, order.orderId);
 }
 
 /** Delivers what the venue has: books each fill, applies each cancel confirmation. A repeat of either changes nothing. */

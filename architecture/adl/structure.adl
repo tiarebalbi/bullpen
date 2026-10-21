@@ -49,6 +49,8 @@ ASSERT(ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA)
 ASSERT(ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING)
 ASSERT(ONLY apps/web/app/lib/trading READS SWEEP_SECRET)
 ASSERT(ONLY apps/sweeper/src READS SWEEPER_TOKEN)
+ASSERT(ONLY apps/web/app/lib/auth READS NEON_AUTH_BASE_URL)
+ASSERT(ONLY apps/web/app/lib/auth READS NEON_AUTH_COOKIE_SECRET)
 
 # Data ownership
 ASSERT(ONLY market-data WRITES market_data)

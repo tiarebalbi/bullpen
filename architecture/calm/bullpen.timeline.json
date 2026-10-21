@@ -79,7 +79,8 @@
       "adrs": [
         "architecture/adr/0017-order-lifecycle-as-a-postgres-state-machine.md",
         "architecture/adr/0018-the-sweeper-is-a-daemon-that-calls-a-route.md",
-        "architecture/adr/0019-leaderboard-cash-counts-reserved-buying-power.md"
+        "architecture/adr/0019-leaderboard-cash-counts-reserved-buying-power.md",
+        "architecture/adr/0020-sign-in-is-neon-auth-with-github-only.md"
       ],
       "metadata": {
         "planned-architecture": "planned/part-04.architecture.json",

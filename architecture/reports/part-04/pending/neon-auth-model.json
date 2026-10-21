@@ -1,0 +1,58 @@
+{
+  "note": "ADR-0016: the model may name Neon Auth only once ADR-0020 is Accepted. After that, add these to architecture/calm/moments/part-04.architecture.json (node, relationship) and content/architecture/part-04.json (node, edge), then run pnpm check:arch.",
+  "calm-node": {
+    "unique-id": "neon-auth",
+    "node-type": "external-system",
+    "name": "Neon Auth",
+    "description": "Neon's managed sign-in, enabled on the production branch with GitHub as its only provider. The trading app checks the access token it issues against its public keys and stores only the user's id."
+  },
+  "calm-relationship": {
+    "unique-id": "trading-app-to-neon-auth",
+    "description": "The trading app sends a visitor to GitHub through Neon Auth's proxy, reads the session, and fetches the project's public keys to check an access token.",
+    "relationship-type": {
+      "connects": {
+        "source": {
+          "node": "trading-app"
+        },
+        "destination": {
+          "node": "neon-auth"
+        }
+      }
+    },
+    "protocol": "HTTPS",
+    "metadata": {
+      "interaction": "synchronous",
+      "bullpen:rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
+    }
+  },
+  "explorer-node": {
+    "id": "neon-auth",
+    "label": "Neon Auth",
+    "kind": "ext",
+    "meta": "Sign-in",
+    "purpose": "Neon's managed sign-in, enabled on the production branch with GitHub as its only provider. The trading app checks the access token it issues against its public keys and stores only the user's id.",
+    "x": 1220,
+    "y": 900,
+    "adrs": [
+      "ADR-0020"
+    ],
+    "costNote": "Cost pending: not read from the console"
+  },
+  "explorer-edge": {
+    "id": "trading-app-to-neon-auth",
+    "a": "trading-app",
+    "b": "neon-auth",
+    "type": "sync",
+    "rate": {
+      "count": 4,
+      "per": "minute",
+      "source": "illustrative",
+      "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+    }
+  }
+}

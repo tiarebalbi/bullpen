@@ -5,8 +5,7 @@ const tickMock = vi.fn();
 const authMock = vi.fn();
 vi.mock("@bullpen/db-trading", () => ({
   tick: (...args: unknown[]) => tickMock(...args),
-  DerivedVenue: class {},
-  dbPriceSource: () => ({}),
+  createSimulatedVenue: () => ({}),
 }));
 vi.mock("../../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
 vi.mock("../../../lib/trading/sweepAuth.js", () => ({ authorizeSweep: (...args: unknown[]) => authMock(...args) }));

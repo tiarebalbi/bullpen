@@ -92,3 +92,18 @@ Read 2026-09-26:
 - **What a request is, and when the day resets:** not documented. The day
   reset is measured, inside the call cap; the command, output and date are in
   `architecture/reports/part-03/`.
+
+## Neon Auth — in use
+
+Not a market-data provider: it signs players in, and the model names it as an external system. It is enabled on the production branch of the Neon
+project with GitHub as its only provider, and `bullpen-app.tiarebalbi.com` is a trusted domain (the owner's settings, 2026-10-21). The record of the
+choice is ADR-0020, which is Proposed until the post is published; this entry says what is true now.
+
+Read 2026-10-21:
+
+- **How it is used:** the trading app's sign-in proxy and session go through Neon's SDK; the app checks the access token against the project's public
+  keys (`<auth URL>/.well-known/jwks.json`) and stores only the user's id. Name, email and login are not stored or shown.
+- **Terms and limits:** not read for this plan. What it costs on the project's plan is a line for the cost ledger when the console is read; nothing here is
+  estimated.
+- **Settings to confirm in the Neon console** ([production checklist](https://neon.com/docs/auth/production-checklist)): trusted domains (set),
+  "Allow Localhost" off in production, and email and password sign-up off so GitHub is the only way in.
