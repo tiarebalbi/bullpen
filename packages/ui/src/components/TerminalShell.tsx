@@ -28,7 +28,7 @@ export function TerminalShell({ header, watchlist, main, rail, bar }: TerminalSh
       <aside className="bp-terminal__rail" aria-label="Order ticket">
         {rail}
       </aside>
-      {bar ? <div className="bp-terminal__bar">{bar}</div> : null}
+      {bar ? <div className="bp-terminal__bar" role="region" aria-label="Trade bar">{bar}</div> : null}
     </div>
   );
 }

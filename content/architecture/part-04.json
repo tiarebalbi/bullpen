@@ -18,7 +18,7 @@
       "label": "Player",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "A visitor who sees live crypto and end-of-day stock prices and the leaderboard. Placing an order arrives with the order ticket; the lifecycle behind it is built and tested.",
+      "purpose": "A visitor who sees live crypto and end-of-day stock prices and the leaderboard. Signing in with GitHub gives a player an account; the order ticket and the lifecycle behind it are built and tested.",
       "x": 40,
       "y": 560
     },
@@ -55,7 +55,7 @@
       "label": "Bullpen Trading App",
       "kind": "app",
       "meta": "Next.js",
-      "purpose": "The trading app. It owns orders and their lifecycle, reservations, fills, the ledger, positions and the leaderboard view in the trading schema, shows end-of-day stock prices read through prices_v1, and serves the authenticated sweep route the sweeper calls.",
+      "purpose": "The trading app. It owns orders and their lifecycle, reservations, fills, the ledger, positions and the leaderboard view in the trading schema, shows end-of-day stock prices read through prices_v1, signs players in with GitHub, and serves the authenticated sweep route the sweeper calls.",
       "x": 560,
       "y": 560,
       "adrs": [

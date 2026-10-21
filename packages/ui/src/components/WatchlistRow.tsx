@@ -45,8 +45,9 @@ export interface WatchlistRowProps {
 
 export function WatchlistRow(props: WatchlistRowProps): ReactNode {
   const { symbol, kind, hue, detail, price, status, stale = false, marketClosed = false, selected, onSelect } = props;
+  // No aria-label: the name is the row's own words, so what is read is what is shown (WCAG 2.5.3, label in name).
   return (
-    <button type="button" className="bp-watchlist__row" aria-pressed={selected} aria-label={`${symbol}, ${status ?? detail}`} onClick={() => onSelect(symbol)}>
+    <button type="button" className="bp-watchlist__row" aria-pressed={selected} onClick={() => onSelect(symbol)}>
       <TickerBadge symbol={symbol} kind={kind} hue={hue} size="md" stale={stale} marketClosed={marketClosed} />
       <span className="bp-watchlist__who">
         <span className="bp-watchlist__symbol">{symbol.replace("-USD", "")}</span>
