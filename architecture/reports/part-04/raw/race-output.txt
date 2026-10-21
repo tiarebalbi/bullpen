@@ -1,0 +1,19 @@
+$ bash scripts/test-db.sh src/db-integration/orders-race --reporter=verbose
+
+ RUN  v5.0.2 <repo>/architecture/fitness
+
+stdout | src/db-integration/orders-race.int.test.ts > experiment 1: the cancel races the fills > holds for every allowed delivery order of small plans (exhaustive)
+EXHAUSTIVE runs=8346 failures=0
+
+ ✓ src/db-integration/orders-race.int.test.ts > experiment 1: the cancel races the fills > holds for every allowed delivery order of small plans (exhaustive) 75100ms
+stdout | src/db-integration/orders-race.int.test.ts > experiment 1: the cancel races the fills > holds for seeded random plans delivered concurrently, with duplicates and crashes
+RANDOM seeds=1..1500 runs=1500 failures=0 crashes_injected=1985 concurrent_waves=1676 duplicate_deliveries=915 late_fill_window_ms=30000
+
+ ✓ src/db-integration/orders-race.int.test.ts > experiment 1: the cancel races the fills > holds for seeded random plans delivered concurrently, with duplicates and crashes 43236ms
+ ✓ src/db-integration/orders-race.int.test.ts > experiment 1: the cancel races the fills > the invariant checks can fail: a corrupted account is reported 26337ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  17:04:26
+   Duration  145.14s (tests 100%)
+
