@@ -2,7 +2,7 @@
   "part": 4,
   "status": "built",
   "flow": "right",
-  "summary": "What runs at the end of Part 4's build: the order lifecycle as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. No page offers an order yet, and the sweeper is not switched on in production.",
+  "summary": "What runs at the end of Part 4's build: the order lifecycle as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. A signed-in player can place a market buy from the trading app and watch it move through its states; the sweeper is not switched on in production.",
   "nodes": [
     {
       "id": "reader",
@@ -18,7 +18,7 @@
       "label": "Player",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "A visitor who sees live crypto and end-of-day stock prices and the leaderboard. Signing in with GitHub gives a player an account; the order ticket and the lifecycle behind it are built and tested.",
+      "purpose": "A visitor who sees live crypto and end-of-day stock prices and the leaderboard. Signing in with GitHub gives a player an account; the order ticket, the orders list showing the seven states, and the lifecycle behind them are built and tested.",
       "x": 40,
       "y": 560
     },

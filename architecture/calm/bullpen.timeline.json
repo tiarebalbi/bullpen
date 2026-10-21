@@ -71,7 +71,7 @@
       "unique-id": "part-04",
       "node-type": "moment",
       "name": "Part 4 — The order lifecycle",
-      "description": "What runs at the end of Part 4's build: the order lifecycle (accepted, working, partially filled, cancel requested, cancelled, filled, rejected) as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. No page offers an order yet, and the sweeper is not switched on in production.",
+      "description": "What runs at the end of Part 4's build: the order lifecycle (accepted, working, partially filled, cancel requested, cancelled, filled, rejected) as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. A signed-in player can place a market buy from the trading app and watch it move through its states; the sweeper is not switched on in production.",
       "details": {
         "detailed-architecture": "moments/part-04.architecture.json",
         "required-pattern": "bullpen.pattern.json"

@@ -1088,9 +1088,10 @@ html[data-consent-open] body {
   border-color: var(--bp-loss);
   background: color-mix(in oklch, var(--bp-loss) 14%, transparent);
 }
+/* Only the border pulses: dimming the badge would dim its words below readable contrast. */
 @keyframes bp-pending {
   50% {
-    opacity: 0.55;
+    border-color: var(--foreground-muted);
   }
 }
 @media (prefers-reduced-motion: reduce) {

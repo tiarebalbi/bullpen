@@ -130,6 +130,9 @@ for (const viewport of [
         await page.getByRole("button", { name: "Trade" }).click();
         await expect(page.getByLabel("Quantity").locator("visible=true")).toBeVisible();
         expect((await new AxeBuilder({ page }).analyze()).violations.map((v) => v.id), "axe with the sheet open").toEqual([]);
+        await shot(page, "ticket-sheet-open", viewport.width);
+      } else {
+        await shot(page, "ticket-rail", viewport.width);
       }
       for (const control of await page.locator(".bp-ticket__cta:visible, .bp-order__cancel:visible, .bp-tradebar__open:visible, .bp-sheet__close:visible").all()) {
         const size = (await control.boundingBox())!;
