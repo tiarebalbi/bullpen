@@ -16,5 +16,8 @@ export default defineConfig({
     // testDir (./e2e here) has its own *.spec.ts files, and without this
     // include Vitest would otherwise also try (and fail) to collect them.
     include: ["app/**/*.test.{ts,tsx}"],
+    // The Neon Auth SDK imports `next/headers` without an extension, which Node cannot resolve outside Next. Inlined, Vite resolves it and a test
+    // can mock the request's cookies while the SDK's own session code stays real (app/lib/auth/player.test.ts).
+    server: { deps: { inline: ["@neondatabase/auth"] } },
   },
 });

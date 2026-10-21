@@ -15,7 +15,6 @@
     "@bullpen/db-trading": "workspace:*",
     "@bullpen/ui": "workspace:*",
     "@neondatabase/auth": "0.6.0-beta",
-    "jose": "6.2.12",
     "next": "16.3.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"

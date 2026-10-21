@@ -1,4 +1,4 @@
-/** Neon Auth's URL for this project: where its tokens are signed and where the sign-in proxy sends requests. Null when it is not set. */
+/** Neon Auth's URL for this project: where the sign-in proxy sends requests and where the SDK asks about a session. Null when it is not set. */
 export function authBaseUrl(): string | null {
   return process.env.NEON_AUTH_BASE_URL || null;
 }
