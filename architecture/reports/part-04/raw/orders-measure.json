@@ -1,0 +1,56 @@
+{
+  "measuredAt": "2026-10-21T05:55:05.587Z",
+  "node": "v26.12.0",
+  "database": "throwaway local Postgres 17 container; no Neon",
+  "orders": 40,
+  "perOrder": {
+    "statementsPlacingAndPollingToFilled": 39.83,
+    "statementsInThePost": 31.1,
+    "rowsWritten": 17.58,
+    "walBytes": 6274.2,
+    "pollsToFilled": 0.23,
+    "pollsToFilledDistribution": {
+      "0": 34,
+      "1": 4,
+      "2": 1,
+      "3": 1
+    },
+    "functionInvocations": 1.23
+  },
+  "idlePollStatements": 7,
+  "subscriber": [
+    {
+      "orders": 0,
+      "jsonBytes": 213,
+      "gzipBytes": 153,
+      "valid": true,
+      "gzipBytesPerHourWhileOpen": 183600,
+      "gzipBytesPerHourIdle": 36720
+    },
+    {
+      "orders": 1,
+      "jsonBytes": 751,
+      "gzipBytes": 345,
+      "valid": true,
+      "gzipBytesPerHourWhileOpen": 414000,
+      "gzipBytesPerHourIdle": 82800
+    },
+    {
+      "orders": 7,
+      "jsonBytes": 3409,
+      "gzipBytes": 562,
+      "valid": true,
+      "gzipBytesPerHourWhileOpen": 674400,
+      "gzipBytesPerHourIdle": 134880
+    },
+    {
+      "orders": 50,
+      "jsonBytes": 22461,
+      "gzipBytes": 1844,
+      "valid": true,
+      "gzipBytesPerHourWhileOpen": 2212800,
+      "gzipBytesPerHourIdle": 442560
+    }
+  ],
+  "note": "Rows written and WAL bytes are Postgres counters on the throwaway database. Function invocations are counted (1 POST + 1 GET per poll), not billed. Neon CU-hours and transfer, and Vercel Active CPU as billed, are pending: the dashboards were not read."
+}

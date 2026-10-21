@@ -12,7 +12,7 @@ export function ageLabel(ageMs: number): string {
   return seconds < 90 ? `${seconds} s ago` : `${Math.round(seconds / 60)} min ago`;
 }
 
-export function Leaderboard({ polled }: { polled: Polled<LeaderboardSnapshot> }): ReactNode {
+export function Leaderboard({ polled, youLabel = null }: { polled: Polled<LeaderboardSnapshot>; youLabel?: string | null }): ReactNode {
   const now = useNow();
 
   if (polled.status === "loading") {
@@ -54,7 +54,7 @@ export function Leaderboard({ polled }: { polled: Polled<LeaderboardSnapshot> })
         <>
           <LeaderboardList label="Players ranked by equity">
             {snapshot.rows.map((row) => (
-              <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} />
+              <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} you={youLabel !== null && row.handle === youLabel} />
             ))}
           </LeaderboardList>
           {hidden > 0 ? <p className="bp-leaderboard__more">Showing the top {snapshot.rows.length} of {snapshot.total} players.</p> : null}

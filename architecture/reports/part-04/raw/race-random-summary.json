@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-21T00:05:58.235Z",
+  "seeds": "1..1500",
+  "runs": 1500,
+  "failures": 0,
+  "crashesInjected": 1985,
+  "concurrentWaves": 1676,
+  "duplicateDeliveries": 915,
+  "lateFillWindowMs": 30000
+}

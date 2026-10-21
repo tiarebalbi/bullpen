@@ -28,6 +28,7 @@ interface Routes { board?: Answer; stocks?: Answer; btc?: Answer }
 async function mock(page: Page, { board, stocks, btc }: Routes = {}): Promise<void> {
   await route(page, "**/api/leaderboard", board, { rows: [], total: 0, asOf: new Date().toISOString(), ageMs: 0, stale: false, lastFailure: null });
   await route(page, "**/api/stock-prices", stocks, { rows: [] });
+  await page.route("**/api/orders", (r) => r.fulfill(json({ error: "sign-in-unavailable", message: "Sign-in is not available here, so orders cannot be placed." }, 503)));
   await route(page, "**/api/price/BTC-USD", btc, { symbol: "BTC-USD", price: 65432.1, changePercent: 1.25, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString() });
 }
 const entry = (rank: number, handle: string, equity: string, cash = equity) => ({ accountId: `id-${handle}`, handle, cash, positionsValue: "0", equity, rank });
@@ -161,13 +162,13 @@ for (const viewport of [
       await page.goto("/");
       const detail = page.getByRole("region", { name: "Price detail" });
       await expect(detail.getByTestId("price-cell-price")).toHaveText("65,432.10");
-      await watchlist(page).getByRole("button", { name: /^AAPL,/ }).click();
+      await watchlist(page).getByRole("button", { name: /^AAPL/ }).click();
       await expect(detail.getByTestId("price-cell-price")).toHaveText("190.12");
       await expect(detail.getByText("Close · 16:00 ET")).toBeVisible();
       await expect(detail.getByTestId("price-cell-change")).toHaveCount(0);
       await expect(detail.getByText("No price history yet")).toBeVisible();
       await shot(page, "detail-stock-close", viewport.width);
-      await watchlist(page).getByRole("button", { name: /^MSFT,/ }).click();
+      await watchlist(page).getByRole("button", { name: /^MSFT/ }).click();
       await expect(detail.getByTestId("price-cell-stale-label")).toContainText("stale · as of Oct 8");
       await shot(page, "detail-stock-stale", viewport.width);
     });
@@ -240,21 +241,17 @@ for (const viewport of [
       await shot(page, "database-unavailable", viewport.width);
     });
 
-    test("the order ticket is off and says why: every control disabled, no number shown, and nothing to submit", async ({ page }) => {
+    test("where sign-in does not exist the ticket says so and shows no form; on a phone the bar is pinned to the bottom", async ({ page }) => {
       await mock(page);
       await page.goto("/");
-      const ticket = wide ? page.getByRole("form", { name: "Order ticket, not available" }) : page.locator(".bp-tradebar");
       if (wide) {
-        for (const button of await ticket.getByRole("button").all()) await expect(button).toBeDisabled();
-        await expect(ticket.getByLabel("Quantity")).toBeDisabled();
-        await expect(ticket.getByRole("status")).toHaveText("Trading opens with sign-in in Part 4");
-        await expect(ticket.getByText("Estimated cost").locator("..")).not.toContainText(/\d/);
+        const rail = page.getByRole("complementary", { name: "Order ticket" });
+        await expect(rail.getByRole("status")).toContainText("Sign-in is not available here");
+        await expect(rail.getByLabel("Quantity")).toHaveCount(0);
       } else {
-        await expect(ticket.getByText("Trading opens with sign-in in Part 4")).toBeVisible();
-        await expect(ticket.getByRole("button", { name: "Buy" })).toBeDisabled();
-        await expect(ticket.getByRole("button", { name: "Sell" })).toBeDisabled();
-        const bar = await box(page, ".bp-terminal__bar");
-        expect(Math.abs(bar.y + bar.height - viewport.height)).toBeLessThan(2); // pinned to the bottom of the screen
+        await expect(page.locator(".bp-tradebar").getByText("Sign-in is off on previews")).toBeVisible();
+        const pinned = await box(page, ".bp-terminal__bar");
+        expect(Math.abs(pinned.y + pinned.height - viewport.height)).toBeLessThan(2); // pinned to the bottom of the screen
       }
       await shot(page, "order-ticket-off", viewport.width);
     });

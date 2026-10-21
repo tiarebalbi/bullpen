@@ -42,7 +42,7 @@ describe("buildRulesTabData", () => {
     expect(snapshot).not.toBeNull();
     const data = buildRulesTabData(snapshot, adl);
 
-    expect(data.snapshot).toMatchObject({ part: 3, commit: snapshot!.commit });
+    expect(data.snapshot).toMatchObject({ part: 4, commit: snapshot!.commit });
     expect(data.rows.map((row) => row.id)).toEqual(expect.arrayContaining(adl.rules.map((rule) => rule.id)));
     for (const rule of adl.rules) {
       const row = data.rows.find((candidate) => candidate.id === rule.id)!;

@@ -1,8 +1,8 @@
 {
   "part": 4,
-  "status": "planned",
+  "status": "built",
   "flow": "right",
-  "summary": "Prediction, not yet built: placing a paper trade becomes a durable order saga. Orders and the ledger stay in one transaction in the trading schema.",
+  "summary": "What runs at the end of Part 4's build: the order lifecycle as a Postgres state machine in the trading schema, with a sweeper that finds stuck orders. Week one predicted a workflow engine; the build kept every step as one transaction in trading, and the sweeper is a daemon that calls a route, not a service with its own data. A signed-in player can place a market buy from the trading app and watch it move through its states; the sweeper is a Vercel Daemon, declared in vercel.json, that runs in production deployments.",
   "nodes": [
     {
       "id": "reader",
@@ -18,9 +18,22 @@
       "label": "Player",
       "kind": "actor",
       "meta": "Visitor",
-      "purpose": "A registered player who places paper trade orders.",
+      "purpose": "A visitor who sees live crypto and end-of-day stock prices and the leaderboard. Signing in with GitHub gives a player an account; the order ticket, the orders list showing the seven states, and the lifecycle behind them are built and tested.",
       "x": 40,
       "y": 560
+    },
+    {
+      "id": "daily-ingest-cron",
+      "label": "Daily ingest cron",
+      "kind": "infra",
+      "meta": "Vercel cron",
+      "purpose": "Vercel's scheduler: once a day after the U.S. close it calls the Market Data service's ingest, with a secret.",
+      "x": 40,
+      "y": 170,
+      "adrs": [
+        "ADR-0004",
+        "ADR-0013"
+      ]
     },
     {
       "id": "landing-app",
@@ -30,27 +43,30 @@
       "purpose": "The public landing site with the architecture timeline explorer.",
       "x": 300,
       "y": 680,
-      "costNote": "Planned"
+      "adrs": [
+        "ADR-0003",
+        "ADR-0006",
+        "ADR-0009"
+      ],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "trading-app",
       "label": "Bullpen Trading App",
       "kind": "app",
       "meta": "Next.js",
-      "purpose": "The trading app where players view prices and submit paper trade orders. It owns orders, the ledger, positions and the leaderboard view in the trading schema.",
+      "purpose": "The trading app. It owns orders and their lifecycle, reservations, fills, the ledger, positions and the leaderboard view in the trading schema, shows end-of-day stock prices read through prices_v1, signs players in with GitHub, and serves the authenticated sweep route the sweeper calls.",
       "x": 560,
       "y": 560,
-      "costNote": "Planned"
-    },
-    {
-      "id": "order-saga-workflow",
-      "label": "Order Saga",
-      "kind": "infra",
-      "meta": "Workflow",
-      "purpose": "Durable workflow driving each order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together; compensation covers a step that fails.",
-      "x": 560,
-      "y": 830,
-      "costNote": "Planned"
+      "adrs": [
+        "ADR-0001",
+        "ADR-0003",
+        "ADR-0012",
+        "ADR-0014",
+        "ADR-0017",
+        "ADR-0018"
+      ],
+      "costNote": "Free tier (Hobby)"
     },
     {
       "id": "market-data-service",
@@ -64,7 +80,10 @@
         "ADR-0004",
         "ADR-0013"
       ],
-      "costNote": "Free tier (Hobby)"
+      "costNote": "Free tier (Hobby)",
+      "replaces": [
+        "price-snapshot-service"
+      ]
     },
     {
       "id": "market-data-provider",
@@ -91,6 +110,113 @@
         "ADR-0008"
       ],
       "costNote": "Free tier"
+    },
+    {
+      "id": "google-analytics",
+      "label": "Google Analytics 4",
+      "kind": "ext",
+      "meta": "Analytics",
+      "purpose": "Page views and a short list of events, only after the visitor accepts.",
+      "x": 1220,
+      "y": 680,
+      "adrs": [
+        "ADR-0010"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "microsoft-clarity",
+      "label": "Microsoft Clarity",
+      "kind": "ext",
+      "meta": "Recordings",
+      "purpose": "Heatmaps and session recordings, only after the visitor accepts.",
+      "x": 1220,
+      "y": 790,
+      "adrs": [
+        "ADR-0010"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "schema-trading",
+      "label": "trading schema",
+      "kind": "data",
+      "meta": "Schema · trading_owner",
+      "purpose": "Accounts, orders with a state and a version, reservations, fills, order events, the ledger, positions and the leaderboard view. Every step of an order's life is one transaction here.",
+      "x": 920,
+      "y": 490,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0017"
+      ],
+      "owner": "trading-app"
+    },
+    {
+      "id": "schema-market-data",
+      "label": "market_data schema",
+      "kind": "data",
+      "meta": "Schema · market_data_owner",
+      "purpose": "Quotes, the provider call ledger, and the view prices_v1.",
+      "x": 920,
+      "y": 270,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0013"
+      ],
+      "owner": "market-data-service"
+    },
+    {
+      "id": "prices-v1",
+      "label": "market_data.prices_v1",
+      "kind": "data",
+      "meta": "View · read-only",
+      "purpose": "The price contract: symbol, price, as-of time, source and a stale flag. The only thing outside market_data that trading may read.",
+      "x": 920,
+      "y": 380,
+      "adrs": [
+        "ADR-0012"
+      ],
+      "owner": "market-data-service"
+    },
+    {
+      "id": "bullpen-database",
+      "label": "Bullpen Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "One Neon project and one database, with a schema and a plain role per owner.",
+      "x": 920,
+      "y": 270,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0014"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "sweeper",
+      "label": "Sweeper",
+      "kind": "infra",
+      "meta": "Vercel Daemon",
+      "purpose": "A daemon whose only job is to call the trading app's sweep route and wait: every 5 seconds while an order is open, backing off to every 60 minutes when none is. It reads no database URL and holds no data. Built and tested locally; declared in vercel.json, it runs in production deployments only.",
+      "x": 300,
+      "y": 430,
+      "adrs": [
+        "ADR-0018"
+      ],
+      "costNote": "Hobby quota: 10 Active CPU-hours"
+    },
+    {
+      "id": "neon-auth",
+      "label": "Neon Auth",
+      "kind": "ext",
+      "meta": "Sign-in",
+      "purpose": "Neon's managed sign-in, enabled on the production branch with GitHub as its only provider. The trading app checks the access token it issues against its public keys and stores only the user's id.",
+      "x": 1220,
+      "y": 900,
+      "adrs": [
+        "ADR-0020"
+      ],
+      "costNote": "Cost pending: not read from the console"
     }
   ],
   "edges": [
@@ -119,10 +245,29 @@
       }
     },
     {
-      "id": "trading-app-to-saga",
-      "a": "trading-app",
-      "b": "order-saga-workflow",
-      "type": "async"
+      "id": "daily-cron-to-market-data",
+      "a": "daily-ingest-cron",
+      "b": "market-data-service",
+      "type": "async",
+      "rate": {
+        "count": 1,
+        "per": "day",
+        "source": "configured",
+        "basis": "vercel.json: the cron runs `0 23 * * *` UTC, once a day."
+      }
+    },
+    {
+      "id": "landing-to-market-data",
+      "a": "landing-app",
+      "b": "market-data-service",
+      "type": "sync",
+      "caption": "/api/price (rewrite)",
+      "rate": {
+        "count": 6,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The price strip asks once a minute per open tab; the number of tabs is not known."
+      }
     },
     {
       "id": "trading-app-to-market-data",
@@ -159,6 +304,118 @@
         "source": "configured",
         "basis": "One call for each of the 10 stock symbols a day, under a cap of 20 a day (ADR-0008)."
       }
+    },
+    {
+      "id": "trading-app-to-trading-schema",
+      "a": "trading-app",
+      "b": "schema-trading",
+      "type": "sync",
+      "label": "trading_owner · read/write",
+      "rate": {
+        "count": 14,
+        "per": "second",
+        "source": "measured",
+        "basis": "Measured in the load test, not from users: 8 writers made 417 buys in 30 s (contention.md, the N = 0 cell). Each buy is one write transaction."
+      }
+    },
+    {
+      "id": "trading-app-to-prices-v1",
+      "a": "trading-app",
+      "b": "prices-v1",
+      "type": "sync",
+      "label": "trading_owner · read only",
+      "rate": {
+        "count": 14,
+        "per": "second",
+        "source": "measured",
+        "basis": "Measured in the load test, not from users: each of the 417 buys in 30 s reads one price through prices_v1 (contention.md)."
+      }
+    },
+    {
+      "id": "market-data-to-market-data-schema",
+      "a": "market-data-service",
+      "b": "schema-market-data",
+      "type": "sync",
+      "label": "market_data_owner · write",
+      "rate": {
+        "count": 10,
+        "per": "day",
+        "source": "configured",
+        "basis": "The daily ingest stores one quote for each of the 10 stock symbols."
+      }
+    },
+    {
+      "id": "landing-to-google-analytics",
+      "a": "landing-app",
+      "b": "google-analytics",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "landing-to-microsoft-clarity",
+      "a": "landing-app",
+      "b": "microsoft-clarity",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "trading-app-to-google-analytics",
+      "a": "trading-app",
+      "b": "google-analytics",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "trading-app-to-microsoft-clarity",
+      "a": "trading-app",
+      "b": "microsoft-clarity",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "sweeper-to-trading-app",
+      "a": "sweeper",
+      "b": "trading-app",
+      "type": "sync",
+      "caption": "/api/internal/sweep",
+      "rate": {
+        "count": 12,
+        "per": "minute",
+        "source": "configured",
+        "basis": "Every 5 seconds while an order is open, backing off to every 60 minutes when none is (ADR-0018, ceiling raised by ADR-0021). The sweeper is a Vercel Daemon declared in vercel.json; it runs in production deployments only."
+      }
+    },
+    {
+      "id": "trading-app-to-neon-auth",
+      "a": "trading-app",
+      "b": "neon-auth",
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
     }
   ],
   "groups": [
@@ -167,7 +424,8 @@
       "label": "One Vercel project, shared release",
       "nodeIds": [
         "trading-app",
-        "market-data-service"
+        "market-data-service",
+        "sweeper"
       ]
     },
     {
@@ -182,13 +440,62 @@
     }
   ],
   "request": {
-    "name": "an order",
+    "name": "a price request",
     "steps": [
       {
-        "edge": "trading-app-to-saga",
-        "caption": "Start the saga",
-        "detail": "The trading app accepts the order and hands it to the durable workflow, one asynchronous step."
+        "edge": "landing-to-market-data",
+        "caption": "Ask for a quote",
+        "detail": "The landing's price strip asks the trading app's domain for BTC-USD; a rewrite on /api/price sends the request to the Market Data service."
+      },
+      {
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Fetch upstream",
+        "detail": "The service counts the call against its monthly budget, then calls CoinGecko server-side with the Demo API key in a header, never the URL."
+      },
+      {
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Return the snapshot",
+        "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt. The response says it varies by Origin.",
+        "reverse": true
+      },
+      {
+        "edge": "landing-to-market-data",
+        "caption": "Answer the strip",
+        "detail": "The allowed landing origin is echoed in the response, and nothing else is.",
+        "reverse": true
       }
     ]
-  }
+  },
+  "requests": [
+    {
+      "name": "an order's life",
+      "steps": [
+        {
+          "edge": "trading-app-to-prices-v1",
+          "caption": "Read the price",
+          "detail": "Through prices_v1 only. A missing or stale price refuses the order and writes nothing; otherwise the order reserves buying power at a ceiling 5 % over that price."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "Accept and reserve",
+          "detail": "One transaction: a conditional update reserves the buying power, then the order (accepted) and its reservation are inserted. A retry with the same client key returns the same order."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "Book each fill",
+          "detail": "One transaction per fill, keyed by a unique fill id, so a second delivery changes nothing. A partial fill leaves the order partially filled; the order's version is checked on every update."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "A cancel is requested, not done",
+          "detail": "The order stays open for fills until the venue confirms with an effective time; a fill executed before that time is booked even if it arrives after the order shows cancelled."
+        },
+        {
+          "edge": "sweeper-to-trading-app",
+          "caption": "Find what is stuck",
+          "detail": "A pass that hands an unplaced order to the venue, cancels one with no fillable price, and releases what a finished order did not spend. Every step is idempotent, so a pass that dies is simply run again."
+        }
+      ]
+    }
+  ]
 }

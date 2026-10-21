@@ -832,3 +832,270 @@ html[data-consent-open] body {
   outline: 2px solid var(--ember);
   outline-offset: 2px;
 }
+
+/* ─────────────────────────────────────────────
+   Trading: the live order ticket, the phone's trade bar and sheet, the portfolio and the orders
+────────────────────────────────────────────── */
+.bp-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.bp-ticket__title {
+  margin: 0;
+  font: 500 18px/1.2 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.bp-ticket__field input {
+  min-height: 44px;
+  color: var(--foreground);
+}
+.bp-ticket__field input:focus-visible,
+.bp-ticket__cta:focus-visible,
+.bp-tradebar__open:focus-visible,
+.bp-sheet__close:focus-visible,
+.bp-order__cancel:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.bp-ticket__field input[aria-invalid="true"] {
+  border-bottom: 2px solid var(--bp-loss);
+}
+.bp-ticket__note {
+  margin: 0;
+  font: 500 12px/1.5 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-ticket__cta {
+  min-height: 44px;
+  cursor: pointer;
+}
+.bp-ticket__cta[data-ready],
+.bp-tradebar__open {
+  background: var(--foreground);
+  color: var(--background);
+}
+.bp-ticket__cta[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.bp-ticket__why[data-tone="ok"] {
+  border-style: solid;
+  border-color: var(--bp-gain);
+}
+.bp-ticket__why[data-tone="error"] {
+  border-style: solid;
+  border-color: var(--bp-loss);
+}
+.bp-tradebar {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+.bp-tradebar p {
+  text-align: left;
+}
+.bp-tradebar__open {
+  border: 0;
+  border-radius: var(--radius-pill);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 24px;
+  font: 700 14px/1 var(--font-body);
+  cursor: pointer;
+}
+.bp-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  max-height: 85vh;
+  overflow: auto;
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--bp-hair);
+  border-bottom: 0;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  background: var(--bp-panel);
+  color: var(--foreground);
+  display: block;
+}
+.bp-sheet:not([open]) {
+  display: none;
+}
+.bp-sheet::backdrop {
+  background: oklch(8% 0.03 238 / 0.62);
+}
+.bp-sheet__close {
+  display: block;
+  margin: 0 0 var(--space-3) auto;
+  min-height: 44px;
+  min-width: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0 16px;
+  background: var(--bp-panel-2);
+  color: var(--foreground);
+  font: 600 13px/1 var(--font-body);
+  cursor: pointer;
+}
+.bp-terminal[data-has-bar] .bp-terminal__main {
+  padding-bottom: 6rem;
+}
+.bp-palette-toggle {
+  min-height: 44px;
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-pill);
+  padding: 0 14px;
+  background: transparent;
+  color: var(--foreground);
+  font: 600 12px/1 var(--font-body);
+  cursor: pointer;
+}
+.bp-palette-toggle[aria-pressed="true"] {
+  background: var(--bp-panel-2);
+  border-color: var(--foreground);
+}
+.bp-palette-toggle:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+
+.bp-account__who {
+  font: 600 12px/1 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-account__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+}
+.bp-account__stats dt {
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-account__stats dd {
+  margin: var(--space-2) 0 0;
+  font: 500 18px/1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bp-account__positions {
+  width: 100%;
+  border-collapse: collapse;
+  font: 500 13px/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bp-account__positions th,
+.bp-account__positions td {
+  padding: 10px 6px;
+  text-align: right;
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-account__positions th:first-child {
+  text-align: left;
+}
+.bp-account__positions thead th {
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+  border-top: 0;
+}
+
+.bp-orders {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.bp-order {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-order:first-child {
+  border-top: 0;
+}
+.bp-order__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.bp-order__symbol {
+  font: 600 15px/1.3 var(--font-body);
+}
+.bp-order__qty {
+  font: 500 13px/1.3 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-order__detail {
+  margin: 0;
+  font: 500 13px/1.5 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-order__cancel {
+  justify-self: start;
+  min-height: 44px;
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-pill);
+  padding: 0 18px;
+  background: transparent;
+  color: var(--foreground);
+  font: 600 13px/1 var(--font-body);
+  cursor: pointer;
+}
+.bp-order__cancel:disabled {
+  cursor: progress;
+}
+
+/* The badge: the words and a glyph carry the state; the border style and colour only echo it, so no state rests on colour. */
+.bp-state {
+  margin-left: auto;
+  border: 1.5px solid var(--foreground-muted);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  font: 600 12px/1.2 var(--font-body);
+}
+.bp-state[data-tone="neutral"] {
+  border-style: dotted;
+}
+.bp-state[data-tone="working"] {
+  border-color: var(--foreground);
+}
+.bp-state[data-tone="ok"] {
+  border-color: var(--bp-gain);
+  background: color-mix(in oklch, var(--bp-gain) 14%, transparent);
+}
+.bp-state[data-tone="pending"] {
+  border-style: dashed;
+  border-width: 2px;
+  border-color: var(--ember);
+  font-style: italic;
+  animation: bp-pending 1.6s ease-in-out infinite;
+}
+.bp-state[data-tone="closed"] {
+  border-style: double;
+  border-width: 4px;
+  color: var(--foreground-muted);
+}
+.bp-state[data-tone="refused"] {
+  border-color: var(--bp-loss);
+  background: color-mix(in oklch, var(--bp-loss) 14%, transparent);
+}
+/* Only the border pulses: dimming the badge would dim its words below readable contrast. */
+@keyframes bp-pending {
+  50% {
+    border-color: var(--foreground-muted);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-state[data-tone="pending"] {
+    animation: none;
+  }
+}

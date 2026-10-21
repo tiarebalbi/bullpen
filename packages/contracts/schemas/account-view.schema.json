@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bullpen.invalid/schemas/account-view.schema.json",
+  "title": "AccountView",
+  "description": "What GET /api/orders answers: the signed-in player's account as a screen shows it. Nothing in it names a person: a neutral label, money as decimal strings, orders and positions. The lifecycle (packages/db-trading) builds it; the screens read it.",
+  "type": "object",
+  "required": ["label", "buyingPower", "reserved", "cash", "positionsValue", "equity", "positions", "orders", "asOf"],
+  "additionalProperties": false,
+  "definitions": {
+    "decimal": { "type": "string", "pattern": "^-?\\d+(\\.\\d{1,8})?$" },
+    "state": { "enum": ["accepted", "working", "partially_filled", "cancel_requested", "cancelled", "filled", "rejected"] }
+  },
+  "properties": {
+    "label": { "type": "string", "pattern": "^Player [0-9A-F]{4,16}$" },
+    "buyingPower": { "$ref": "#/definitions/decimal" },
+    "reserved": { "$ref": "#/definitions/decimal" },
+    "cash": { "$ref": "#/definitions/decimal" },
+    "positionsValue": { "$ref": "#/definitions/decimal" },
+    "equity": { "$ref": "#/definitions/decimal" },
+    "asOf": { "type": "string", "format": "date-time" },
+    "positions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "quantity", "price", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "symbol": { "type": "string", "minLength": 1 },
+          "quantity": { "$ref": "#/definitions/decimal" },
+          "price": { "anyOf": [{ "$ref": "#/definitions/decimal" }, { "type": "null" }] },
+          "value": { "anyOf": [{ "$ref": "#/definitions/decimal" }, { "type": "null" }] }
+        }
+      }
+    },
+    "orders": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": ["orderId", "symbol", "side", "type", "state", "quantity", "filledQty", "openQty", "cancelledQty", "avgPrice", "capPrice", "reserved", "spent", "released", "releaseDone", "needsAttention", "createdAt", "cancelRequestedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "orderId": { "type": "string", "format": "uuid" },
+          "symbol": { "type": "string", "minLength": 1 },
+          "side": { "const": "buy" },
+          "type": { "const": "market" },
+          "state": { "$ref": "#/definitions/state" },
+          "quantity": { "$ref": "#/definitions/decimal" },
+          "filledQty": { "$ref": "#/definitions/decimal" },
+          "openQty": { "$ref": "#/definitions/decimal" },
+          "cancelledQty": { "$ref": "#/definitions/decimal" },
+          "avgPrice": { "anyOf": [{ "$ref": "#/definitions/decimal" }, { "type": "null" }] },
+          "capPrice": { "$ref": "#/definitions/decimal" },
+          "reserved": { "$ref": "#/definitions/decimal" },
+          "spent": { "$ref": "#/definitions/decimal" },
+          "released": { "$ref": "#/definitions/decimal" },
+          "releaseDone": { "type": "boolean" },
+          "needsAttention": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "cancelRequestedAt": { "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] }
+        }
+      }
+    }
+  }
+}

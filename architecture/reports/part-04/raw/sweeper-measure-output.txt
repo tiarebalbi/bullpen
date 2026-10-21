@@ -1,0 +1,33 @@
+$ bash scripts/measure-sweeper.sh
+A idle (no orders): {"ticks":300,"cpuMsPerTick":0.277,"statementsPerTick":6,"wireBytesPerTick":2481,"wallMsPerTick":1.913}
+A 5 open orders, none fillable: {"ticks":300,"cpuMsPerTick":0.846,"statementsPerTick":11,"wireBytesPerTick":4566,"wallMsPerTick":3.322}
+B idle: {"calls":600,"serverCpuMsPerCall":1,"responseMsP50":2.276,"responseMsP95":2.897,"responseBodyBytes":149}
+B 5 open orders, none fillable: {"calls":600,"serverCpuMsPerCall":1.133,"responseMsP50":3.545,"responseMsP95":4.641,"responseBodyBytes":149}
+C daemon polling every 25 ms against 5 open orders (accelerated: the ticker's code, a shorter wait): {"seconds":20,"calls":500,"daemonCpuMsPerCall":1.58,"daemonCpuPercentOfOneCore":3.95}
+C daemon sleeping 20 s between calls: 0 ms of CPU in 20 s
+C2 three calls 6 s apart with Node's fetch opened 3 connection(s)
+C2 client CPU per call: {"httpKeepAliveCpuMsPerCall":0.157,"httpsKeepAliveCpuMsPerCall":0.165,"httpsNewConnectionCpuMsPerCall":0.734,"httpNewConnectionCpuMsPerCall":0.246}
+E stuck accepted order, real daemon at the 5 s cadence: {"trials":8,"minMs":556,"p50Ms":2314,"maxMs":4856,"allMs":[556,2308,4856,2314,1070,4106,2155,4300]}
+F lifecycle: submit, working, one fill, release: {"orders":100,"statementsPerOrder":34.07,"wireBytesPerOrder":11499,"cpuMsPerOrderInThisProcess":2.384,"rowsWrittenPerOrder":{"orders":1,"reservations":1,"fills":1,"order_events":4,"ledger":2,"positions":1},"tableAndIndexBytesAddedPerOrder":4260}
+F Part 3: one-transaction market buy: {"orders":100,"statementsPerOrder":7.07,"wireBytesPerOrder":2022,"cpuMsPerOrderInThisProcess":0.354,"rowsWrittenPerOrder":{"orders":1,"reservations":0,"fills":0,"order_events":0,"ledger":2,"positions":1},"tableAndIndexBytesAddedPerOrder":1229}
+┌─────────┬──────────────────────────────────┬────────────────────┬─────────────┬───────────────┬──────────────────────┬─────────────────────┬────────────────────────────────┐
+│ (index) │ scenario                         │ idleCeilingMinutes │ callsPerDay │ callsPerMonth │ neonAwakeHoursPerDay │ neonCuHoursPerMonth │ neonUsdPerMonthForComputeAlone │
+├─────────┼──────────────────────────────────┼────────────────────┼─────────────┼───────────────┼──────────────────────┼─────────────────────┼────────────────────────────────┤
+│ 0       │ 'no order all day'               │ 1                  │ 1442        │ 43260         │ 24                   │ 180                 │ 19.08                          │
+│ 1       │ 'no order all day'               │ 5                  │ 292         │ 8760          │ 24                   │ 180                 │ 19.08                          │
+│ 2       │ 'no order all day'               │ 15                 │ 102         │ 3060          │ 8.17                 │ 61.3                │ 6.5                            │
+│ 3       │ 'no order all day'               │ 30                 │ 55          │ 1650          │ 4.25                 │ 31.9                │ 3.38                           │
+│ 4       │ 'orders open for one hour a day' │ 1                  │ 2102        │ 63060         │ 24                   │ 180                 │ 19.08                          │
+│ 5       │ 'orders open for one hour a day' │ 5                  │ 1002        │ 30060         │ 24                   │ 180                 │ 19.08                          │
+│ 6       │ 'orders open for one hour a day' │ 15                 │ 750         │ 22500         │ 8.9                  │ 66.8                │ 7.08                           │
+│ 7       │ 'orders open for one hour a day' │ 30                 │ 630         │ 18900         │ 5.13                 │ 38.5                │ 4.08                           │
+│ 8       │ 'an order is always open'        │ 1                  │ 17280       │ 518400        │ 24                   │ 180                 │ 19.08                          │
+│ 9       │ 'an order is always open'        │ 5                  │ 17280       │ 518400        │ 24                   │ 180                 │ 19.08                          │
+│ 10      │ 'an order is always open'        │ 15                 │ 17280       │ 518400        │ 24                   │ 180                 │ 19.08                          │
+│ 11      │ 'an order is always open'        │ 30                 │ 17280       │ 518400        │ 24                   │ 180                 │ 19.08                          │
+│ 12      │ 'the route fails all day'        │ 1                  │ 1442        │ 43260         │ 24                   │ 180                 │ 19.08                          │
+│ 13      │ 'the route fails all day'        │ 5                  │ 292         │ 8760          │ 24                   │ 180                 │ 19.08                          │
+│ 14      │ 'the route fails all day'        │ 15                 │ 292         │ 8760          │ 24                   │ 180                 │ 19.08                          │
+│ 15      │ 'the route fails all day'        │ 30                 │ 292         │ 8760          │ 24                   │ 180                 │ 19.08                          │
+└─────────┴──────────────────────────────────┴────────────────────┴─────────────┴───────────────┴──────────────────────┴─────────────────────┴────────────────────────────────┘
+wrote sweeper-measure.json

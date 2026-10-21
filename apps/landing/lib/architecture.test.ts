@@ -13,9 +13,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
     expect(parts).toHaveLength(6);
     expect(parts.map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
-    // Parts 1 to 3 are built; 4 to 6 are the plan.
-    expect(parts.slice(0, 3).map((p) => p.status)).toEqual(["built", "built", "built"]);
-    for (const part of parts.slice(3)) {
+    // Parts 1 to 4 are built; 5 and 6 are the plan.
+    expect(parts.slice(0, 4).map((p) => p.status)).toEqual(["built", "built", "built", "built"]);
+    for (const part of parts.slice(4)) {
       expect(part.status).toBe("planned");
     }
     for (const part of parts) {
@@ -117,33 +117,35 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     expect(() => parseArchitecturePart(malformed, "test.json")).toThrow(/invalid "kind"/);
   });
 
-  it("carries what Part 3 built, and what Part 1 built and still runs, into every planned part that does not name it (4 to 6), and nothing else", () => {
+  it("carries what Part 4 built, and what Parts 3 and 1 built and still run, into every planned part that does not name it (5 and 6), and nothing else", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    // Parts 1 to 3 draw their own nodes, so they carry nothing.
-    for (const own of parts.slice(0, 3)) expect(own.nodes.some((n) => n.carried)).toBe(false);
-    for (const part of parts.slice(3)) {
-      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "prices-v1", "schema-market-data", "schema-trading"]);
+    // Parts 1 to 4 draw their own nodes, so they carry nothing.
+    for (const own of parts.slice(0, 4)) expect(own.nodes.some((n) => n.carried)).toBe(false);
+    for (const part of parts.slice(4)) {
+      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "neon-auth", "prices-v1", "schema-market-data", "schema-trading", "sweeper"]);
       expect(part.edges.filter((e) => e.carried).map((e) => e.id).sort()).toEqual([
         "daily-cron-to-market-data",
         "landing-to-google-analytics",
         "landing-to-market-data",
         "landing-to-microsoft-clarity",
         "market-data-to-market-data-schema",
+        "sweeper-to-trading-app",
         "trading-app-to-google-analytics",
         "trading-app-to-microsoft-clarity",
+        "trading-app-to-neon-auth",
         "trading-app-to-prices-v1",
         "trading-app-to-trading-schema",
       ]);
-      // Copied from Part 3, the latest built moment; each is labelled with the moment that first built it (ADR-0010, ADR-0011).
+      // Copied from Part 4, the latest built moment; each is labelled with the moment that first built it (ADR-0010, ADR-0011).
       for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried)) {
-        expect(item.builtIn, item.id).toBe(/google-analytics|microsoft-clarity/.test(item.id) ? "part-01" : "part-03");
+        expect(item.builtIn, item.id).toBe(/google-analytics|microsoft-clarity/.test(item.id) ? "part-01" : /sweeper|neon-auth/.test(item.id) ? "part-04" : "part-03");
       }
     }
   });
 
-  it("draws the Vercel box and the database box in every later part, around nodes it carries forward from Part 3", () => {
+  it("draws the Vercel box and the database box in every later part, around nodes it carries forward from Part 4", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    for (const part of parts.slice(3)) {
+    for (const part of parts.slice(4)) {
       expect(part.flow, `Part ${part.part} reads left to right like Part 3`).toBe("right");
       expect(part.groups.map((g) => g.id)).toEqual(["vercel-project", "neon-database"]);
       const database = part.groups.find((g) => g.id === "neon-database")!;
@@ -159,10 +161,10 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     }
   });
 
-  it("keeps the carried copy of a node equal to what the latest built moment, Part 3, has, labelled as first built in Part 1", () => {
+  it("keeps the carried copy of a node equal to what the latest built moment, Part 4, has, labelled as first built in Part 1", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    const built = parts[2]!.nodes.find((n) => n.id === "google-analytics")!;
-    const carried = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
+    const built = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
+    const carried = parts[4]!.nodes.find((n) => n.id === "google-analytics")!;
     expect({ ...carried, x: 0, y: 0 }).toEqual({ ...built, x: 0, y: 0, carried: true, builtIn: "part-01" });
   });
 
@@ -207,8 +209,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
 
     it("gives Part 1 and every planned part no changes, and nothing at all without the calm directory", () => {
       const withCalm = loadArchitectureParts(architectureDir, plannedDir, calmDir);
-      for (const part of withCalm.filter((p) => p.part !== 2 && p.part !== 3)) expect(part.changes).toBeUndefined();
+      for (const part of withCalm.filter((p) => p.part !== 2 && p.part !== 3 && p.part !== 4)) expect(part.changes).toBeUndefined();
       expect(withCalm[2]!.changes?.length).toBeGreaterThan(0);
+      expect(withCalm[3]!.changes?.length).toBeGreaterThan(0);
       for (const part of loadArchitectureParts(architectureDir, plannedDir)) expect(part.changes).toBeUndefined();
     });
   });
@@ -232,7 +235,15 @@ describe("predictionOfPart: what week one predicted and the part did not build",
   it("has nothing for a part whose prediction was built as written, or that had none", () => {
     expect(predictionOfPart(2, plannedDir, calmDir)).toBeNull();
     expect(predictionOfPart(1, plannedDir, calmDir)).toBeNull();
-    expect(predictionOfPart(4, plannedDir, calmDir)).toBeNull(); // not built: there is no moment to compare with
+    expect(predictionOfPart(5, plannedDir, calmDir)).toBeNull(); // not built: there is no moment to compare with
+  });
+
+  it("names the Order Saga workflow engine that Part 4 planned and did not build: the lifecycle is a Postgres state machine and a sweeper", () => {
+    expect(predictionOfPart(4, plannedDir, calmDir)).toEqual({
+      tag: "predictions-week-1",
+      tagUrl: "https://github.com/tiarebalbi/bullpen/tree/predictions-week-1",
+      notBuilt: [{ id: "order-saga-workflow", label: "Order Saga" }],
+    });
   });
 });
 

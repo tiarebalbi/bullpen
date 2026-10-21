@@ -49,9 +49,9 @@ describe("WatchlistRow", () => {
     expect(onSelect).toHaveBeenCalledWith("BTC-USD");
   });
 
-  it("names its state in the button's label, so a screen reader hears stale without seeing a colour", () => {
+  it("names its state in the button's own words, so a screen reader hears stale without seeing a colour", () => {
     render(row({ status: "Stale · Oct 8", stale: true }));
-    expect(screen.getByRole("button", { name: "AAPL, Stale · Oct 8" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /AAPL.*Stale · Oct 8/ })).toBeInTheDocument();
     expect(screen.getByText("Stale · Oct 8")).toBeVisible();
   });
 

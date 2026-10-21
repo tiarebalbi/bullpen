@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bullpen.invalid/schemas/sweep-tick.schema.json",
+  "title": "SweepTick",
+  "description": "What POST /api/internal/sweep answers: what one pass of the order lifecycle's background work did, and how many orders are still open.",
+  "type": "object",
+  "required": ["at", "open", "flagged", "fills", "cancels", "placed", "cancelRequested", "released", "releaseFailed", "errors"],
+  "additionalProperties": false,
+  "properties": {
+    "at": { "type": "string", "format": "date-time" },
+    "open": { "type": "integer", "minimum": 0, "description": "Orders not terminal, or terminal with an unreleased reservation. Zero lets the caller back off." },
+    "flagged": { "type": "integer", "minimum": 0 },
+    "fills": { "type": "integer", "minimum": 0 },
+    "cancels": { "type": "integer", "minimum": 0 },
+    "placed": { "type": "integer", "minimum": 0 },
+    "cancelRequested": { "type": "integer", "minimum": 0 },
+    "released": { "type": "integer", "minimum": 0 },
+    "releaseFailed": { "type": "integer", "minimum": 0 },
+    "errors": { "type": "integer", "minimum": 0 }
+  }
+}

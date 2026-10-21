@@ -30,8 +30,8 @@ describe("StocksSection", () => {
   it("marks the selected row pressed and reports a click with the symbol", () => {
     const onSelect = vi.fn();
     render(<StocksSection polled={stocks(rows)} selected="AAPL" onSelect={onSelect} />);
-    expect(screen.getByRole("button", { name: /^AAPL,/ })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: /^MSFT,/ }));
+    expect(screen.getByRole("button", { name: /^AAPL/ })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: /^MSFT/ }));
     expect(onSelect).toHaveBeenCalledWith("MSFT");
   });
 

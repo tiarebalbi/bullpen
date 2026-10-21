@@ -12,7 +12,7 @@ import { loadCurrentPart } from "./lib/currentPart.js";
 // This app's own production URL (see BULLPEN_WEB_URL's fallback in
 // apps/landing/app/lib/webAppUrl.ts, and PRODUCTION_LANDING_ORIGIN in this
 // app's own CORS route, which name the same alias from the other side).
-const PRODUCTION_URL = "https://bullpen-web-nine.vercel.app";
+const PRODUCTION_URL = "https://bullpen-app.tiarebalbi.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(PRODUCTION_URL),

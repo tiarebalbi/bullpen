@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bullpen.invalid/schemas/order-request.schema.json",
+  "title": "OrderRequest",
+  "description": "The body of POST /api/orders: a market buy. The client's key makes a retry return the same order. There is no side, no type and no price: Part 4 builds market buys only.",
+  "type": "object",
+  "required": ["symbol", "quantity", "clientOrderId"],
+  "additionalProperties": false,
+  "properties": {
+    "symbol": { "type": "string", "pattern": "^[A-Z0-9][A-Z0-9.\\-]{0,15}$" },
+    "quantity": { "type": "string", "pattern": "^(?!0+(\\.0+)?$)\\d{1,9}(\\.\\d{1,8})?$" },
+    "clientOrderId": { "type": "string", "format": "uuid" }
+  }
+}

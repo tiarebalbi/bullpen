@@ -4,6 +4,7 @@ DEFINE SYSTEM Bullpen AS bullpen
   DEFINE COMPONENT Landing AS apps/landing
   DEFINE COMPONENT Trading App AS apps/web
   DEFINE COMPONENT Market Data Service AS apps/market-data
+  DEFINE COMPONENT Sweeper AS apps/sweeper
   DEFINE LIBRARY UI AS packages/ui
   DEFINE LIBRARY Contracts AS packages/contracts
   DEFINE LIBRARY market-data AS packages/db-market-data
@@ -17,6 +18,7 @@ ASSERT(every DEFINED COMPONENT and LIBRARY exists as a directory)
 ASSERT(Landing IS DEPENDENT ON UI, Contracts)
 ASSERT(Trading App IS DEPENDENT ON UI, Contracts, trading)
 ASSERT(Market Data Service IS DEPENDENT ON Contracts, market-data)
+ASSERT(Sweeper IS DEPENDENT ON Contracts)
 
 # Disallowed dependencies (direct and transitive)
 ASSERT(Landing HAS NO DEPENDENCY ON Trading App)
@@ -33,6 +35,10 @@ ASSERT(Market Data Service HAS NO DEPENDENCY ON trading)
 ASSERT(trading HAS NO DEPENDENCY ON market-data)
 ASSERT(market-data HAS NO DEPENDENCY ON trading)
 ASSERT(Landing HAS NO DEPENDENCY ON trading, market-data)
+ASSERT(Sweeper HAS NO DEPENDENCY ON Landing, Trading App, Market Data Service, UI, trading, market-data)
+ASSERT(Landing HAS NO DEPENDENCY ON Sweeper)
+ASSERT(Trading App HAS NO DEPENDENCY ON Sweeper)
+ASSERT(Market Data Service HAS NO DEPENDENCY ON Sweeper)
 
 # Entry points and secrets
 ASSERT(COMPONENTS use LIBRARIES ONLY THROUGH their package entry point)
@@ -41,6 +47,10 @@ ASSERT(ONLY apps/market-data/src READS ALPHA_VANTAGE_API_KEY)
 ASSERT(ONLY apps/market-data/src READS CRON_SECRET)
 ASSERT(ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA)
 ASSERT(ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING)
+ASSERT(ONLY apps/web/app/lib/trading READS SWEEP_SECRET)
+ASSERT(ONLY apps/sweeper/src READS SWEEPER_TOKEN)
+ASSERT(ONLY apps/web/app/lib/auth READS NEON_AUTH_BASE_URL)
+ASSERT(ONLY apps/web/app/lib/auth READS NEON_AUTH_COOKIE_SECRET)
 
 # Data ownership
 ASSERT(ONLY market-data WRITES market_data)

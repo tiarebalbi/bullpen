@@ -3,6 +3,7 @@ packages:
   - "packages/*"
   - "architecture/fitness"
 allowBuilds:
+  core-js: false
   esbuild: true
   unrs-resolver: true
 minimumReleaseAgeExclude:

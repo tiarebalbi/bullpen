@@ -1,0 +1,44 @@
+$ bash scripts/test-db.sh src/db-integration/orders-recovery src/db-integration/orders-lifecycle --reporter=verbose
+
+ RUN  v5.0.2 <repo>/architecture/fitness
+
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > submitting an order reserves buying power and nothing else > reserves at the price ceiling and holds the order as accepted 180ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > submitting an order reserves buying power and nothing else > returns the same order for the same client key and reserves once 16ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > submitting an order reserves buying power and nothing else > refuses with nothing written when buying power is short, the price is missing or the price is stale 18ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > booking fills > fills the order, then release returns only what the ceiling over-reserved 26ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > booking fills > books partial fills in order and leaves the order partially filled until the rest arrives 25ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > booking fills > a duplicate delivery changes nothing: ledger, position and reservation stay as the first left them 21ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > booking fills > two different fills for one order, booked at the same moment, are both booked (the second retries on the order's new version) 120ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > booking fills > stores a fill for more than is open as an anomaly, books nothing and flags the order 24ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > partial fill then cancel: the filled quantity is booked, the rest cancelled, only the unused reservation released 29ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > books a fill that executed before the cancel took effect, even when it arrives after the order shows cancelled 22ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > a late fill that completes the order ends it filled, not cancelled 23ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > cancel_requested -> filled: the remaining quantity fills before the cancel takes effect 20ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > a cancel after the order filled is too late and changes nothing 18ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > a fill that executed at or after the effective time is not booked and flags the order 22ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > a cancel request is not a cancel > a late fill after the reservation was released takes the money back from buying power; if there is none it is stored unbooked 31ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > the fill price rule > fills at the latest price of the contract 29ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > the fill price rule > holds the order when the latest price is older than the limit, and when it is flagged stale: nothing fills 22ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > the fill price rule > holds the order when the price is above its ceiling 15ms
+ ✓ src/db-integration/orders-lifecycle.int.test.ts > the fill price rule > an order held past the working deadline is cancelled by the sweep, confirmed by the venue, and its reservation comes back 38ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 2: a duplicate fill after a lost acknowledgement > the first delivery committed and its acknowledgement was lost: the second changes nothing 194ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 2: a duplicate fill after a lost acknowledgement > a venue that delivers every fill twice leaves the account as if it had delivered once 34ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > submit dying at submit:after-reserve rolls back, and the retry reserves once 17ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > submit dying at submit:after-order rolls back, and the retry reserves once 15ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > submit dying after the commit: the retry returns the same order and reserves nothing more 14ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a fill dying at fill:after-fill-row: the retry leaves one fill, one pair of ledger entries and one position 19ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a fill dying at fill:after-ledger: the retry leaves one fill, one pair of ledger entries and one position 19ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a fill dying at fill:before-commit: the retry leaves one fill, one pair of ledger entries and one position 21ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a fill dying at fill:after-commit: the retry leaves one fill, one pair of ledger entries and one position 21ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a release dying at release:before-update: the retry returns the unused reservation once 21ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a release dying at release:after-commit: the retry returns the unused reservation once 20ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a cancel request dying at cancel:before-commit: the retry leaves one cancel_requested order 18ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a cancel request dying at cancel:after-commit: the retry leaves one cancel_requested order 17ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 3: a crash after a side effect and before success is recorded > a crash between handing the order to the venue and marking it working: the next sweep completes it, the venue holds one order 24ms
+ ✓ src/db-integration/orders-recovery.int.test.ts > experiment 4: a compensation that keeps failing > the order is flagged after the limit, the release keeps retrying, and recovery leaves the account correct 53ms
+
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
+   Start at  17:06:58
+   Duration  1.81s (tests 95%, transform 3%, import 3%)
+

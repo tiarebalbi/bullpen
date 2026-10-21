@@ -78,6 +78,11 @@ describe("buildUsageView", () => {
     for (const present of ["Vercel Hobby", "Neon", "CoinGecko Demo"]) expect(services.has(present)).toBe(true);
   });
 
+  it("once Part 4 is built, Workflows (planned for it, not built) is still not listed as in use", () => {
+    const part4 = buildUsageView(all, usage, 4);
+    expect(part4.rows.some((r) => r.service === "Vercel Workflows")).toBe(false);
+  });
+
   it("says usage pending for a row with no reading, and never a bar or a number the snapshot does not hold", () => {
     for (const row of view.rows) {
       expect(row.measured).toBe(false);

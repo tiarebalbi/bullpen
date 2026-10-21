@@ -78,8 +78,8 @@ test.describe("Architecture Explorer", () => {
 
     const panel = architecture.getByLabel("Details");
     await expect(panel.getByText("Bullpen Trading App")).toBeVisible();
-    await expect(panel.getByText(/It owns orders, the ledger, positions and the leaderboard view/)).toBeVisible();
-    for (const adr of ["ADR-0001", "ADR-0003", "ADR-0012", "ADR-0014"]) await expect(panel.getByText(adr)).toBeVisible();
+    await expect(panel.getByText(/It owns orders and their lifecycle, reservations, fills, the ledger, positions and the leaderboard view/)).toBeVisible();
+    for (const adr of ["ADR-0001", "ADR-0003", "ADR-0012", "ADR-0014", "ADR-0017", "ADR-0018"]) await expect(panel.getByText(adr)).toBeVisible();
     await expect(panel.getByText("Free tier (Hobby)")).toBeVisible();
 
     await panel.getByRole("button", { name: "Close details" }).click();
@@ -89,7 +89,7 @@ test.describe("Architecture Explorer", () => {
   test("a node with no recorded ADR yet shows the pending copy", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
-    await scrubber.getByRole("button", { name: "PART 4" }).click();
+    await scrubber.getByRole("button", { name: "PART 5" }).click();
 
     await architecture.getByRole("button", { name: "Order Saga, Infra" }).click();
     const panel = architecture.getByLabel("Details");
@@ -164,9 +164,9 @@ test.describe("Architecture Explorer", () => {
   test("a planned part ghosts nodes and edges the built system doesn't have yet", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
-    await scrubber.getByRole("button", { name: "PART 4" }).click();
+    await scrubber.getByRole("button", { name: "PART 5" }).click();
 
-    // "Order Saga" is new to Part 4's plan: ghosted, dashed, tagged PLANNED.
+    // "Order Saga" is only in the plan (Part 4 was built without it): ghosted, dashed, tagged PLANNED.
     const orderSaga = architecture.getByRole("button", { name: "Order Saga, Infra" });
     await expect(orderSaga.getByText("PLANNED")).toBeVisible();
 
@@ -549,7 +549,7 @@ for (const viewport of [
       await page.goto("/");
     });
 
-    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 4 on", async ({ page }) => {
+    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 5 on", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
 
@@ -560,8 +560,8 @@ for (const viewport of [
         for (const name of ANALYTICS_CARDS) {
           const card = architecture.getByRole("button", { name: new RegExp(`^${name}`) });
           await expect(card, `${name} in Part ${part}`).toHaveCount(1);
-          // Parts 2 and 3 draw the cards themselves; Parts 4 to 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
-          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 4 ? 1 : 0);
+          // Parts 2 to 4 draw the cards themselves; Parts 5 and 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
+          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 5 ? 1 : 0);
           await expect(card.getByText("Built in Part 2")).toHaveCount(0);
           // Built, not predicted: never ghosted.
           await expect(card.getByText("PLANNED")).toHaveCount(0);
@@ -572,9 +572,9 @@ for (const viewport of [
       }
     });
 
-    test("Part 4's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
+    test("Part 5's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
       const architecture = page.locator("#architecture");
-      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 4" }).click();
+      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 5" }).click();
 
       const card = architecture.getByRole("button", { name: /^Google Analytics 4, External/ });
       await expect(card.getByText("Built in Part 1")).toBeVisible();
@@ -599,7 +599,7 @@ for (const viewport of [
     test("selecting a carried node shows its Part 1 text and ADR-0010", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
-      await scrubber.getByRole("button", { name: "PART 4" }).click();
+      await scrubber.getByRole("button", { name: "PART 5" }).click();
 
       await architecture.getByRole("button", { name: /^Google Analytics 4, External/ }).click();
       const panel = architecture.getByLabel("Details");

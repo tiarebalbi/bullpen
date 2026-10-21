@@ -1,0 +1,193 @@
+{
+  "computedAt": "2026-10-21T12:24:27.147Z",
+  "computed": true,
+  "assumptions": {
+    "neonSuspendsAfterMinutes": 5,
+    "computeCu": 0.25,
+    "usdPerCuHour": 0.106,
+    "daysInMonth": 30,
+    "source": "cost/allowances.json (Launch plan, scale-to-zero at 5 minutes) and the ticker's own wait function on a virtual clock"
+  },
+  "rows": [
+    {
+      "scenario": "no order all day",
+      "idleCeilingMinutes": 1,
+      "callsPerDay": 1442,
+      "callsPerMonth": 43260,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "no order all day",
+      "idleCeilingMinutes": 5,
+      "callsPerDay": 292,
+      "callsPerMonth": 8760,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "no order all day",
+      "idleCeilingMinutes": 15,
+      "callsPerDay": 102,
+      "callsPerMonth": 3060,
+      "neonAwakeHoursPerDay": 8.17,
+      "neonCuHoursPerMonth": 61.3,
+      "neonUsdPerMonthForComputeAlone": 6.5
+    },
+    {
+      "scenario": "no order all day",
+      "idleCeilingMinutes": 30,
+      "callsPerDay": 55,
+      "callsPerMonth": 1650,
+      "neonAwakeHoursPerDay": 4.25,
+      "neonCuHoursPerMonth": 31.9,
+      "neonUsdPerMonthForComputeAlone": 3.38
+    },
+    {
+      "scenario": "no order all day",
+      "idleCeilingMinutes": 60,
+      "callsPerDay": 32,
+      "callsPerMonth": 960,
+      "neonAwakeHoursPerDay": 2.34,
+      "neonCuHoursPerMonth": 17.5,
+      "neonUsdPerMonthForComputeAlone": 1.86
+    },
+    {
+      "scenario": "orders open for one hour a day",
+      "idleCeilingMinutes": 1,
+      "callsPerDay": 2102,
+      "callsPerMonth": 63060,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "orders open for one hour a day",
+      "idleCeilingMinutes": 5,
+      "callsPerDay": 1002,
+      "callsPerMonth": 30060,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "orders open for one hour a day",
+      "idleCeilingMinutes": 15,
+      "callsPerDay": 750,
+      "callsPerMonth": 22500,
+      "neonAwakeHoursPerDay": 8.9,
+      "neonCuHoursPerMonth": 66.8,
+      "neonUsdPerMonthForComputeAlone": 7.08
+    },
+    {
+      "scenario": "orders open for one hour a day",
+      "idleCeilingMinutes": 30,
+      "callsPerDay": 630,
+      "callsPerMonth": 18900,
+      "neonAwakeHoursPerDay": 5.13,
+      "neonCuHoursPerMonth": 38.5,
+      "neonUsdPerMonthForComputeAlone": 4.08
+    },
+    {
+      "scenario": "orders open for one hour a day",
+      "idleCeilingMinutes": 60,
+      "callsPerDay": 457,
+      "callsPerMonth": 13710,
+      "neonAwakeHoursPerDay": 3.17,
+      "neonCuHoursPerMonth": 23.8,
+      "neonUsdPerMonthForComputeAlone": 2.52
+    },
+    {
+      "scenario": "an order is always open",
+      "idleCeilingMinutes": 1,
+      "callsPerDay": 17280,
+      "callsPerMonth": 518400,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "an order is always open",
+      "idleCeilingMinutes": 5,
+      "callsPerDay": 17280,
+      "callsPerMonth": 518400,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "an order is always open",
+      "idleCeilingMinutes": 15,
+      "callsPerDay": 17280,
+      "callsPerMonth": 518400,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "an order is always open",
+      "idleCeilingMinutes": 30,
+      "callsPerDay": 17280,
+      "callsPerMonth": 518400,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "an order is always open",
+      "idleCeilingMinutes": 60,
+      "callsPerDay": 17280,
+      "callsPerMonth": 518400,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "the route fails all day",
+      "idleCeilingMinutes": 1,
+      "callsPerDay": 1442,
+      "callsPerMonth": 43260,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "the route fails all day",
+      "idleCeilingMinutes": 5,
+      "callsPerDay": 292,
+      "callsPerMonth": 8760,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "the route fails all day",
+      "idleCeilingMinutes": 15,
+      "callsPerDay": 292,
+      "callsPerMonth": 8760,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "the route fails all day",
+      "idleCeilingMinutes": 30,
+      "callsPerDay": 292,
+      "callsPerMonth": 8760,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    },
+    {
+      "scenario": "the route fails all day",
+      "idleCeilingMinutes": 60,
+      "callsPerDay": 292,
+      "callsPerMonth": 8760,
+      "neonAwakeHoursPerDay": 24,
+      "neonCuHoursPerMonth": 180,
+      "neonUsdPerMonthForComputeAlone": 19.08
+    }
+  ]
+}
