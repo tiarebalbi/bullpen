@@ -52,7 +52,8 @@ describe("buildArchitecturePage, from the real repo", () => {
     expect(page.scrubber).toHaveLength(6);
     expect(page.scrubber[1]).toEqual({ part: 2, title: "Architecture as code", status: "built" });
     expect(page.scrubber[2]).toEqual({ part: 3, title: "Who owns the data", status: "built" });
-    expect(page.scrubber[3]!.status).toBe("planned");
+    expect(page.scrubber[3]).toMatchObject({ part: 4, status: "built" });
+    expect(page.scrubber[4]!.status).toBe("planned");
   });
 
   describe("services", () => {
@@ -115,12 +116,14 @@ describe("buildArchitecturePage, from the real repo", () => {
     it("adds the planned services for a planned part, with the part they arrive in", () => {
       expect(page.services[3]!.planned).toEqual([]); // Part 3 is built as written: it predicts nothing more
       const saga = page.services[5]!.planned.find((s) => s.name === "Order Saga");
-      expect(saga?.arrives).toBe(4);
+      // Part 4 was built without it (a Postgres state machine and a sweeper); the Part 5 plan still lists it, and planned files change when the part starts.
+      expect(saga?.arrives).toBe(5);
       // The current plan has no Prices or Market History service and no separate Orders or Ledger service.
       const planned = page.services[5]!.planned.map((s) => s.name);
       expect(planned).toEqual(["Order Saga", "Market Open Queue"]);
       expect(planned.filter((name) => /Prices|History|Orders|Ledger/.test(name))).toEqual([]);
       expect(page.services[3]!.built.map((s) => s.name)).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service"]);
+      expect(page.services[4]!.built.map((s) => s.name)).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service", "Sweeper"]);
     });
 
     it("every control that names a check names one the snapshot can report on", () => {
@@ -194,7 +197,7 @@ describe("buildArchitecturePage, from the real repo", () => {
     });
 
     it("makes no cache claim for a planned part, and none at all if the route cannot be read", () => {
-      expect(page.flows[4]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
+      expect(page.flows[5]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
       const unread = buildArchitecturePage({
         parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
         series: loadSeries(join(repoRoot, "content", "series.json")),
@@ -207,8 +210,8 @@ describe("buildArchitecturePage, from the real repo", () => {
     });
 
     it("marks a planned part's flow as planned, and a built part's as not", () => {
-      expect(page.flows[3]!.planned).toBe(false);
-      expect(page.flows[4]!.planned).toBe(true);
+      expect(page.flows[4]!.planned).toBe(false);
+      expect(page.flows[5]!.planned).toBe(true);
     });
   });
 

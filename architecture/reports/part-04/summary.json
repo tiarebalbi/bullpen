@@ -1,8 +1,8 @@
 {
   "schema": 2,
   "part": 4,
-  "generatedAt": "2026-10-21T01:44:13.582Z",
-  "commit": "0a3c7e1ec31e618727df50a6c67e44b3e26dcb89",
+  "generatedAt": "2026-10-21T02:01:27.662Z",
+  "commit": "c1d3ab6b3eeeb1222d0a5e39758cd3fccf7b99aa",
   "dirty": true,
   "ref": "post-04-saga",
   "source": "local",
@@ -13,7 +13,7 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 10 checks held, 38 rules enforced",
+      "summary": "check:arch passed: 10 checks held, 45 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
@@ -43,6 +43,12 @@
         {
           "id": "market-data-service-is-dependent-on-contracts-market-data",
           "rule": "Market Data Service IS DEPENDENT ON Contracts, market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "sweeper-is-dependent-on-contracts",
+          "rule": "Sweeper IS DEPENDENT ON Contracts",
           "check": "turbo boundaries",
           "passed": true
         },
@@ -131,6 +137,30 @@
           "passed": true
         },
         {
+          "id": "sweeper-has-no-dependency-on-landing-trading-app-market-data-service-ui-trading-market-data",
+          "rule": "Sweeper HAS NO DEPENDENCY ON Landing, Trading App, Market Data Service, UI, trading, market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "landing-has-no-dependency-on-sweeper",
+          "rule": "Landing HAS NO DEPENDENCY ON Sweeper",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-app-has-no-dependency-on-sweeper",
+          "rule": "Trading App HAS NO DEPENDENCY ON Sweeper",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-service-has-no-dependency-on-sweeper",
+          "rule": "Market Data Service HAS NO DEPENDENCY ON Sweeper",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
           "id": "components-use-libraries-only-through-their-package-entry-point",
           "rule": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point",
           "check": "entry-point imports",
@@ -163,6 +193,18 @@
         {
           "id": "only-apps-web-app-lib-trading-reads-database-url-trading",
           "rule": "ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-trading-reads-sweep-secret",
+          "rule": "ONLY apps/web/app/lib/trading READS SWEEP_SECRET",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-sweeper-src-reads-sweeper-token",
+          "rule": "ONLY apps/sweeper/src READS SWEEPER_TOKEN",
           "check": "secret containment",
           "passed": true
         },
@@ -280,6 +322,15 @@
       "passed": true,
       "summary": "no errors, no warnings",
       "raw": "calm-part-03.json",
+      "rules": []
+    },
+    {
+      "id": "calm-part-04",
+      "name": "calm validate (part-04)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/part-04.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-part-04.json",
       "rules": []
     },
     {

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -24,9 +24,8 @@ arrive while fills are still on their way, and what was not used is released. Th
 ADR tests is that this needs a saga because of time, not a new service: every step can stay one
 atomic transaction in the `trading` schema, owned by the Trading App.
 
-This ADR is Proposed until the Part 4 post is published. Decision 1 (what drives the sweep) is
-open until the measurements are in; it is recorded at the end and will be filled in, not
-guessed.
+Accepted by the owner on 2026-10-20, before publication. Decision 1 (what drives the sweep) is
+recorded in ADR-0018, with the measurements in `architecture/reports/part-04/decision-1-sweep-driver.md`.
 
 ## Decision
 
@@ -39,15 +38,13 @@ fill (see ordering rule 3).
 | From | To | Why |
 |---|---|---|
 | (none) | `accepted` | the order is inserted and buying power reserved, in one transaction |
-| (none) | `rejected` | no price, stale price, unknown account, insufficient buying power (nothing reserved) |
 | `accepted` | `working` | the venue has the order |
-| `accepted` | `rejected` | the venue refused it; the reservation is released |
+| `accepted` | `rejected` | the venue refused it; the reservation is released. A refusal at accept time (no price, stale price, unknown account, insufficient buying power) writes no order and reserves nothing |
 | `working` | `partially_filled` | a fill for less than the open quantity was booked |
 | `working` | `filled` | the open quantity filled |
 | `partially_filled` | `partially_filled` | another partial fill was booked |
 | `partially_filled` | `filled` | the rest filled |
 | `accepted`, `working`, `partially_filled` | `cancel_requested` | the player asked to cancel |
-| `cancel_requested` | `partially_filled` / `working` | not a transition of its own: the state stays `cancel_requested` while fills are booked |
 | `cancel_requested` | `filled` | the remaining quantity filled with `executed_at` before the cancel's `effective_at` |
 | `cancel_requested` | `cancelled` | the venue confirmed the cancel with an `effective_at`; the open quantity becomes `cancelled_qty` |
 | `cancelled` | `filled` | a late fill, executed before `effective_at`, brought `cancelled_qty` to 0 |
@@ -108,10 +105,8 @@ in Part 3.
 
 ### Decision 1: what drives the sweep
 
-Open. The baseline is a sweep function that finds stuck orders and advances or flags them, with
-every step idempotent, so any driver can call it. Candidates (daemon ticker, delayed queue
-message, Workflows `sleep`) are compared by measurement in
-`architecture/reports/part-04/`, and this section is completed from that report.
+The baseline is a sweep function that finds stuck orders and advances or flags them, with every step idempotent, so any driver can
+call it. What calls it is decided in ADR-0018.
 
 ## Consequences
 

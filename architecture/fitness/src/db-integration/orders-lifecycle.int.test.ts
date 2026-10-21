@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, inject, it } from "vitest";
-import { BuyRefused, LATE_FILL_WINDOW_MS, SimulatedVenue, bookFill, confirmCancel, dbPriceSource, dispatchOrder, markWorking, pump, releaseReservation, requestCancel, submitOrder, sweep, WORKING_DEADLINE_MS } from "@bullpen/db-trading";
+import { BuyRefused, LATE_FILL_WINDOW_MS, computeLeaderboardOnRead, SimulatedVenue, bookFill, confirmCancel, dbPriceSource, dispatchOrder, markWorking, pump, releaseReservation, requestCancel, submitOrder, sweep, WORKING_DEADLINE_MS } from "@bullpen/db-trading";
 import { world } from "./orders-harness.js";
 
 const w = world(inject("dbUrls"));
@@ -213,5 +213,42 @@ describe("the fill price rule", () => {
     expect(await sweep(w.trading, venue, new Date(now.getTime() + LATE_FILL_WINDOW_MS + 1))).toMatchObject({ released: 1 });
     expect(await w.buyingPower(accountId)).toBe("10000.00000000");
     expect(WORKING_DEADLINE_MS).toBe(15 * 60_000);
+  });
+});
+
+describe("leaderboard equity counts reserved cash (ADR-0019)", () => {
+  const rowOf = async (accountId: string) => (await computeLeaderboardOnRead(w.trading)).find((r) => r.accountId === accountId)!;
+
+  it("reserving money, partly filling, cancelling and releasing never move equity; only a price does", async () => {
+    const { accountId, symbol, orderId } = await accepted();
+    // accepted() reserved 1,050 of 10,000: available buying power is 8,950, but the account still holds 10,000
+    expect(await w.buyingPower(accountId)).toBe("8950.00000000");
+    expect(await rowOf(accountId)).toMatchObject({ cash: "10000.00000000", positionsValue: "0.00000000", equity: "10000.00000000" });
+
+    await bookFill(w.trading, fill(orderId, "1", "4", 100));
+    expect(await rowOf(accountId)).toMatchObject({ cash: "9600.00000000", positionsValue: "400.00000000", equity: "10000.00000000" });
+
+    await requestCancel(w.trading, orderId, at(500));
+    await confirmCancel(w.trading, orderId, at(1000));
+    expect(await rowOf(accountId)).toMatchObject({ cash: "9600.00000000", equity: "10000.00000000" }); // cancelled, reservation not yet released
+
+    await releaseReservation(w.trading, orderId, SETTLED);
+    expect(await w.buyingPower(accountId)).toBe("9600.00000000");
+    expect(await rowOf(accountId)).toMatchObject({ cash: "9600.00000000", equity: "10000.00000000" });
+
+    await w.price(symbol, "110");
+    expect(await rowOf(accountId)).toMatchObject({ positionsValue: "440.00000000", equity: "10040.00000000" });
+  });
+
+  it("an account with an open order ranks level with the same account before the order", async () => {
+    const symbol = w.symbol();
+    await w.price(symbol, "100");
+    const before = await w.account("7777");
+    const withOrder = await w.account("7777");
+    await submitOrder(w.trading, { accountId: withOrder, symbol, quantity: "10", clientOrderId: `r-${symbol}` });
+    const a = await rowOf(before);
+    const b = await rowOf(withOrder);
+    expect(b.equity).toBe(a.equity);
+    expect(b.rank).toBe(a.rank);
   });
 });

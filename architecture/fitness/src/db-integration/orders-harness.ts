@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type pg from "pg";
 import { expect } from "vitest";
 import { createPool as createMarketDataPool } from "@bullpen/db-market-data";
-import { checkOrderInvariants, createPool as createTradingPool, refreshLeaderboard, type AccountStart } from "@bullpen/db-trading";
+import { checkEquityInvariant, checkOrderInvariants, createPool as createTradingPool, refreshLeaderboard, type AccountStart } from "@bullpen/db-trading";
 import type { DbUrls } from "./global-setup.js";
 import { formatViolation } from "../violation.js";
 import { checkLeaderboardReconciliation } from "./reconcile-check.js";
@@ -58,6 +58,7 @@ export function world(urls: DbUrls, poolSize = 12) {
     /** The invariants of ADR-0017 and the Part 3 reconciliation check, for every account the test made. Run after every test. */
     async assertInvariants(): Promise<void> {
       expect(await checkOrderInvariants(trading, accounts)).toEqual([]);
+      expect(await checkEquityInvariant(trading, accounts)).toEqual([]);
       await refreshLeaderboard(trading);
       const violations = await checkLeaderboardReconciliation(trading);
       expect(violations.map(formatViolation)).toEqual([]);

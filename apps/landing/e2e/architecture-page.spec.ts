@@ -139,13 +139,13 @@ for (const viewport of [
       await expect(panel(page)).toContainText("Overview · Part 1");
 
       // Overview
-      await toPart(page, 4);
-      await expect(panel(page)).toContainText("Overview · Part 4");
+      await toPart(page, 5);
+      await expect(panel(page)).toContainText("Overview · Part 5");
       await expect(panel(page).getByText("Planned", { exact: true }).first()).toBeVisible();
 
       // Services: the planned services appear beside what runs today
       await tab(page, "Services").click();
-      await expect(panel(page).getByRole("heading", { name: "Planned for Part 4" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 5" })).toBeVisible();
       await expect(panel(page).getByRole("heading", { name: "Order Saga" })).toBeVisible();
 
       // Flows: the same request, marked as a prediction
@@ -174,7 +174,7 @@ for (const viewport of [
       await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(0);
       await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0009" })).toHaveCount(0);
       await tab(page, "Services").click();
-      await expect(panel(page).getByRole("heading", { name: "Planned for Part 4" })).toHaveCount(0);
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 5" })).toHaveCount(0);
     });
 
 

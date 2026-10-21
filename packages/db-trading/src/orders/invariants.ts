@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { LEADERBOARD_ON_READ_SQL } from "../leaderboard.js";
 
 export interface AccountStart {
   accountId: string;
@@ -64,4 +65,24 @@ export async function checkOrderInvariants(pool: Pool, accounts: readonly Accoun
     problems.push(`reservation ${r.order_id} says ${r.spent} spent but the ledger took ${r.ledger}`);
   }
   return problems;
+}
+
+/**
+ * ADR-0019: the ranking's cash counts money held by open orders, so an account's equity moves only when a fill is booked
+ * or a price changes, never when a reservation is made or released. Read from the same query the view is built from:
+ * cash = available + still-reserved, and equity = starting cash - spent + positions at the price contract.
+ */
+export async function checkEquityInvariant(pool: Pool, accounts: readonly AccountStart[]): Promise<string[]> {
+  const { rows } = await pool.query<{ account_id: string; cash: string; equity: string; expected_cash: string; expected_equity: string }>(
+    `SELECT l.account_id, l.cash::text, l.equity::text,
+            (a.buying_power + COALESCE((SELECT sum(reserved - spent - released) FROM trading.reservations x WHERE x.account_id = a.account_id), 0))::text AS expected_cash,
+            (s.cash - COALESCE(-(SELECT sum(delta) FROM trading.ledger g WHERE g.account_id = a.account_id AND g.asset = 'USD'), 0) + l.positions_value)::text AS expected_equity
+       FROM (${LEADERBOARD_ON_READ_SQL}) l
+       JOIN trading.accounts a ON a.account_id = l.account_id
+       JOIN unnest($1::uuid[], $2::numeric[]) AS s(id, cash) ON s.id = l.account_id
+      WHERE l.cash <> a.buying_power + COALESCE((SELECT sum(reserved - spent - released) FROM trading.reservations x WHERE x.account_id = a.account_id), 0)
+         OR l.equity <> s.cash - COALESCE(-(SELECT sum(delta) FROM trading.ledger g WHERE g.account_id = a.account_id AND g.asset = 'USD'), 0) + l.positions_value`,
+    [accounts.map((a) => a.accountId), accounts.map((a) => a.startingCash)],
+  );
+  return rows.map((r) => `leaderboard for ${r.account_id}: cash ${r.cash} (expected ${r.expected_cash}), equity ${r.equity} (expected ${r.expected_equity})`);
 }

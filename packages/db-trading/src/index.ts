@@ -7,7 +7,7 @@ export { CAP_MARGIN, CrashError, LATE_FILL_WINDOW_MS, bookFill, confirmCancel, m
 export { DerivedVenue, MAX_FILL_PRICE_AGE_MS, SimulatedVenue, dbPriceSource, seeded, type PriceSource, type Quote, type DerivedVenueOptions, type SimulatedVenueOptions, type Venue, type VenueEvent, type VenueOrder } from "./orders/venue.js";
 export { ACCEPT_TIMEOUT_MS, CANCEL_RESEND_MS, CANCEL_STUCK_MS, MAX_RELEASE_FAILURES, WORKING_DEADLINE_MS, dispatchOrder, pump, sweep, type SweepResult } from "./orders/sweep.js";
 export { tick, type TickResult } from "./orders/tick.js";
-export { checkOrderInvariants, type AccountStart } from "./orders/invariants.js";
+export { checkEquityInvariant, checkOrderInvariants, type AccountStart } from "./orders/invariants.js";
 export { readPrices, type ReadPricesOptions, type StockPrice } from "./prices.js";
 export { TEST_HANDLE_PREFIX, TEST_QUOTE_SOURCE } from "./testRows.js";
 export { LEADERBOARD_ON_READ_SQL, LEADERBOARD_TOP, MAX_AGE_MS, computeLeaderboardOnRead, readLeaderboard, readLeaderboardRows, refreshLeaderboard, serveLeaderboard, type LeaderboardRead, type LeaderboardRow, type ReadLeaderboardOptions, type RefreshHooks, type RefreshOutcome, type ServeOptions } from "./leaderboard.js";
