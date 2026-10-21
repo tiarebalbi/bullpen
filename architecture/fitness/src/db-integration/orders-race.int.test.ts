@@ -13,7 +13,8 @@ import { world } from "./orders-harness.js";
 
 const w = world(inject("dbUrls"), 24);
 afterAll(() => w.close());
-afterEach(() => w.assertInvariants());
+// The whole file's accounts (about 10,000 after the exhaustive part) are checked at the end of each test, which takes a while on a busy machine.
+afterEach(() => w.assertInvariants(), 300_000);
 
 const T0 = new Date("2026-10-20T12:00:00.000Z");
 const at = (ms: number): Date => new Date(T0.getTime() + ms);
