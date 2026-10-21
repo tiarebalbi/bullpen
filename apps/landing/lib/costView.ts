@@ -8,6 +8,12 @@ import { SERVICE_ARRIVES_IN_PART, humanAllowance, metricLabel, serviceLabel } fr
  */
 export const OFF_LANDING_SERVICES: ReadonlySet<string> = new Set(["upstash-redis", "aws-lambda"]);
 
+/**
+ * Planned for a part that has since been built without them: Part 4 did not build Workflows (decision-1-sweep-driver.md), so the usage card, which
+ * lists only what runs today, does not list it even though its planned part is built. Its allowance stays in the list the card opens.
+ */
+export const NOT_BUILT_SERVICES: ReadonlySet<string> = new Set(["vercel-workflows"]);
+
 /** The part in which the per-player cost estimate arrives: Part 5's moment is "Market open and the bill". No number is shown before it. */
 export const PER_PLAYER_ESTIMATE_PART = 5;
 
@@ -105,7 +111,7 @@ export interface UsageView {
 export function buildUsageView(all: readonly AllowanceEntry[], usage: UsageSnapshot, builtPart: number): UsageView {
   const allowances = landingAllowances(all);
   const rows = joinUsageWithAllowances(allowances, { ...usage, usage: usage.usage.filter((u) => !OFF_LANDING_SERVICES.has(u.service)) })
-    .filter(({ allowance }) => inUse(allowance.service, builtPart))
+    .filter(({ allowance }) => inUse(allowance.service, builtPart) && !NOT_BUILT_SERVICES.has(allowance.service))
     .map(({ entry, allowance }): UsageRowView => ({
       key: `${entry.service}-${entry.metric}`,
       service: serviceLabel(allowance.service),
