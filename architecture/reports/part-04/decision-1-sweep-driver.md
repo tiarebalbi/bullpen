@@ -110,8 +110,25 @@ a fill row, an event row, two ledger rows and a position update. Workflow events
 | Moving parts it adds | a daemon, a route, a secret, a contract | a topic, a consumer route, per-order messages Postgres does not hold | the Workflow SDK, an outbox and a dispatcher (the handoff cannot commit with Postgres) |
 | Lines of code | 120 lines (`main.ts` 22, `ticker.ts` 98); route and auth 45 lines (`route.ts` 28, `sweepAuth.ts` 17); the sweep and tick 161 lines (`sweep.ts` 118, `tick.ts` 43), plus the two simulated venues, 239 lines in `venue.ts` | not built | not built |
 
+## Workflows: not built in Part 4, and why (stated explicitly, 2026-10-20)
+
+I did not build Workflows for Part 4 and I did not measure it. The report carries the analytical comparison and the cost model above and nothing
+measured for it. The reasons:
+
+- **The baseline passes every test.** The Postgres state machine, the sweep and the simulator pass the rule tests, the exhaustive and seeded races (0 failures in
+  8,346 and 1,500 runs), the duplicate-fill, crash and failing-release experiments, and the tick that dies mid-run. Nothing found so far needs a durable engine to be correct.
+- **The one gain Workflows could show is cost at idle, and it cannot be measured without a deployment.** The measured cost of the baseline is small in CPU and
+  invocations; its real cost is the Neon compute a polling daemon keeps awake, which the model puts at about $6.50 a month at a 15-minute idle ceiling. A `sleep` or a queue timer
+  would avoid that. Checking it takes a Vercel deployment with Workflows enabled running against a database, which is a stop condition in the brief (a new integration, and it
+  writes to Neon); Workflows' own metering (events, data written) exists only on Vercel.
+- **The handoff would be new code that is itself a risk.** Postgres and Workflows cannot commit together, so Workflows needs an outbox, an idempotent dispatcher and the handoff
+  experiment (order committed, workflow start fails). That is the experiment the brief marks "only if Workflows is used"; it was not run, and it is not claimed.
+
+What this means for the post: the claim that this needs a saga because of time, not a new service, is supported by the baseline alone, which is a state machine, a sweep and
+a driver. It is **not** evidence that Workflows would be worse or better; it is evidence that Part 4 did not need it. If the owner wants Workflows measured, it needs a deployment and a yes.
+
 ## What I would conclude, and what is open
 
 - The daemon works as a baseline, and its own CPU and the route's are small. Its real costs are the invocations at the 5 s cadence and the Neon compute it keeps awake when idle.
 - Whether Workflows or a queue timer beats it cannot be said from this run: I have not measured them. The post's claim, that the lifecycle needs a saga because of time and not a new service, holds so far in this sense: every step is one transaction in `trading` and the sweep is a plain function. The daemon adds a driver, not a service with its own data.
-- Open: Neon's scale-to-zero setting on this project (console), the real CU-hours once anything polls, and the Queues and Workflows numbers, which need a deployment and your yes.
+- Open: Neon's scale-to-zero setting on this project (console), the real CU-hours once anything polls, and the Queues numbers, which need a deployment and your yes. Workflows is recorded above as not built.
