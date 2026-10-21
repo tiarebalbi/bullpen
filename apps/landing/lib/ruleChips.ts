@@ -83,3 +83,9 @@ export function cardChip(view: RuleCardView, part?: number): RuleChip {
   if (known.length === 0 || view.stamp === null) return { tone: "neutral", label: "no snapshot yet" };
   return known.every((result) => result.passed) ? { tone: "gain", label: `pass · ${view.stamp}` } : { tone: "loss", label: `fail · ${view.stamp}` };
 }
+
+/** A tile row's or tile's chip: pass, fail, or "no result" when the snapshot has none (never a pass nobody recorded). */
+export function chipFor(passed: boolean | null): RuleChip {
+  if (passed === null) return { tone: "neutral", label: "no result" };
+  return passed ? { tone: "gain", label: "✓ pass" } : { tone: "loss", label: "✕ fail" };
+}

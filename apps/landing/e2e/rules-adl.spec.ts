@@ -44,92 +44,7 @@ for (const viewport of [
         await page.goto("/");
       });
 
-      test("one card per # heading, in the file's order, then the CALM and budget cards", async ({ page }) => {
-        const cards = page.locator("#rules .bp-rule-card");
-        await expect(cards).toHaveCount(HEADINGS.length + 2);
-        const adlCards = page.locator("#rules .bp-rule-card--adl");
-        await expect(adlCards).toHaveCount(HEADINGS.length);
-        expect(await adlCards.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("aria-label") ?? node.querySelector("[aria-label]")?.getAttribute("aria-label")))).toEqual(HEADINGS);
-        await expect(page.locator("#rules .bp-rule-card").nth(HEADINGS.length)).toContainText("calm validate --strict");
-        await expect(page.locator("#rules .bp-rule-card").nth(HEADINGS.length + 1)).toContainText("budget-check.ts");
-      });
-
-      test("every card shows its # heading and its ASSERT lines exactly as the file has them, indentation included", async ({ page }) => {
-        const lines = await shown(page.locator("#rules .bp-rule-card--adl .bp-adl__line"));
-        const expected = HEADINGS.flatMap((heading) => {
-          const headingLine = adlLines.findIndex((line) => line === `# ${heading}`);
-          const asserts: string[] = [];
-          for (let i = headingLine + 1; i < adlLines.length && !adlLines[i]!.startsWith("# "); i++) if (adlLines[i]!.startsWith("ASSERT(")) asserts.push(adlLines[i]!);
-          return [`# ${heading}`, ...asserts];
-        });
-        expect(lines).toEqual(expected);
-        expect(lines.filter((line) => line.startsWith("ASSERT("))).toHaveLength(ASSERT_LINES.length);
-      });
-
-      test("keywords, names, paths and comments take the design system's tokens", async ({ page }) => {
-        const styles = await page.evaluate(() => {
-          const card = document.querySelector("#rules .bp-rule-card--adl")!;
-          const resolve = (value: string): string => {
-            const probe = document.createElement("span");
-            probe.style.color = value;
-            card.appendChild(probe);
-            const color = getComputedStyle(probe).color;
-            probe.remove();
-            return color;
-          };
-          const of = (selector: string) => {
-            const node = document.querySelector(`#rules ${selector}`)!;
-            const style = getComputedStyle(node);
-            return { color: style.color, fontStyle: style.fontStyle, fontFamily: style.fontFamily, text: node.textContent };
-          };
-          const mono = getComputedStyle(document.documentElement).getPropertyValue("--font-mono").trim().split(",")[0]!.replace(/["']/g, "");
-          return {
-            mono,
-            accent: resolve("var(--bp-accent-text)"),
-            primary: resolve("var(--foreground)"),
-            muted: resolve("var(--foreground-muted)"),
-            keyword: of(".bp-adl__keyword"),
-            name: of(".bp-adl__name"),
-            path: of(".bp-adl__path"),
-            comment: of(".bp-adl__comment"),
-          };
-        });
-
-        expect(styles.keyword.color).toBe(styles.accent);
-        expect(styles.name.color).toBe(styles.primary);
-        expect(styles.path.color).toBe(styles.muted);
-        expect(styles.path.fontFamily).toContain(styles.mono);
-        expect(styles.comment.color).toBe(styles.muted);
-        expect(styles.comment.fontStyle).toBe("italic");
-        expect(styles.accent).not.toBe(styles.muted);
-      });
-
-      test("every ASSERT carries the snapshot's result for its own id, and each card the pass or fail with the commit it was for", async ({ page }) => {
-        const stamp = `${snapshot.generatedAt.slice(0, 10)} · ${snapshot.commit.slice(0, 7)}`;
-        for (const assert of ASSERT_LINES) {
-          const row = page.locator(`#rules .bp-adl__row[data-rule="${ruleIdOf(assert.raw)}"]`);
-          const result = snapshotRules.find((rule) => rule.id === ruleIdOf(assert.raw));
-          expect(result, `${assert.raw} has a result in the snapshot`).toBeDefined();
-          await expect(row.locator(".bp-chip")).toHaveText(result!.passed ? "✓ pass" : "✕ fail");
-        }
-        for (const card of await page.locator("#rules .bp-rule-card--adl").all()) {
-          const ids = await card.locator(".bp-adl__row[data-rule]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-rule")!));
-          const held = ids.every((id) => snapshotRules.find((rule) => rule.id === id)!.passed);
-          await expect(card.locator(".bp-rule-card__foot .bp-chip")).toHaveText(`${held ? "pass" : "fail"} · ${stamp}`);
-        }
-      });
-
-      test("the header counts the snapshot's rules, not its cards", async ({ page }) => {
-        const passing = snapshotRules.filter((rule) => rule.passed).length;
-        await expect(page.locator("#rules .bp-bento__meta")).toHaveText(`${passing} of ${snapshotRules.length} rules passing in the last snapshot`);
-      });
-
-      test("the other cards keep their own source", async ({ page }) => {
-        await expect(page.locator('#rules [data-card="calm"] .bp-rule-card__file')).toHaveText("architecture/calm/");
-        await expect(page.locator('#rules [data-card="budget"] .bp-rule-card__file')).toHaveText("architecture/fitness/src/budget-check.ts");
-        await expect(page.locator('#rules [data-card="budget"]')).toContainText("Modeled monthly CoinGecko calls stay");
-      });
-
+      // The tiles and their panel are checked in rule-tiles.spec.ts; the Rules card keeps a link that opens the whole file.
       test("View structure.adl opens the whole file, highlighted the same way, and Escape closes it", async ({ page }) => {
         await page.locator("#rules").getByRole("link", { name: "View structure.adl" }).first().click();
         const dialog = page.getByRole("dialog");
@@ -151,29 +66,27 @@ for (const viewport of [
         await expect(page).not.toHaveURL(/#structure-adl/);
       });
 
-      test("every card links to the same file, and a deep link to #structure-adl opens it", async ({ page }) => {
-        await expect(page.locator("#rules .bp-rule-card--adl").getByRole("link", { name: "View structure.adl" })).toHaveCount(HEADINGS.length);
+      test("the Rules card links to the file, and a deep link to #structure-adl opens it", async ({ page }) => {
+        await expect(page.locator("#rules").getByRole("link", { name: "View structure.adl" })).toHaveCount(1);
         await page.goto("/#structure-adl");
         await expect(page.getByRole("dialog")).toBeVisible();
       });
 
-      test("long lines wrap with a hanging indent and the page never scrolls sideways", async ({ page }) => {
+      test("the longest rule wraps inside its row in the open tile, and the page never scrolls sideways", async ({ page }) => {
         await noSidewaysScroll(page, "the home page");
         const longest = ASSERT_LINES.reduce((a, b) => (a.raw.length >= b.raw.length ? a : b));
-        const line = page.locator(`#rules .bp-adl__row[data-line="${longest.number}"] .bp-adl__line`);
-        const metrics = await line.evaluate((node) => {
-          const style = getComputedStyle(node);
-          const range = document.createRange();
-          range.selectNodeContents(node);
-          const rects = [...range.getClientRects()];
-          const tops = [...new Set(rects.map((rect) => Math.round(rect.top)))].sort((a, b) => a - b);
-          const leftOf = (top: number) => Math.min(...rects.filter((rect) => Math.round(rect.top) === top).map((rect) => rect.left));
-          return { visualLines: tops.length, firstLeft: leftOf(tops[0]!), nextLeft: tops.length > 1 ? leftOf(tops[1]!) : null, whiteSpace: style.whiteSpace, scrollWidth: node.scrollWidth, clientWidth: node.clientWidth };
-        });
-        expect(metrics.whiteSpace).toBe("pre-wrap");
+        const groupOf = (heading: string): string[] => {
+          const out: string[] = [];
+          for (let i = adlLines.indexOf(`# ${heading}`) + 1; i < adlLines.length && !adlLines[i]!.startsWith("# "); i++) out.push(adlLines[i]!);
+          return out;
+        };
+        const heading = HEADINGS.find((h) => groupOf(h).includes(longest.raw))!;
+        await page.locator(".bp-tile", { hasText: heading.replace(/\s*\(.+\)$/, "") }).first().click();
+        const row = page.locator(".bp-tile-detail .bp-tile-row__text", { hasText: longest.raw });
+        await expect(row).toBeVisible();
+        const metrics = await row.evaluate((node) => ({ scrollWidth: node.scrollWidth, clientWidth: node.clientWidth }));
         expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
-        if (metrics.nextLeft !== null) expect(metrics.nextLeft, "a wrapped line hangs under the first").toBeGreaterThan(metrics.firstLeft);
-        if (viewport.width < 500) expect(metrics.visualLines, "at 390px the longest rule wraps").toBeGreaterThan(1);
+        await noSidewaysScroll(page, "the home page with the tile open");
       });
     });
 

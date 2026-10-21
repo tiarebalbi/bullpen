@@ -1,0 +1,9 @@
+{
+  "lighthouseVersion": "12.8.2",
+  "fetchTime": "2026-10-21T03:47:35.878Z",
+  "formFactor": "desktop",
+  "categories": {
+    "performance": 0.95,
+    "accessibility": 1
+  }
+}

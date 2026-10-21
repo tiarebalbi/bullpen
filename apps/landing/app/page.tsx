@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { loadAdl } from "../lib/adl.js";
 import { loadAdrs } from "../lib/adr.js";
 import { loadArchitectureParts } from "../lib/architecture.js";
-import { loadAllowances, loadUsage } from "../lib/cost.js";
+import { loadAllowances, loadLatestUsage } from "../lib/cost.js";
+import { loadCurrentPart } from "../lib/currentPart.js";
 import { loadLatestRulesSnapshot } from "../lib/rulesSnapshot.js";
 import { loadSeries } from "../lib/series.js";
 import { Architecture } from "./components/Architecture.js";
@@ -35,7 +36,7 @@ export default function LandingPage(): ReactNode {
   // Parsed from architecture/adl/structure.adl by the one ADL parser, which `adl:emit` runs before the build.
   const adl = loadAdl(join(process.cwd(), ".generated", "adl.json"));
   const allowances = loadAllowances(join(repoRoot, "cost", "allowances.json"));
-  const usage = loadUsage(join(repoRoot, "cost", "usage", "2026-w40.json"));
+  const usage = loadLatestUsage(join(repoRoot, "cost", "usage"));
   const snapshot = loadLatestRulesSnapshot(join(repoRoot, "architecture", "reports"));
 
   return (
@@ -49,7 +50,7 @@ export default function LandingPage(): ReactNode {
         <MarketStripSection />
         <SeriesRail parts={series} />
         <Architecture parts={architectureParts} adrs={adrs} />
-        <StatusBento adrs={adrs} adl={adl} snapshot={snapshot} allowances={allowances} usage={usage} />
+        <StatusBento adrs={adrs} adl={adl} snapshot={snapshot} allowances={allowances} usage={usage} builtPart={loadCurrentPart(repoRoot) ?? 1} />
       </main>
       <Footer />
     </>
