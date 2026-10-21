@@ -301,62 +301,11 @@ const buyCost = await perOrder("Part 3: one-transaction market buy", 100, async 
 });
 results.costPerOrder = { lifecycle: lifecycleCost, partThreeBuy: buyCost, note: "Local Postgres, no TLS. The lifecycle row includes one tick for the order; with several orders open a tick is shared between them. Table bytes include indexes and come from pg_total_relation_size after VACUUM FULL, so the page size (8 kB) makes a small run coarse." };
 
-// ---- D. calls a day and Neon awake time under each cadence, on a virtual clock ----------------------------------------
-const tickerModule = (await import(pathToFileURL(join(repoRoot, "apps", "sweeper", "src", "ticker.ts")).href)) as { run: (options: Record<string, unknown>, signal: AbortSignal) => Promise<void> };
-const DAY = 86_400_000;
-const SUSPEND_AFTER = 5 * 60_000;
-async function simulate(openAt: (t: number) => number, maxMs: number, fail = false): Promise<{ callsPerDay: number; neonAwakeHoursPerDay: number }> {
-  let t = 0;
-  const callTimes: number[] = [];
-  const controller = new AbortController();
-  await tickerModule.run(
-    {
-      url: "http://virtual",
-      token: "t",
-      maxMs,
-      log: () => undefined,
-      fetch: (async () => {
-        callTimes.push(t);
-        return fail ? new Response("no", { status: 500 }) : Response.json({ open: openAt(t) });
-      }) as typeof fetch,
-      sleep: async (ms: number) => {
-        t += ms;
-        if (t >= DAY) controller.abort();
-      },
-    },
-    controller.signal,
-  );
-  let awake = 0;
-  let until = -1;
-  let from = 0;
-  for (const c of callTimes) {
-    if (c > until) {
-      if (until >= 0) awake += until - from;
-      from = c;
-    }
-    until = Math.max(until, c + SUSPEND_AFTER);
-  }
-  if (until >= 0) awake += Math.min(until, DAY + SUSPEND_AFTER) - from;
-  return { callsPerDay: callTimes.length, neonAwakeHoursPerDay: round(Math.min(awake, DAY) / 3_600_000, 2) };
-}
-const scenarios: { name: string; open: (t: number) => number; fail?: boolean }[] = [
-  { name: "no order all day", open: () => 0 },
-  { name: "orders open for one hour a day", open: (t) => (t >= 10 * 3_600_000 && t < 11 * 3_600_000 ? 3 : 0) },
-  { name: "an order is always open", open: () => 3 },
-  { name: "the route fails all day", open: () => 0, fail: true },
-];
-const cadences = [60_000, 5 * 60_000, 15 * 60_000, 30 * 60_000];
-const cost = { cuPerCompute: 0.25, usdPerCuHour: 0.106, daysInMonth: 30 };
-const modelRows: Record<string, unknown>[] = [];
-for (const s of scenarios) {
-  for (const maxMs of cadences) {
-    const r = await simulate(s.open, maxMs, s.fail);
-    const awakeHoursMonth = r.neonAwakeHoursPerDay * cost.daysInMonth;
-    modelRows.push({ scenario: s.name, idleCeilingMinutes: maxMs / 60_000, callsPerDay: r.callsPerDay, callsPerMonth: r.callsPerDay * cost.daysInMonth, neonAwakeHoursPerDay: r.neonAwakeHoursPerDay, neonCuHoursPerMonth: round(awakeHoursMonth * cost.cuPerCompute, 1), neonUsdPerMonthForComputeAlone: round(awakeHoursMonth * cost.cuPerCompute * cost.usdPerCuHour, 2) });
-  }
-}
-console.table(modelRows);
-results.cadenceModel = { computed: true, assumptions: { neonSuspendsAfterMinutes: 5, computeCu: cost.cuPerCompute, usdPerCuHour: cost.usdPerCuHour, daysInMonth: cost.daysInMonth, source: "cost/allowances.json (Launch plan, scale-to-zero at 5 minutes) and the ticker's own wait function on a virtual clock" }, rows: modelRows };
+// ---- D. calls a day and Neon awake time under each cadence, on a virtual clock (computed in cadence-model.ts) ------------------
+const { cadenceModel } = await import("./cadence-model.js");
+const model = await cadenceModel();
+console.table(model.rows);
+results.cadenceModel = { computed: true, ...model };
 
 // ---- done -------------------------------------------------------------------------------------------------------------
 web.kill("SIGTERM");

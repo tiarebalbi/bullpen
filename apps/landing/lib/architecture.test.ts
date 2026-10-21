@@ -122,7 +122,7 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     // Parts 1 to 4 draw their own nodes, so they carry nothing.
     for (const own of parts.slice(0, 4)) expect(own.nodes.some((n) => n.carried)).toBe(false);
     for (const part of parts.slice(4)) {
-      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "prices-v1", "schema-market-data", "schema-trading", "sweeper"]);
+      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "neon-auth", "prices-v1", "schema-market-data", "schema-trading", "sweeper"]);
       expect(part.edges.filter((e) => e.carried).map((e) => e.id).sort()).toEqual([
         "daily-cron-to-market-data",
         "landing-to-google-analytics",
@@ -132,12 +132,13 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
         "sweeper-to-trading-app",
         "trading-app-to-google-analytics",
         "trading-app-to-microsoft-clarity",
+        "trading-app-to-neon-auth",
         "trading-app-to-prices-v1",
         "trading-app-to-trading-schema",
       ]);
       // Copied from Part 4, the latest built moment; each is labelled with the moment that first built it (ADR-0010, ADR-0011).
       for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried)) {
-        expect(item.builtIn, item.id).toBe(/google-analytics|microsoft-clarity/.test(item.id) ? "part-01" : /sweeper/.test(item.id) ? "part-04" : "part-03");
+        expect(item.builtIn, item.id).toBe(/google-analytics|microsoft-clarity/.test(item.id) ? "part-01" : /sweeper|neon-auth/.test(item.id) ? "part-04" : "part-03");
       }
     }
   });

@@ -20,8 +20,8 @@ export interface TickerOptions {
 }
 
 export const ACTIVE_MS = 5_000;
-/** The longest wait while nothing is open. Every call reaches Postgres, and Neon suspends the compute only after 5 minutes without activity, so a shorter wait keeps it awake all month (ADR-0018). */
-export const MAX_MS = 15 * 60_000;
+/** The longest wait while nothing is open. Every call reaches Postgres, and Neon suspends the compute only after 5 minutes without activity, so a shorter wait keeps it awake all month (ADR-0018, raised to 60 minutes by ADR-0021). */
+export const MAX_MS = 60 * 60_000;
 /** The longest wait after failures: shorter, so a transient failure heals quickly. */
 export const FAILED_MAX_MS = 5 * 60_000;
 export const TIMEOUT_MS = 20_000;

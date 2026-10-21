@@ -97,7 +97,7 @@ Read 2026-09-26:
 
 Not a market-data provider: it signs players in, and the model names it as an external system. It is enabled on the production branch of the Neon
 project with GitHub as its only provider, and `bullpen-app.tiarebalbi.com` is a trusted domain (the owner's settings, 2026-10-21). The record of the
-choice is ADR-0020, which is Proposed until the post is published; this entry says what is true now.
+choice is ADR-0020, which the owner accepted on 2026-10-21; this entry says what is true now.
 
 Read 2026-10-21:
 

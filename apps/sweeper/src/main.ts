@@ -3,7 +3,7 @@ import { realSleep, run } from "./ticker.ts";
 const url = process.env.SWEEPER_TARGET_URL;
 const token = process.env.SWEEPER_TOKEN;
 const controller = new AbortController();
-// Optional: shorter waits for a test or a measurement. Left unset, the defaults of the ticker apply (5 s, 15 min).
+// Optional: shorter waits for a test or a measurement. Left unset, the defaults of the ticker apply (5 s, 60 min).
 const intOf = (name: string): number | undefined => (/^\d+$/.test(process.env[name] ?? "") ? Number(process.env[name]) : undefined);
 
 // Vercel sends SIGTERM on every rollout and waits (30 s by default). Abandon the call in flight and leave: the route is idempotent.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -42,7 +42,7 @@ Sign-in uses Neon's managed auth with GitHub as the only provider, and a player 
 - **Two settings, read in one place.** `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET` are read only by `apps/web/app/lib/auth`
   (ADL rules). Neither is set by this change; both are set in Vercel production by the owner.
 - The model names Neon's auth as an external system, and `docs/data-sources.md` lists it as in use, because it is enabled today; this ADR
-  records the choice and is Proposed until the post is published.
+  records the choice, and the owner accepted it on 2026-10-21.
 
 ## Consequences
 

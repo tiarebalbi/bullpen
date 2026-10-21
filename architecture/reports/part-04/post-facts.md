@@ -30,14 +30,13 @@ Source: `TRANSITIONS` in `packages/db-trading/src/orders/states.ts`, the lifecyc
 
 ## 3. Decision 1: what drives the sweep
 
-**Choice:** a daemon that calls an authenticated route, ticking every 5 s while an order is open and backing off to every 15 minutes when none is (ADR-0018).
+**Choice:** a daemon that calls an authenticated route, ticking every 5 s while an order is open and backing off to every 60 minutes when none is (ADR-0018 set 15 minutes; ADR-0021 raised it on 2026-10-21, see the flip line below).
 **Why:** it is the option I could build and measure without a new integration, every step of the sweep is conditional on the order's state so a stopped or crashed daemon only delays recovery
 (test: `after an outage: the daemon stopped for days`), and its own cost is small: about 2.1 ms of daemon CPU a call, 518,400 calls a month at 5 s all month is 0.31 CPU-hours of the team's 10.
 **Why Workflows was not built (and not measured):** the baseline passed every test, the one gain a Workflows `sleep` could show is Neon idle cost, which cannot be measured without a Vercel deployment with
 Workflows enabled writing to Neon (a stop condition), and Workflows needs an outbox and a dispatcher that would be new risk. The post says "Part 4 did not need it", not "Workflows would be worse".
-**What would flip it:** if the sweeper keeps Neon awake more than about 8 hours a day on average, which is 61.3 CU-hours a month, about $6.50 a month of compute at 0.25 CU and $0.106 a CU-hour (the 15-minute idle ceiling's own figure), a delayed
-message or a `sleep` that touches Postgres only when an order's timer fires becomes the cheaper driver. That threshold is a decision I and the owner approved on 2026-10-21; it is computed, not a Neon reading.
-Source: `decision-1-sweep-driver.md` (tables "Computed" and "Workflows: not built"); `cost/allowances.json`.
+**What would flip it:** the line is the sweeper keeping Neon awake more than about 8 hours a day on average. At the first ceiling, 15 minutes, the model said 8.17 hours a day with no orders (61.3 CU-hours, about $6.50 a month of compute at 0.25 CU and $0.106 a CU-hour), already over the line, so on 2026-10-21 the idle ceiling went to 60 minutes (ADR-0021, Proposed): **2.34 hours a day, 17.5 CU-hours, about $1.86 a month** with no orders, and 3.17 hours, 23.8 CU-hours, about $2.52 with orders open an hour a day. Over 8 hours a day on the 60-minute ceiling would mean orders open for most of the day, and then a delayed message or a `sleep` that touches Postgres only when an order's timer fires is the driver to measure. The line is a decision the owner approved on 2026-10-21; the hours are computed (`pnpm --filter @bullpen/fitness-checks cadence-model`, `raw/cadence-model.json`), not a Neon reading.
+Source: `decision-1-sweep-driver.md` (tables "Computed", the 2026-10-21 update, and "Workflows: not built"); `cost/allowances.json`.
 
 ## 4. The simulator's ordering rules
 
@@ -62,7 +61,7 @@ Commands: `pnpm test:db src/db-integration/orders-recovery src/db-integration/or
 
 ## 7. Sign-in
 
-**Option chosen:** Neon's managed auth (Better Auth underneath), GitHub as the only provider; a player is shown as "Player" plus four hex characters of a hash of their id, never a GitHub username (ADR-0020, Proposed). I first proposed a self-hosted Better Auth with its own schema and role; the owner chose the managed one, which was already enabled.
+**Option chosen:** Neon's managed auth (Better Auth underneath), GitHub as the only provider; a player is shown as "Player" plus four hex characters of a hash of their id, never a GitHub username (ADR-0020, Accepted 2026-10-21). I first proposed a self-hosted Better Auth with its own schema and role; the owner chose the managed one, which was already enabled.
 **Evidence:** the verifier checks the session's access token against the project's public keys (`jose`) and takes the user id from `sub`; tests sign tokens with a key made for the test (`apps/web/app/lib/auth/token.test.ts`, `player.test.ts`); `players.int.test.ts` shows one account per user under concurrent first sign-ins and a handle that never names the person; the order routes answer 401, 503 (no sign-in here) and the rest as tested in `apps/web/app/api/orders/route.test.ts` (13 tests); an e2e test shows the signed-out and no-sign-in states (`apps/web/e2e/trading-orders.spec.ts`).
 **Not tested:** a real GitHub sign-in on `bullpen-app.tiarebalbi.com`. It needs the owner's `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET` in Vercel production and a sign-in by the owner. Two Neon console settings are the owner's to confirm (Allow Localhost off for production; email and password sign-up off). The cost of Neon Auth on this plan was not read.
 
@@ -88,9 +87,9 @@ Command: `pnpm --filter @bullpen/contracts test`.
 
 ## 10. Records
 
-- ADR-0016 (only an Accepted decision authorizes naming an external system in the model): Accepted. ADR-0017 (the order lifecycle): Accepted. ADR-0018 (the sweeper): Accepted. ADR-0019 (leaderboard cash counts reserved buying power): **Proposed**. ADR-0020 (sign-in is Neon's managed auth): **Proposed**. (Source: the Status section of each file in `architecture/adr/`.)
+- ADR-0016 (only an Accepted decision authorizes naming an external system in the model): Accepted. ADR-0017 (the order lifecycle): Accepted. ADR-0018 (the sweeper): Accepted. ADR-0019 (leaderboard cash counts reserved buying power): **Accepted** by the owner on 2026-10-21. ADR-0020 (sign-in is Neon's managed auth): **Accepted** by the owner on 2026-10-21. ADR-0021 (the sweeper's idle wait is 60 minutes): **Proposed**. (Source: the Status section of each file in `architecture/adr/`.)
 - **The CALM moment:** `architecture/calm/moments/part-04.architecture.json` is the current moment; the explorer data (`content/architecture/part-04.json`) is kept in step with it and the `explorer consistency` check passes (`pnpm check:arch`: 10 checks, 47 rules).
-- **Held until ADR-0020 is Accepted:** the Neon Auth node. ADR-0016 says only an Accepted decision authorizes naming an external system, so the node sits in `architecture/reports/part-04/pending/neon-auth-model.json` and is not in the model. Merge-day step: accept ADR-0020, then add it.
+- **Neon Auth is in the model:** with ADR-0020 Accepted, the Neon Auth node and the trading-app-to-Neon-Auth edge are in `architecture/calm/moments/part-04.architecture.json` and the explorer (`content/architecture/part-04.json`); `pnpm check:arch` still passes (ADR-0016's rule: an external system is named only under an Accepted decision). The cost note on the node says the cost is pending.
 - **The Order Saga component** that week one predicted is **predicted, not built**: the lifecycle is one transaction per step inside the trading schema, with no separate saga service. The week-one prediction tag (`predictions-week-1`) is untouched.
 
 ## 11. What the app shows
@@ -114,14 +113,14 @@ None in `cost/allowances.json` on this branch (`git diff main -- cost` is empty)
 | Function invocations: the POST plus the polls | 1.23 |
 | Neon CU-hours and transfer per order | pending (not measured; dashboards not read) |
 
-Daemon Active CPU a day, locally: about 37 s at the 5 s cadence all day, 0.22 s at the 15-minute idle ceiling (`decision-1-sweep-driver.md`, "The three options"); not a Vercel Active CPU reading.
+Daemon Active CPU a day, locally: about 37 s at the 5 s cadence all day, about 0.07 s at the 60-minute idle ceiling (32 calls x about 2.1 ms; the earlier 0.22 s was the 15-minute ceiling; `decision-1-sweep-driver.md`, "The three options"); not a Vercel Active CPU reading.
 
 ## 13. Not tested, and why
 
-- **The sweeper in production.** The `daemons` key is not in `vercel.json`; adding it is the owner's yes, with the cost estimate (idle at the 15-minute ceiling about 8.17 awake hours a day, 61.3 CU-hours a month, about $6.50 of compute; at 5 s all month 518,400 invocations).
+- **The sweeper in production.** The `daemons` key is not in `vercel.json`; adding it is the owner's yes, asked for with the 60-minute figures: idle ceiling 60 minutes, 32 calls a day, 2.34 awake Neon hours a day, 17.5 CU-hours and about $1.86 a month of compute at 0.25 CU (computed, not read from Neon); with orders open an hour a day 457 calls a day, 3.17 hours, 23.8 CU-hours, about $2.52; with an order always open 17,280 calls a day (518,400 a month, about 52 % of Hobby's 1,000,000 invocations), the compute awake all day, 180 CU-hours, about $19.08.
 - **Vercel Queues and Workflows:** not built, not measured (a deployment and a yes are needed).
 - **A real sign-in** and any real order against Neon: needs the owner's settings and a sign-in; nothing in this branch has written to Neon.
 - **Neon and Vercel dashboards:** CU-hours, transfer, invocations as billed and Active CPU as billed: not read.
 - **A real exchange:** the venue is a seeded simulator.
 - **Lighthouse for the trading app, and a long browser session at the 3 s cadence:** not run; the cadence is tested as a function.
-- **Two landing end-to-end tests** (`rules-adl.spec.ts`, "a deep link to #structure-adl opens it") failed in two of the last three forced `turbo run lint typecheck test build` runs (and once when `turbo` ran only the landing tests) and passed in the third, and every time when run alone or through `pnpm run test` in `apps/landing`; I did not change them and did not find the cause. The last full run, with all 33 tasks, was green.
+- **Two landing end-to-end tests** (`rules-adl.spec.ts`, "a deep link to #structure-adl opens it") fail intermittently under `turbo` and passed every time outside it. I spent a time-boxed 20 minutes, could not reproduce it (CPU load, slowed scripts, hash set before hydration) and did not change the tests; the write-up and what to capture if it appears in CI is `landing-deep-link-flake.md`.

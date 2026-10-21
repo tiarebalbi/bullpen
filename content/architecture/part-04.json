@@ -197,13 +197,26 @@
       "label": "Sweeper",
       "kind": "infra",
       "meta": "Vercel Daemon · not switched on",
-      "purpose": "A daemon whose only job is to call the trading app's sweep route and wait: every 5 seconds while an order is open, backing off to every 15 minutes when none is. It reads no database URL and holds no data. Built and tested locally; the owner switches it on.",
+      "purpose": "A daemon whose only job is to call the trading app's sweep route and wait: every 5 seconds while an order is open, backing off to every 60 minutes when none is. It reads no database URL and holds no data. Built and tested locally; the owner switches it on.",
       "x": 300,
       "y": 430,
       "adrs": [
         "ADR-0018"
       ],
       "costNote": "Hobby quota: 10 Active CPU-hours"
+    },
+    {
+      "id": "neon-auth",
+      "label": "Neon Auth",
+      "kind": "ext",
+      "meta": "Sign-in",
+      "purpose": "Neon's managed sign-in, enabled on the production branch with GitHub as its only provider. The trading app checks the access token it issues against its public keys and stores only the user's id.",
+      "x": 1220,
+      "y": 900,
+      "adrs": [
+        "ADR-0020"
+      ],
+      "costNote": "Cost pending: not read from the console"
     }
   ],
   "edges": [
@@ -389,7 +402,19 @@
         "count": 12,
         "per": "minute",
         "source": "configured",
-        "basis": "Every 5 seconds while an order is open, backing off to every 15 minutes when none is (ADR-0018). The sweeper is not switched on in production."
+        "basis": "Every 5 seconds while an order is open, backing off to every 60 minutes when none is (ADR-0018, ceiling raised by ADR-0021). The sweeper is not switched on in production."
+      }
+    },
+    {
+      "id": "trading-app-to-neon-auth",
+      "a": "trading-app",
+      "b": "neon-auth",
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
       }
     }
   ],

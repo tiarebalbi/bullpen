@@ -24,7 +24,8 @@
     "architecture/adr/0004-deploy-topology-vercel-services.md",
     "architecture/adr/0017-order-lifecycle-as-a-postgres-state-machine.md",
     "architecture/adr/0018-the-sweeper-is-a-daemon-that-calls-a-route.md",
-    "architecture/adr/0020-sign-in-is-neon-auth-with-github-only.md"
+    "architecture/adr/0020-sign-in-is-neon-auth-with-github-only.md",
+    "architecture/adr/0021-the-sweepers-idle-wait-is-sixty-minutes.md"
   ],
   "nodes": [
     {
@@ -319,7 +320,7 @@
       "unique-id": "sweeper",
       "node-type": "service",
       "name": "Sweeper",
-      "description": "A Vercel Daemon whose only job is to call the Trading App's sweep route and wait: every 5 seconds while an order is open, backing off to every 15 minutes when none is. It reads no database URL and holds no data. It is built and tested locally; it is not switched on in production.",
+      "description": "A Vercel Daemon whose only job is to call the Trading App's sweep route and wait: every 5 seconds while an order is open, backing off to every 60 minutes when none is. It reads no database URL and holds no data. It is built and tested locally; it is not switched on in production.",
       "metadata": {
         "bullpen:path": "apps/sweeper",
         "bullpen:libraries": [],
@@ -341,6 +342,12 @@
           ]
         }
       }
+    },
+    {
+      "unique-id": "neon-auth",
+      "node-type": "external-system",
+      "name": "Neon Auth",
+      "description": "Neon's managed sign-in, enabled on the production branch with GitHub as its only provider. The trading app checks the access token it issues against its public keys and stores only the user's id."
     }
   ],
   "relationships": [
@@ -753,7 +760,31 @@
           "count": 12,
           "per": "minute",
           "source": "configured",
-          "basis": "Every 5 seconds while an order is open, backing off to every 15 minutes when none is (ADR-0018). The sweeper is not switched on in production."
+          "basis": "Every 5 seconds while an order is open, backing off to every 60 minutes when none is (ADR-0018, ceiling raised by ADR-0021). The sweeper is not switched on in production."
+        }
+      }
+    },
+    {
+      "unique-id": "trading-app-to-neon-auth",
+      "description": "The trading app sends a visitor to GitHub through Neon Auth's proxy, reads the session, and fetches the project's public keys to check an access token.",
+      "relationship-type": {
+        "connects": {
+          "source": {
+            "node": "trading-app"
+          },
+          "destination": {
+            "node": "neon-auth"
+          }
+        }
+      },
+      "protocol": "HTTPS",
+      "metadata": {
+        "interaction": "synchronous",
+        "bullpen:rate": {
+          "count": 4,
+          "per": "minute",
+          "source": "illustrative",
+          "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
         }
       }
     }

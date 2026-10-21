@@ -38,9 +38,9 @@ describe("the sweeper's cadence", () => {
     expect(waits).toEqual([5000, 5000, 5000]);
   });
 
-  it("backs off, doubling to 15 minutes, when none are open, and returns to 5 seconds when one appears", async () => {
-    const { waits } = await drive([ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(2), ok(0)]);
-    expect(waits).toEqual([10000, 20000, 40000, 80000, 160000, 320000, 640000, 900000, 900000, 5000, 10000]);
+  it("backs off, doubling to 60 minutes, when none are open, and returns to 5 seconds when one appears", async () => {
+    const { waits } = await drive([ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(0), ok(2), ok(0)]);
+    expect(waits).toEqual([10000, 20000, 40000, 80000, 160000, 320000, 640000, 1280000, 2560000, 3600000, 3600000, 5000, 10000]);
   });
 
   it("backs off after failures too, whatever kind, and never stops", async () => {
@@ -88,11 +88,11 @@ describe("the sweeper's cadence", () => {
   });
 
   it("nextWait: open resets, idle and failure double from twice the active wait, up to the maximum", () => {
-    expect(nextWait(900000, "open")).toBe(5000);
+    expect(nextWait(3600000, "open")).toBe(5000);
     expect(nextWait(5000, "idle")).toBe(10000);
     expect(nextWait(400000, "failed")).toBe(300000);
-    expect(nextWait(900000, "idle")).toBe(900000);
-    expect(nextWait(500000, "idle")).toBe(900000);
+    expect(nextWait(3600000, "idle")).toBe(3600000);
+    expect(nextWait(2000000, "idle")).toBe(3600000);
   });
 });
 

@@ -65,6 +65,7 @@ $0.106 a CU-hour (`cost/allowances.json`). This is a model of Neon, not a measur
 | 5 min | 292 | 8,760 | 0.9 % | 24 | 180 | 19.08 |
 | 15 min | 102 | 3,060 | 0.3 % | 8.17 | 61.3 | 6.5 |
 | 30 min | 55 | 1,650 | 0.2 % | 4.25 | 31.9 | 3.38 |
+| **60 min (the ceiling since ADR-0021)** | 32 | 960 | 0.1 % | 2.34 | 17.5 | 1.86 |
 
 **Orders open for one hour a day**
 
@@ -74,6 +75,7 @@ $0.106 a CU-hour (`cost/allowances.json`). This is a model of Neon, not a measur
 | 5 min | 1,002 | 30,060 | 3.0 % | 24 | 180 | 19.08 |
 | 15 min | 750 | 22,500 | 2.2 % | 8.9 | 66.8 | 7.08 |
 | 30 min | 630 | 18,900 | 1.9 % | 5.13 | 38.5 | 4.08 |
+| **60 min (the ceiling since ADR-0021)** | 457 | 13,710 | 1.4 % | 3.17 | 23.8 | 2.52 |
 
 **An order is always open** (every ceiling gives the same result, because the cadence is 5 s): 17,280 calls a day, 518,400 a month, the compute awake all day.
 
@@ -146,3 +148,12 @@ a driver. It is **not** evidence that Workflows would be worse or better; it is 
 - The daemon works as a baseline, and its own CPU and the route's are small. Its real costs are the invocations at the 5 s cadence and the Neon compute it keeps awake when idle.
 - Whether Workflows or a queue timer beats it cannot be said from this run: I have not measured them. The post's claim, that the lifecycle needs a saga because of time and not a new service, holds so far in this sense: every step is one transaction in `trading` and the sweep is a plain function. The daemon adds a driver, not a service with its own data.
 - Open: Neon's scale-to-zero setting on this project (console), the real CU-hours once anything polls, and the Queues numbers, which need a deployment and your yes. Workflows is recorded above as not built.
+
+## Update, 2026-10-21: the idle ceiling is now 60 minutes (ADR-0021)
+
+The owner's flip line for leaving the daemon for a driver that touches Postgres only when an order's timer fires is 8 awake hours a day. The 15-minute ceiling is at 8.17, so it is over the line. The idle ceiling is now
+60 minutes (`MAX_MS` in `apps/sweeper/src/ticker.ts`; the backoff test in `ticker.test.ts` follows it). The 60-minute rows above come from `pnpm --filter @bullpen/fitness-checks cadence-model` (2026-10-21, virtual clock, the ticker's own wait function;
+`raw/cadence-model.json`), the same model that gave the other rows, which reproduced the earlier figures exactly. With no order all day: 32 calls a day, **2.34 awake hours a day, 17.5 CU-hours and about $1.86 a month of Neon compute at 0.25 CU**
+(against 8.17, 61.3 and about $6.50 at 15 minutes). With orders open an hour a day: 3.17 hours, 23.8 CU-hours, about $2.52. With an order always open nothing changes: 17,280 calls a day, 518,400 a month, the compute awake all day (180 CU-hours, about $19.08).
+These are computed, not Neon readings; the console is the check once a daemon runs. The text above that says "15-minute idle ceiling" describes what was measured and decided on 2026-10-20; ADR-0018 is not edited and ADR-0021 supersedes only that ceiling.
+The measured per-call figures (CPU, bytes, connections) do not depend on the ceiling. The Docker run's accelerated 30 s ceiling still shows the idle backoff finds a stuck order inside the ceiling.

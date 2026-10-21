@@ -96,7 +96,7 @@ const logTail = execFileSync("docker", ["logs", "--tail", "2", "bullpen-sweeper-
 log(`docker stop (SIGTERM, 30 s grace): stopped in ${stopMs} ms, exit code ${exit}; last log line: ${logTail[logTail.length - 1]!.replace(secret, "<token>")}`);
 
 // 3. idle backoff: with nothing open the waits double up to the ceiling, so a stuck order that appears then is found within that ceiling.
-// The ceiling is 30 s here (15 minutes in production) so the run is short. Each trial empties the tables and waits for the backoff to reach it.
+// The ceiling is 30 s here (60 minutes in production) so the run is short. Each trial empties the tables and waits for the backoff to reach it.
 const clear = (): Promise<unknown> => trading.query("TRUNCATE trading.order_events, trading.fills, trading.reservations, trading.ledger, trading.positions, trading.orders, trading.accounts CASCADE");
 await clear();
 execFileSync("docker", ["rm", "-f", "bullpen-sweeper-idle"], { stdio: "ignore" });
@@ -113,7 +113,7 @@ for (let i = 0; i < 3; i += 1) {
   }
   idleTimes.push(Math.round(performance.now() - start));
 }
-log(`stuck order, container idle (ceiling 30 s, accelerated; production's is 15 minutes), ms to be found: ${JSON.stringify(idleTimes)}`);
+log(`stuck order, container idle (ceiling 30 s, accelerated; production's is 60 minutes), ms to be found: ${JSON.stringify(idleTimes)}`);
 
 execFileSync("docker", ["rm", "-f", "bullpen-sweeper-idle", "bullpen-sweeper-active"], { stdio: "ignore" });
 process.kill(-web.pid!, "SIGTERM"); // the whole group: `pnpm exec` and the server it starts
