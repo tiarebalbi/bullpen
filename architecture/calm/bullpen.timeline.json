@@ -77,7 +77,8 @@
         "required-pattern": "bullpen.pattern.json"
       },
       "adrs": [
-        "architecture/adr/0017-order-lifecycle-as-a-postgres-state-machine.md"
+        "architecture/adr/0017-order-lifecycle-as-a-postgres-state-machine.md",
+        "architecture/adr/0018-the-sweeper-is-a-daemon-that-calls-a-route.md"
       ]
     },
     {
