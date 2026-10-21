@@ -81,7 +81,8 @@
         "architecture/adr/0018-the-sweeper-is-a-daemon-that-calls-a-route.md",
         "architecture/adr/0019-leaderboard-cash-counts-reserved-buying-power.md",
         "architecture/adr/0020-sign-in-is-neon-auth-with-github-only.md",
-        "architecture/adr/0021-the-sweepers-idle-wait-is-sixty-minutes.md"
+        "architecture/adr/0021-the-sweepers-idle-wait-is-sixty-minutes.md",
+        "architecture/adr/0022-identity-is-the-sdks-verified-session.md"
       ],
       "metadata": {
         "planned-architecture": "planned/part-04.architecture.json",

@@ -101,8 +101,8 @@ choice is ADR-0020, which the owner accepted on 2026-10-21; this entry says what
 
 Read 2026-10-21:
 
-- **How it is used:** the trading app's sign-in proxy and session go through Neon's SDK; the app checks the access token against the project's public
-  keys (`<auth URL>/.well-known/jwks.json`) and stores only the user's id. Name, email and login are not stored or shown.
+- **How it is used:** the trading app's sign-in proxy and session go through Neon's SDK; the app takes the user's id from the SDK's own session check (ADR-0022) and stores only that id.
+  Name, email and login are not stored or shown.
 - **Terms and limits:** not read for this plan. What it costs on the project's plan is a line for the cost ledger when the console is read; nothing here is
   estimated.
 - **Settings to confirm in the Neon console** ([production checklist](https://neon.com/docs/auth/production-checklist)): trusted domains (set),
