@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import type { AccountView, ApiError } from "@bullpen/contracts";
 import { BTC_SYMBOL } from "./Watchlist.js";
-import { estimate, formatMoney, newAttemptKey, parseQuantity } from "../lib/trading/orderView.js";
+import { buyLabel, estimate, formatMoney, newAttemptKey, parseQuantity, stepQuantity } from "../lib/trading/orderView.js";
+import { FOCUS_TICKET_EVENT } from "../lib/trading/shortcuts.js";
 import type { AccountState } from "../lib/trading/useAccount.js";
 
 export interface OrderTicketProps {
@@ -60,11 +61,26 @@ function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { vie
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   // One key per attempt: a double click or a lost response retries the same order, and an edited quantity is a new attempt.
   const key = useRef<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const id = useId();
+  // `B` asks every ticket on the page to take focus; the one that is on screen does (a hidden one cannot).
+  useEffect(() => {
+    const focus = (): void => input.current?.focus();
+    window.addEventListener(FOCUS_TICKET_EVENT, focus);
+    return () => window.removeEventListener(FOCUS_TICKET_EVENT, focus);
+  }, []);
 
   const orderable = symbol !== BTC_SYMBOL && price !== null;
   const parsed = parseQuantity(text);
   const sums = parsed.ok && price !== null ? estimate(parsed.quantity, price) : null;
   const short = sums !== null && sums.reserve > Number(view.buyingPower);
+
+  const edit = (next: string): void => {
+    setText(next);
+    key.current = null; // an edited quantity is a new attempt
+    setMessage(null);
+  };
+  const step = (direction: 1 | -1): void => edit(stepQuantity(text, direction));
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -72,23 +88,16 @@ function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { vie
     key.current ??= newAttemptKey();
     setBusy(true);
     setMessage(null);
-    try {
-      const response = await fetch("/api/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ symbol, quantity: parsed.quantity, clientOrderId: key.current }) });
-      const body = (await response.json().catch(() => ({}))) as { account?: AccountView } & Partial<ApiError>;
-      if (response.ok && body.account) {
-        onAccount(body.account);
-        setText("");
-        key.current = null;
-        setMessage({ tone: "ok", text: "Order accepted. It appears under Orders and moves as the venue answers." });
-      } else {
-        if (response.status === 422 || response.status === 400) key.current = null; // refused: not the same attempt on a retry
-        setMessage({ tone: "error", text: body.message ?? "I could not place that order. Nothing was reserved." });
-      }
-    } catch {
-      setMessage({ tone: "error", text: "I could not reach the app. If the order went through it will show under Orders; trying again will not place a second one." });
-    } finally {
-      setBusy(false);
+    const outcome = await sendOrder(symbol, parsed.quantity, key.current);
+    if (outcome.kind === "placed") {
+      onAccount(outcome.account);
+      setText("");
+      key.current = null;
+    } else if (outcome.kind === "refused") {
+      key.current = null; // refused: not the same attempt on a retry
     }
+    setMessage(outcome.kind === "placed" ? { tone: "ok", text: "Order accepted. It appears under Orders and moves as the venue answers." } : { tone: "error", text: outcome.message });
+    setBusy(false);
   }
 
   const why = symbol === BTC_SYMBOL ? "Bitcoin is a price only here. Orders are for the stocks in the watchlist." : price === null ? `There is no price for ${symbol} yet, so it cannot be ordered.` : null;
@@ -97,41 +106,13 @@ function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { vie
     <form className="bp-ticket" onSubmit={(e) => void submit(e)} aria-label="Order ticket" noValidate>
       <h3 className="bp-ticket__title">Market buy · {symbol}</h3>
       <fieldset disabled={!orderable} className="bp-ticket__fields">
-        <label className="bp-ticket__field">
-          <span>Quantity</span>
-          <input
-            inputMode="decimal"
-            autoComplete="off"
-            value={text}
-            placeholder="0"
-            aria-describedby="bp-ticket-help"
-            aria-invalid={text !== "" && !parsed.ok ? true : undefined}
-            onChange={(e) => {
-              setText(e.target.value);
-              key.current = null;
-              setMessage(null);
-            }}
-          />
-        </label>
-        <dl className="bp-ticket__sums">
-          <div>
-            <dt>Estimated cost</dt>
-            <dd>{sums ? formatMoney(String(sums.cost)) : "—"}</dd>
-          </div>
-          <div>
-            <dt>Held in reserve</dt>
-            <dd>{sums ? formatMoney(String(sums.reserve)) : "—"}</dd>
-          </div>
-          <div>
-            <dt>Buying power</dt>
-            <dd>{formatMoney(view.buyingPower)}</dd>
-          </div>
-        </dl>
-        <p id="bp-ticket-help" className="bp-ticket__note">
+        <QuantityField id={id} inputRef={input} value={{ text, invalid: text !== "" && !parsed.ok }} onStep={step} onText={edit} />
+        <TicketSums sums={sums} buyingPower={view.buyingPower} />
+        <p id={`${id}-help`} className="bp-ticket__note">
           {text !== "" && !parsed.ok ? parsed.why : short ? "That is more than your buying power, with the 5% reserve." : "A market buy fills at the latest stored price. 5% above it is held until it fills, and what is unused comes back."}
         </p>
         <button type="submit" className="bp-ticket__cta" data-ready={orderable && parsed.ok && !short ? "" : undefined} aria-disabled={!orderable || !parsed.ok || short || busy ? true : undefined}>
-          {busy ? "Placing…" : `Buy ${symbol}`}
+          {busy ? "Placing…" : buyLabel(symbol, parsed.ok ? parsed.quantity : null, sums ? sums.cost : null)}
         </button>
       </fieldset>
       {why ? <p className="bp-ticket__why" role="status">{why}</p> : null}
@@ -154,6 +135,17 @@ export function TradeBar(props: OrderTicketProps): ReactNode {
     const el = dialog.current;
     if (el && typeof el.showModal === "function") el.showModal();
   };
+  // `B` on a phone opens the ticket's sheet and lands on its quantity; on the desktop frame the rail's own ticket takes the focus.
+  useEffect(() => {
+    const onFocusTicket = (): void => {
+      const el = dialog.current;
+      if (!el || window.matchMedia("(min-width: 64rem)").matches || account.status !== "ok") return;
+      open();
+      requestAnimationFrame(() => el.querySelector("input")?.focus());
+    };
+    window.addEventListener(FOCUS_TICKET_EVENT, onFocusTicket);
+    return () => window.removeEventListener(FOCUS_TICKET_EVENT, onFocusTicket);
+  });
   return (
     <div className="bp-tradebar">
       <p>{line}</p>
@@ -165,5 +157,66 @@ export function TradeBar(props: OrderTicketProps): ReactNode {
         <OrderTicket {...props} onAccount={(a) => { props.onAccount(a); dialog.current?.close(); }} />
       </dialog>
     </div>
+  );
+}
+
+type Outcome = { kind: "placed"; account: AccountView } | { kind: "refused" | "failed"; message: string };
+
+/** One POST of a market buy. A refusal (400, 422) is a different attempt on a retry; a network failure is the same one, so it is retried with its key. */
+async function sendOrder(symbol: string, quantity: string, clientOrderId: string): Promise<Outcome> {
+  try {
+    const response = await fetch("/api/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ symbol, quantity, clientOrderId }) });
+    const body = (await response.json().catch(() => ({}))) as { account?: AccountView } & Partial<ApiError>;
+    if (response.ok && body.account) return { kind: "placed", account: body.account };
+    const message = body.message ?? "I could not place that order. Nothing was reserved.";
+    return { kind: response.status === 422 || response.status === 400 ? "refused" : "failed", message };
+  } catch {
+    return { kind: "failed", message: "I could not reach the app. If the order went through it will show under Orders; trying again will not place a second one." };
+  }
+}
+
+interface QuantityFieldProps {
+  id: string;
+  inputRef: RefObject<HTMLInputElement | null>;
+  /** What is typed, and whether it is not a quantity the ticket will send. */
+  value: { text: string; invalid: boolean };
+  onStep: (direction: 1 | -1) => void;
+  onText: (text: string) => void;
+}
+
+/** The quantity: a field with a − and a + of 44 px each. */
+function QuantityField({ id, inputRef, value, onStep, onText }: QuantityFieldProps): ReactNode {
+  return (
+    <div className="bp-ticket__field">
+      <label htmlFor={`${id}-qty`}>Quantity</label>
+      <div className="bp-stepper">
+        <button type="button" className="bp-stepper__button" aria-label="Decrease quantity" onClick={() => onStep(-1)}>−</button>
+        <input id={`${id}-qty`} ref={inputRef} inputMode="decimal" autoComplete="off" value={value.text} placeholder="0" aria-describedby={`${id}-help`} aria-invalid={value.invalid ? true : undefined} onChange={(e) => onText(e.target.value)} />
+        <button type="button" className="bp-stepper__button" aria-label="Increase quantity" onClick={() => onStep(1)}>+</button>
+      </div>
+    </div>
+  );
+}
+
+/** What the buy would cost and hold, and buying power before → after (after the reserve is held). */
+function TicketSums({ sums, buyingPower }: { sums: { cost: number; reserve: number } | null; buyingPower: string }): ReactNode {
+  return (
+    <dl className="bp-ticket__sums">
+      <div>
+        <dt>Estimated cost</dt>
+        <dd>{sums ? formatMoney(String(sums.cost)) : "—"}</dd>
+      </div>
+      <div>
+        <dt>Held in reserve</dt>
+        <dd>{sums ? formatMoney(String(sums.reserve)) : "—"}</dd>
+      </div>
+      <div>
+        <dt>Buying power</dt>
+        <dd>
+          {formatMoney(buyingPower)}
+          {sums ? <span data-testid="bp-after"> → {formatMoney(String(Number(buyingPower) - sums.reserve))}</span> : null}
+        </dd>
+      </div>
+    </dl>
   );
 }

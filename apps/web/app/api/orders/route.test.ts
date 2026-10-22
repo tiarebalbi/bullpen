@@ -20,7 +20,7 @@ const { POST: CANCEL } = await import("./[id]/cancel/route.js");
 const { BuyRefused } = await import("@bullpen/db-trading");
 
 const KEY = "0b9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f11";
-const view: AccountView = { label: "Player 4F2A", buyingPower: "100000.00000000", reserved: "0.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders: [], asOf: "2026-10-21T12:00:00.000Z" };
+const view: AccountView = { label: "Player 4F2A", buyingPower: "100000.00000000", reserved: "0.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders: [], latestOrder: null, fills: [], asOf: "2026-10-21T12:00:00.000Z" };
 const post = (body: unknown) => POST(new Request("http://x/api/orders", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) }));
 const cancel = (id: string) => CANCEL(new Request(`http://x/api/orders/${id}/cancel`, { method: "POST" }), { params: Promise.resolve({ id }) });
 

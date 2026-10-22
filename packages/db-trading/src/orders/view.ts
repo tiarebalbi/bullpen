@@ -30,8 +30,30 @@ export interface OrderRow {
 export interface PositionRow {
   symbol: string;
   quantity: string;
+  /** Volume-weighted price of the booked fills of this symbol: what the player paid per unit, or null when there are none. */
+  avgCost: string | null;
   price: string | null;
   value: string | null;
+}
+
+/** One step of an order's own history, from `trading.order_events`: what happened, when, and the state it moved to. */
+export interface OrderEventRow {
+  kind: "accepted" | "working" | "fill" | "cancel_requested" | "cancelled" | "rejected" | "released";
+  at: string;
+  /** The state the order moved to, when the event is a transition. */
+  state: OrderState | null;
+  /** For a fill: how much, and at what price. */
+  quantity: string | null;
+  price: string | null;
+}
+
+export interface FillRow {
+  fillId: string;
+  symbol: string;
+  side: "buy";
+  quantity: string;
+  price: string;
+  executedAt: string;
 }
 
 export interface AccountView {
@@ -47,10 +69,15 @@ export interface AccountView {
   equity: string;
   positions: PositionRow[];
   orders: OrderRow[];
+  /** The history of the player's latest order, oldest first, or null with no orders. */
+  latestOrder: { orderId: string; events: OrderEventRow[] } | null;
+  /** The last booked fills, newest first. */
+  fills: FillRow[];
   asOf: string;
 }
 
 export const ORDERS_SHOWN = 50;
+export const FILLS_SHOWN = 10;
 
 /** The player's account as a screen shows it, from the tables. Valued at the price contract; a symbol with no price has no value, not a made-up one. */
 export async function readAccountView(pool: Pool, accountId: string, now: Date = new Date()): Promise<AccountView | null> {
@@ -63,8 +90,10 @@ export async function readAccountView(pool: Pool, accountId: string, now: Date =
   const head = account.rows[0];
   if (!head) return null;
 
-  const positions = await pool.query<{ symbol: string; quantity: string; price: string | null; value: string | null }>(
-    `SELECT p.symbol, p.quantity::text, pr.price::text AS price, (p.quantity * pr.price)::numeric(20,8)::text AS value
+  const positions = await pool.query<{ symbol: string; quantity: string; avg_cost: string | null; price: string | null; value: string | null }>(
+    `SELECT p.symbol, p.quantity::text,
+            (SELECT (sum(f.quantity * f.price) / sum(f.quantity))::numeric(20,8)::text FROM trading.fills f WHERE f.account_id = p.account_id AND f.symbol = p.symbol AND f.booked) AS avg_cost,
+            pr.price::text AS price, (p.quantity * pr.price)::numeric(20,8)::text AS value
        FROM trading.positions p LEFT JOIN market_data.prices_v1 pr ON pr.symbol = p.symbol
       WHERE p.account_id = $1 AND p.quantity > 0 ORDER BY p.symbol`,
     [accountId],
@@ -78,6 +107,18 @@ export async function readAccountView(pool: Pool, accountId: string, now: Date =
             r.reserved::text, r.spent::text, r.released::text, r.released_at, o.needs_attention, o.created_at, o.cancel_requested_at
        FROM trading.orders o JOIN trading.reservations r USING (order_id)
       WHERE o.account_id = $1 ORDER BY o.created_at DESC, o.order_id LIMIT ${ORDERS_SHOWN}`,
+    [accountId],
+  );
+
+  const latest = orders.rows[0];
+  const events = latest
+    ? await pool.query<{ kind: OrderEventRow["kind"]; at: Date; to_state: OrderState | null; detail: { quantity?: string; price?: string } }>(
+        "SELECT kind, at, to_state, detail FROM trading.order_events WHERE order_id = $1 AND kind IN ('accepted', 'working', 'fill', 'cancel_requested', 'cancelled', 'rejected', 'released') ORDER BY event_id",
+        [latest.order_id],
+      )
+    : null;
+  const fills = await pool.query<{ fill_id: string; symbol: string; quantity: string; price: string; executed_at: Date }>(
+    `SELECT fill_id, symbol, quantity::text, price::text, executed_at FROM trading.fills WHERE account_id = $1 AND booked ORDER BY executed_at DESC, fill_id LIMIT ${FILLS_SHOWN}`,
     [accountId],
   );
 
@@ -95,7 +136,7 @@ export async function readAccountView(pool: Pool, accountId: string, now: Date =
     cash: total.cash,
     positionsValue: total.positions_value,
     equity: total.equity,
-    positions: positions.rows.map((p) => ({ symbol: p.symbol, quantity: p.quantity, price: p.price, value: p.value })),
+    positions: positions.rows.map((p) => ({ symbol: p.symbol, quantity: p.quantity, avgCost: p.avg_cost, price: p.price, value: p.value })),
     orders: orders.rows.map((o) => ({
       orderId: o.order_id,
       symbol: o.symbol,
@@ -116,6 +157,8 @@ export async function readAccountView(pool: Pool, accountId: string, now: Date =
       createdAt: o.created_at.toISOString(),
       cancelRequestedAt: o.cancel_requested_at ? o.cancel_requested_at.toISOString() : null,
     })),
+    latestOrder: latest && events ? { orderId: latest.order_id, events: events.rows.map((e) => ({ kind: e.kind, at: e.at.toISOString(), state: e.to_state, quantity: e.detail.quantity ?? null, price: e.detail.price ?? null })) } : null,
+    fills: fills.rows.map((f) => ({ fillId: f.fill_id, symbol: f.symbol, side: "buy", quantity: f.quantity, price: f.price, executedAt: f.executed_at.toISOString() })),
     asOf: now.toISOString(),
   };
 }

@@ -76,3 +76,258 @@ a {
     padding: var(--space-4) var(--space-6) var(--space-10);
   }
 }
+
+/* ─────────────────────────────────────────────
+   Terminal polish: the header's figures and avatar, the positions table, the active order's steps, recent fills, the stepper and
+   the shortcuts sheet. Tokens come from @bullpen/ui; nothing here draws a number that is not given to it.
+────────────────────────────────────────────── */
+.bp-terminal__stat {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 var(--space-3);
+  border-left: 1px solid var(--bp-hair);
+}
+.bp-terminal__stat span {
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-terminal__stat strong {
+  font: 500 16px/1.1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bp-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3) 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+}
+.bp-avatar__tile {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  background: var(--bp-panel-2);
+  font: 700 12px/1 var(--font-mono);
+}
+.bp-avatar__label {
+  font: 600 12.5px/1 var(--font-mono);
+}
+
+.bp-chart-empty {
+  border: 1px dashed var(--bp-hair);
+  border-radius: var(--radius-lg);
+  min-height: 11rem;
+  display: grid;
+  place-items: center;
+}
+
+.bp-positions {
+  overflow-x: auto;
+}
+.bp-positions:focus-visible,
+.bp-confirm button:focus-visible,
+.bp-stepper__button:focus-visible,
+.bp-shortcuts__list kbd:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.bp-positions__cash {
+  font: 500 12px/1.3 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-positions__pct {
+  color: var(--foreground-muted);
+}
+.bp-account__positions td[data-tone="gain"] {
+  color: var(--bp-gain);
+}
+.bp-account__positions td[data-tone="loss"] {
+  color: var(--bp-loss);
+}
+.bp-account__positions td,
+.bp-account__positions th {
+  white-space: nowrap;
+}
+
+.bp-stepper {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: var(--space-2);
+}
+.bp-stepper input {
+  text-align: center;
+  font: 500 18px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bp-stepper__button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-pill);
+  background: var(--bp-panel-2);
+  color: var(--foreground);
+  font: 600 20px/1 var(--font-body);
+  cursor: pointer;
+}
+
+.bp-active__what {
+  margin: 0 0 var(--space-3);
+  font: 600 14px/1.3 var(--font-body);
+}
+.bp-steps {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.bp-step {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: start;
+  color: var(--foreground-muted);
+}
+.bp-step[data-status="done"],
+.bp-step[data-status="active"] {
+  color: var(--foreground);
+}
+.bp-step__glyph {
+  font: 700 14px/1.3 var(--font-mono);
+}
+.bp-step[data-status="done"] .bp-step__glyph {
+  color: var(--bp-gain);
+}
+.bp-step[data-status="stopped"] .bp-step__glyph {
+  color: var(--ember);
+}
+.bp-step__body {
+  display: grid;
+  gap: 2px;
+}
+.bp-step__label {
+  font: 600 13px/1.3 var(--font-body);
+}
+.bp-step__sub {
+  font: 500 12px/1.4 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-step__time {
+  font: 500 11.5px/1.3 var(--font-mono);
+  color: var(--foreground-muted);
+  font-variant-numeric: tabular-nums;
+}
+.bp-kbd {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 2px 6px;
+  border: 1px solid var(--bp-hair);
+  border-radius: var(--radius-sm);
+  font: 600 11px/1.2 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-confirm {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 2px dashed var(--ember);
+  border-radius: var(--radius-lg);
+}
+.bp-confirm p {
+  margin: 0;
+  font: 500 13px/1.5 var(--font-body);
+}
+.bp-confirm__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.bp-fills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  font: 500 12.5px/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bp-fills li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  gap: var(--space-2);
+}
+.bp-fills time {
+  color: var(--foreground-muted);
+}
+.bp-fills__price {
+  text-align: right;
+}
+
+.bp-shortcuts {
+  max-width: 28rem;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-2xl);
+  border-bottom: 1px solid var(--bp-hair);
+}
+.bp-shortcuts__list {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.bp-shortcuts__list li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font: 500 13px/1.5 var(--font-body);
+}
+@media (max-width: 63.99rem) {
+  .bp-shortcuts {
+    inset: auto 0 0 0;
+    transform: none;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  }
+  .bp-terminal__stat {
+    padding: 0 var(--space-2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-step *,
+  .bp-confirm {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* The main column is a grid; without this its one column sizes to its widest child (a table, a long line) and the panels run off a phone's screen. */
+.bp-terminal__main,
+.bp-terminal__rail {
+  grid-template-columns: minmax(0, 1fr);
+}
+.bp-terminal__rail {
+  display: grid;
+  align-content: start;
+  gap: var(--space-5);
+}
+.bp-terminal[data-has-bar] .bp-terminal__rail {
+  display: none;
+}
+@media (min-width: 64rem) {
+  .bp-terminal[data-has-bar] .bp-terminal__rail {
+    display: grid;
+  }
+}
+.bp-positions__cash {
+  overflow-wrap: anywhere;
+}

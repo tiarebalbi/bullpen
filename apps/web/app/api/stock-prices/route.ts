@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(): Promise<NextResponse> {
   try {
     const prices = await readPrices(tradingPool());
-    const body: StockPriceSnapshot = { rows: prices.map(({ symbol, price, asOf, stale }) => ({ symbol, price, asOf: asOf.toISOString(), stale })) };
+    const body: StockPriceSnapshot = { rows: prices.map(({ symbol, price, asOf, stale, previous }) => ({ symbol, price, asOf: asOf.toISOString(), stale, previousClose: previous ? { price: previous.price, asOf: previous.asOf.toISOString() } : null })) };
     return NextResponse.json(body, { headers: { "cache-control": "no-store" } });
   } catch {
     return NextResponse.json({ error: "Stock prices unavailable." }, { status: 503, headers: { "cache-control": "no-store" } });

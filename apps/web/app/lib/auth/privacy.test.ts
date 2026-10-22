@@ -19,7 +19,7 @@ const upstreamSession = {
   session: { id: "s-1", userId: "user-abc", token: "opaque-session-token", expiresAt: new Date(Date.now() + 3_600_000).toISOString(), createdAt: now(), updatedAt: now() },
   user: { id: "user-abc", ...PII, createdAt: now(), updatedAt: now() },
 };
-const view: AccountView = { label: "Player 4F2A", buyingPower: "100000.00000000", reserved: "0.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders: [], asOf: "2026-10-21T12:00:00.000Z" };
+const view: AccountView = { label: "Player 4F2A", buyingPower: "100000.00000000", reserved: "0.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders: [], latestOrder: null, fills: [], asOf: "2026-10-21T12:00:00.000Z" };
 const PII_PATTERN = /Ada|Lovelace|ada@example|avatars\.example|ada-gh/;
 
 async function signedInCookies(): Promise<string> {

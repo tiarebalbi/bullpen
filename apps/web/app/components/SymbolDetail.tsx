@@ -37,7 +37,7 @@ export function SymbolDetail({ selected, crypto, stocks }: { selected: string; c
     <Panel title={row.symbol} label="Price detail">
       <div className="bp-detail">
         <TickerBadge symbol={row.symbol} kind="stock" hue={STOCK_HUE} size="lg" stale={row.stale} marketClosed={closed} />
-        <PriceCell symbol={row.symbol} price={Number(row.price)} changePercent={0} timestamp={new Date(row.asOf).getTime()} status="market-closed" statusLabel="Close · 16:00 ET" stale={row.stale} asOfLabel={closeLabel(row.asOf)} />
+        <PriceCell symbol={row.symbol} price={Number(row.price)} changePercent={0} timestamp={new Date(row.asOf).getTime()} status="market-closed" statusLabel={`Close · ${closeLabel(row.asOf)}`} stale={row.stale} asOfLabel={closeLabel(row.asOf)} />
       </div>
       <p className="bp-detail__note">
         End-of-day price for {closeLabel(row.asOf)}, not live. Stock prices: <a href="https://www.alphavantage.co">Alpha Vantage</a>.
@@ -48,5 +48,5 @@ export function SymbolDetail({ selected, crypto, stocks }: { selected: string; c
 }
 
 function NoHistory(): ReactNode {
-  return <EmptyState title="No price history yet" description="A chart needs a history of prices, and the database does not hold one yet." />;
+  return <div className="bp-chart-empty"><EmptyState title="No chart yet" description="A chart needs price history; it arrives in Part 5." /></div>;
 }

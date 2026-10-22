@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { ConnectionIndicator, EmptyState, ErrorState, Skeleton, WatchlistRow, WatchlistSection, isUsMarketClosed, signed, useNow } from "@bullpen/ui";
 import type { ConnectionStatus } from "@bullpen/ui";
-import type { PriceSnapshot, StockPriceSnapshot } from "@bullpen/contracts";
+import type { PositionView, PriceSnapshot, StockPriceSnapshot } from "@bullpen/contracts";
+import { changeVsPreviousClose, heldLabel } from "../lib/trading/terminalView.js";
 import type { Polled } from "../lib/usePolled.js";
 import { CoinGeckoCredit } from "./CoinGeckoCredit.js";
 import { Unavailable } from "./Unavailable.js";
@@ -33,7 +34,7 @@ interface SelectProps {
   onSelect: (symbol: string) => void;
 }
 
-export function StocksSection({ polled, selected, onSelect }: { polled: Polled<StockPriceSnapshot> } & SelectProps): ReactNode {
+export function StocksSection({ polled, selected, onSelect, positions = [] }: { polled: Polled<StockPriceSnapshot>; positions?: PositionView[] } & SelectProps): ReactNode {
   const now = useNow();
   const closed = isUsMarketClosed(now);
   let body: ReactNode;
@@ -41,21 +42,25 @@ export function StocksSection({ polled, selected, onSelect }: { polled: Polled<S
   else if (polled.status === "error") body = <Unavailable httpStatus={polled.httpStatus} title="Stock prices unavailable" message={polled.message} what="Stock prices" />;
   else if (polled.data.rows.length === 0) body = <EmptyState title="No end-of-day prices yet" description="The first prices arrive after the next U.S. market close." />;
   else {
-    body = polled.data.rows.map((row) => (
+    body = polled.data.rows.map((row) => {
+      const change = changeVsPreviousClose(row);
+      const held = heldLabel(positions, row.symbol);
+      return (
       <WatchlistRow
         key={row.symbol}
         symbol={row.symbol}
         kind="stock"
         hue={STOCK_HUE}
-        detail={`Close · ${closeLabel(row.asOf)}`}
+        detail={held ? `Close · ${closeLabel(row.asOf)} · ${held}` : `Close · ${closeLabel(row.asOf)}`}
         price={Number(row.price)}
-        status={row.stale ? `Stale · ${closeLabel(row.asOf)}` : closed ? "Market closed" : undefined}
+        status={row.stale ? `Stale · ${closeLabel(row.asOf)}` : change ? `${change.up ? "▲" : "▼"} ${signed(change.percent, 2, "", "%")}` : undefined}
         stale={row.stale}
         marketClosed={closed}
         selected={selected === row.symbol}
         onSelect={onSelect}
       />
-    ));
+      );
+    });
   }
   return (
     <WatchlistSection title="Stocks" note="end of day">
@@ -112,7 +117,7 @@ export function MarketStatus({ crypto }: { crypto: Polled<PriceSnapshot> }): Rea
   const now = useNow();
   return (
     <>
-      <span className="bp-terminal__chip">Stocks · {isUsMarketClosed(now) ? "market closed" : "end of day"}</span>
+      <span className="bp-terminal__chip">Stocks · end of day</span>
       <ConnectionIndicator status={cryptoState(crypto, now)} detail="crypto" />
     </>
   );

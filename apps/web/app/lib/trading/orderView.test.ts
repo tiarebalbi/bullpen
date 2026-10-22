@@ -52,3 +52,21 @@ describe("the quantity the ticket sends", () => {
     expect(estimate("10", "100")).toEqual({ cost: 1000, reserve: 1050 });
   });
 });
+
+describe("the ticket's stepper and button words", () => {
+  it("steps a whole unit at a time and never below nothing", async () => {
+    const { stepQuantity } = await import("./orderView.js");
+    expect(stepQuantity("", 1)).toBe("1");
+    expect(stepQuantity("10", 1)).toBe("11");
+    expect(stepQuantity("10", -1)).toBe("9");
+    expect(stepQuantity("1", -1)).toBe("");
+    expect(stepQuantity("", -1)).toBe("");
+    expect(stepQuantity("abc", 1)).toBe("1");
+    expect(stepQuantity("2.5", 1)).toBe("3.5");
+  });
+  it("the button says what it will do once the quantity is valid", async () => {
+    const { buyLabel } = await import("./orderView.js");
+    expect(buyLabel("NVDA", "10.00000000", 1825.8)).toBe("Buy 10 NVDA · $1,825.80");
+    expect(buyLabel("NVDA", null, null)).toBe("Buy NVDA");
+  });
+});

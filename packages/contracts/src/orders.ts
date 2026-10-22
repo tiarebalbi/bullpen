@@ -34,9 +34,30 @@ export interface OrderView {
   cancelRequestedAt: string | null;
 }
 
+/** One step of an order's history, from the order's own events. */
+export interface OrderEventView {
+  kind: "accepted" | "working" | "fill" | "cancel_requested" | "cancelled" | "rejected" | "released";
+  at: string;
+  state: OrderState | null;
+  /** On a fill: how much, and at what price. */
+  quantity: string | null;
+  price: string | null;
+}
+
+export interface FillView {
+  fillId: string;
+  symbol: string;
+  side: "buy";
+  quantity: string;
+  price: string;
+  executedAt: string;
+}
+
 export interface PositionView {
   symbol: string;
   quantity: string;
+  /** What the player paid per unit, from the booked fills; null with none. */
+  avgCost: string | null;
   price: string | null;
   value: string | null;
 }
@@ -51,6 +72,10 @@ export interface AccountView {
   equity: string;
   positions: PositionView[];
   orders: OrderView[];
+  /** The history of the latest order, oldest first, or null with no orders. */
+  latestOrder: { orderId: string; events: OrderEventView[] } | null;
+  /** The last booked fills, newest first (at most 10). */
+  fills: FillView[];
   asOf: string;
 }
 
