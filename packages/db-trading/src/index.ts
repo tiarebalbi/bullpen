@@ -12,6 +12,7 @@ export { ORDERS_SHOWN, readAccountView, type AccountView, type OrderRow, type Po
 export { checkEquityInvariant, checkOrderInvariants, type AccountStart } from "./orders/invariants.js";
 export { readPrices, type ReadPricesOptions, type StockPrice } from "./prices.js";
 export { STARTING_CASH, ensurePlayerAccount, neutralHandle, type PlayerAccount } from "./players.js";
+export { EXPECTED_COLUMNS, EXPECTED_RELATIONS, checkSchema } from "./health.js";
 export { TEST_HANDLE_PREFIX, TEST_QUOTE_SOURCE } from "./testRows.js";
 export { LEADERBOARD_ON_READ_SQL, LEADERBOARD_TOP, MAX_AGE_MS, computeLeaderboardOnRead, readLeaderboard, readLeaderboardRows, refreshLeaderboard, serveLeaderboard, type LeaderboardRead, type LeaderboardRow, type ReadLeaderboardOptions, type RefreshHooks, type RefreshOutcome, type ServeOptions } from "./leaderboard.js";
 

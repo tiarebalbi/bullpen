@@ -1,6 +1,6 @@
 import { BuyRefused, advanceAccount, placePlayerOrder, readAccountView } from "@bullpen/db-trading";
 import { validateOrderRequest, type AccountView, type OrderRequest } from "@bullpen/contracts";
-import { apiError, noStore, resolvePlayer } from "../../lib/trading/playerAccount.js";
+import { apiError, logFailure, noStore, resolvePlayer } from "../../lib/trading/playerAccount.js";
 import { tradingPool } from "../../lib/trading/pool.js";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,8 @@ export async function GET(): Promise<Response> {
     const view = await readAccountView(pool, who.accountId);
     if (!view) return apiError(404, { error: "not-found", message: "I cannot find your account." });
     return Response.json(view satisfies AccountView, { headers: noStore });
-  } catch {
+  } catch (error) {
+    logFailure("orders.GET", error);
     return apiError(503, { error: "unavailable", message: "I cannot reach your account right now. Try again in a moment." });
   }
 }
@@ -40,6 +41,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ orderId: placed.orderId, duplicate: placed.duplicate, account }, { status: placed.duplicate ? 200 : 201, headers: noStore });
   } catch (error) {
     if (error instanceof BuyRefused) return apiError(422, { error: "refused", reason: error.reason, message: error.message });
+    logFailure("orders.POST", error);
     return apiError(503, { error: "unavailable", message: "I could not place that order. Nothing was reserved; try again in a moment." });
   }
 }

@@ -1,3 +1,4 @@
+import { configProblems } from "./config.ts";
 import { realSleep, run } from "./ticker.ts";
 
 const url = process.env.SWEEPER_TARGET_URL;
@@ -10,9 +11,10 @@ const intOf = (name: string): number | undefined => (/^\d+$/.test(process.env[na
 process.on("SIGTERM", () => controller.abort());
 process.on("SIGINT", () => controller.abort());
 
-if (!url || !token) {
-  // Misconfigured: say so once and wait. Exiting would make Vercel restart the daemon in a loop that spends the quota.
-  console.log(JSON.stringify({ at: new Date().toISOString(), outcome: "not-configured", problem: "SWEEPER_TARGET_URL or SWEEPER_TOKEN is not set; waiting" }));
+const problems = configProblems(url, token);
+if (problems.length > 0 || !url || !token) {
+  // Misconfigured: say so once, with what is wrong, and wait. Exiting would make Vercel restart the daemon in a loop that spends the quota.
+  console.log(JSON.stringify({ at: new Date().toISOString(), outcome: "not-configured", problems, waiting: true }));
   while (!controller.signal.aborted) await realSleep(60_000, controller.signal);
 } else {
   console.log(JSON.stringify({ at: new Date().toISOString(), outcome: "started", target: new URL(url).origin }));
