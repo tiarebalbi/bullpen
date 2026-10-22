@@ -34,7 +34,7 @@ the venue then refused to fill. Two freshness rules, one of them wrong for stock
 Freshness depends on the price's kind, and the venue's rule for a stock is the rule submit already uses.
 
 - **The price contract says which kind a price is.** `market_data.quotes` gains `kind` (`'live'` or `'end-of-day'`, default `'live'`), and `market_data.prices_v1` gains it as its last column; the columns it had and
-  the grant are unchanged, so a reader of the contract keeps working. The stock ingest stores `'end-of-day'`; rows already stored by the `alphavantage` source are backfilled to it. The change is in
+  the grant are unchanged, so a reader of the contract keeps working. The stock ingest stores `'end-of-day'`; every quote already stored is backfilled to it, once, when the column is added (all of them are stock closes). The change is in
   migration `0002_quotes_and_price_contract.sql` (every migration re-runs, so the column is added before the view that lists it).
 - **A live price keeps the 5-minute limit** (`MAX_FILL_PRICE_AGE_MS`), and is refused when the contract flags it stale.
 - **An end-of-day price is fresh when the contract does not flag it stale**, which is when it is the close of the latest completed trading day: `valid_until` is the end of the next trading day, so a Friday close

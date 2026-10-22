@@ -147,4 +147,16 @@ describe("the roles hold only what they should", () => {
     expect(await migrateMarketData(migrator, "market_data_owner")).toEqual(["0001_schema.sql", "0002_quotes_and_price_contract.sql", "0003_provider_calls.sql"]);
     expect(await migrateTrading(migrator, "trading_owner")).toEqual(["0001_schema.sql", "0002_accounts_orders_ledger.sql", "0003_leaderboard.sql", "0004_order_lifecycle.sql", "0005_leaderboard_counts_reserved_cash.sql", "0006_account_owner.sql"]);
   });
+  it("a re-run of the migrations leaves the kind of a stored quote alone (the backfill runs once, when the column is added)", async () => {
+    const migrator = await as(urls.migrator);
+    const symbol = `K${Date.now().toString(36).toUpperCase()}`;
+    await migrator.query("SET ROLE market_data_owner");
+    await migrator.query("INSERT INTO market_data.quotes (symbol, as_of, price, source, valid_until, kind) VALUES ($1, now(), 1, 'test', now() + interval '1 hour', 'live')", [symbol]);
+    await migrator.query("RESET ROLE");
+    await migrateMarketData(migrator, "market_data_owner");
+    const { rows } = await migrator.query("SELECT kind FROM market_data.prices_v1 WHERE symbol = $1", [symbol]);
+    expect(rows).toEqual([{ kind: "live" }]);
+    await migrator.query("SET ROLE market_data_owner");
+    await migrator.query("DELETE FROM market_data.quotes WHERE symbol = $1", [symbol]).catch(() => undefined);
+  });
 });
