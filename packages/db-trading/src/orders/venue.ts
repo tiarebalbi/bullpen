@@ -22,7 +22,7 @@ export interface Venue {
   poll(now: Date): Promise<VenueEvent[]>;
 }
 
-/** 'end-of-day' is a close; 'live' moves during the day. The price contract says which (ADR-0023). */
+/** 'end-of-day' is a close; 'live' moves during the day. The price contract says which (ADR-0024). */
 export type PriceKind = "live" | "end-of-day";
 export interface Quote {
   price: string;
@@ -42,13 +42,13 @@ export const dbPriceSource = (pool: Pool): PriceSource => ({
   },
 });
 
-/** A live price older than this is not filled at: the order is held (ADR-0017, ADR-0023). */
+/** A live price older than this is not filled at: the order is held (ADR-0017, ADR-0024). */
 export const MAX_FILL_PRICE_AGE_MS = 5 * 60_000;
 
 /**
  * Whether the venue may fill at this quote. A live price must be under `maxLiveAgeMs` old. An end-of-day price has no age limit of its
  * own: it is fresh while the contract does not flag it stale, which is the rule that refuses a buy at submit, so a buy the app accepted is
- * one the venue can fill (ADR-0023). Both kinds are refused when the contract says stale.
+ * one the venue can fill (ADR-0024). Both kinds are refused when the contract says stale.
  */
 export function isFillable(quote: Quote | null, now: Date, maxLiveAgeMs: number = MAX_FILL_PRICE_AGE_MS): quote is Quote {
   if (!quote || quote.stale) return false;

@@ -1,6 +1,6 @@
 /**
  * A stock price is a close, hours old by the time anyone trades it. Every order test used to seed a price seconds old, so a market buy filled
- * here and was cancelled by the sweep in production (ADR-0023). These tests seed prices the way the stock ingest stores them (as of the close,
+ * here and was cancelled by the sweep in production (ADR-0024). These tests seed prices the way the stock ingest stores them (as of the close,
  * kind 'end-of-day') and run the venue production uses (the derived one), not only the simulator.
  */
 import { afterAll, afterEach, describe, expect, inject, it } from "vitest";

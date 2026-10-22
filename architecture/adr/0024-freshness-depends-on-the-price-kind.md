@@ -1,4 +1,4 @@
-# ADR-0023: How fresh a price must be depends on its kind
+# ADR-0024: How fresh a price must be depends on its kind
 
 ## Status
 

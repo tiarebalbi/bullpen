@@ -42,7 +42,7 @@ Source: `decision-1-sweep-driver.md` (tables "Computed", the 2026-10-21 update, 
 
 Written in ADR-0017, section "The simulator's ordering rules" (the same commit as section 1, `43267d9`, with the same caveat): a fill has a unique id and a venue time; delivery is at-least-once and unordered; a cancel request is not a cancel; the
 venue confirms it with an effective time and every fill executed before that time is owed wherever it arrives; a booked fill is never undone; a duplicate fill id changes nothing; release is a separate step, allowed only after the effective time plus
-a 30 s late-fill window and retried by the sweep; about 10 % of fills are partial. The derived venue the app uses (fill id `<order>:<fills so far>`, a seeded partial, a 5 % price ceiling, a 5-minute stale limit for a live price and, from ADR-0023 (Proposed), no age limit of its own for an end-of-day price) is `packages/db-trading/src/orders/venue.ts`.
+a 30 s late-fill window and retried by the sweep; about 10 % of fills are partial. The derived venue the app uses (fill id `<order>:<fills so far>`, a seeded partial, a 5 % price ceiling, a 5-minute stale limit for a live price and, from ADR-0024 (Proposed), no age limit of its own for an end-of-day price) is `packages/db-trading/src/orders/venue.ts`.
 
 ## 5. The race
 
@@ -134,8 +134,7 @@ correctly, so no money was lost. These three are as reported by the owner: I did
 `valid_until` is the end of the next trading day), so it accepted a buy the venue could never fill.
 **Why the tests did not see it.** Every order test seeded its price seconds old (`w.price`, `architecture/fitness/src/db-integration/orders-harness.ts`), with `source = 'test'`; the one case that held an order used a price 6 minutes old. No test had a
 price shaped like the ingest's. The first four sections of this file describe that rule as written in ADR-0017, which is accurate: the rule was as decided, and wrong for stocks.
-**The fix (ADR-0023, Proposed).** The price contract carries a `kind` (`live` or `end-of-day`); a live price keeps the 5-minute limit; an end-of-day price is fresh while the contract does not flag it stale; one function (`isFillable`) decides in both
+**The fix (ADR-0024, Proposed).** The price contract carries a `kind` (`live` or `end-of-day`); a live price keeps the 5-minute limit; an end-of-day price is fresh while the contract does not flag it stale; one function (`isFillable`) decides in both
 the simulator and the derived venue the app runs; `WORKING_DEADLINE` is unchanged. Tests: `orders-end-of-day.int.test.ts` (7 tests; run from `architecture/fitness`: `pnpm test:db src/db-integration/orders-end-of-day`), which fail when the end-of-day
-branch is removed (4 of 7, checked by hand) and pass with it. **Not verified:** that the three orders would now fill (they are cancelled; nothing was replayed against Neon), and the fix in production (it needs a deploy and a migration run against Neon,
-the owner's).
-**What it does not close.** Between 16:00 New York and that evening's ingest the previous close is still current under the contract; ADR-0023 records it and leaves it.
+branch is removed (4 of 7, checked by hand) and pass with it. **Not verified:** that the three orders would now fill (they are cancelled; nothing was replayed against Neon), and the fix in production (it needs a deploy, whose build applies the migration to Neon under ADR-0023).
+**What it does not close.** Between 16:00 New York and that evening's ingest the previous close is still current under the contract; ADR-0024 records it and leaves it.

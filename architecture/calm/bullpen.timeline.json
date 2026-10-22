@@ -83,7 +83,8 @@
         "architecture/adr/0020-sign-in-is-neon-auth-with-github-only.md",
         "architecture/adr/0021-the-sweepers-idle-wait-is-sixty-minutes.md",
         "architecture/adr/0022-identity-is-the-sdks-verified-session.md",
-        "architecture/adr/0023-freshness-depends-on-the-price-kind.md"
+        "architecture/adr/0023-production-builds-apply-the-migrations.md",
+        "architecture/adr/0024-freshness-depends-on-the-price-kind.md"
       ],
       "metadata": {
         "planned-architecture": "planned/part-04.architecture.json",

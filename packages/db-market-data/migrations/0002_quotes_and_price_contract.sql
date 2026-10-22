@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS market_data.quotes (
   PRIMARY KEY (symbol, as_of)
 );
 
--- What kind of price a quote is, so a reader can tell how old a current one may be (ADR-0023). 'live' moves during the day; 'end-of-day' is a
+-- What kind of price a quote is, so a reader can tell how old a current one may be (ADR-0024). 'live' moves during the day; 'end-of-day' is a
 -- close, current until the next trading day's close is expected. Added here, before the view that exposes it, so a re-run of this file
 -- (every migration re-runs) never meets a view with a column it does not list.
 ALTER TABLE market_data.quotes ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'live';
