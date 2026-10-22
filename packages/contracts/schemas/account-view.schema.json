@@ -4,31 +4,111 @@
   "title": "AccountView",
   "description": "What GET /api/orders answers: the signed-in player's account as a screen shows it. Nothing in it names a person: a neutral label, money as decimal strings, orders and positions. The lifecycle (packages/db-trading) builds it; the screens read it.",
   "type": "object",
-  "required": ["label", "buyingPower", "reserved", "cash", "positionsValue", "equity", "positions", "orders", "asOf"],
+  "required": [
+    "label",
+    "buyingPower",
+    "reserved",
+    "cash",
+    "positionsValue",
+    "equity",
+    "positions",
+    "orders",
+    "latestOrder",
+    "fills",
+    "asOf"
+  ],
   "additionalProperties": false,
   "definitions": {
-    "decimal": { "type": "string", "pattern": "^-?\\d+(\\.\\d{1,8})?$" },
-    "state": { "enum": ["accepted", "working", "partially_filled", "cancel_requested", "cancelled", "filled", "rejected"] }
+    "decimal": {
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d{1,8})?$"
+    },
+    "state": {
+      "enum": [
+        "accepted",
+        "working",
+        "partially_filled",
+        "cancel_requested",
+        "cancelled",
+        "filled",
+        "rejected"
+      ]
+    }
   },
   "properties": {
-    "label": { "type": "string", "pattern": "^Player [0-9A-F]{4,16}$" },
-    "buyingPower": { "$ref": "#/definitions/decimal" },
-    "reserved": { "$ref": "#/definitions/decimal" },
-    "cash": { "$ref": "#/definitions/decimal" },
-    "positionsValue": { "$ref": "#/definitions/decimal" },
-    "equity": { "$ref": "#/definitions/decimal" },
-    "asOf": { "type": "string", "format": "date-time" },
+    "label": {
+      "type": "string",
+      "pattern": "^Player [0-9A-F]{4,16}$"
+    },
+    "buyingPower": {
+      "$ref": "#/definitions/decimal"
+    },
+    "reserved": {
+      "$ref": "#/definitions/decimal"
+    },
+    "cash": {
+      "$ref": "#/definitions/decimal"
+    },
+    "positionsValue": {
+      "$ref": "#/definitions/decimal"
+    },
+    "equity": {
+      "$ref": "#/definitions/decimal"
+    },
+    "asOf": {
+      "type": "string",
+      "format": "date-time"
+    },
     "positions": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["symbol", "quantity", "price", "value"],
+        "required": [
+          "symbol",
+          "quantity",
+          "avgCost",
+          "price",
+          "value"
+        ],
         "additionalProperties": false,
         "properties": {
-          "symbol": { "type": "string", "minLength": 1 },
-          "quantity": { "$ref": "#/definitions/decimal" },
-          "price": { "anyOf": [{ "$ref": "#/definitions/decimal" }, { "type": "null" }] },
-          "value": { "anyOf": [{ "$ref": "#/definitions/decimal" }, { "type": "null" }] }
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quantity": {
+            "$ref": "#/definitions/decimal"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "avgCost": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
         }
       }
     },
@@ -37,27 +117,229 @@
       "maxItems": 50,
       "items": {
         "type": "object",
-        "required": ["orderId", "symbol", "side", "type", "state", "quantity", "filledQty", "openQty", "cancelledQty", "avgPrice", "capPrice", "reserved", "spent", "released", "releaseDone", "needsAttention", "createdAt", "cancelRequestedAt"],
+        "required": [
+          "orderId",
+          "symbol",
+          "side",
+          "type",
+          "state",
+          "quantity",
+          "filledQty",
+          "openQty",
+          "cancelledQty",
+          "avgPrice",
+          "capPrice",
+          "reserved",
+          "spent",
+          "released",
+          "releaseDone",
+          "needsAttention",
+          "createdAt",
+          "cancelRequestedAt"
+        ],
         "additionalProperties": false,
         "properties": {
-          "orderId": { "type": "string", "format": "uuid" },
-          "symbol": { "type": "string", "minLength": 1 },
-          "side": { "const": "buy" },
-          "type": { "const": "market" },
-          "state": { "$ref": "#/definitions/state" },
-          "quantity": { "$ref": "#/definitions/decimal" },
-          "filledQty": { "$ref": "#/definitions/decimal" },
-          "openQty": { "$ref": "#/definitions/decimal" },
-          "cancelledQty": { "$ref": "#/definitions/decimal" },
-          "avgPrice": { "anyOf": [{ "$ref": "#/definitions/decimal" }, { "type": "null" }] },
-          "capPrice": { "$ref": "#/definitions/decimal" },
-          "reserved": { "$ref": "#/definitions/decimal" },
-          "spent": { "$ref": "#/definitions/decimal" },
-          "released": { "$ref": "#/definitions/decimal" },
-          "releaseDone": { "type": "boolean" },
-          "needsAttention": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "cancelRequestedAt": { "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] }
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "side": {
+            "const": "buy"
+          },
+          "type": {
+            "const": "market"
+          },
+          "state": {
+            "$ref": "#/definitions/state"
+          },
+          "quantity": {
+            "$ref": "#/definitions/decimal"
+          },
+          "filledQty": {
+            "$ref": "#/definitions/decimal"
+          },
+          "openQty": {
+            "$ref": "#/definitions/decimal"
+          },
+          "cancelledQty": {
+            "$ref": "#/definitions/decimal"
+          },
+          "avgPrice": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "capPrice": {
+            "$ref": "#/definitions/decimal"
+          },
+          "reserved": {
+            "$ref": "#/definitions/decimal"
+          },
+          "spent": {
+            "$ref": "#/definitions/decimal"
+          },
+          "released": {
+            "$ref": "#/definitions/decimal"
+          },
+          "releaseDone": {
+            "type": "boolean"
+          },
+          "needsAttention": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelRequestedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "latestOrder": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "orderId",
+            "events"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "orderId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "events": {
+              "type": "array",
+              "maxItems": 200,
+              "items": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "at",
+                  "state",
+                  "quantity",
+                  "price"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "accepted",
+                      "working",
+                      "fill",
+                      "cancel_requested",
+                      "cancelled",
+                      "rejected",
+                      "released"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "state": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/state"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "quantity": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/decimal"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "price": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/decimal"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fills": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": [
+          "fillId",
+          "symbol",
+          "side",
+          "quantity",
+          "price",
+          "executedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "fillId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "side": {
+            "const": "buy"
+          },
+          "quantity": {
+            "$ref": "#/definitions/decimal"
+          },
+          "price": {
+            "$ref": "#/definitions/decimal"
+          },
+          "executedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       }
     }

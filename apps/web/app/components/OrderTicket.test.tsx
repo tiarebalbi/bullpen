@@ -11,7 +11,7 @@ const order = (state: OrderState, over: Partial<OrderView> = {}): OrderView => (
   createdAt: "2026-10-20T10:00:00.000Z", cancelRequestedAt: null, ...over,
 });
 const view = (orders: OrderView[] = [], over: Partial<AccountView> = {}): AccountView => ({
-  label: "Player 4F2A", buyingPower: "5000.00000000", reserved: "0.00000000", cash: "5000.00000000", positionsValue: "0.00000000", equity: "5000.00000000", positions: [], orders, asOf: "2026-10-20T10:00:00.000Z", ...over,
+  label: "Player 4F2A", buyingPower: "5000.00000000", reserved: "0.00000000", cash: "5000.00000000", positionsValue: "0.00000000", equity: "5000.00000000", positions: [], orders, latestOrder: null, fills: [], asOf: "2026-10-20T10:00:00.000Z", ...over,
 });
 const ok = (account: AccountView): AccountState => ({ status: "ok", account });
 const props = (account: AccountState, over = {}) => ({ symbol: "AAPL", price: "100.00000000", account, signIn: vi.fn(async () => undefined), onAccount: vi.fn(), refresh: vi.fn(), ...over });
@@ -43,6 +43,21 @@ describe("the order ticket", () => {
     expect(screen.getByText("$1,000.00")).toBeInTheDocument();
     expect(screen.getByText("$1,050.00")).toBeInTheDocument();
     expect(screen.getByText("$5,000.00")).toBeInTheDocument();
+  });
+
+  it("steps the quantity with − and +, shows buying power before → after, and puts the cost in the button", () => {
+    render(<OrderTicket {...props(ok(view()))} />);
+    const buy = () => screen.getByRole("button", { name: /^Buy/ });
+    expect(buy()).toHaveTextContent("Buy AAPL");
+    fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
+    fireEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
+    expect(screen.getByLabelText("Quantity")).toHaveValue("2");
+    expect(buy()).toHaveTextContent("Buy 2 AAPL · $200.00");
+    expect(screen.getByTestId("bp-after")).toHaveTextContent("→ $4,790.00"); // 5,000 less the 5% reserve on 200
+    fireEvent.click(screen.getByRole("button", { name: "Decrease quantity" }));
+    fireEvent.click(screen.getByRole("button", { name: "Decrease quantity" }));
+    expect(screen.getByLabelText("Quantity")).toHaveValue("");
+    expect(screen.queryByTestId("bp-after")).not.toBeInTheDocument();
   });
 
   it("will not place an order the buying power cannot cover, and says why", () => {
@@ -115,7 +130,7 @@ describe("the portfolio and the orders", () => {
   });
 
   it("shows the player's positions at their prices, and 'No price' rather than a made-up value", () => {
-    const account = view([], { positions: [{ symbol: "AAPL", quantity: "10.00000000", price: "100.00000000", value: "1000.00000000" }, { symbol: "MSFT", quantity: "1.00000000", price: null, value: null }] });
+    const account = view([], { positions: [{ symbol: "AAPL", quantity: "10.00000000", avgCost: "90.00000000", price: "100.00000000", value: "1000.00000000" }, { symbol: "MSFT", quantity: "1.00000000", avgCost: "50.00000000", price: null, value: null }] });
     render(<AccountPanels account={ok(account)} refresh={() => undefined} />);
     expect(screen.getByText("$1,000.00")).toBeInTheDocument();
     expect(screen.getByText("No price")).toBeInTheDocument();

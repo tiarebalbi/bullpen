@@ -97,21 +97,13 @@ for (const viewport of [
       await shot(page, "watchlist-stocks", viewport.width);
     });
 
-    test("watchlist: says market closed on a weekend and nothing about it while the clock might have it open", async ({ page }) => {
+    test("watchlist: the header tells the feed truthfully, end of day, on a weekend or in session; a closed market says so on the rows", async ({ page }) => {
       await page.clock.install({ time: new Date("2026-10-17T15:00:00Z") }); // a Saturday
       await mock(page, { stocks: { rows } });
       await page.goto("/");
-      await expect(page.getByRole("banner").getByText("Stocks · market closed")).toBeVisible();
-      await expect(watchlist(page).getByText("Market closed")).toHaveCount(1); // AAPL; MSFT says Stale
+      await expect(page.getByRole("banner").getByText("Stocks · end of day")).toBeVisible();
+      await expect(watchlist(page).getByText("Market closed")).toHaveCount(0); // the status line is for a move or a stale close, never a guess about the clock
       await shot(page, "watchlist-market-closed", viewport.width);
-
-      const open = await page.context().newPage();
-      await open.clock.install({ time: new Date("2026-10-14T16:00:00Z") }); // a Wednesday, 12:00 in New York
-      await mock(open, { stocks: { rows } });
-      await open.setViewportSize(viewport);
-      await open.goto("/");
-      await expect(open.getByRole("banner").getByText("Stocks · end of day")).toBeVisible();
-      await expect(open.getByText("Market closed")).toHaveCount(0);
     });
 
     test("watchlist: crypto shows the live price with a direction glyph and a true minus, the credit beside it", async ({ page }) => {
@@ -164,9 +156,9 @@ for (const viewport of [
       await expect(detail.getByTestId("price-cell-price")).toHaveText("65,432.10");
       await watchlist(page).getByRole("button", { name: /^AAPL/ }).click();
       await expect(detail.getByTestId("price-cell-price")).toHaveText("190.12");
-      await expect(detail.getByText("Close · 16:00 ET")).toBeVisible();
+      await expect(detail.getByText("Close · Oct 13")).toBeVisible();
       await expect(detail.getByTestId("price-cell-change")).toHaveCount(0);
-      await expect(detail.getByText("No price history yet")).toBeVisible();
+      await expect(detail.getByText("A chart needs price history; it arrives in Part 5.")).toBeVisible();
       await shot(page, "detail-stock-close", viewport.width);
       await watchlist(page).getByRole("button", { name: /^MSFT/ }).click();
       await expect(detail.getByTestId("price-cell-stale-label")).toContainText("stale · as of Oct 8");

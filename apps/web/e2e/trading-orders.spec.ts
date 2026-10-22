@@ -21,7 +21,7 @@ const order = (state: string, over: Record<string, unknown> = {}) => ({
   avgPrice: null, capPrice: "199.62600000", reserved: "1996.26000000", spent: "0.00000000", released: "0.00000000", releaseDone: false, needsAttention: null, createdAt: "2026-10-20T10:00:00.000Z", cancelRequestedAt: null, ...over,
 });
 const account = (orders: unknown[] = [], over: Record<string, unknown> = {}) => ({
-  label: "Player 4F2A", buyingPower: "98000.00000000", reserved: "2000.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders, asOf: new Date().toISOString(), ...over,
+  label: "Player 4F2A", buyingPower: "98000.00000000", reserved: "2000.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders, latestOrder: null, fills: [], asOf: new Date().toISOString(), ...over,
 });
 const allSeven = [
   order("accepted"),
@@ -59,7 +59,7 @@ for (const viewport of [
       if (!wide) await page.getByRole("button", { name: "Sign in" }).click();
       const dialog = wide ? page.getByRole("complementary", { name: "Order ticket" }) : page.getByRole("dialog", { name: "Order ticket" });
       await expect(dialog.getByRole("button", { name: "Sign in with GitHub" })).toBeEnabled();
-      await expect(dialog.getByLabel("Quantity")).toHaveCount(0);
+      await expect(dialog.getByRole("textbox", { name: "Quantity" })).toHaveCount(0);
       await expect(page.getByRole("region", { name: "Orders" })).toHaveCount(0);
       await shot(page, "ticket-signed-out", viewport.width);
     });
@@ -108,13 +108,14 @@ for (const viewport of [
         await page.getByRole("button", { name: "Trade" }).focus();
         await page.keyboard.press("Enter");
       }
-      const quantity = page.getByLabel("Quantity").locator("visible=true");
+      const quantity = page.getByRole("textbox", { name: "Quantity" }).locator("visible=true");
       for (let i = 0; i < 40 && !(await quantity.evaluate((el) => el === document.activeElement)); i += 1) await page.keyboard.press(wide ? "Tab" : "Tab");
       await expect(quantity).toBeFocused();
       await page.keyboard.type("3");
       await expect(page.getByText("$570.36").first()).toBeVisible(); // 3 x 190.12
+      await page.keyboard.press("Tab"); // the + button
       await page.keyboard.press("Tab");
-      await expect(page.getByRole("button", { name: "Buy AAPL" }).locator("visible=true")).toBeFocused();
+      await expect(page.getByRole("button", { name: "Buy 3 AAPL · $570.36" }).locator("visible=true")).toBeFocused();
       await page.keyboard.press("Enter");
       await expect.poll(() => posted.length).toBe(1);
       expect(posted[0]).toMatchObject({ symbol: "AAPL", quantity: "3" });
@@ -128,7 +129,7 @@ for (const viewport of [
       await page.getByRole("button", { name: /^AAPL/ }).click();
       if (!wide) {
         await page.getByRole("button", { name: "Trade" }).click();
-        await expect(page.getByLabel("Quantity").locator("visible=true")).toBeVisible();
+        await expect(page.getByRole("textbox", { name: "Quantity" }).locator("visible=true")).toBeVisible();
         expect((await new AxeBuilder({ page }).analyze()).violations.map((v) => v.id), "axe with the sheet open").toEqual([]);
         await shot(page, "ticket-sheet-open", viewport.width);
       } else {
