@@ -4,16 +4,23 @@
 //
 // The URL comes from your environment and is never printed. Run it after creating the two owner
 // roles in the provider's console. It is safe to run again: every file is idempotent.
+// A production build of the trading app runs it before `next build` (ADR-0023); a preview build skips it.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { migrate as migrateMarketData } from "@bullpen/db-market-data";
 import { migrate as migrateTrading } from "@bullpen/db-trading";
+import { migrationPlan } from "../src/migration-plan.js";
 
+const plan = migrationPlan(process.env);
+if (plan.action === "skip") {
+  console.log(`db-migrate: skipped, ${plan.reason}.`);
+  process.exit(0);
+}
 const url = process.env.DATABASE_URL_MIGRATOR;
-if (!url) {
-  console.error("db-migrate: set DATABASE_URL_MIGRATOR to the unpooled admin connection string.");
+if (plan.action === "fail" || !url) {
+  console.error(`db-migrate: ${plan.action === "fail" ? plan.reason : "set DATABASE_URL_MIGRATOR"}.`);
   process.exit(1);
 }
 
