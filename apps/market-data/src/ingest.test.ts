@@ -12,7 +12,7 @@ const quoteFor = (symbol: string, day: string) => ({ ok: true, status: 200, json
 
 function harness(overrides: Partial<IngestDeps> & { held?: Set<string>; day?: string; grants?: number } = {}) {
   const calls: string[] = [];
-  const stored: Array<{ symbol: string; asOf: string; validUntil: string; price: string }> = [];
+  const stored: Array<{ symbol: string; asOf: string; validUntil: string; price: string; kind: string | undefined }> = [];
   const slept: number[] = [];
   const logs: string[] = [];
   let reservations = 0;
@@ -31,7 +31,7 @@ function harness(overrides: Partial<IngestDeps> & { held?: Set<string>; day?: st
     seams: {
       has: async (_pool, symbol) => overrides.held?.has(symbol) ?? false,
       store: async (_pool, quote) => {
-        stored.push({ symbol: quote.symbol, asOf: quote.asOf.toISOString(), validUntil: quote.validUntil.toISOString(), price: quote.price });
+        stored.push({ symbol: quote.symbol, asOf: quote.asOf.toISOString(), validUntil: quote.validUntil.toISOString(), price: quote.price, kind: quote.kind });
         return true;
       },
       reserve: async () => {
@@ -52,7 +52,7 @@ describe("runStockIngest", () => {
 
     expect(summary).toMatchObject({ date: "2026-10-13", skipped: null, stored: ["AAPL", "MSFT", "NVDA"], refused: false, failed: [] });
     expect(h.calls).toEqual(["AAPL", "MSFT", "NVDA"]);
-    expect(h.stored[0]).toEqual({ symbol: "AAPL", asOf: "2026-10-13T20:00:00.000Z", validUntil: "2026-10-15T03:59:59.000Z", price: "100.5" });
+    expect(h.stored[0]).toEqual({ symbol: "AAPL", asOf: "2026-10-13T20:00:00.000Z", validUntil: "2026-10-15T03:59:59.000Z", price: "100.5", kind: "end-of-day" });
   });
 
   it("spaces its calls: no wait before the first, 12 seconds between the rest", async () => {

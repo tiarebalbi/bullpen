@@ -4,7 +4,7 @@ export { migrate } from "./migrate.js";
 export { BuyRefused, placeMarketBuy, type BuyHooks, type Fill, type MarketBuy } from "./buy.js";
 export { ORDER_STATES, OPEN_STATES, TRANSITIONS, canTransition, fillBucket, isOpen, stateAfterFill, type OrderState } from "./orders/states.js";
 export { CAP_MARGIN, CrashError, LATE_FILL_WINDOW_MS, bookFill, confirmCancel, markWorking, recordReleaseFailure, rejectOrder, releaseReservation, requestCancel, submitOrder, type Boundary, type FillEvent, type FillOutcome, type Hooks, type ReleaseOutcome, type SubmitOrder, type Submitted } from "./orders/lifecycle.js";
-export { DerivedVenue, MAX_FILL_PRICE_AGE_MS, SimulatedVenue, dbPriceSource, seeded, type PriceSource, type Quote, type DerivedVenueOptions, type SimulatedVenueOptions, type Venue, type VenueEvent, type VenueOrder, type VenueRefusal } from "./orders/venue.js";
+export { DerivedVenue, MAX_FILL_PRICE_AGE_MS, SimulatedVenue, dbPriceSource, isFillable, seeded, type PriceKind, type PriceSource, type Quote, type DerivedVenueOptions, type SimulatedVenueOptions, type Venue, type VenueEvent, type VenueOrder, type VenueRefusal } from "./orders/venue.js";
 export { ACCEPT_TIMEOUT_MS, CANCEL_RESEND_MS, CANCEL_STUCK_MS, MAX_RELEASE_FAILURES, WORKING_DEADLINE_MS, dispatchOrder, pump, sweep, type SweepResult } from "./orders/sweep.js";
 export { tick, type TickResult } from "./orders/tick.js";
 export { CANCEL_ACK_DELAY_MS, SIMULATOR_SEED, advanceAccount, cancelPlayerOrder, createSimulatedVenue, placePlayerOrder, type AdvanceResult, type PlacedOrder } from "./orders/player.js";

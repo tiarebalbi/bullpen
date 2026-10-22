@@ -1,6 +1,6 @@
 # Part 4: facts for the post
 
-Thirteen short sections, each ready to paste. Every number names the file it comes from and the command that reproduces it (commands run from the repo root unless a directory is
+Fourteen short sections, each ready to paste. Every number names the file it comes from and the command that reproduces it (commands run from the repo root unless a directory is
 given). Anything not read or not run says so. Branch `post-04-saga`; the reports it cites are in `architecture/reports/part-04/`.
 
 ## 1. Where the lifecycle rules landed as tests
@@ -42,7 +42,7 @@ Source: `decision-1-sweep-driver.md` (tables "Computed", the 2026-10-21 update, 
 
 Written in ADR-0017, section "The simulator's ordering rules" (the same commit as section 1, `43267d9`, with the same caveat): a fill has a unique id and a venue time; delivery is at-least-once and unordered; a cancel request is not a cancel; the
 venue confirms it with an effective time and every fill executed before that time is owed wherever it arrives; a booked fill is never undone; a duplicate fill id changes nothing; release is a separate step, allowed only after the effective time plus
-a 30 s late-fill window and retried by the sweep; about 10 % of fills are partial. The derived venue the app uses (fill id `<order>:<fills so far>`, a seeded partial, a 5 % price ceiling, a 5-minute stale limit) is `packages/db-trading/src/orders/venue.ts`.
+a 30 s late-fill window and retried by the sweep; about 10 % of fills are partial. The derived venue the app uses (fill id `<order>:<fills so far>`, a seeded partial, a 5 % price ceiling, a 5-minute stale limit for a live price and, from ADR-0023 (Proposed), no age limit of its own for an end-of-day price) is `packages/db-trading/src/orders/venue.ts`.
 
 ## 5. The race
 
@@ -124,3 +124,18 @@ Daemon Active CPU a day, locally: about 37 s at the 5 s cadence all day, about 0
 - **A real exchange:** the venue is a seeded simulator.
 - **Lighthouse for the trading app, and a long browser session at the 3 s cadence:** not run; the cadence is tested as a function.
 - **Two landing end-to-end tests** (`rules-adl.spec.ts`, "a deep link to #structure-adl opens it") fail intermittently under `turbo` and passed every time outside it. I spent a time-boxed 20 minutes, could not reproduce it (CPU load, slowed scripts, hash set before hydration) and did not change the tests; the write-up and what to capture if it appears in CI is `landing-deep-link-flake.md`.
+
+## 14. A bug that passed every test: stock buys cancelled after 15 minutes
+
+**What happened (in production, reported 2026-10-22).** Every stock market buy was cancelled by the sweep 15 minutes after it was placed. Three real orders, **AMZN 90, V 12 and AAPL 3**, were cancelled; their reservations came back
+correctly, so no money was lost. These three are as reported by the owner: I did not read the orders table, so their ids and times are not here.
+**Why.** The venue fills only at a price at most 5 minutes old (`MAX_FILL_PRICE_AGE_MS`, `packages/db-trading/src/orders/venue.ts`) and the sweep cancels a working order with no fill after 15 minutes (`WORKING_DEADLINE_MS`,
+`sweep.ts`). A stock price is a close, stored once a trading day as of 16:00 New York (`apps/market-data/src/ingest.ts`), so it is hours old when anyone trades. Submit used a different rule (the contract's `stale` flag, whose
+`valid_until` is the end of the next trading day), so it accepted a buy the venue could never fill.
+**Why the tests did not see it.** Every order test seeded its price seconds old (`w.price`, `architecture/fitness/src/db-integration/orders-harness.ts`), with `source = 'test'`; the one case that held an order used a price 6 minutes old. No test had a
+price shaped like the ingest's. The first four sections of this file describe that rule as written in ADR-0017, which is accurate: the rule was as decided, and wrong for stocks.
+**The fix (ADR-0023, Proposed).** The price contract carries a `kind` (`live` or `end-of-day`); a live price keeps the 5-minute limit; an end-of-day price is fresh while the contract does not flag it stale; one function (`isFillable`) decides in both
+the simulator and the derived venue the app runs; `WORKING_DEADLINE` is unchanged. Tests: `orders-end-of-day.int.test.ts` (7 tests; run from `architecture/fitness`: `pnpm test:db src/db-integration/orders-end-of-day`), which fail when the end-of-day
+branch is removed (4 of 7, checked by hand) and pass with it. **Not verified:** that the three orders would now fill (they are cancelled; nothing was replayed against Neon), and the fix in production (it needs a deploy and a migration run against Neon,
+the owner's).
+**What it does not close.** Between 16:00 New York and that evening's ingest the previous close is still current under the contract; ADR-0023 records it and leaves it.
