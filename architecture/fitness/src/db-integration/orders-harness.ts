@@ -25,13 +25,21 @@ export function world(urls: DbUrls, poolSize = 12) {
       return rows[0]!.account_id;
     },
 
-    /** A quote that is `ageMs` old and valid for an hour from now, or already past `valid_until` when `stale`. */
-    async price(symbol: string, value: string, options: { ageMs?: number; stale?: boolean } = {}): Promise<void> {
+    /** A quote that is `ageMs` old and valid for an hour from now, or already past `valid_until` when `stale`. `kind: "end-of-day"` makes it a close, as the stock ingest stores. */
+    async price(symbol: string, value: string, options: { ageMs?: number; stale?: boolean; kind?: "live" | "end-of-day" } = {}): Promise<void> {
       await marketData.query(
-        `INSERT INTO market_data.quotes (symbol, as_of, price, source, valid_until)
-         VALUES ($1, now() - make_interval(secs => $3::numeric / 1000), $2, 'test', now() ${options.stale ? "- interval '1 second'" : "+ interval '1 hour'"})`,
-        [symbol, value, options.ageMs ?? 1000],
+        `INSERT INTO market_data.quotes (symbol, as_of, price, source, valid_until, kind)
+         VALUES ($1, now() - make_interval(secs => $3::numeric / 1000), $2, 'test', now() ${options.stale ? "- interval '1 second'" : "+ interval '1 hour'"}, $4)`,
+        [symbol, value, options.ageMs ?? 1000, options.kind ?? "live"],
       );
+    },
+
+    /**
+     * A stock close as the ingest stores it: as of 16:00 New York, so by the time anyone trades it is hours old. `ageHours` old and valid for four more hours (the close of
+     * the latest completed trading day, still current), or `staleClose` for a close older than the latest completed trading day, which the contract flags stale.
+     */
+    async endOfDayPrice(symbol: string, value: string, options: { ageHours?: number; staleClose?: boolean } = {}): Promise<void> {
+      await this.price(symbol, value, { ageMs: (options.ageHours ?? 20) * 3_600_000, kind: "end-of-day", stale: options.staleClose ?? false });
     },
 
     async order(orderId: string): Promise<Record<string, string | number | null>> {

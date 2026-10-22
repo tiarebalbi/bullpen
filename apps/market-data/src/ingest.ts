@@ -74,7 +74,7 @@ export async function runStockIngest(deps: IngestDeps): Promise<IngestSummary> {
         summary.notYetPublished.push(symbol);
         continue;
       }
-      await store(pool, { symbol, price: quote.price, asOf, source: "alphavantage", validUntil: stockValidUntil(date) });
+      await store(pool, { symbol, price: quote.price, asOf, source: "alphavantage", validUntil: stockValidUntil(date), kind: "end-of-day" });
       summary.stored.push(symbol);
     } catch (error) {
       summary.failed.push({ symbol, reason: error instanceof Error ? error.message : String(error) });

@@ -22,10 +22,13 @@ export interface Venue {
   poll(now: Date): Promise<VenueEvent[]>;
 }
 
+/** 'end-of-day' is a close; 'live' moves during the day. The price contract says which (ADR-0024). */
+export type PriceKind = "live" | "end-of-day";
 export interface Quote {
   price: string;
   asOf: Date;
   stale: boolean;
+  kind: PriceKind;
 }
 export interface PriceSource {
   latest(symbol: string, now: Date): Promise<Quote | null>;
@@ -34,13 +37,23 @@ export interface PriceSource {
 /** The latest price of the price contract, which is all the simulator fills at (ADR-0017). */
 export const dbPriceSource = (pool: Pool): PriceSource => ({
   async latest(symbol) {
-    const { rows } = await pool.query<{ price: string; as_of: Date; stale: boolean }>("SELECT price::text, as_of, stale FROM market_data.prices_v1 WHERE symbol = $1", [symbol]);
-    return rows[0] ? { price: rows[0].price, asOf: rows[0].as_of, stale: rows[0].stale } : null;
+    const { rows } = await pool.query<{ price: string; as_of: Date; stale: boolean; kind: PriceKind }>("SELECT price::text, as_of, stale, kind FROM market_data.prices_v1 WHERE symbol = $1", [symbol]);
+    return rows[0] ? { price: rows[0].price, asOf: rows[0].as_of, stale: rows[0].stale, kind: rows[0].kind } : null;
   },
 });
 
-/** A price older than this is not filled at: the order is held (ADR-0017). */
+/** A live price older than this is not filled at: the order is held (ADR-0017, ADR-0024). */
 export const MAX_FILL_PRICE_AGE_MS = 5 * 60_000;
+
+/**
+ * Whether the venue may fill at this quote. A live price must be under `maxLiveAgeMs` old. An end-of-day price has no age limit of its
+ * own: it is fresh while the contract does not flag it stale, which is the rule that refuses a buy at submit, so a buy the app accepted is
+ * one the venue can fill (ADR-0024). Both kinds are refused when the contract says stale.
+ */
+export function isFillable(quote: Quote | null, now: Date, maxLiveAgeMs: number = MAX_FILL_PRICE_AGE_MS): quote is Quote {
+  if (!quote || quote.stale) return false;
+  return quote.kind === "end-of-day" || now.getTime() - quote.asOf.getTime() <= maxLiveAgeMs;
+}
 
 const SCALE = 8;
 const toUnits = (decimal: string): bigint => {
@@ -156,8 +169,7 @@ export class SimulatedVenue implements Venue {
 
   private async execute(working: Working, now: Date): Promise<FillEvent | null> {
     const quote = await this.options.prices.latest(working.order.symbol, now);
-    const tooOld = !quote || quote.stale || now.getTime() - quote.asOf.getTime() > this.maxPriceAgeMs;
-    if (tooOld || toUnits(quote.price) > toUnits(working.order.capPrice)) {
+    if (!isFillable(quote, now, this.maxPriceAgeMs) || toUnits(quote.price) > toUnits(working.order.capPrice)) {
       working.held += 1;
       return null;
     }
@@ -235,7 +247,7 @@ export class DerivedVenue implements Venue {
         continue;
       }
       const quote = await this.options.prices.latest(order.symbol, now);
-      if (!quote || quote.stale || now.getTime() - quote.asOf.getTime() > this.maxPriceAgeMs || toUnits(quote.price) > toUnits(order.cap_price)) continue;
+      if (!isFillable(quote, now, this.maxPriceAgeMs) || toUnits(quote.price) > toUnits(order.cap_price)) continue;
       const remaining = toUnits(order.open_qty);
       if (remaining <= 0n) continue;
       const rng = seeded(fnv1a(`${this.options.seed}:${order.order_id}:${order.fills}`));
