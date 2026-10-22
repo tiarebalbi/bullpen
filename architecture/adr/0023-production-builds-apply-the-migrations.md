@@ -10,7 +10,7 @@ Proposed
 
 ## Summary
 
-The trading app's production build runs the database migrations first, and fails if it cannot
+A production build applies the migrations or fails
 
 ## Part
 
