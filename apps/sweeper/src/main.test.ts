@@ -52,4 +52,24 @@ describe("the sweeper process", () => {
     expect(result.code).toBe(0);
     expect(result.out).toContain("not-configured");
   }, 20_000);
+
+  it("with a target URL that stops short of the sweep route, names the problem, makes no call, and stops on SIGTERM", async () => {
+    const seen: IncomingMessage[] = [];
+    const server = createServer((req, res) => { seen.push(req); res.statusCode = 405; res.end(); });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const port = (server.address() as AddressInfo).port;
+    const child = start({ SWEEPER_TARGET_URL: `http://127.0.0.1:${port}`, SWEEPER_TOKEN: "SECRET-TOKEN" });
+    const done = exited(child);
+    let said = "";
+    child.stdout!.on("data", (d) => (said += d));
+    for (let i = 0; i < 200 && !said.includes("not-configured"); i += 1) await new Promise((r) => setTimeout(r, 50));
+    expect(said).toContain('"outcome":"not-configured"');
+    expect(said).toContain("SWEEPER_TARGET_URL must end at /api/internal/sweep");
+    expect(said).not.toContain("SECRET-TOKEN");
+    child.kill("SIGTERM");
+    expect((await done).code).toBe(0);
+    expect(seen).toHaveLength(0);
+    server.close();
+  }, 20_000);
 });
