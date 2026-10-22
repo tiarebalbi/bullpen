@@ -1,5 +1,5 @@
 import { cancelPlayerOrder } from "@bullpen/db-trading";
-import { apiError, noStore, resolvePlayer } from "../../../../lib/trading/playerAccount.js";
+import { apiError, logFailure, noStore, resolvePlayer } from "../../../../lib/trading/playerAccount.js";
 import { tradingPool } from "../../../../lib/trading/pool.js";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,8 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     const outcome = await cancelPlayerOrder(tradingPool(), who.accountId, id);
     if (outcome === "not-found") return apiError(404, { error: "not-found", message: "I cannot find that order." });
     return Response.json({ outcome }, { status: 202, headers: noStore });
-  } catch {
+  } catch (error) {
+    logFailure("orders.cancel", error);
     return apiError(503, { error: "unavailable", message: "I could not ask for that cancel. Try again in a moment." });
   }
 }

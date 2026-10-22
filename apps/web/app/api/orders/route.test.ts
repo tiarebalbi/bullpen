@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { validateAccountView, type AccountView } from "@bullpen/contracts";
 
 const mocks = vi.hoisted(() => ({
@@ -24,7 +24,11 @@ const view: AccountView = { label: "Player 4F2A", buyingPower: "100000.00000000"
 const post = (body: unknown) => POST(new Request("http://x/api/orders", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) }));
 const cancel = (id: string) => CANCEL(new Request(`http://x/api/orders/${id}/cancel`, { method: "POST" }), { params: Promise.resolve({ id }) });
 
+let errorLog: MockInstance<typeof console.error>;
+const loggedAt = (): unknown[] => errorLog.mock.calls.map((call) => (JSON.parse(String(call[0])) as { at: string }).at);
+
 beforeEach(() => {
+  errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
   for (const m of Object.values(mocks)) m.mockReset();
   mocks.signInAvailable.mockReturnValue(true);
   mocks.currentPlayer.mockResolvedValue({ userId: "user-1", label: "Player 4F2A" });
@@ -70,6 +74,15 @@ describe("GET /api/orders", () => {
     const response = await GET();
     expect(response.status).toBe(503);
     expect(JSON.stringify(await response.json())).not.toMatch(/password|trading_owner/);
+    expect(loggedAt()).toEqual(["orders.GET"]);
+  });
+
+  it("answers 503 and logs why when the account itself cannot be made", async () => {
+    mocks.ensurePlayerAccount.mockRejectedValue(Object.assign(new Error('column "owner_user_id" does not exist'), { code: "42703" }));
+    const response = await GET();
+    expect(response.status).toBe(503);
+    expect(loggedAt()).toEqual(["resolvePlayer"]);
+    expect(mocks.advanceAccount).not.toHaveBeenCalled();
   });
 });
 
@@ -117,10 +130,25 @@ describe("POST /api/orders", () => {
     const response = await post({ symbol: "AAPL", quantity: "10", clientOrderId: KEY });
     expect(response.status).toBe(503);
     expect(JSON.stringify(await response.json())).not.toMatch(/password|secret/);
+    expect(loggedAt()).toEqual(["orders.POST"]);
+  });
+
+  it("does not log a refusal: it is an answer, not a failure", async () => {
+    mocks.placePlayerOrder.mockRejectedValue(new BuyRefused("insufficient-buying-power", "Refused: not enough buying power for 10 AAPL."));
+    await post({ symbol: "AAPL", quantity: "10", clientOrderId: KEY });
+    expect(errorLog).not.toHaveBeenCalled();
   });
 });
 
 describe("POST /api/orders/[id]/cancel", () => {
+  it("answers 503 without the error text, and logs why, when the cancel cannot be asked for", async () => {
+    mocks.cancelPlayerOrder.mockRejectedValue(new Error("connection terminated with password=secret"));
+    const response = await cancel(KEY);
+    expect(response.status).toBe(503);
+    expect(JSON.stringify(await response.json())).not.toMatch(/password|secret/);
+    expect(loggedAt()).toEqual(["orders.cancel"]);
+  });
+
   it("answers 202 'requested': a request, not a cancel", async () => {
     const response = await cancel(KEY);
     expect(response.status).toBe(202);
