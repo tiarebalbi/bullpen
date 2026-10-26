@@ -30,12 +30,12 @@ describe("buildJsonLd: home", () => {
     expect(validateJsonLd(buildJsonLd("home", real)).valid).toBe(true);
   });
 
-  it("lists the three published parts, each with a date", () => {
-    expect(real.filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"]]);
-    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(3);
+  it("lists the four published parts, each with a date", () => {
+    expect(real.filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"], [4, "2026-10-26"]]);
+    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(4);
   });
 
-  it("lists Parts 1 to 3 with each post's real headline, URL and date", () => {
+  it("lists Parts 1 to 4 with each post's real headline, URL and date", () => {
     expect(seriesNode(real).hasPart).toEqual([
       {
         "@type": "BlogPosting",
@@ -54,6 +54,12 @@ describe("buildJsonLd: home", () => {
         headline: "Database per Service Is Free Now. That Is Not a Reason to Use It",
         url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership",
         datePublished: "2026-10-19",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "The Saga Pattern Is About Time, Not Services",
+        url: "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services",
+        datePublished: "2026-10-26",
       },
     ]);
   });

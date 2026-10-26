@@ -26,12 +26,10 @@ describe("parseSeries", () => {
     // Part 3 is published, with its post's address and its publish date.
     expect(parts[2]).toMatchObject({ part: 3, status: "published", url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership", date: "2026-10-19" });
     expect(parts[2]).toMatchObject({ title: "Who owns the data", headline: "Database per Service Is Free Now. That Is Not a Reason to Use It", introduced: "One owner per transaction, one Market Data service" });
-    expect(parts[3]).toMatchObject({ part: 4, status: "next", url: "", date: null });
-    for (const part of parts.slice(4)) {
-      expect(part.status).toBe("planned");
-      expect(part.url).toBe("");
-      expect(part.date).toBeNull();
-    }
+    // Part 4 is published, with its post's address, headline and publish date; Part 5 is the next one.
+    expect(parts[3]).toMatchObject({ part: 4, status: "published", url: "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services", date: "2026-10-26", headline: "The Saga Pattern Is About Time, Not Services" });
+    expect(parts[4]).toMatchObject({ part: 5, status: "next", url: "", date: null });
+    expect(parts[5]).toMatchObject({ part: 6, status: "planned", url: "", date: null });
     for (const part of parts) {
       expect(part.title.length).toBeGreaterThan(0);
       expect(part.introduced.length).toBeGreaterThan(0);
