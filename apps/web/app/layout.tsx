@@ -21,9 +21,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  // No content here is worth ranking yet -- two kinds of price and a
-  // leaderboard with no players until accounts arrive in Part 4. Revisit
-  // once there's something real to index.
+  // Not indexed: a signed-in terminal has nothing public to rank beyond two
+  // kinds of price. Revisit once there's something real to index.
   robots: { index: false },
 };
 
