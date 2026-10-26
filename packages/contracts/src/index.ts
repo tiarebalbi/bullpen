@@ -10,6 +10,6 @@ export type { LeaderboardEntry, LeaderboardSnapshot, StockPriceEntry, StockPrice
 
 
 export { validateAccountView, validateOrderRequest } from "./orders.js";
-export type { AccountView, ApiError, OrderRequest, OrderState, OrderView, PositionView } from "./orders.js";
+export type { AccountView, ApiError, FillView, OrderEventView, OrderRequest, OrderState, OrderView, PositionView } from "./orders.js";
 export { validateSweepTick } from "./sweep.js";
 export type { SweepTick } from "./sweep.js";

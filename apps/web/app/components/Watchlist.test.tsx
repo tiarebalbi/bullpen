@@ -6,8 +6,8 @@ import { CryptoSection, StocksSection, closeLabel } from "./Watchlist.js";
 
 const stocks = (rows: StockPriceSnapshot["rows"]): Polled<StockPriceSnapshot> => ({ status: "ok", data: { rows } });
 const rows = [
-  { symbol: "AAPL", price: "190.12000000", asOf: "2026-10-13T20:00:00.000Z", stale: false },
-  { symbol: "MSFT", price: "410.5", asOf: "2026-10-08T20:00:00.000Z", stale: true },
+  { symbol: "AAPL", price: "190.12000000", asOf: "2026-10-13T20:00:00.000Z", stale: false, previousClose: null },
+  { symbol: "MSFT", price: "410.5", asOf: "2026-10-08T20:00:00.000Z", stale: true, previousClose: null },
 ];
 const btc = (overrides: Partial<PriceSnapshot> = {}): Polled<PriceSnapshot> => ({ status: "ok", data: { symbol: "BTC-USD", price: 65432.1, changePercent: 1.25, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString(), ...overrides } as PriceSnapshot });
 
@@ -19,6 +19,15 @@ describe("StocksSection", () => {
     expect(screen.getByText("Close · Oct 13")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Alpha Vantage" })).toHaveAttribute("href", "https://www.alphavantage.co");
     expect(screen.queryByText(/[▲▼%]/)).not.toBeInTheDocument();
+  });
+
+  it("shows the move since the previous close only for a symbol with both closes stored, and 'N held' from positions", () => {
+    const withPrevious = [{ ...rows[0]!, previousClose: { price: "180.00000000", asOf: "2026-10-12T20:00:00.000Z" } }, rows[1]!];
+    render(<StocksSection polled={stocks(withPrevious)} selected="" onSelect={() => undefined} positions={[{ symbol: "AAPL", quantity: "30.00000000", avgCost: "100.00000000", price: null, value: null }]} />);
+    expect(screen.getByText("▲ +5.62%")).toBeInTheDocument();
+    expect(screen.getAllByText(/[▲▼]/)).toHaveLength(1); // MSFT has one close only: no figure
+    expect(screen.getByText("Close · Oct 13 · 30 held")).toBeInTheDocument();
+    expect(screen.getByText("Close · Oct 8")).toBeInTheDocument();
   });
 
   it("labels a stale price in words, and only the stale one", () => {

@@ -5,7 +5,7 @@ import type { Polled } from "../lib/usePolled.js";
 import { SymbolDetail } from "./SymbolDetail.js";
 
 const crypto = (): Polled<PriceSnapshot> => ({ status: "ok", data: { symbol: "BTC-USD", price: 65000, changePercent: 0.5, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString() } as PriceSnapshot });
-const stocks = (stale = false): Polled<StockPriceSnapshot> => ({ status: "ok", data: { rows: [{ symbol: "AAPL", price: "190.12", asOf: "2026-10-13T20:00:00.000Z", stale }] } });
+const stocks = (stale = false): Polled<StockPriceSnapshot> => ({ status: "ok", data: { rows: [{ symbol: "AAPL", price: "190.12", asOf: "2026-10-13T20:00:00.000Z", stale, previousClose: null }] } });
 const none: Polled<StockPriceSnapshot> = { status: "loading" };
 
 describe("SymbolDetail", () => {
@@ -13,13 +13,14 @@ describe("SymbolDetail", () => {
     render(<SymbolDetail selected="BTC-USD" crypto={crypto()} stocks={none} />);
     expect(screen.getByTestId("price-cell-price")).toHaveTextContent("65,000.00");
     expect(screen.getByRole("link", { name: "Powered by CoinGecko" })).toBeInTheDocument();
-    expect(screen.getByText("No price history yet")).toBeInTheDocument();
+    expect(screen.getByText("No chart yet")).toBeInTheDocument();
+    expect(screen.getByText("A chart needs price history; it arrives in Part 5.")).toBeInTheDocument();
   });
 
   it("shows a stock's close in the market-closed form, with no change figure, and says it is not live", () => {
     render(<SymbolDetail selected="AAPL" crypto={crypto()} stocks={stocks()} />);
     expect(screen.getByTestId("price-cell-price")).toHaveTextContent("190.12");
-    expect(screen.getByText("Close · 16:00 ET")).toBeInTheDocument();
+    expect(screen.getByText("Close · Oct 13")).toBeInTheDocument();
     expect(screen.queryByTestId("price-cell-change")).not.toBeInTheDocument();
     expect(screen.getByText(/End-of-day price for Oct 13, not live/)).toBeInTheDocument();
   });

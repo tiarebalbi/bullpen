@@ -3,7 +3,7 @@ import type { AccountView, OrderState, OrderView } from "@bullpen/contracts";
 import { IDLE_POLL_MS, OPEN_POLL_MS, pollInterval, readAccount } from "./useAccount.js";
 
 const view = (states: OrderState[]): AccountView => ({
-  label: "Player 4F2A", buyingPower: "100000.00000000", reserved: "0.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], asOf: "2026-10-20T10:00:00.000Z",
+  label: "Player 4F2A", buyingPower: "100000.00000000", reserved: "0.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], latestOrder: null, fills: [], asOf: "2026-10-20T10:00:00.000Z",
   orders: states.map((state, i) => ({ orderId: `o${i}`, symbol: "AAPL", side: "buy", type: "market", state } as OrderView)),
 });
 const answer = (status: number, body: unknown): typeof fetch => (async () => new Response(JSON.stringify(body), { status })) as typeof fetch;

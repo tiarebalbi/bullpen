@@ -27,7 +27,8 @@ BEGIN
   END IF;
 END $$;
 
--- The price contract: symbol, price, as-of, source, stale, kind. The only thing outside the owner that reads market_data.
+-- The price contract: symbol, price, as-of, source, stale, kind, previous price, previous as-of. The only thing outside the owner that reads market_data.
+-- The previous price is the quote stored just before the latest one for the symbol, or NULL when there is none: a reader may show a change only when both exist (ADR-0025).
 CREATE OR REPLACE VIEW market_data.prices_v1 AS
   SELECT DISTINCT ON (symbol)
          symbol,
@@ -35,8 +36,15 @@ CREATE OR REPLACE VIEW market_data.prices_v1 AS
          as_of,
          source,
          (now() > valid_until) AS stale,
-         kind
-    FROM market_data.quotes
+         kind,
+         previous_price,
+         previous_as_of
+    FROM (
+      SELECT q.*,
+             lag(price) OVER (PARTITION BY symbol ORDER BY as_of) AS previous_price,
+             lag(as_of) OVER (PARTITION BY symbol ORDER BY as_of) AS previous_as_of
+        FROM market_data.quotes q
+    ) quotes
    ORDER BY symbol, as_of DESC;
 
 GRANT USAGE ON SCHEMA market_data TO trading_owner;
