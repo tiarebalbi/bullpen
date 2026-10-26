@@ -34,6 +34,8 @@ export interface StockPriceEntry {
   asOf: string;
   /** Older than its expected cadence. */
   stale: boolean;
+  /** The close stored just before this one, or null: a change is shown only when both exist. */
+  previousClose: { price: string; asOf: string } | null;
 }
 
 export interface StockPriceSnapshot {

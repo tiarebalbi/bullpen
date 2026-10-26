@@ -85,3 +85,16 @@ export function estimate(quantity: string, price: string): { cost: number; reser
 export function newAttemptKey(): string {
   return globalThis.crypto.randomUUID();
 }
+
+/** The ticket's `−` and `+`: one whole unit at a time, never below nothing. Text that is not a number counts as zero, and zero shows as empty. */
+export function stepQuantity(text: string, direction: 1 | -1): string {
+  const current = Number(text.trim());
+  const base = Number.isFinite(current) && current > 0 ? current : 0;
+  const next = Math.max(0, Math.round((base + direction) * 1e8) / 1e8);
+  return next === 0 ? "" : String(next);
+}
+
+/** The primary button's words: "Buy 10 NVDA · $1,825.80" once the quantity is valid, "Buy NVDA" before. */
+export function buyLabel(symbol: string, quantity: string | null, cost: number | null): string {
+  return quantity !== null && cost !== null ? `Buy ${quantityLabel(quantity)} ${symbol} · ${formatMoney(String(cost))}` : `Buy ${symbol}`;
+}
