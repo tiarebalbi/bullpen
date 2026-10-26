@@ -16,6 +16,7 @@ const EXTRA_RULE_TILE: Record<string, string> = {
   "data ownership": "Data ownership",
   "rule coverage": "Structural assertions",
   "email in files": "Entry points and secrets",
+  "web url": "Entry points and secrets",
 };
 
 export interface TileRow {

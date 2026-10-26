@@ -85,7 +85,8 @@
         "architecture/adr/0022-identity-is-the-sdks-verified-session.md",
         "architecture/adr/0023-production-builds-apply-the-migrations.md",
         "architecture/adr/0024-freshness-depends-on-the-price-kind.md",
-        "architecture/adr/0025-the-price-contract-carries-the-previous-close.md"
+        "architecture/adr/0025-the-price-contract-carries-the-previous-close.md",
+        "architecture/adr/0026-a-production-landing-build-refuses-a-stale-app-url.md"
       ],
       "metadata": {
         "planned-architecture": "planned/part-04.architecture.json",

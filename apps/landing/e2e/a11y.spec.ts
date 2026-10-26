@@ -25,6 +25,15 @@ for (const theme of ["light", "dark"] as const) {
         const summary = results.violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(" | ")}`);
         expect(summary).toEqual([]);
       });
+
+      // axe skips a count of one digit, so a faded count passed until a part had ten decisions (3.88:1 at opacity 0.8, against 4.5:1).
+      // The count must not be dimmer than its tab's own text, whatever its digits.
+      test("an unselected decisions tab shows its count at full strength, so contrast does not depend on the digits", async ({ page }) => {
+        await open(page, theme);
+        const counts = page.locator('.bp-decision-tab[aria-selected="false"] .bp-decision-tab__count');
+        expect(await counts.count()).toBeGreaterThan(0);
+        expect(await counts.evaluateAll((spans) => spans.map((span) => getComputedStyle(span).opacity))).toEqual(Array(await counts.count()).fill("1"));
+      });
     });
   }
 }

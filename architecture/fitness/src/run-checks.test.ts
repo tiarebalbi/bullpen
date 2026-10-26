@@ -23,6 +23,7 @@ describe("check:arch on the real repo", () => {
       "budget",
       "explorer consistency",
       "email in files",
+      "web url",
       "rule coverage",
     ]);
   });

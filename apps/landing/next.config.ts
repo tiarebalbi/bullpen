@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import { WEB_URL_VARIABLE, assertWebUrl } from "./lib/webUrlGuard";
+
+// NEXT_PUBLIC_ values are inlined at build time, so a stale one ships silently: a production build refuses a trading-app
+// address that is not the custom domain (ADR-0026).
+assertWebUrl(process.env[WEB_URL_VARIABLE], process.env.VERCEL_ENV);
 
 // @bullpen/ui and @bullpen/contracts ship TypeScript source (no build step,
 // see their package.json `main`/`types` fields), so Next must transpile

@@ -782,7 +782,6 @@ code {
 }
 .bp-decision-tab__count {
   font: 500 11px/1 var(--font-mono);
-  opacity: 0.8;
 }
 .bp-decision-tab:focus-visible,
 .bp-decision-more:focus-visible,
