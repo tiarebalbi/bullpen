@@ -69,9 +69,10 @@ export default function PrivacyPage(): ReactNode {
           <div className="bp-eyebrow">Privacy</div>
           <h1 className="bp-privacy__title">What I collect, and why</h1>
           <p className="bp-section__lede">
-            Bullpen is a project I build in public. It has no accounts or sign-in yet, so I hold nothing
-            about you by name. If you accept, two analytics tools measure how the site is used. If you
-            don&rsquo;t, they never load.
+            Bullpen is a project I build in public. You can sign in to the trading app with GitHub, and
+            Bullpen stores no name, email address or GitHub login for you, only a neutral player label. If
+            you accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
+            load.
           </p>
           <p className="bp-privacy__updated">Last updated {formatLongDate(PRIVACY_UPDATED)}</p>
         </div>

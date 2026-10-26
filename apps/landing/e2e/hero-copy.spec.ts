@@ -43,10 +43,13 @@ test.describe("landing hero copy", () => {
     }
   });
 
-  test("the leaderboard status line stays under the hero, not on a button, and names the part accounts arrive in", async ({ page }) => {
-    await expect(page.locator(".bp-hero")).toContainText("no one is on it yet");
-    await expect(page.locator(".bp-hero")).toContainText("Accounts and orders arrive in Part 4");
-    await expect(page.locator(".bp-hero")).not.toContainText("the league opens in Part 3");
+  test("the hero says orders are open and links to the trading app, not on a button", async ({ page }) => {
+    const hero = page.locator(".bp-hero");
+    await expect(hero).toContainText("Orders are open in the trading app");
+    await expect(hero.getByRole("link", { name: "trading app" })).toHaveAttribute("href", "https://bullpen-app.tiarebalbi.com");
+    await expect(hero).not.toContainText("Accounts and orders arrive in Part 4");
+    await expect(hero).not.toContainText("no one is on it yet");
+    await expect(hero).not.toContainText("the league opens in Part 3");
     await expect(page.locator(".bp-hero__ctas")).not.toContainText("League opens");
     await expect(page.locator(".bp-nav")).not.toContainText("League opens");
   });

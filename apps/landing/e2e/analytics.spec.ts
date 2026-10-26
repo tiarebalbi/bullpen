@@ -289,6 +289,10 @@ for (const viewport of [
       await expect(page).toHaveTitle("Privacy: what Bullpen collects, and why");
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://bullpen.tiarebalbi.com/privacy");
       await expect(page.getByRole("heading", { name: "Advertising is off" })).toBeVisible();
+      // Sign-in exists since Part 4, so the page no longer says there are no accounts.
+      await expect(page.locator(".bp-privacy")).not.toContainText("no accounts or sign-in");
+      await expect(page.locator(".bp-privacy")).toContainText("sign in to the trading app with GitHub");
+      await expect(page.getByText("Last updated 26 October 2026")).toBeVisible();
       await expect(page.getByRole("link", { name: "my site" })).toHaveAttribute("href", "https://tiarebalbi.com");
       await expect(page.getByRole("button", { name: "Cookie settings" })).toBeVisible();
       for (const cookie of ["bullpen_consent", "_ga", "_clck", "_clsk"]) {
