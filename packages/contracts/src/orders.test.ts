@@ -28,8 +28,17 @@ const view: AccountView = {
   cash: "99600.00000000",
   positionsValue: "400.00000000",
   equity: "100000.00000000",
-  positions: [{ symbol: "AAPL", quantity: "4.00000000", price: "100.00000000", value: "400.00000000" }],
+  positions: [{ symbol: "AAPL", quantity: "4.00000000", avgCost: "99.00000000", price: "100.00000000", value: "400.00000000" }],
   orders: [order],
+  latestOrder: {
+    orderId: order.orderId,
+    events: [
+      { kind: "accepted", at: "2026-10-21T12:00:00.000Z", state: "accepted", quantity: "10.00000000", price: null },
+      { kind: "working", at: "2026-10-21T12:00:01.000Z", state: "working", quantity: null, price: null },
+      { kind: "fill", at: "2026-10-21T12:00:02.000Z", state: "partially_filled", quantity: "4.00000000", price: "100.00000000" },
+    ],
+  },
+  fills: [{ fillId: `${order.orderId}:0`, symbol: "AAPL", side: "buy", quantity: "4.00000000", price: "100.00000000", executedAt: "2026-10-21T12:00:02.000Z" }],
   asOf: "2026-10-21T12:00:01.000Z",
 };
 
@@ -42,6 +51,17 @@ describe("the account view contract", () => {
   it("refuses a field that would name a person: an owner id, a login, an email", () => {
     for (const extra of [{ ownerUserId: "u1" }, { login: "octocat" }, { email: "a@b.c" }]) expect(validateAccountView({ ...view, ...extra }).valid).toBe(false);
     expect(validateAccountView({ ...view, orders: [{ ...order, accountId: "x" }] }).valid).toBe(false);
+  });
+
+  it("accepts no orders at all (latestOrder null, no fills) and refuses what would name a person in the history or the fills", () => {
+    expect(validateAccountView({ ...view, orders: [], latestOrder: null, fills: [], positions: [] }).valid).toBe(true);
+    expect(validateAccountView({ ...view, fills: [{ ...view.fills[0]!, accountId: "x" }] }).valid).toBe(false);
+    expect(validateAccountView({ ...view, latestOrder: { ...view.latestOrder!, events: [{ ...view.latestOrder!.events[0]!, detail: {} }] } }).valid).toBe(false);
+  });
+
+  it("holds at most ten fills, and an event kind the screen does not draw is refused", () => {
+    expect(validateAccountView({ ...view, fills: Array.from({ length: 11 }, () => view.fills[0]) }).valid).toBe(false);
+    expect(validateAccountView({ ...view, latestOrder: { ...view.latestOrder!, events: [{ ...view.latestOrder!.events[0]!, kind: "fill_anomaly" }] } }).valid).toBe(false);
   });
 
   it("refuses a label that is a name, and a state the lifecycle does not have", () => {

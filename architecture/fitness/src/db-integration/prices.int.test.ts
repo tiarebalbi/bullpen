@@ -28,4 +28,15 @@ describe("readPrices: the trading owner reads prices through the contract", () =
     expect(prices.filter((p) => p.symbol === fresh)).toHaveLength(1); // one row per symbol, the latest
     expect(stale).toMatchObject({ price: "9.00000000", stale: true });
   });
+
+  it("carries the previous stored close, and null when only one close is stored", async () => {
+    const two = symbol();
+    const one = symbol();
+    await marketData.query("INSERT INTO market_data.quotes (symbol, as_of, price, source, valid_until, kind) VALUES ($1, now() - interval '3 days', 100, 'test', now() + interval '1 day', 'end-of-day'), ($1, now() - interval '2 days', 90, 'test', now() + interval '1 day', 'end-of-day'), ($1, now() - interval '1 day', 110, 'test', now() + interval '1 day', 'end-of-day'), ($2, now() - interval '1 day', 5, 'test', now() + interval '1 day', 'end-of-day')", [two, one]);
+    const prices = await readPrices(trading, { includeTestRows: true });
+    const latest = prices.find((p) => p.symbol === two)!;
+    expect(latest).toMatchObject({ price: "110.00000000", previous: { price: "90.00000000" } });
+    expect(latest.previous!.asOf).toBeInstanceOf(Date);
+    expect(prices.find((p) => p.symbol === one)).toMatchObject({ previous: null });
+  });
 });

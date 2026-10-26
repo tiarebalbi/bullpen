@@ -210,7 +210,8 @@ describe("the fill price rule", () => {
     expect(await sweep(w.trading, venue, now)).toMatchObject({ cancelRequested: 1 });
     await pump(w.trading, venue, now);
     expect(await w.order(orderId)).toMatchObject({ status: "cancelled", cancelled_qty: "10.00000000" });
-    expect(await sweep(w.trading, venue, new Date(now.getTime() + LATE_FILL_WINDOW_MS + 1))).toMatchObject({ released: 1 });
+    // the sweep acts on every order in the shared database, so another test file's finished order may be released in the same pass: this order's own release is what buying power shows
+    expect((await sweep(w.trading, venue, new Date(now.getTime() + LATE_FILL_WINDOW_MS + 1))).released).toBeGreaterThanOrEqual(1);
     expect(await w.buyingPower(accountId)).toBe("10000.00000000");
     expect(WORKING_DEADLINE_MS).toBe(15 * 60_000);
   });

@@ -1,6 +1,6 @@
 # Part 4: facts for the post
 
-Fourteen short sections, each ready to paste. Every number names the file it comes from and the command that reproduces it (commands run from the repo root unless a directory is
+Fifteen short sections, each ready to paste. Every number names the file it comes from and the command that reproduces it (commands run from the repo root unless a directory is
 given). Anything not read or not run says so. Branch `post-04-saga`; the reports it cites are in `architecture/reports/part-04/`.
 
 ## 1. Where the lifecycle rules landed as tests
@@ -138,3 +138,15 @@ price shaped like the ingest's. The first four sections of this file describe th
 the simulator and the derived venue the app runs; `WORKING_DEADLINE` is unchanged. Tests: `orders-end-of-day.int.test.ts` (7 tests; run from `architecture/fitness`: `pnpm test:db src/db-integration/orders-end-of-day`), which fail when the end-of-day
 branch is removed (4 of 7, checked by hand) and pass with it. **Not verified:** that the three orders would now fill (they are cancelled; nothing was replayed against Neon), and the fix in production (it needs a deploy, whose build applies the migration to Neon under ADR-0023).
 **What it does not close.** Between 16:00 New York and that evening's ingest the previous close is still current under the contract; ADR-0024 records it and leaves it.
+
+## 15. A Postgres error seen once in CI: "new multixact has more than one updating member"
+
+**Observed once, not reproduced.** On 2026-10-26 the `ci` job of run 139, attempt 1 (https://github.com/tiarebalbi/bullpen/actions/runs/40375301401/job/121756619887, head `5fb2b14`) failed one test of 118 in
+`architecture/fitness/src/db-integration/orders-race.int.test.ts`: "experiment 1: the cancel races the fills > holds for seeded random plans delivered concurrently, with duplicates and crashes". Postgres 17 (`postgres:17-alpine`, a
+floating tag) raised `XX000 new multixact has more than one updating member: 0 3[81794 (keysh), 81794 (nokeyupd), 81799 (nokeyupd)]` (`multixact.c`, `MultiXactIdCreateFromMembers`) on the `UPDATE trading.orders ... WHERE order_id = $1 AND version = $5`
+in `bookFill` (`packages/db-trading/src/orders/lifecycle.ts`, via `inTx`). Attempt 2 of the same run, on the same commit, passed that test (job 121762790128), as did `main`'s run 138 and #54's run 137.
+**Seed: not recorded.** The test runs seeds 1 to 1500 (`PART4_RACE_SEEDS`) in batches of 10 at once, and it prints a seed only for a failure it collects; this error was thrown out of `deliver`, so the log names no seed. The seed fixes the plan, not the interleaving of the
+ten concurrent runs, so it would not reproduce the failure by itself.
+**What the code does.** The order update takes no explicit row lock and no savepoint: there is no `SAVEPOINT`, `FOR UPDATE`, `FOR SHARE` or advisory lock in `packages/db-trading`, `apps/sweeper` or `apps/web`. It is an optimistic update guarded by `version`, retried on a
+version conflict, `40001` or `40P01` (`inTx`, 12 attempts). The `keysh` member is the implicit key-share lock that inserting a child row (`fills`, `reservations`, `ledger`) takes on its `trading.orders` row through the foreign key.
+**Not verified:** the cause. I have not reproduced it, so I do not claim it is a Postgres bug or a flaw in the update; if it shows again, it is a finding, not a flake.

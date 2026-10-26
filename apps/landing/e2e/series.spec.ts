@@ -6,6 +6,7 @@ import { expect, test, type Page } from "@playwright/test";
 const POST_1 = "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026";
 const POST_2 = "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember";
 const POST_3 = "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership";
+const POST_4 = "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services";
 
 async function mockPrice(page: Page): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) =>
@@ -82,25 +83,33 @@ for (const viewport of [
       await expect(part3).not.toContainText(/Invalid|NaN/);
     });
 
-    test("Part 4 is next: the Next chip, no date and no link", async ({ page }) => {
+    test("Part 4 is published, links its post and shows its publish date", async ({ page }) => {
       const part4 = card(page, 4);
       await expect(part4).toContainText("Part 4");
-      await expect(part4.locator(".bp-chip")).toHaveText("Next");
-      await expect(part4).toContainText("Not yet published");
-      await expect(part4.getByRole("link")).toHaveCount(0);
+      await expect(part4.locator(".bp-chip")).toHaveText("Published");
+      await expect(part4.getByRole("link")).toHaveAttribute("href", POST_4);
+      await expect(part4).not.toContainText("Not yet published");
+      await expect(part4).toContainText("Oct 26, 2026");
+      await expect(part4).not.toContainText(/Invalid|NaN/);
     });
 
-    test("Parts 5 and 6 are planned, with no date and no link", async ({ page }) => {
-      for (const part of [5, 6]) {
-        await expect(card(page, part).locator(".bp-chip")).toHaveText("Planned");
-        await expect(card(page, part)).toContainText("Not yet published");
-        await expect(card(page, part).getByRole("link")).toHaveCount(0);
-      }
+    test("Part 5 is next: the Next chip, no date and no link", async ({ page }) => {
+      const part5 = card(page, 5);
+      await expect(part5).toContainText("Part 5");
+      await expect(part5.locator(".bp-chip")).toHaveText("Next");
+      await expect(part5).toContainText("Not yet published");
+      await expect(part5.getByRole("link")).toHaveCount(0);
     });
 
-    test("the three posts are the only links out of the series cards", async ({ page }) => {
+    test("Part 6 is planned, with no date and no link", async ({ page }) => {
+      await expect(card(page, 6).locator(".bp-chip")).toHaveText("Planned");
+      await expect(card(page, 6)).toContainText("Not yet published");
+      await expect(card(page, 6).getByRole("link")).toHaveCount(0);
+    });
+
+    test("the four posts are the only links out of the series cards", async ({ page }) => {
       const hrefs = await page.locator(".bp-series-grid a").evaluateAll((anchors) => anchors.map((a) => a.getAttribute("href")));
-      expect(hrefs).toEqual([POST_1, POST_2, POST_3]);
+      expect(hrefs).toEqual([POST_1, POST_2, POST_3, POST_4]);
     });
   });
 }

@@ -49,7 +49,7 @@ describe("a player's own order, from submit to the screen", () => {
     const order = v.orders.find((o) => o.orderId === placed.orderId)!;
     expect(order).toMatchObject({ state: "filled", filledQty: "10.00000000", avgPrice: "100.00000000", reserved: "1050.00000000", spent: "1000.00000000", released: "50.00000000", releaseDone: true });
     expect(v).toMatchObject({ buyingPower: "99000.00000000", reserved: "0.00000000", cash: "99000.00000000", positionsValue: "1000.00000000", equity: "100000.00000000" });
-    expect(v.positions).toEqual([{ symbol, quantity: "10.00000000", price: "100.00000000", value: "1000.00000000" }]);
+    expect(v.positions).toEqual([{ symbol, quantity: "10.00000000", avgCost: "100.00000000", price: "100.00000000", value: "1000.00000000" }]);
   });
 
   it("a retry with the same key is the same order: one order, one reservation", async () => {
@@ -151,5 +151,33 @@ describe("a player's own order, from submit to the screen", () => {
     await advanceAccount(w.trading, theirs);
     await settle(theirs, order.orderId);
     expect(await cancelPlayerOrder(w.trading, theirs, order.orderId)).toBe("too-late");
+  });
+
+  it("the view carries the average cost of the booked fills, the latest order's own history and the recent fills", async () => {
+    const accountId = await player();
+    const symbol = w.symbol();
+    await w.price(symbol, "100", { ageMs: 5000 });
+    const first = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "10", clientOrderId: randomUUID() });
+    await settle(accountId, first.orderId);
+    await w.price(symbol, "110", { ageMs: 1000 });
+    const second = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "10", clientOrderId: randomUUID() });
+    await settle(accountId, second.orderId);
+
+    const v = await view(accountId);
+    expect(v.positions.find((p) => p.symbol === symbol)).toMatchObject({ quantity: "20.00000000", avgCost: "105.00000000", price: "110.00000000" });
+    expect(v.latestOrder?.orderId).toBe(second.orderId);
+    const kinds = v.latestOrder!.events.map((e) => e.kind);
+    expect(kinds.slice(0, 2)).toEqual(["accepted", "working"]);
+    expect(kinds).toContain("fill");
+    expect(kinds.at(-1)).toBe("released");
+    expect(v.latestOrder!.events.filter((e) => e.kind === "fill").every((e) => e.quantity !== null && e.price === "110.00000000")).toBe(true);
+    expect(v.fills.length).toBeGreaterThanOrEqual(2);
+    expect(v.fills[0]).toMatchObject({ symbol, side: "buy", price: "110.00000000" }); // newest first
+    expect(JSON.stringify(v)).not.toMatch(/account_id|accountId|user/i);
+  });
+
+  it("an account with no orders has no latest order and no fills", async () => {
+    const v = await view(await player());
+    expect(v).toMatchObject({ latestOrder: null, fills: [], positions: [] });
   });
 });
