@@ -21,7 +21,7 @@ const groupAsserts = (heading: string): string[] => {
 };
 const adlIds = new Set(adlLines.filter((l) => l.startsWith("ASSERT(")).map((l) => slugOf(l.slice("ASSERT(".length, -1))));
 // The mapping the tiles promise: a rule with no ASSERT line is listed in the tile of its family.
-const FAMILY: Record<string, string> = { "model currency": "Model currency", "explorer consistency": "Model currency", "data ownership": "Data ownership", "rule coverage": "Structural assertions", "email in files": "Entry points and secrets" };
+const FAMILY: Record<string, string> = { "model currency": "Model currency", "explorer consistency": "Model currency", "data ownership": "Data ownership", "rule coverage": "Structural assertions", "email in files": "Entry points and secrets", "web url": "Entry points and secrets" };
 const extrasOf = (heading: string) => snapshotRules.filter((r) => !adlIds.has(r.id) && r.check !== "budget" && FAMILY[r.check] === heading);
 const titleOf = (heading: string): string => heading.replace(/\s*\(.+\)$/, "");
 const budgetRules = snapshotRules.filter((r) => r.check === "budget");

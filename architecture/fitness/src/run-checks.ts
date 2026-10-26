@@ -11,6 +11,7 @@ import { ADR_LINKED_RULE, CONTROL_POINTER_RULE, EXTERNAL_SYSTEM_RULE, checkModel
 import { ADL_RULE, checkAdlEnforced } from "./rules.js";
 import { checkSecretContainment } from "./secret-check.js";
 import { checkStructure } from "./structure-check.js";
+import { WEB_URL_RULE, checkWebUrl } from "./web-url-check.js";
 import type { Violation } from "./violation.js";
 
 export interface CheckContext {
@@ -55,6 +56,7 @@ export const CHECKS: CheckDefinition[] = [
   { name: "budget", rules: [BUDGET_RULE], run: ({ repoRoot, allowances }) => checkBudgetAt(repoRoot, allowances) },
   { name: "explorer consistency", rules: [EXPLORER_RULE], run: ({ repoRoot }) => checkAllExplorerParts(repoRoot) },
   { name: "email in files", rules: [EMAIL_RULE], run: ({ repoRoot }) => checkEmailInFiles(repoRoot) },
+  { name: "web url", rules: [WEB_URL_RULE], run: ({ repoRoot }) => checkWebUrl(repoRoot) },
   { name: "rule coverage", rules: ["every ADL ASSERT is enforced by a check, and every enforced rule is still in the ADL"], run: ({ repoRoot }) => checkAdlEnforced(repoRoot) },
 ];
 

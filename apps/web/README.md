@@ -37,9 +37,12 @@ projects.vercel.app`). Update the relevant env var if either production
 origin ever changes, or the preview pattern in `route.ts` if the Vercel
 team slug changes.
 
-**Important:** for `NEXT_PUBLIC_BULLPEN_WEB_URL` (set on the **landing**
-project, not here) and any preview of `bullpen-web` itself to matter, this
-CORS logic has to actually be deployed — i.e. this PR needs to merge to
-`main` before a landing preview can successfully call *production*
-`bullpen-web` (previews of landing don't get their own preview of
-`bullpen-web`; they always call the production one).
+**Important:** `NEXT_PUBLIC_BULLPEN_WEB_URL` is set on the **landing** project, not
+here, and a `NEXT_PUBLIC_` value is baked into the landing at build time. In
+production it must be the custom domain, `https://bullpen-app.tiarebalbi.com`,
+or be left unset so the landing uses that fallback: a production landing build
+fails on any other value (ADR-0026), and `check:arch` holds the same rule. A
+landing preview may set it to any `https://` origin. Previews of landing don't
+get their own preview of `bullpen-web`, so they call production `bullpen-web`
+unless the variable points elsewhere, which needs the CORS logic above to be
+deployed.

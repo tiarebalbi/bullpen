@@ -29,7 +29,9 @@ describe("the trading app's host", () => {
   });
 
   it("the landing's link and the app's canonical URL both name the production domain", () => {
-    expect(readFileSync(join(repoRoot, "apps", "landing", "app", "lib", "webAppUrl.ts"), "utf8")).toContain(`https://${NEW_HOST}`);
+    // The landing's fallback is the shared constant (ADR-0026), which lives in the guard the production build runs.
+    expect(readFileSync(join(repoRoot, "apps", "landing", "lib", "webUrlGuard.ts"), "utf8")).toContain(`PRODUCTION_WEB_ORIGIN = "https://${NEW_HOST}"`);
+    expect(readFileSync(join(repoRoot, "apps", "landing", "app", "lib", "webAppUrl.ts"), "utf8")).toContain("?? PRODUCTION_WEB_ORIGIN");
     expect(readFileSync(join(repoRoot, "apps", "web", "app", "layout.tsx"), "utf8")).toContain(`https://${NEW_HOST}`);
   });
 });

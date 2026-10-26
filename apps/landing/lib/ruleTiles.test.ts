@@ -20,6 +20,7 @@ const EXTRAS: SnapshotRule[] = [
   { id: "x-migration", rule: "a migration touches only its owner's schema", check: "data ownership", passed: true },
   { id: "x-coverage", rule: "every ADL ASSERT is enforced", check: "rule coverage", passed: true },
   { id: "x-email", rule: "no email in files", check: "email in files", passed: true },
+  { id: "x-web-url", rule: "production links to the trading app's domain", check: "web url", passed: true },
   { id: "x-budget", rule: "the budget holds", check: "budget", passed: true },
 ];
 
@@ -54,7 +55,7 @@ describe("buildRuleTiles", () => {
     expect(tile("Model currency").extraRows.map((r) => r.key)).toEqual(["x-model-1", "x-model-2", "x-explorer"]);
     expect(tile("Data ownership").extraRows.map((r) => r.key)).toEqual(["x-migration"]);
     expect(tile("Structural assertions").extraRows.map((r) => r.key)).toEqual(["x-coverage"]);
-    expect(tile("Entry points and secrets").extraRows.map((r) => r.key)).toEqual(["x-email"]);
+    expect(tile("Entry points and secrets").extraRows.map((r) => r.key)).toEqual(["x-email", "x-web-url"]);
     expect(tile("Allowed dependencies").extraRows).toEqual([]);
     expect(tile("Model currency").count).toBe(tile("Model currency").rows.length + 3);
     expect(view.tiles.find((t) => t.id === "budget")!.count).toBe(1);
