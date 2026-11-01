@@ -39,6 +39,7 @@ export type {
   ArchEdgeData,
   ArchGroupData,
   ArchPartData,
+  ArchChangeRequest,
   ArchRequestStep,
   ArchRequestData,
   ArchChange,

@@ -26,7 +26,7 @@ import { ArchitectureExplorerEdge } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup } from "./ArchitectureExplorerGroup.js";
 import type { ArchEdgeData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
-export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
+export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchChangeRequest, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
 
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
@@ -342,7 +342,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
       <div style={{ display: "flex", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 260 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={eyebrowStyle}>Overview · Part {current.part}</span>
+            <span style={eyebrowStyle}>Overview · {nameOfPart(current, true)}</span>
             <span style={chipStyle(current.status)}>{current.status === "built" ? "Built" : "Planned"}</span>
           </div>
           <div style={{ marginTop: 10, font: "400 15px/1.6 var(--font-body)", color: "var(--foreground-muted)" }}>
@@ -821,7 +821,8 @@ function SidePanel({
 
   return (
     <aside aria-label="Details" className="bp-arch-explorer__side" data-popover-bounds style={panelStyle}>
-      <div style={smallEyebrow}>What changed in Part {part.part}</div>
+      <div style={smallEyebrow}>What changed in {nameOfPart(part)}</div>
+      {part.changeRequest ? <ChangeRequest request={part.changeRequest} /> : null}
       <DetailsSheet part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
@@ -978,10 +979,47 @@ const smallRoundBtn: CSSProperties = {
 };
 
 /** Text-list fallback for screen readers -- an SVG/React Flow canvas alone isn't meaningfully readable. */
+/** "Part 3", or the label of a part that is not numbered ("the bonus", or "The bonus" at the start of a heading). */
+function nameOfPart(part: ArchPartData, capitalise = false): string {
+  const name = part.label ?? `Part ${part.part}`;
+  return capitalise ? name[0]!.toUpperCase() + name.slice(1) : name;
+}
+
+const requestHeading: CSSProperties = { margin: "14px 0 4px", font: "600 12px/1.3 var(--font-body)", letterSpacing: "0.04em", color: "var(--foreground)" };
+
+/** The bonus's change request: three parts of its ADR, rendered at build time from the ADR's Markdown, as written. */
+function ChangeRequest({ request }: { request: NonNullable<ArchPartData["changeRequest"]> }): ReactNode {
+  const sections = [
+    { title: "Why now", html: request.whyNowHtml },
+    { title: "In scope", html: request.inScopeHtml },
+    { title: "Out of scope", html: request.outOfScopeHtml },
+  ];
+  return (
+    <section aria-labelledby="bp-arch-change-request" className="bp-arch-change-request" style={{ marginTop: 12, paddingBottom: 12, borderBottom: "1px dashed var(--ember)" }}>
+      <h3 id="bp-arch-change-request" style={{ margin: 0, font: "500 18px/1.2 var(--font-display)", letterSpacing: "-0.02em" }}>
+        Change request
+      </h3>
+      {sections.map((section) => (
+        <div key={section.title}>
+          <h4 style={requestHeading}>{section.title}</h4>
+          <div className="bp-arch-change-request__body" style={{ font: "400 13px/1.5 var(--font-body)" }} dangerouslySetInnerHTML={{ __html: section.html }} />
+        </div>
+      ))}
+      <p style={{ margin: "10px 0 0", font: "400 12px/1.4 var(--font-body)", color: "var(--foreground-muted)" }}>
+        From{" "}
+        <a href={request.adrHref ?? "#"} style={{ color: "var(--bp-accent-text)", fontFamily: "var(--font-mono)" }}>
+          {request.adr}
+        </a>
+        .
+      </p>
+    </section>
+  );
+}
+
 function ScreenReaderSummary({ part, adrTitles }: { part: ArchPartData; adrTitles: Record<string, string> }): ReactNode {
   return (
     <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-      <h3>Part {part.part} nodes and connections</h3>
+      <h3>{nameOfPart(part, true)} nodes and connections</h3>
       <ul>
         {part.nodes.map((n) => (
           <li key={n.id}>

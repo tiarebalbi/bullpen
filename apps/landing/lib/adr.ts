@@ -12,6 +12,11 @@ export interface Adr {
   summary: string;
   /** The "## Part" section: which series part this decision belongs to (1-PART_COUNT), or "bonus" for the detour between Part 4 and Part 5 (ADR-0027). */
   part: number | "bonus";
+  /**
+   * The "## Change request" section's three parts (### Why now, ### In scope, ### Out of scope), rendered the same way, for an ADR that records a change
+   * request (ADR-0027). Absent for the others.
+   */
+  changeRequest?: { whyNowHtml: string; inScopeHtml: string; outOfScopeHtml: string };
   /** "## Context", rendered from Markdown to HTML at build time (see ADR-0007). */
   contextHtml: string;
   /** "## Decision", rendered from Markdown to HTML at build time. */
@@ -96,6 +101,8 @@ export function parseAdr(content: string, filename: string): Adr {
     throw new Error(`${filename}: "## Part" must be an integer 1-${PART_COUNT} or "Bonus", got ${JSON.stringify(partRaw)}`);
   }
 
+  const changeRequest = parseChangeRequest(sections.get("change request"), filename);
+
   return {
     id: id!,
     title: title!.trim(),
@@ -104,6 +111,7 @@ export function parseAdr(content: string, filename: string): Adr {
     date: sections.get("date")!,
     summary,
     part,
+    ...(changeRequest ? { changeRequest } : {}),
     contextHtml: md.render(sections.get("context")!),
     decisionHtml: md.render(sections.get("decision")!),
     consequencesHtml: md.render(sections.get("consequences")!),
@@ -111,6 +119,33 @@ export function parseAdr(content: string, filename: string): Adr {
     linksHtml: md.render(sections.get("links")!),
     filename,
   };
+}
+
+const CHANGE_REQUEST_PARTS = [
+  ["why now", "whyNowHtml"],
+  ["in scope", "inScopeHtml"],
+  ["out of scope", "outOfScopeHtml"],
+] as const;
+
+/** The three `###` parts of a "## Change request" section, each rendered from Markdown; a section that lacks one is an error, not a half panel. */
+function parseChangeRequest(body: string | undefined, filename: string): Adr["changeRequest"] {
+  if (body === undefined) return undefined;
+  const parts = new Map<string, string[]>();
+  let current: string | null = null;
+  for (const line of body.split("\n")) {
+    const heading = /^###\s+(.+)$/.exec(line);
+    if (heading) {
+      current = heading[1]!.trim().toLowerCase();
+      parts.set(current, []);
+    } else if (current) parts.get(current)!.push(line);
+  }
+  const html: Record<string, string> = {};
+  for (const [title, key] of CHANGE_REQUEST_PARTS) {
+    const text = parts.get(title)?.join("\n").trim();
+    if (!text) throw new Error(`${filename}: "## Change request" is missing its "### ${title[0]!.toUpperCase()}${title.slice(1)}" part`);
+    html[key] = md.render(text);
+  }
+  return html as NonNullable<Adr["changeRequest"]>;
 }
 
 /** Parses every `*.md` file in `architecture/adr/`, sorted by filename (ADR number). */

@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadArchitectureParts, parseArchitecturePart, predictionOfPart } from "./architecture.js";
+import { loadArchitectureParts, loadBonusPart, parseArchitecturePart, predictionOfPart } from "./architecture.js";
+import { parseAdr } from "./adr.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const architectureDir = join(repoRoot, "content", "architecture");
@@ -366,5 +367,44 @@ describe("Part 3's explorer content is the moment, drawn", () => {
 
   it("says the Market Data Service took over the Price Snapshot Service", () => {
     expect(part3.nodes.find((n) => n.id === "market-data-service")!.replaces).toEqual(["price-snapshot-service"]);
+  });
+});
+
+describe("loadBonusPart", () => {
+  const adrPath = join(repoRoot, "architecture", "adr", "0027-player-handles-are-moderated-by-a-decision-model-and-a-queue.md");
+  const adr = parseAdr(readFileSync(adrPath, "utf8"), "0027.md");
+  const source = { adr: adr.id, adrHref: "#adr-0027", changeRequest: adr.changeRequest! };
+  const bonus = loadBonusPart(architectureDir, calmDir, source)!;
+
+  it("is the bonus, labelled and ordered after Part 4, and planned until the owner publishes it", () => {
+    expect(bonus.label).toBe("the bonus");
+    expect(bonus.part).toBe(4);
+    expect(bonus.status).toBe("planned");
+    expect(bonus.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(["vercel-ai-gateway", "schema-handles", "approved-handles-v1", "trading-app"]));
+    expect(bonus.edges.map((e) => e.id)).toEqual(expect.arrayContaining(["trading-app-to-ai-gateway", "trading-app-to-approved-handles-v1"]));
+  });
+
+  it("takes its change request from ADR-0027 as written: why now, in scope and out of scope", () => {
+    expect(bonus.changeRequest).toMatchObject({ adr: "ADR-0027", adrHref: "#adr-0027" });
+    // A distinctive phrase from each part of the ADR's own "## Change request" section appears in the panel's HTML, and nothing else was written for it.
+    expect(readFileSync(adrPath, "utf8")).toContain("Part 4 left handles out on purpose");
+    expect(bonus.changeRequest!.whyNowHtml).toContain("Part 4 left handles out on purpose");
+    expect(bonus.changeRequest!.inScopeHtml).toContain("strictly above the threshold approves the handle");
+    expect(bonus.changeRequest!.outOfScopeHtml).toContain("Avatars, display names, profile pages");
+    for (const html of [bonus.changeRequest!.whyNowHtml, bonus.changeRequest!.inScopeHtml, bonus.changeRequest!.outOfScopeHtml]) expect(html).toMatch(/^<(p|ul)>/);
+  });
+
+  it("derives what changed from the two CALM documents: the gateway and the handles owner are new", () => {
+    const text = JSON.stringify(bonus.changes);
+    expect(bonus.changes).toBeDefined();
+    expect(text).toContain("ADR-0027");
+  });
+
+  it("is not one of the numbered parts, and the numbered parts are still six", () => {
+    expect(loadArchitectureParts(architectureDir, plannedDir, calmDir).map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it("refuses to build without the change request, since the panel is made of it", () => {
+    expect(() => loadBonusPart(architectureDir, calmDir, null)).toThrow(/needs its ADR's change request/);
   });
 });
