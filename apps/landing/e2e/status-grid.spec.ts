@@ -137,7 +137,7 @@ test.describe("Status grid at 390px", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     const boxes = await page.locator("#decisions, #rules, #defined, .bp-tile").evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
-    expect(boxes).toHaveLength(11);
+    expect(boxes).toHaveLength(12);
     for (const box of boxes) {
       expect(box.right).toBeLessThanOrEqual(391);
       expect(box.width).toBeGreaterThanOrEqual(300);
