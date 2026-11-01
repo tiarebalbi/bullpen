@@ -7,7 +7,7 @@
     "kind": "bonus",
     "after": "part-04",
     "before": "part-05",
-    "status": "unpublished"
+    "status": "current"
   },
   "adrs": [
     "architecture/adr/0001-stack.md",
