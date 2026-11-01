@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "part": 4,
-  "generatedAt": "2026-10-26T20:13:53.479Z",
-  "commit": "5d4cdc15f2f36c766b3645bcaca822161b6cc0b1",
+  "generatedAt": "2026-11-01T13:26:41.637Z",
+  "commit": "67edc3027568893fcaf28dac8e909806e0d4cded",
   "dirty": false,
-  "ref": "landing-link-guard",
+  "ref": "bonus-handle-moderation",
   "source": "local",
   "passed": true,
   "checks": [
@@ -13,7 +13,7 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 11 checks held, 48 rules enforced",
+      "summary": "check:arch passed: 12 checks held, 61 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
@@ -35,8 +35,8 @@
           "passed": true
         },
         {
-          "id": "trading-app-is-dependent-on-ui-contracts-trading",
-          "rule": "Trading App IS DEPENDENT ON UI, Contracts, trading",
+          "id": "trading-app-is-dependent-on-ui-contracts-trading-handles",
+          "rule": "Trading App IS DEPENDENT ON UI, Contracts, trading, handles",
           "check": "turbo boundaries",
           "passed": true
         },
@@ -143,6 +143,42 @@
           "passed": true
         },
         {
+          "id": "handles-has-no-dependency-on-landing-trading-app-market-data-service-sweeper-ui-trading-market-data",
+          "rule": "handles HAS NO DEPENDENCY ON Landing, Trading App, Market Data Service, Sweeper, UI, trading, market-data",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "trading-has-no-dependency-on-handles",
+          "rule": "trading HAS NO DEPENDENCY ON handles",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-has-no-dependency-on-handles",
+          "rule": "market-data HAS NO DEPENDENCY ON handles",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "market-data-service-has-no-dependency-on-handles",
+          "rule": "Market Data Service HAS NO DEPENDENCY ON handles",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "landing-has-no-dependency-on-handles",
+          "rule": "Landing HAS NO DEPENDENCY ON handles",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
+          "id": "sweeper-has-no-dependency-on-handles",
+          "rule": "Sweeper HAS NO DEPENDENCY ON handles",
+          "check": "turbo boundaries",
+          "passed": true
+        },
+        {
           "id": "landing-has-no-dependency-on-sweeper",
           "rule": "Landing HAS NO DEPENDENCY ON Sweeper",
           "check": "turbo boundaries",
@@ -164,6 +200,12 @@
           "id": "components-use-libraries-only-through-their-package-entry-point",
           "rule": "COMPONENTS use LIBRARIES ONLY THROUGH their package entry point",
           "check": "entry-point imports",
+          "passed": true
+        },
+        {
+          "id": "no-packages-db-trading-packages-db-market-data-apps-market-data-apps-web-app-lib-trading-imports-apps-web-app-lib-moderation",
+          "rule": "NO packages/db-trading, packages/db-market-data, apps/market-data, apps/web/app/lib/trading IMPORTS apps/web/app/lib/moderation",
+          "check": "import boundaries",
           "passed": true
         },
         {
@@ -197,6 +239,12 @@
           "passed": true
         },
         {
+          "id": "only-apps-web-app-lib-handles-reads-database-url-handles",
+          "rule": "ONLY apps/web/app/lib/handles READS DATABASE_URL_HANDLES",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
           "id": "only-apps-web-app-lib-trading-reads-sweep-secret",
           "rule": "ONLY apps/web/app/lib/trading READS SWEEP_SECRET",
           "check": "secret containment",
@@ -217,6 +265,18 @@
         {
           "id": "only-apps-web-app-lib-auth-reads-neon-auth-cookie-secret",
           "rule": "ONLY apps/web/app/lib/auth READS NEON_AUTH_COOKIE_SECRET",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-moderation-reads-ai-gateway-api-key",
+          "rule": "ONLY apps/web/app/lib/moderation READS AI_GATEWAY_API_KEY",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-moderation-reads-ai-gateway-vercel-sh",
+          "rule": "ONLY apps/web/app/lib/moderation READS ai-gateway.vercel.sh",
           "check": "secret containment",
           "passed": true
         },
@@ -269,6 +329,24 @@
           "passed": true
         },
         {
+          "id": "only-trading-writes-trading",
+          "rule": "ONLY trading WRITES trading",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
+          "id": "only-handles-writes-handles",
+          "rule": "ONLY handles WRITES handles",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
+          "id": "trading-reads-handles-only-through-handles-approved-v1",
+          "rule": "trading READS handles ONLY THROUGH handles.approved_v1",
+          "check": "data ownership",
+          "passed": true
+        },
+        {
           "id": "a-migration-in-one-owner-s-folder-touches-only-that-owner-s-schema",
           "rule": "a migration in one owner's folder touches only that owner's schema",
           "check": "data ownership",
@@ -313,6 +391,15 @@
       "passed": true,
       "summary": "• turbo 2.11.4",
       "raw": "turbo-boundaries.txt",
+      "rules": []
+    },
+    {
+      "id": "calm-bonus-handles",
+      "name": "calm validate (bonus-handles)",
+      "command": "npx @finos/calm-cli@1.60.1 validate -a architecture/calm/moments/bonus-handles.architecture.json -p architecture/calm/bullpen.pattern.json --strict -f json -o <out>",
+      "passed": true,
+      "summary": "no errors, no warnings",
+      "raw": "calm-bonus-handles.json",
       "rules": []
     },
     {
