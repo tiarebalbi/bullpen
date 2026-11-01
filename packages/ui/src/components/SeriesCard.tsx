@@ -71,6 +71,8 @@ const BONUS_STYLE: CSSProperties = {
 const VISUALLY_HIDDEN: CSSProperties = { position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 
 const PLANNED_STYLE: CSSProperties = {
+  // Positioned, so its visually hidden "Planned for" is placed inside the card and not at the far end of a scrolling rail (an absolute box escapes an overflow container that is not positioned).
+  position: "relative",
   font: "italic 500 11.5px/1 var(--font-mono)",
   whiteSpace: "nowrap",
   color: "var(--foreground-muted)",

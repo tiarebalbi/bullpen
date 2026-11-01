@@ -137,6 +137,8 @@ describe("SeriesCard: a planned date on a numbered part", () => {
     expect(time.closest("time")!.textContent).toBe("Planned for Nov 16");
     expect(screen.queryByText("Not yet published")).not.toBeInTheDocument();
     expect(styleOf2(time.closest("time")!)).toContain("dashed");
+    // the hidden text is placed against the date, which is positioned, so it cannot widen a scrolling rail
+    expect(styleOf2(time.closest("time")!)).toContain("position: relative");
   });
 
   it("never shows a planned date as a published one: a part with a real date shows only that", () => {

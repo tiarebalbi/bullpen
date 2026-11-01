@@ -4,8 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const ledger = JSON.parse(readFileSync(join(repoRoot, "cost", "allowances.json"), "utf8")) as Array<{ service: string }>;
-// The landing leaves Redis and Lambda off (they stay in the ledger file): the count it shows is the ledger without them.
-const OFF_LANDING = new Set(["upstash-redis", "aws-lambda"]);
+// The landing leaves Redis, Lambda and the AI Gateway off (they stay in the ledger file): the count it shows is the ledger without them.
+const OFF_LANDING = new Set(["upstash-redis", "aws-lambda", "vercel-ai-gateway"]);
 const SHOWN_ALLOWANCES = ledger.filter((a) => !OFF_LANDING.has(a.service)).length;
 const latestUsage = JSON.parse(readFileSync(join(repoRoot, "cost", "usage", readdirSync(join(repoRoot, "cost", "usage")).sort().pop()!), "utf8")) as { week: string };
 
