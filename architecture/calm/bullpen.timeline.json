@@ -98,7 +98,7 @@
       "unique-id": "bonus-handles",
       "node-type": "moment",
       "name": "Bonus — Changing the plan mid-flight",
-      "description": "What runs at the end of the bonus build: player handles, moderated. One requirement that arrived between Part 4 and Part 5, costed, scoped and built: a decision model answers one Boolean question per new or changed handle, a review queue (a Postgres table) holds what it is unsure of, and a new data owner publishes the approved handles to the leaderboard view. Not published: current-moment stays at part-04 until the owner says so.",
+      "description": "What runs at the end of the bonus build: player handles, moderated. One requirement that arrived between Part 4 and Part 5, costed, scoped and built: a decision model answers one Boolean question per new or changed handle, a review queue (a Postgres table) holds what it is unsure of, and a new data owner publishes the approved handles to the leaderboard view. Not published: current-moment stays at part-04 until the publish pull request.",
       "details": {
         "detailed-architecture": "moments/bonus-handles.architecture.json",
         "required-pattern": "bullpen.pattern.json"

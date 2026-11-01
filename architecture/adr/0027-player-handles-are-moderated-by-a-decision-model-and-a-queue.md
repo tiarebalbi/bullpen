@@ -20,7 +20,7 @@ Bonus
 
 Part 4 (ADR-0020) shows every player as a neutral label, "Player" and four hash characters, and never shows a GitHub login. Handles were left for later on purpose.
 This is the later: one requirement that arrived while Part 5 was being planned, costed and scoped before it was built. A public name is text a stranger typed and every
-other player reads, so the requirement is a moderation problem before it is a feature. The brief approved the dates: the bonus on 2026-11-09, Part 5 on 2026-11-16 and Part 6 on 2026-11-23.
+other player reads, so the requirement is a moderation problem before it is a feature. The owner approved the direction and the scope on 2026-11-01, before the build began, which is why this ADR is Accepted and dated that day. The brief approved the dates: the bonus on 2026-11-09, Part 5 on 2026-11-16 and Part 6 on 2026-11-23.
 
 ## Change request
 
@@ -60,7 +60,7 @@ Moderate a handle with one Boolean question to a decision model, approve only a 
 - **One published view.** `handles.approved_v1` (owner user id, handle) holds approved handles only. `trading_owner` has `SELECT` on it and no grant on any table in `handles`; the leaderboard view (ADR-0014) joins it and picks a new handle up at its next refresh. No new read model and no new service.
 - **Three rules.** Only `apps/web/app/lib/moderation` reads `AI_GATEWAY_API_KEY` or names the gateway. Trading and market-data code never import moderation. Only `trading` writes the `trading` schema, so moderation cannot. Each is an ASSERT in `structure.adl` with a failing fixture.
 - **The admin is an allowlist in config.** `apps/web/app/lib/handles/admins.ts` lists Neon Auth user ids, and anyone else gets a 404. It is a reviewed commit, not an environment variable.
-- **Who accepts what.** The owner accepted this ADR on 2026-11-01 so that the model may name Vercel AI Gateway (ADR-0016); the timeline's `current-moment` stays at `part-04` until the owner says the bonus is published.
+- **Accepted before the build.** The direction and scope were approved on 2026-11-01, so the model may name Vercel AI Gateway (ADR-0016) and the bonus moment does; the timeline's `current-moment` stays at `part-04` until the publish pull request.
 
 ## Consequences
 
