@@ -62,7 +62,7 @@ export type { OrderTicketLockedProps } from "./components/OrderTicketLocked.js";
 export { useTheme } from "./lib/useTheme.js";
 export type { Theme } from "./lib/useTheme.js";
 
-export { LeaderboardList, LeaderboardRow } from "./components/LeaderboardRow.js";
+export { LeaderboardList, LeaderboardRow, handleInitials } from "./components/LeaderboardRow.js";
 export type { LeaderboardListProps, LeaderboardRowProps } from "./components/LeaderboardRow.js";
 
 export { Panel } from "./components/Panel.js";

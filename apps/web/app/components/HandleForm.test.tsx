@@ -14,6 +14,18 @@ describe("what the player is told", () => {
     expect(statusLine(null, "Player 4F2A")).toContain("Player 4F2A");
     expect(statusLine({ handle: "BullRun", status: "pending" }, "Player 4F2A")).toContain("Until then you appear as Player 4F2A");
     expect(statusLine({ handle: "BullRun", status: "review" }, "Player 4F2A")).toContain("Until then you appear as Player 4F2A");
+  });
+
+  it("says a handle in review shows on the leaderboard once it is approved, and promises no time", () => {
+    const review = statusLine({ handle: "BullRun", status: "review" }, "Player 4F2A");
+    expect(review).toContain("It shows on the leaderboard once it’s approved.");
+    expect(statusLine({ handle: "BullRun", status: "pending" }, "Player 4F2A")).toContain("It shows on the leaderboard once it’s approved.");
+    for (const status of ["pending", "review"] as const) {
+      expect(statusLine({ handle: "BullRun", status }, "Player 4F2A")).not.toMatch(/minute|hour|day|soon|shortly|within|refresh/i);
+    }
+  });
+
+  it("keeps the other statuses as they were", () => {
     expect(statusLine({ handle: "BullRun", status: "rejected" }, "Player 4F2A")).toBe("BullRun was not approved, so you appear as Player 4F2A. Choose another.");
     expect(statusLine({ handle: "BullRun", status: "approved" }, "Player 4F2A")).toContain("is approved");
   });
@@ -38,8 +50,9 @@ describe("the handle form", () => {
     reply(200, { status: "review" });
     render(<HandleForm initial={null} label="Player 4F2A" />);
     save("BullRun");
-    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("A person will look at it"));
-    expect(screen.getByText(/waiting for a person/).textContent).toContain("Player 4F2A");
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Saved. It shows on the leaderboard once it’s approved."));
+    expect(screen.getByText(/is in review/).textContent).toContain("Player 4F2A");
+    expect(screen.getByRole("status").textContent).not.toMatch(/minute|hour|day|soon|shortly|within/i);
   });
 
   it("says when it could not reach the server", async () => {

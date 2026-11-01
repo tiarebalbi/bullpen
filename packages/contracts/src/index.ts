@@ -6,7 +6,7 @@ export type { CoinGeckoPriceResponse, PriceSnapshot, PriceSource } from "./price
 
 export { validateJsonLd } from "./jsonld.js";
 
-export type { LeaderboardEntry, LeaderboardSnapshot, StockPriceEntry, StockPriceSnapshot } from "./leaderboard.js";
+export type { LeaderboardEntry, LeaderboardSnapshot, LeaderboardViewer, StockPriceEntry, StockPriceSnapshot } from "./leaderboard.js";
 
 
 export { validateAccountView, validateOrderRequest } from "./orders.js";

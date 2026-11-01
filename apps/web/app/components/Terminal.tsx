@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { TerminalHeader, TerminalShell, ThemeToggle, useTheme } from "@bullpen/ui";
+import { TerminalHeader, TerminalShell, ThemeToggle, handleInitials, useTheme } from "@bullpen/ui";
 import type { AccountView, LeaderboardSnapshot, PriceSnapshot, StockPriceSnapshot } from "@bullpen/contracts";
 import { signInWithProvider } from "../lib/auth/actions.js";
 import { formatMoney } from "../lib/trading/orderView.js";
-import { cancellableOrderId, rankLabel } from "../lib/trading/terminalView.js";
+import { approvedHandleOf, cancellableOrderId, rankLabel } from "../lib/trading/terminalView.js";
 import { useAccount } from "../lib/trading/useAccount.js";
 import { useTerminalShortcuts } from "../lib/trading/useTerminalShortcuts.js";
 import { usePolled, type Polled } from "../lib/usePolled.js";
@@ -20,11 +20,14 @@ import { ShortcutsSheet } from "./ShortcutsSheet.js";
 import { SymbolDetail } from "./SymbolDetail.js";
 import { BTC_SYMBOL, CryptoSection, MarketStatus, StocksSection } from "./Watchlist.js";
 
-/** The signed-in player in the header: a neutral tile and the "Player ####" label, never a GitHub name or picture. */
-export function AvatarSlot({ label }: { label: string }): ReactNode {
+/**
+ * The signed-in player in the header: a tile and the "Player ####" label, never a GitHub name or picture. The tile's two characters come from the player's approved
+ * handle once there is one (their own, which the ranking shows to everyone), and from the end of the label until then.
+ */
+export function AvatarSlot({ label, approvedHandle = null }: { label: string; approvedHandle?: string | null }): ReactNode {
   return (
     <span className="bp-avatar" role="img" aria-label={`Signed in as ${label}`}>
-      <span className="bp-avatar__tile" aria-hidden="true">{label.slice(-2)}</span>
+      <span className="bp-avatar__tile" aria-hidden="true">{approvedHandle ? handleInitials(approvedHandle) : label.slice(-2)}</span>
       <span className="bp-avatar__label" aria-hidden="true">{label}</span>
     </span>
   );
@@ -60,7 +63,7 @@ function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceS
 }
 
 /** The header's right side: the player's figures, the feeds, the toggles and the avatar slot. */
-function HeaderBar({ view, rank, crypto }: { view: AccountView | null; rank: string | null; crypto: Polled<PriceSnapshot> }): ReactNode {
+function HeaderBar({ view, rank, approvedHandle, crypto }: { view: AccountView | null; rank: string | null; approvedHandle: string | null; crypto: Polled<PriceSnapshot> }): ReactNode {
   const [theme, toggleTheme] = useTheme();
   return (
     <TerminalHeader title="Trading app">
@@ -68,7 +71,7 @@ function HeaderBar({ view, rank, crypto }: { view: AccountView | null; rank: str
       <MarketStatus crypto={crypto} />
       <PaletteToggle />
       <ThemeToggle theme={theme} onToggle={toggleTheme} />
-      {view ? <AvatarSlot label={view.label} /> : null}
+      {view ? <AvatarSlot label={view.label} approvedHandle={approvedHandle} /> : null}
     </TerminalHeader>
   );
 }
@@ -93,6 +96,7 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
 
   const ticket = { symbol: selected, price: storedPrice(stocks, selected), account, signIn: signInWithProvider, onAccount: apply, refresh };
   const rank = rankLabel(leaderboard.status === "ok" ? leaderboard.data : null, view ? view.label : null);
+  const approvedHandle = approvedHandleOf(leaderboard.status === "ok" ? leaderboard.data : null);
 
   const orderPanels = view ? <OrderPanels view={view} refresh={refresh} confirming={confirming} onConfirming={setConfirming} /> : null;
 
@@ -100,7 +104,7 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
     <>
       <TerminalShell
         header={
-          <HeaderBar view={view} rank={rank} crypto={crypto} />
+          <HeaderBar view={view} rank={rank} approvedHandle={approvedHandle} crypto={crypto} />
         }
         watchlist={
           <>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AccountView, LeaderboardSnapshot, OrderEventView, OrderView } from "@bullpen/contracts";
-import { activeOrder, changeVsPreviousClose, fillLine, heldLabel, positionLine, rankLabel, timelineSteps } from "./terminalView.js";
+import { activeOrder, approvedHandleOf, changeVsPreviousClose, fillLine, heldLabel, ownRow, positionLine, rankLabel, timelineSteps } from "./terminalView.js";
 
 const order = (over: Partial<OrderView> = {}): OrderView => ({
   orderId: "0b9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f11", symbol: "AAPL", side: "buy", type: "market", state: "working", quantity: "10.00000000", filledQty: "0.00000000", openQty: "10.00000000", cancelledQty: "0.00000000",
@@ -43,6 +43,29 @@ describe("rank visibility", () => {
     expect(rankLabel(null, "Player 4F2A")).toBeNull();
     expect(rankLabel(snapshot([{ handle: "Player 4F2A", rank: 1 }], 1), null)).toBeNull();
     expect(rankLabel(snapshot([], 0), "Player 4F2A")).toBeNull();
+  });
+  it("finds the player by their account once their handle is approved, when the row no longer carries the neutral label", () => {
+    const withViewer: LeaderboardSnapshot = { ...snapshot([{ handle: "ada", rank: 3 }], 9), viewer: { accountId: "a", handle: { status: "approved", approved: "ada" } } };
+    expect(rankLabel(withViewer, "Player 4F2A")).toBe("#3 of 9");
+    expect(ownRow(withViewer, "Player 4F2A")).toMatchObject({ handle: "ada", rank: 3 });
+  });
+  it("does not take another player's row for the viewer's, even when their label matches", () => {
+    const other: LeaderboardSnapshot = { ...snapshot([{ handle: "Player 4F2A", rank: 1 }], 1), viewer: { accountId: "someone-else", handle: null } };
+    expect(rankLabel(other, "Player 4F2A")).toBeNull();
+  });
+});
+
+describe("the approved handle the avatar takes its initials from", () => {
+  const board = (viewer: LeaderboardSnapshot["viewer"]): LeaderboardSnapshot => ({ rows: [], total: 0, asOf: "2026-10-20T10:00:00.000Z", ageMs: 0, stale: false, lastFailure: null, ...(viewer ? { viewer } : {}) });
+  it("is the player's own handle once it is approved", () => {
+    expect(approvedHandleOf(board({ accountId: "a", handle: { status: "approved", approved: "ada" } }))).toBe("ada");
+  });
+  it("is nothing for a visitor, for no handle, for a handle in review or rejected, or while the ranking loads", () => {
+    expect(approvedHandleOf(board(undefined))).toBeNull();
+    expect(approvedHandleOf(board({ accountId: "a", handle: null }))).toBeNull();
+    expect(approvedHandleOf(board({ accountId: "a", handle: { status: "review", approved: null } }))).toBeNull();
+    expect(approvedHandleOf(board({ accountId: "a", handle: { status: "rejected", approved: null } }))).toBeNull();
+    expect(approvedHandleOf(null)).toBeNull();
   });
 });
 

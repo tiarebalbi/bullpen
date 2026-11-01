@@ -55,6 +55,21 @@ a {
   font: 500 12px/1.4 var(--font-mono);
   color: var(--foreground-muted);
 }
+.bp-leaderboard__aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-4);
+}
+.bp-leaderboard__handle-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font: 600 13px/1.2 var(--font-body);
+  color: var(--bp-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .bp-leaderboard-list > li:not(:first-child) {
   border-top: 1px solid var(--bp-hair);
 }

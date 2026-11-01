@@ -13,12 +13,13 @@ export function statusLine(own: OwnHandleView | null, label: string): string {
   if (!own) return `You appear on the leaderboard as ${label}.`;
   if (own.status === "approved") return `${own.handle} is approved. It shows on the leaderboard at its next refresh.`;
   if (own.status === "rejected") return `${own.handle} was not approved, so you appear as ${label}. Choose another.`;
-  return `${own.handle} is waiting for a person to look at it. Until then you appear as ${label}.`;
+  if (own.status === "pending") return `${own.handle} is waiting to be checked. It shows on the leaderboard once it’s approved. Until then you appear as ${label}.`;
+  return `${own.handle} is in review. It shows on the leaderboard once it’s approved. Until then you appear as ${label}.`;
 }
 
 const SAVED: Record<string, string> = {
   approved: "Approved. It shows on the leaderboard at its next refresh.",
-  review: "Saved. A person will look at it before it shows. Until then you appear under your neutral label.",
+  review: "Saved. It shows on the leaderboard once it’s approved.",
   pending: "Saved, but I could not finish checking it. Save it again to retry.",
 };
 

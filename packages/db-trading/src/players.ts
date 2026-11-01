@@ -23,6 +23,12 @@ const MAX_HANDLE_HEX = 16;
 const findOwned = async (pool: Pool, userId: string): Promise<{ account_id: string; handle: string } | undefined> =>
   (await pool.query<{ account_id: string; handle: string }>("SELECT account_id, handle FROM trading.accounts WHERE owner_user_id = $1", [userId])).rows[0];
 
+/** The account of a signed-in user if there is one; nothing is made. For a read that must not create an account, such as the leaderboard. */
+export async function findPlayerAccount(pool: Pool, userId: string): Promise<{ accountId: string } | null> {
+  const found = await findOwned(pool, userId);
+  return found ? { accountId: found.account_id } : null;
+}
+
 /**
  * The account of a signed-in user, made on first sign-in and the same one every time after. Idempotent and safe under concurrent calls: the
  * owner is unique, and a handle taken by someone else makes the next one longer.

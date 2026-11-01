@@ -16,23 +16,27 @@ export interface LeaderboardRowProps {
   cash: number;
   /** Marks the signed-in player's own row; the label is text, so it does not rest on colour. */
   you?: boolean;
+  /** A line under the name, for the player's own row alone (where their handle stands). It is text, never colour. */
+  note?: string;
 }
 
-const initials = (handle: string): string => handle.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
+/** Two characters for a monogram: the first two letters or digits of a handle, upper case. */
+export const handleInitials = (handle: string): string => handle.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
 
-export function LeaderboardRow({ rank, handle, equity, cash, you = false }: LeaderboardRowProps): ReactNode {
+export function LeaderboardRow({ rank, handle, equity, cash, you = false, note }: LeaderboardRowProps): ReactNode {
   return (
     <li className="bp-leaderboard-row" data-you={you || undefined} style={{ display: "grid", gridTemplateColumns: "32px 40px minmax(0, 1fr) auto", alignItems: "center", gap: 12, padding: "10px 4px" }}>
       <span style={{ font: "500 13px/1 var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "var(--foreground-muted)" }}>{rank}</span>
       <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: "9999px", display: "grid", placeItems: "center", background: "var(--bp-panel-2)", font: "600 11px/1 var(--font-mono)" }}>
-        {initials(handle)}
+        {handleInitials(handle)}
       </span>
       <span style={{ minWidth: 0 }}>
         <span style={{ display: "block", font: "600 15px/1.3 var(--font-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {handle}
-          {you ? <span style={{ marginLeft: 8, font: "600 10.5px/1 var(--font-body)", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--bp-accent-text)" }}>you</span> : null}
+          {you ? <span style={{ marginLeft: 8, font: "600 10.5px/1 var(--font-body)", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--bp-accent-text)" }}>You</span> : null}
         </span>
         <span style={{ display: "block", font: "500 12px/1.4 var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "var(--foreground-muted)" }}>cash ${fmt(cash)}</span>
+        {note ? <span data-testid="leaderboard-own-note" style={{ display: "block", font: "500 12px/1.4 var(--font-body)", color: "var(--foreground-muted)" }}>{note}</span> : null}
       </span>
       <span style={{ font: "500 15px/1.3 var(--font-mono)", fontVariantNumeric: "tabular-nums", textAlign: "right" }}>${fmt(equity)}</span>
     </li>

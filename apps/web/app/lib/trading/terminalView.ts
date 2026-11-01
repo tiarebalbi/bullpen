@@ -30,13 +30,25 @@ export function heldLabel(positions: PositionView[], symbol: string): string | n
   return held && Number(held.quantity) > 0 ? `${quantityLabel(held.quantity)} held` : null;
 }
 
+/** The signed-in player's own row: found by their account when the ranking says who is asking (it still works once their handle is approved), otherwise by their neutral label. */
+export function ownRow(snapshot: LeaderboardSnapshot | null, label: string | null): LeaderboardSnapshot["rows"][number] | undefined {
+  if (!snapshot) return undefined;
+  if (snapshot.viewer) return snapshot.rows.find((row) => row.accountId === snapshot.viewer!.accountId);
+  return label === null ? undefined : snapshot.rows.find((row) => row.handle === label);
+}
+
+/** The signed-in player's own approved handle, if the ranking says they have one. Nothing for a visitor, for a handle in any other status, or while the ranking loads. */
+export function approvedHandleOf(snapshot: LeaderboardSnapshot | null): string | null {
+  return snapshot?.viewer?.handle?.approved ?? null;
+}
+
 /**
- * "#n of N": where the signed-in player stands, or null until they are ranked. The leaderboard returns the top rows and the caller's own row,
- * found by its neutral label; a player with no row is not ranked yet, and the header shows nothing rather than a placeholder.
+ * "#n of N": where the signed-in player stands, or null until they are ranked. The leaderboard returns the top rows and the caller's own row;
+ * a player with no row is not ranked yet, and the header shows nothing rather than a placeholder.
  */
 export function rankLabel(snapshot: LeaderboardSnapshot | null, label: string | null): string | null {
-  const mine = snapshot?.rows.find((row) => row.handle === label);
-  return snapshot && mine && label && snapshot.total > 0 ? `#${mine.rank} of ${snapshot.total}` : null;
+  const mine = ownRow(snapshot, label);
+  return snapshot && mine && snapshot.total > 0 ? `#${mine.rank} of ${snapshot.total}` : null;
 }
 
 /** The move since the previous stored close, shown only when both closes are stored; otherwise null and nothing is drawn. */
