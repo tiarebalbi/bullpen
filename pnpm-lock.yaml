@@ -294,6 +294,9 @@ importers:
       '@bullpen/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@bullpen/db-handles':
+        specifier: workspace:*
+        version: link:../../packages/db-handles
       '@bullpen/db-trading':
         specifier: workspace:*
         version: link:../../packages/db-trading
@@ -358,6 +361,9 @@ importers:
       '@bullpen/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@bullpen/db-handles':
+        specifier: workspace:*
+        version: link:../../packages/db-handles
       '@bullpen/db-market-data':
         specifier: workspace:*
         version: link:../../packages/db-market-data
@@ -393,6 +399,28 @@ importers:
       '@types/node':
         specifier: 22.20.4
         version: 22.20.4
+      eslint:
+        specifier: 10.11.0
+        version: 10.11.0
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 5.0.2
+        version: 5.0.2(@types/node@22.20.4)(jsdom@30.1.1(@noble/hashes@2.4.0))(vite@8.3.1(@types/node@22.20.4))
+
+  packages/db-handles:
+    dependencies:
+      pg:
+        specifier: 8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@types/node':
+        specifier: 22.20.4
+        version: 22.20.4
+      '@types/pg':
+        specifier: 8.23.1
+        version: 8.23.1
       eslint:
         specifier: 10.11.0
         version: 10.11.0

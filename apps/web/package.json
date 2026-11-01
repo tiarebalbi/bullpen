@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@bullpen/contracts": "workspace:*",
+    "@bullpen/db-handles": "workspace:*",
     "@bullpen/db-trading": "workspace:*",
     "@bullpen/ui": "workspace:*",
     "@neondatabase/auth": "0.6.0-beta",

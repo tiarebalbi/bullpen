@@ -9,6 +9,8 @@ export function Footer(): ReactNode {
         Market data: BTC-USD price via CoinGecko; U.S. stocks end of day via Alpha Vantage.
       </p>
       <p>
+        <a href="/account">Account</a>
+        <span aria-hidden="true"> · </span>
         <a href={PRIVACY_URL}>Privacy</a>
         <span aria-hidden="true"> · </span>
         <CookieSettingsButton />
