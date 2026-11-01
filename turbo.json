@@ -24,10 +24,10 @@
   "boundaries": {
     "tags": {
       "landing": {
-        "dependencies": { "allow": ["ui", "contracts"], "deny": ["trading-app", "market-data-service", "trading", "market-data", "sweeper"] }
+        "dependencies": { "allow": ["ui", "contracts"], "deny": ["trading-app", "market-data-service", "trading", "market-data", "handles", "sweeper"] }
       },
       "trading-app": {
-        "dependencies": { "allow": ["ui", "contracts", "trading"], "deny": ["landing", "market-data-service", "market-data", "sweeper"] }
+        "dependencies": { "allow": ["ui", "contracts", "trading", "handles"], "deny": ["landing", "market-data-service", "market-data", "sweeper"] }
       },
       "ui": {
         "dependencies": { "deny": ["landing", "trading-app", "market-data-service"] }
@@ -36,16 +36,19 @@
         "dependencies": { "deny": ["landing", "trading-app", "market-data-service"] }
       },
       "trading": {
-        "dependencies": { "deny": ["market-data"] }
+        "dependencies": { "deny": ["market-data", "handles"] }
       },
       "market-data": {
-        "dependencies": { "deny": ["trading"] }
+        "dependencies": { "deny": ["trading", "handles"] }
+      },
+      "handles": {
+        "dependencies": { "deny": ["landing", "trading-app", "market-data-service", "sweeper", "ui", "trading", "market-data"] }
       },
       "market-data-service": {
-        "dependencies": { "allow": ["contracts", "market-data"], "deny": ["landing", "trading-app", "ui", "trading", "sweeper"] }
+        "dependencies": { "allow": ["contracts", "market-data"], "deny": ["landing", "trading-app", "ui", "trading", "handles", "sweeper"] }
       },
       "sweeper": {
-        "dependencies": { "allow": ["contracts"], "deny": ["landing", "trading-app", "market-data-service", "ui", "trading", "market-data"] }
+        "dependencies": { "allow": ["contracts"], "deny": ["landing", "trading-app", "market-data-service", "ui", "trading", "market-data", "handles"] }
       }
     }
   }

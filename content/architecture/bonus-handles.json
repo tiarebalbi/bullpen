@@ -1,0 +1,602 @@
+{
+  "kind": "bonus",
+  "after": 4,
+  "status": "planned",
+  "flow": "right",
+  "summary": "What runs at the end of the bonus build: Part 4's system plus player handles, moderated. A signed-in player saves a handle; the rules are checked first, then one Boolean question goes to a decision model through Vercel AI Gateway. A probability strictly above the threshold approves it, and anything else, including every failure, goes to a review queue that is a Postgres table. A new owner, the handles schema, publishes one view, handles.approved_v1, which the leaderboard view joins; nothing pending, in review or rejected reaches a page.",
+  "nodes": [
+    {
+      "id": "reader",
+      "label": "Reader",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A blog reader exploring Bullpen's architecture timeline on the landing site.",
+      "x": 40,
+      "y": 680
+    },
+    {
+      "id": "player",
+      "label": "Player",
+      "kind": "actor",
+      "meta": "Visitor",
+      "purpose": "A visitor who sees live crypto and end-of-day stock prices and the leaderboard. Signing in with GitHub gives a player an account; the order ticket, the orders list showing the seven states, and the lifecycle behind them are built and tested.",
+      "x": 40,
+      "y": 560
+    },
+    {
+      "id": "daily-ingest-cron",
+      "label": "Daily ingest cron",
+      "kind": "infra",
+      "meta": "Vercel cron",
+      "purpose": "Vercel's scheduler: once a day after the U.S. close it calls the Market Data service's ingest, with a secret.",
+      "x": 40,
+      "y": 170,
+      "adrs": [
+        "ADR-0004",
+        "ADR-0013"
+      ]
+    },
+    {
+      "id": "landing-app",
+      "label": "Bullpen Landing",
+      "kind": "app",
+      "meta": "Static",
+      "purpose": "The public landing site with the architecture timeline explorer.",
+      "x": 300,
+      "y": 680,
+      "adrs": [
+        "ADR-0003",
+        "ADR-0006",
+        "ADR-0009"
+      ],
+      "costNote": "Free tier (Hobby)"
+    },
+    {
+      "id": "trading-app",
+      "label": "Bullpen Trading App",
+      "kind": "app",
+      "meta": "Next.js",
+      "purpose": "The trading app. It owns orders and their lifecycle, reservations, fills, the ledger, positions and the leaderboard view in the trading schema, shows end-of-day stock prices read through prices_v1, signs players in with GitHub, lets a signed-in player set a handle and moderates it, and serves the authenticated sweep route the sweeper calls.",
+      "x": 560,
+      "y": 560,
+      "adrs": [
+        "ADR-0001",
+        "ADR-0003",
+        "ADR-0012",
+        "ADR-0014",
+        "ADR-0017",
+        "ADR-0018"
+      ],
+      "costNote": "Free tier (Hobby)"
+    },
+    {
+      "id": "market-data-service",
+      "label": "Market Data Service",
+      "kind": "service",
+      "meta": "Vercel Service",
+      "purpose": "Replaces the Price Snapshot Service: the CoinGecko price route moved into it. It owns both providers and both call budgets, and is the only writer of the market_data schema. A boundary in one release, not an independently deployed microservice.",
+      "x": 560,
+      "y": 170,
+      "adrs": [
+        "ADR-0004",
+        "ADR-0013"
+      ],
+      "costNote": "Free tier (Hobby)",
+      "replaces": [
+        "price-snapshot-service"
+      ]
+    },
+    {
+      "id": "market-data-provider",
+      "label": "CoinGecko",
+      "kind": "ext",
+      "meta": "Demo API",
+      "purpose": "Crypto prices. Called only by the Market Data service, inside a monthly call budget, with the key in a header.",
+      "x": 1220,
+      "y": 30,
+      "adrs": [
+        "ADR-0005"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "stock-data-provider",
+      "label": "Alpha Vantage",
+      "kind": "ext",
+      "meta": "End of day",
+      "purpose": "U.S. stock prices, end of day, one request per symbol, fetched once a day by the Market Data service inside a daily call budget.",
+      "x": 1220,
+      "y": 120,
+      "adrs": [
+        "ADR-0008"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "google-analytics",
+      "label": "Google Analytics 4",
+      "kind": "ext",
+      "meta": "Analytics",
+      "purpose": "Page views and a short list of events, only after the visitor accepts.",
+      "x": 1220,
+      "y": 680,
+      "adrs": [
+        "ADR-0010"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "microsoft-clarity",
+      "label": "Microsoft Clarity",
+      "kind": "ext",
+      "meta": "Recordings",
+      "purpose": "Heatmaps and session recordings, only after the visitor accepts.",
+      "x": 1220,
+      "y": 790,
+      "adrs": [
+        "ADR-0010"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "schema-trading",
+      "label": "trading schema",
+      "kind": "data",
+      "meta": "Schema · trading_owner",
+      "purpose": "Accounts, orders with a state and a version, reservations, fills, order events, the ledger, positions and the leaderboard view. Every step of an order's life is one transaction here.",
+      "x": 920,
+      "y": 490,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0017"
+      ],
+      "owner": "trading-app"
+    },
+    {
+      "id": "schema-market-data",
+      "label": "market_data schema",
+      "kind": "data",
+      "meta": "Schema · market_data_owner",
+      "purpose": "Quotes, the provider call ledger, and the view prices_v1.",
+      "x": 920,
+      "y": 270,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0013"
+      ],
+      "owner": "market-data-service"
+    },
+    {
+      "id": "prices-v1",
+      "label": "market_data.prices_v1",
+      "kind": "data",
+      "meta": "View · read-only",
+      "purpose": "The price contract: symbol, price, as-of time, source and a stale flag. The only thing outside market_data that trading may read.",
+      "x": 920,
+      "y": 380,
+      "adrs": [
+        "ADR-0012"
+      ],
+      "owner": "market-data-service"
+    },
+    {
+      "id": "bullpen-database",
+      "label": "Bullpen Database",
+      "kind": "data",
+      "meta": "Neon Postgres",
+      "purpose": "One Neon project and one database, with a schema and a plain role per owner.",
+      "x": 920,
+      "y": 270,
+      "adrs": [
+        "ADR-0012",
+        "ADR-0014"
+      ],
+      "costNote": "Free tier"
+    },
+    {
+      "id": "sweeper",
+      "label": "Sweeper",
+      "kind": "infra",
+      "meta": "Vercel Daemon",
+      "purpose": "A daemon whose only job is to call the trading app's sweep route and wait: every 5 seconds while an order is open, backing off to every 60 minutes when none is. It reads no database URL and holds no data. Built and tested locally; declared in vercel.json, it runs in production deployments only.",
+      "x": 300,
+      "y": 430,
+      "adrs": [
+        "ADR-0018"
+      ],
+      "costNote": "Hobby quota: 10 Active CPU-hours"
+    },
+    {
+      "id": "neon-auth",
+      "label": "Neon Auth",
+      "kind": "ext",
+      "meta": "Sign-in",
+      "purpose": "Neon's managed sign-in, enabled on the production branch with GitHub as its only provider. The trading app checks the access token it issues against its public keys and stores only the user's id.",
+      "x": 1220,
+      "y": 900,
+      "adrs": [
+        "ADR-0020"
+      ],
+      "costNote": "Cost pending: not read from the console"
+    },
+    {
+      "id": "schema-handles",
+      "label": "handles schema",
+      "kind": "data",
+      "meta": "handles_owner",
+      "purpose": "Schema handles, owned by the role handles_owner: one row per player's handle with its status and the model's probability, the review queue as a table, and the view approved_v1.",
+      "x": 920,
+      "y": 600,
+      "adrs": [
+        "ADR-0027"
+      ]
+    },
+    {
+      "id": "approved-handles-v1",
+      "label": "handles.approved_v1",
+      "kind": "data",
+      "meta": "Read-only view",
+      "purpose": "The handle contract: owner user id and handle, for approved handles only. The only thing outside handles that trading may read, and the reason a pending, review or rejected handle cannot reach a page.",
+      "x": 920,
+      "y": 710,
+      "adrs": [
+        "ADR-0027"
+      ]
+    },
+    {
+      "id": "vercel-ai-gateway",
+      "label": "Vercel AI Gateway",
+      "kind": "ext",
+      "meta": "Handle moderation",
+      "purpose": "Vercel's gateway to models, called once per new or changed handle with model typesafe-ai/jev: one Boolean question, is this handle acceptable to show publicly? Only the handle text is sent. A failure of any kind sends the handle to review; there is no fallback model.",
+      "x": 1220,
+      "y": 1010,
+      "adrs": [
+        "ADR-0027"
+      ],
+      "costNote": "Cost pending: measured in post-facts/bonus.md"
+    }
+  ],
+  "edges": [
+    {
+      "id": "reader-to-landing",
+      "a": "reader",
+      "b": "landing-app",
+      "type": "sync",
+      "rate": {
+        "count": 6,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
+    },
+    {
+      "id": "player-to-trading-app",
+      "a": "player",
+      "b": "trading-app",
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
+    },
+    {
+      "id": "daily-cron-to-market-data",
+      "a": "daily-ingest-cron",
+      "b": "market-data-service",
+      "type": "async",
+      "rate": {
+        "count": 1,
+        "per": "day",
+        "source": "configured",
+        "basis": "vercel.json: the cron runs `0 23 * * *` UTC, once a day."
+      }
+    },
+    {
+      "id": "landing-to-market-data",
+      "a": "landing-app",
+      "b": "market-data-service",
+      "type": "sync",
+      "caption": "/api/price (rewrite)",
+      "rate": {
+        "count": 6,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The price strip asks once a minute per open tab; the number of tabs is not known."
+      }
+    },
+    {
+      "id": "trading-app-to-market-data",
+      "a": "trading-app",
+      "b": "market-data-service",
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The trading app asks once a minute per open tab; the number of tabs is not known."
+      }
+    },
+    {
+      "id": "market-data-to-crypto-provider",
+      "a": "market-data-service",
+      "b": "market-data-provider",
+      "type": "sync",
+      "rate": {
+        "count": 12,
+        "per": "hour",
+        "source": "configured",
+        "basis": "At most one CoinGecko call every 300 seconds: the route's cache interval (ADR-0005). An upper bound."
+      }
+    },
+    {
+      "id": "market-data-to-stock-provider",
+      "a": "market-data-service",
+      "b": "stock-data-provider",
+      "type": "sync",
+      "rate": {
+        "count": 10,
+        "per": "day",
+        "source": "configured",
+        "basis": "One call for each of the 10 stock symbols a day, under a cap of 20 a day (ADR-0008)."
+      }
+    },
+    {
+      "id": "trading-app-to-trading-schema",
+      "a": "trading-app",
+      "b": "schema-trading",
+      "type": "sync",
+      "label": "trading_owner · read/write",
+      "rate": {
+        "count": 14,
+        "per": "second",
+        "source": "measured",
+        "basis": "Measured in the load test, not from users: 8 writers made 417 buys in 30 s (contention.md, the N = 0 cell). Each buy is one write transaction."
+      }
+    },
+    {
+      "id": "trading-app-to-prices-v1",
+      "a": "trading-app",
+      "b": "prices-v1",
+      "type": "sync",
+      "label": "trading_owner · read only",
+      "rate": {
+        "count": 14,
+        "per": "second",
+        "source": "measured",
+        "basis": "Measured in the load test, not from users: each of the 417 buys in 30 s reads one price through prices_v1 (contention.md)."
+      }
+    },
+    {
+      "id": "market-data-to-market-data-schema",
+      "a": "market-data-service",
+      "b": "schema-market-data",
+      "type": "sync",
+      "label": "market_data_owner · write",
+      "rate": {
+        "count": 10,
+        "per": "day",
+        "source": "configured",
+        "basis": "The daily ingest stores one quote for each of the 10 stock symbols."
+      }
+    },
+    {
+      "id": "landing-to-google-analytics",
+      "a": "landing-app",
+      "b": "google-analytics",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "landing-to-microsoft-clarity",
+      "a": "landing-app",
+      "b": "microsoft-clarity",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "trading-app-to-google-analytics",
+      "a": "trading-app",
+      "b": "google-analytics",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "trading-app-to-microsoft-clarity",
+      "a": "trading-app",
+      "b": "microsoft-clarity",
+      "type": "async",
+      "rate": {
+        "count": 2,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "Only after a visitor accepts cookies, and only in production; the volume is not known."
+      }
+    },
+    {
+      "id": "sweeper-to-trading-app",
+      "a": "sweeper",
+      "b": "trading-app",
+      "type": "sync",
+      "caption": "/api/internal/sweep",
+      "rate": {
+        "count": 12,
+        "per": "minute",
+        "source": "configured",
+        "basis": "Every 5 seconds while an order is open, backing off to every 60 minutes when none is (ADR-0018, ceiling raised by ADR-0021). The sweeper is a Vercel Daemon declared in vercel.json; it runs in production deployments only."
+      }
+    },
+    {
+      "id": "trading-app-to-neon-auth",
+      "a": "trading-app",
+      "b": "neon-auth",
+      "type": "sync",
+      "rate": {
+        "count": 4,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
+    },
+    {
+      "id": "trading-app-to-handles-schema",
+      "a": "trading-app",
+      "b": "schema-handles",
+      "type": "sync",
+      "rate": {
+        "count": 1,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
+    },
+    {
+      "id": "trading-app-to-ai-gateway",
+      "a": "trading-app",
+      "b": "vercel-ai-gateway",
+      "type": "sync",
+      "rate": {
+        "count": 1,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "No production traffic exists yet; this shows that the edge is used, not how much."
+      }
+    },
+    {
+      "id": "trading-app-to-approved-handles-v1",
+      "a": "trading-app",
+      "b": "approved-handles-v1",
+      "type": "sync",
+      "rate": {
+        "count": 1,
+        "per": "minute",
+        "source": "illustrative",
+        "basis": "The leaderboard view refreshes about every five minutes (ADR-0014); each refresh reads this view once."
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "vercel-project",
+      "label": "One Vercel project, shared release",
+      "nodeIds": [
+        "trading-app",
+        "market-data-service",
+        "sweeper"
+      ]
+    },
+    {
+      "id": "neon-database",
+      "label": "One Neon database",
+      "nodeIds": [
+        "schema-trading",
+        "schema-market-data",
+        "prices-v1",
+        "schema-handles",
+        "approved-handles-v1"
+      ],
+      "nodeId": "bullpen-database"
+    }
+  ],
+  "request": {
+    "name": "a price request",
+    "steps": [
+      {
+        "edge": "landing-to-market-data",
+        "caption": "Ask for a quote",
+        "detail": "The landing's price strip asks the trading app's domain for BTC-USD; a rewrite on /api/price sends the request to the Market Data service."
+      },
+      {
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Fetch upstream",
+        "detail": "The service counts the call against its monthly budget, then calls CoinGecko server-side with the Demo API key in a header, never the URL."
+      },
+      {
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Return the snapshot",
+        "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt. The response says it varies by Origin.",
+        "reverse": true
+      },
+      {
+        "edge": "landing-to-market-data",
+        "caption": "Answer the strip",
+        "detail": "The allowed landing origin is echoed in the response, and nothing else is.",
+        "reverse": true
+      }
+    ]
+  },
+  "requests": [
+    {
+      "name": "an order's life",
+      "steps": [
+        {
+          "edge": "trading-app-to-prices-v1",
+          "caption": "Read the price",
+          "detail": "Through prices_v1 only. A missing or stale price refuses the order and writes nothing; otherwise the order reserves buying power at a ceiling 5 % over that price."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "Accept and reserve",
+          "detail": "One transaction: a conditional update reserves the buying power, then the order (accepted) and its reservation are inserted. A retry with the same client key returns the same order."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "Book each fill",
+          "detail": "One transaction per fill, keyed by a unique fill id, so a second delivery changes nothing. A partial fill leaves the order partially filled; the order's version is checked on every update."
+        },
+        {
+          "edge": "trading-app-to-trading-schema",
+          "caption": "A cancel is requested, not done",
+          "detail": "The order stays open for fills until the venue confirms with an effective time; a fill executed before that time is booked even if it arrives after the order shows cancelled."
+        },
+        {
+          "edge": "sweeper-to-trading-app",
+          "caption": "Find what is stuck",
+          "detail": "A pass that hands an unplaced order to the venue, cancels one with no fillable price, and releases what a finished order did not spend. Every step is idempotent, so a pass that dies is simply run again."
+        }
+      ]
+    },
+    {
+      "name": "a handle's life",
+      "steps": [
+        {
+          "edge": "trading-app-to-handles-schema",
+          "caption": "Save as pending",
+          "detail": "The rules are checked first (3 to 20 letters, digits, _ and -; unique ignoring case); a failing rule is a form error and no model is asked. Otherwise the handle is saved as pending, and the public label stays Player and four characters."
+        },
+        {
+          "edge": "trading-app-to-ai-gateway",
+          "caption": "Ask one question",
+          "detail": "One Boolean question about the handle text, to typesafe-ai/jev, with a two second limit. Nothing else is sent: no user id, email, address or session."
+        },
+        {
+          "edge": "trading-app-to-handles-schema",
+          "caption": "Record the verdict",
+          "detail": "A probability strictly above the threshold approves the handle. Anything else, and every failure, puts it in the review queue, a table, with the probability for the reviewer."
+        },
+        {
+          "edge": "trading-app-to-approved-handles-v1",
+          "caption": "Show it at the next refresh",
+          "detail": "The leaderboard view joins approved handles only, so a pending, review or rejected handle shows as the neutral label until a model or a person approves it."
+        }
+      ]
+    }
+  ]
+}

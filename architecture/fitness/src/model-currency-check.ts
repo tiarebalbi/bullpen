@@ -30,6 +30,7 @@ interface CalmDoc {
 interface TimelineMoment {
   "unique-id": string;
   details?: { "detailed-architecture"?: string };
+  metadata?: { kind?: string; after?: string };
   adrs?: string[];
 }
 interface Timeline {
@@ -322,19 +323,34 @@ function checkAdrLinks(repoRoot: string, decisions: Decisions, timeline: Timelin
 }
 
 /**
- * The latest built moment: the highest-numbered `moments/part-0N.architecture.json`.
- * The ADL describes the code on this branch, so it is held to the moment that
- * describes this branch, which can be ahead of the timeline's `current-moment`
- * (the pointer to what is published). ADR-0015.
+ * The latest built moment: the highest-placed file in `moments/` (a planned
+ * moment's document is in `planned/`). A part is placed at its number; a bonus
+ * moment, which the timeline places after a part, at that part plus a half, so
+ * the bonus after Part 4 is later than Part 4 and earlier than Part 5
+ * (ADR-0027, supplementing ADR-0015). The ADL describes the code on this
+ * branch, so it is held to the moment that describes this branch, which can be
+ * ahead of the timeline's `current-moment` (the pointer to what is published).
  */
 export function latestBuiltMoment(repoRoot: string): { momentId: string; file: string } | undefined {
   const dir = join(repoRoot, "architecture", "calm", "moments");
   if (!existsSync(dir)) return undefined;
-  const found = readdirSync(dir)
-    .map((name) => ({ name, match: /^part-(\d+)\.architecture\.json$/.exec(name) }))
-    .filter((entry): entry is { name: string; match: RegExpExecArray } => entry.match !== null)
-    .sort((a, b) => Number(b.match[1]) - Number(a.match[1]))[0];
-  return found ? { momentId: `part-${found.match[1]}`, file: `architecture/calm/moments/${found.name}` } : undefined;
+  const timeline = readJson<Timeline>(repoRoot, TIMELINE);
+  const bonusAfter = new Map<string, { momentId: string; after: number }>();
+  for (const moment of timeline?.moments ?? []) {
+    const detail = moment.details?.["detailed-architecture"] ?? "";
+    const after = /^part-(\d+)$/.exec(moment.metadata?.after ?? "");
+    if (moment.metadata?.kind === "bonus" && after && detail.startsWith("moments/")) bonusAfter.set(detail.slice("moments/".length), { momentId: moment["unique-id"], after: Number(after[1]) });
+  }
+  const placed = readdirSync(dir)
+    .map((name) => {
+      const part = /^part-(\d+)\.architecture\.json$/.exec(name);
+      if (part) return { name, momentId: `part-${part[1]}`, place: Number(part[1]) };
+      const bonus = bonusAfter.get(name);
+      return bonus ? { name, momentId: bonus.momentId, place: bonus.after + 0.5 } : null;
+    })
+    .filter((entry): entry is { name: string; momentId: string; place: number } => entry !== null)
+    .sort((a, b) => b.place - a.place)[0];
+  return placed ? { momentId: placed.momentId, file: `architecture/calm/moments/${placed.name}` } : undefined;
 }
 
 function checkAdlMapping(repoRoot: string, entries: AdlEntry[]): Violation[] {

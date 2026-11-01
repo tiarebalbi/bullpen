@@ -6,6 +6,7 @@ import { BUDGET_RULE, checkBudgetAt, type AllowanceEntry } from "./budget-check.
 import { MIGRATION_FOLDER_RULE, checkDataOwnership } from "./data-ownership-check.js";
 import { EMAIL_RULE, checkEmailInFiles } from "./email-in-files-check.js";
 import { EXPLORER_RULE, checkAllExplorerParts } from "./explorer-consistency-check.js";
+import { checkImportBoundaries } from "./import-boundary-check.js";
 import { checkEntryPointImports } from "./imports-check.js";
 import { ADR_LINKED_RULE, CONTROL_POINTER_RULE, EXTERNAL_SYSTEM_RULE, checkModelCurrency } from "./model-currency-check.js";
 import { ADL_RULE, checkAdlEnforced } from "./rules.js";
@@ -38,6 +39,11 @@ export const CHECKS: CheckDefinition[] = [
     run: ({ repoRoot, boundariesRunner }) => checkBoundaries(repoRoot, boundariesRunner),
   },
   { name: "entry-point imports", rules: [ADL_RULE.entryPoint], run: ({ repoRoot }) => checkEntryPointImports(repoRoot) },
+  {
+    name: "import boundaries",
+    rules: ({ adl }) => adl.rules.filter((rule) => rule.form.form === "no-import").map((rule) => rule.text),
+    run: ({ repoRoot }) => checkImportBoundaries(repoRoot),
+  },
   {
     name: "secret containment",
     rules: ({ adl }) => adl.rules.filter((rule) => rule.form.form === "secret").map((rule) => rule.text),

@@ -259,5 +259,14 @@
     "source_url": "https://vercel.com/docs/services/pricing",
     "checked_on": "2026-10-13",
     "note": "Vercel Services is in Beta. A service request is one call from one service to another over a binding; requests from the public internet are not service requests. Compute is billed like Vercel Functions, so Active CPU and provisioned memory draw on the Hobby allowances above."
+  },
+  {
+    "service": "vercel-ai-gateway",
+    "metric": "jev_input_rate",
+    "allowance": 0.042,
+    "unit": "USD per 1M input tokens",
+    "source_url": "https://vercel.com/ai-gateway/models/jev",
+    "checked_on": "2026-11-01",
+    "note": "The price of typesafe-ai/jev on Vercel AI Gateway, with no output charge listed: this is a rate, not a free allowance. Vercel's pricing page says the free tier is a monthly credit on a subset of models but gives no dollar amount, and its model page for Jev does not say whether Jev is in that subset, so whether any of this is free is unconfirmed (docs/data-sources.md). Spend so far: none; a measured cost per decision goes in post-facts/bonus.md once the labelled set has run. The monthly budget is the owner's to set in the AI Gateway dashboard."
   }
 ]
