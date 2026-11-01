@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import type { SeriesPart } from "../../lib/series.js";
+import type { SeriesEntry } from "../../lib/series.js";
 import { buildJsonLd, type JsonLdPage } from "../lib/jsonLd.js";
 
 /** The page's JSON-LD (see `buildJsonLd`) in a script tag. */
-export function JsonLd({ page, parts }: { page: JsonLdPage; parts: SeriesPart[] }): ReactNode {
+export function JsonLd({ page, parts }: { page: JsonLdPage; parts: SeriesEntry[] }): ReactNode {
   const graph = buildJsonLd(page, parts);
   // Escaping "<" (as its unicode escape) prevents a "</script>" appearing
   // inside a string value from breaking out of this script tag.

@@ -19,7 +19,8 @@ import { join } from "node:path";
  *
  * Asserts sit under the `#` heading above them. Three forms carry meaning the
  * checks use: `A IS DEPENDENT ON B, C` (an allow-list), `A HAS NO DEPENDENCY ON
- * B, C` (direct or transitive), and `ONLY <directory> READS <NAME>`.
+ * B, C` (direct or transitive), `ONLY <directory> READS <NAME>`, and `NO <directory>, <directory> IMPORTS <directory>` (code in the first
+ * directories never imports the second).
  */
 
 export type AdlKind = "SYSTEM" | "COMPONENT" | "LIBRARY";
@@ -37,6 +38,7 @@ export type AssertForm =
   | { form: "secret"; directory: string; secret: string }
   | { form: "owner-writes"; owner: string; objects: string[] }
   | { form: "reads-through"; reader: string; schema: string; through: string }
+  | { form: "no-import"; directories: string[]; target: string }
   | { form: "free" };
 
 export interface AdlRule {
@@ -108,14 +110,17 @@ const DEPENDENCY_ASSERT = /^(.+?) (IS DEPENDENT ON|HAS NO DEPENDENCY ON) (.+)$/;
 const SECRET_ASSERT = /^ONLY (\S+) READS (\S+)$/;
 const OWNER_WRITES_ASSERT = /^ONLY (\S+) WRITES (\S+(?: AND \S+)*)$/;
 const READS_THROUGH_ASSERT = /^(\S+) READS (\S+) ONLY THROUGH (\S+)$/;
+const NO_IMPORT_ASSERT = /^NO (\S+(?:, \S+)*) IMPORTS (\S+)$/;
 
 /** Longest phrase first, so `ONLY THROUGH` is one keyword and not `ONLY` followed by a word. */
 const KEYWORDS = [
   "IS DEPENDENT ON",
   "HAS NO DEPENDENCY ON",
   "ONLY THROUGH",
+  "IMPORTS",
   "WRITES",
   "AND",
+  "NO",
   "DESCRIPTION",
   "CATEGORY",
   "COMPONENTS",
@@ -249,6 +254,8 @@ function formOf(label: string, line: number, text: string, definedNames: Set<str
     requireDefined(label, line, reads[1]!, definedNames);
     return { form: "reads-through", reader: reads[1]!, schema: reads[2]!, through: reads[3]! };
   }
+  const noImport = NO_IMPORT_ASSERT.exec(text);
+  if (noImport) return { form: "no-import", directories: nameList(noImport[1]!), target: noImport[2]! };
   return { form: "free" };
 }
 

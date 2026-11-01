@@ -1,9 +1,9 @@
-// Creates market_data_owner and trading_owner as plain roles, with random passwords.
+// Creates market_data_owner, trading_owner and handles_owner as plain roles, with random passwords.
 //
 //   DATABASE_URL_MIGRATOR=<unpooled admin URL> pnpm --filter @bullpen/fitness-checks db:create-roles -- --out ~/Downloads/owner-roles.env
 //
 // The passwords are written only to the --out file (mode 600), as the two runtime URLs
-// (DATABASE_URL_MARKET_DATA, DATABASE_URL_TRADING, through the pooled host), and are never printed.
+// (DATABASE_URL_MARKET_DATA, DATABASE_URL_TRADING, DATABASE_URL_HANDLES, through the pooled host), and are never printed.
 // Roles that already exist are left alone. Afterwards run `db:migrate`.
 import { chmodSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -24,11 +24,11 @@ try {
   const created = await createOwnerRoles(admin);
   const names = Object.keys(created) as OwnerRole[];
   if (names.length === 0) {
-    console.log("both roles already exist; nothing written");
+    console.log("every role already exists; nothing written");
   } else {
     const parsed = new URL(url);
     const pooledHost = parsed.hostname.includes("-pooler") ? parsed.hostname : parsed.hostname.replace(/^([^.]+)/, "$1-pooler");
-    const variable: Record<OwnerRole, string> = { market_data_owner: "DATABASE_URL_MARKET_DATA", trading_owner: "DATABASE_URL_TRADING" };
+    const variable: Record<OwnerRole, string> = { market_data_owner: "DATABASE_URL_MARKET_DATA", trading_owner: "DATABASE_URL_TRADING", handles_owner: "DATABASE_URL_HANDLES" };
     const lines = names.map((role) => `${variable[role]}=postgresql://${role}:${created[role]}@${pooledHost}${parsed.pathname}?sslmode=require`);
     writeFileSync(out, `${lines.join("\n")}\n`, { mode: 0o600 });
     chmodSync(out, 0o600);

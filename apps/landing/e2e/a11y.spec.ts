@@ -26,6 +26,25 @@ for (const theme of ["light", "dark"] as const) {
         expect(summary).toEqual([]);
       });
 
+      const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"];
+      const found = (results: Awaited<ReturnType<AxeBuilder["analyze"]>>) => results.violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(" | ")}`);
+
+      test("the series rail, with the bonus card and the planned dates, has no violations", async ({ page }) => {
+        await open(page, theme);
+        const results = await new AxeBuilder({ page }).include("#series").withTags(TAGS).analyze();
+        expect(found(results)).toEqual([]);
+      });
+
+      // The explorer's own node cards are left out: axe flags their labels on every part (label-content-name-mismatch), which this change did not touch.
+      test("the part scrubber with its bonus node, and the change request in the bonus panel, have no violations", async ({ page }) => {
+        await page.addInitScript((t) => window.localStorage.setItem("bp-theme", t), theme);
+        await page.goto("/architecture#overview");
+        await page.getByRole("group", { name: "Series part" }).getByRole("button", { name: /BONUS/ }).click();
+        await expect(page.getByRole("region", { name: "Change request" })).toBeVisible();
+        const results = await new AxeBuilder({ page }).include(".bp-ap__bar").include(".bp-arch-change-request").withTags(TAGS).analyze();
+        expect(found(results)).toEqual([]);
+      });
+
       // axe skips a count of one digit, so a faded count passed until a part had ten decisions (3.88:1 at opacity 0.8, against 4.5:1).
       // The count must not be dimmer than its tab's own text, whatever its digits.
       test("an unselected decisions tab shows its count at full strength, so contrast does not depend on the digits", async ({ page }) => {

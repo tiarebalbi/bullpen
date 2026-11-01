@@ -25,6 +25,7 @@
     "@bullpen/contracts": "workspace:*",
     "pg": "8.23.1",
     "@bullpen/db-trading": "workspace:*",
+    "@bullpen/db-handles": "workspace:*",
     "@bullpen/db-market-data": "workspace:*"
   },
   "devDependencies": {

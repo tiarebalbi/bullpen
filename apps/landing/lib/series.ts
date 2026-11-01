@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 
 export type SeriesStatus = "published" | "next" | "planned";
 
+/** The bonus is a detour between two parts: it has no part number, and links to its timeline moment (and so its explorer content) by `moment`. */
+export type SeriesKind = "part" | "bonus";
+
 export interface SeriesPart {
+  /** "part" unless the entry says otherwise; the numbered parts of the series. */
+  kind: "part";
   part: number;
   title: string;
   /**
@@ -25,7 +30,28 @@ export interface SeriesPart {
    * future target date in that slot would misrepresent what's happened.
    */
   date: string | null;
+  /**
+   * When the post is planned to go out, ISO (YYYY-MM-DD), or absent. Only an unpublished entry has one, and it is never a publish date: the card shows it
+   * as planned, and neither the JSON-LD nor the sitemap read it.
+   */
+  plannedDate?: string;
 }
+
+export interface SeriesBonus extends Omit<SeriesPart, "kind" | "part"> {
+  kind: "bonus";
+  /** The timeline moment id of the bonus, e.g. "bonus-handles". */
+  moment: string;
+}
+
+/** One card in the series rail: a numbered part, or the bonus between two of them. */
+export type SeriesEntry = SeriesPart | SeriesBonus;
+
+export const isPart = (entry: SeriesEntry): entry is SeriesPart => entry.kind === "part";
+export const isBonus = (entry: SeriesEntry): entry is SeriesBonus => entry.kind === "bonus";
+/** The numbered parts, in order, for what only numbered parts have (the part scrubber, the explorer's tabs). */
+export const partsOf = (series: readonly SeriesEntry[]): SeriesPart[] => series.filter(isPart);
+/** "Part 3" or "the bonus": how an error or a label names an entry. */
+export const nameOf = (entry: SeriesEntry): string => (isBonus(entry) ? "the bonus" : `part ${entry.part}`);
 
 const VALID_STATUS = new Set<string>(["published", "next", "planned"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -44,11 +70,11 @@ export const TITLE_MAX_LENGTH = 28;
 export const INTRODUCED_MAX_LENGTH = 60;
 
 /**
- * Parses `content/series.json` (the six-part series roadmap) from its raw
+ * Parses `content/series.json` (the six-part series roadmap, and the bonus between Part 4 and Part 5) from its raw
  * text content. Throws a descriptive error for anything that isn't a valid
  * series entry, rather than silently rendering partial/garbage data.
  */
-export function parseSeries(content: string, sourceLabel = "content/series.json"): SeriesPart[] {
+export function parseSeries(content: string, sourceLabel = "content/series.json"): SeriesEntry[] {
   let data: unknown;
   try {
     data = JSON.parse(content);
@@ -60,12 +86,17 @@ export function parseSeries(content: string, sourceLabel = "content/series.json"
     throw new Error(`${sourceLabel}: expected a JSON array of series parts`);
   }
 
-  const parts = data.map((entry, index) => validateSeriesEntry(entry, index, sourceLabel));
-  const next = parts.filter((part) => part.status === "next");
+  const entries = data.map((entry, index) => validateSeriesEntry(entry, index, sourceLabel));
+  const next = entries.filter((entry) => entry.status === "next");
   if (next.length > 1) {
-    throw new Error(`${sourceLabel}: parts ${next.map((part) => part.part).join(" and ")} are all "next" -- only one part is next`);
+    throw new Error(`${sourceLabel}: ${next.map(nameOf).join(" and ")} are all "next" -- only one entry is next`);
   }
-  return parts;
+  const numbers = partsOf(entries).map((entry) => entry.part);
+  if (numbers.some((number, at) => at > 0 && number <= numbers[at - 1]!)) {
+    throw new Error(`${sourceLabel}: the numbered parts are not in increasing order (${numbers.join(", ")})`);
+  }
+  if (entries.filter(isBonus).length > 1) throw new Error(`${sourceLabel}: more than one bonus entry`);
+  return entries;
 }
 
 function checkHeadline(headline: unknown, where: string): asserts headline is string | undefined {
@@ -91,17 +122,41 @@ function checkDate(date: unknown, url: string, status: string, where: string): s
   return placeholder ? null : (date as string | null);
 }
 
-function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string): SeriesPart {
+/** The planned date, when there is one: a real YYYY-MM-DD on an entry that is not published (a published entry has its real `date`). */
+function checkPlannedDate(plannedDate: unknown, date: string | null, status: string, where: string): string | undefined {
+  if (plannedDate === undefined) return undefined;
+  if (typeof plannedDate !== "string" || !DATE_PATTERN.test(plannedDate) || Number.isNaN(Date.parse(`${plannedDate}T00:00:00Z`))) {
+    throw new Error(`${where} has an invalid "plannedDate" (expected "YYYY-MM-DD", got ${JSON.stringify(plannedDate)})`);
+  }
+  if (status === "published" || date !== null) throw new Error(`${where} has a "plannedDate" but is published -- a published entry has its real "date" and no planned one`);
+  return plannedDate;
+}
+
+/** "bonus" or a part number: which kind of entry this is, with the fields only that kind has. */
+function checkIdentity(entry: Record<string, unknown>, index: number, sourceLabel: string): { kind: "part"; part: number } | { kind: "bonus"; moment: string } {
+  const { kind, part, moment } = entry;
+  if (kind !== undefined && kind !== "part" && kind !== "bonus") throw new Error(`${sourceLabel}: entry ${index} has an invalid "kind" (expected "part" or "bonus", got ${JSON.stringify(kind)})`);
+  if (kind === "bonus") {
+    if (part !== undefined) throw new Error(`${sourceLabel}: entry ${index} is the bonus and has a "part" -- the bonus has no part number`);
+    if (typeof moment !== "string" || !/^[a-z0-9-]+$/.test(moment)) {
+      throw new Error(`${sourceLabel}: entry ${index} (the bonus) is missing a "moment" id naming its timeline moment, e.g. "bonus-handles"`);
+    }
+    return { kind: "bonus", moment };
+  }
+  if (typeof part !== "number" || !Number.isInteger(part) || part < 1 || part > 6) {
+    throw new Error(`${sourceLabel}: entry ${index} has an invalid "part" (expected an integer 1-6, got ${JSON.stringify(part)})`);
+  }
+  if (moment !== undefined) throw new Error(`${sourceLabel}: entry ${index} (part ${part}) has a "moment" -- only the bonus names a moment`);
+  return { kind: "part", part };
+}
+
+function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string): SeriesEntry {
   if (typeof entry !== "object" || entry === null) {
     throw new Error(`${sourceLabel}: entry ${index} is not an object`);
   }
-  const { part, title, headline, status, url, introduced, date } = entry as Record<string, unknown>;
-
-  if (typeof part !== "number" || !Number.isInteger(part) || part < 1 || part > 6) {
-    throw new Error(
-      `${sourceLabel}: entry ${index} has an invalid "part" (expected an integer 1-6, got ${JSON.stringify(part)})`,
-    );
-  }
+  const { title, headline, status, url, introduced, date, plannedDate } = entry as Record<string, unknown>;
+  const identity = checkIdentity(entry as Record<string, unknown>, index, sourceLabel);
+  const part = identity.kind === "part" ? identity.part : "bonus";
   if (typeof title !== "string" || title.trim().length === 0) {
     throw new Error(`${sourceLabel}: entry ${index} (part ${part}) is missing a non-empty "title" string`);
   }
@@ -127,9 +182,12 @@ function validateSeriesEntry(entry: unknown, index: number, sourceLabel: string)
       `${sourceLabel}: entry ${index} (part ${part}) has an "introduced" line of ${introduced.length} characters, over the ${INTRODUCED_MAX_LENGTH}-character card budget: ${JSON.stringify(introduced)}`,
     );
   }
-  const checkedDate = checkDate(date, url, status, `${sourceLabel}: entry ${index} (part ${part})`);
+  const where = `${sourceLabel}: entry ${index} (${identity.kind === "part" ? `part ${part}` : "the bonus"})`;
+  const checkedDate = checkDate(date, url, status, where);
+  const planned = checkPlannedDate(plannedDate, checkedDate, status, where);
 
-  return { part, title, ...(headline === undefined ? {} : { headline }), status: status as SeriesStatus, url, introduced, date: checkedDate };
+  const shared = { title, ...(headline === undefined ? {} : { headline }), status: status as SeriesStatus, url, introduced, date: checkedDate, ...(planned === undefined ? {} : { plannedDate: planned }) };
+  return identity.kind === "part" ? { kind: "part", part: identity.part, ...shared } : { kind: "bonus", moment: identity.moment, ...shared };
 }
 
 /**
@@ -142,6 +200,15 @@ export function formatPublishDate(iso: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 }
 
-export function loadSeries(filePath: string): SeriesPart[] {
+/**
+ * "2026-11-16" as "Nov 16", the planned date's format: no year, because it is a plan and not a record. Read as midnight UTC and shown in UTC like
+ * formatPublishDate. The bonus's card says "Planned · Nov 9" (`prefix`); the numbered parts show the date alone, set apart in the card.
+ */
+export function formatPlannedDate(iso: string, prefix = false): string {
+  const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+  return prefix ? `Planned · ${day}` : day;
+}
+
+export function loadSeries(filePath: string): SeriesEntry[] {
   return parseSeries(readFileSync(filePath, "utf8"), filePath);
 }

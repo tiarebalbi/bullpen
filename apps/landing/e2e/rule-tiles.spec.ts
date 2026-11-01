@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { loadLatestRulesSnapshot } from "../lib/rulesSnapshot.js";
 
-// The eight tiles and the panel they open, checked against structure.adl and the committed snapshot themselves.
+// The nine tiles and the panel they open, checked against structure.adl and the committed snapshot themselves.
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const adlLines = readFileSync(join(repoRoot, "architecture", "adl", "structure.adl"), "utf8").split("\n");

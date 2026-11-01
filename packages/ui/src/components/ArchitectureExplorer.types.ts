@@ -94,8 +94,27 @@ export interface ArchPrediction {
   notBuilt: Array<{ id: string; label: string }>;
 }
 
+/**
+ * The change request behind the bonus, as its ADR states it (ADR-0027): why now, what is in scope and what is not. Each is HTML that the page's loader
+ * rendered from the ADR's Markdown at build time, with raw HTML escaped (ADR-0007), so the panel shows the record and not copy written for it.
+ */
+export interface ArchChangeRequest {
+  adr: string;
+  adrHref?: string;
+  whyNowHtml: string;
+  inScopeHtml: string;
+  outOfScopeHtml: string;
+}
+
 export interface ArchPartData {
   part: number;
+  /**
+   * What the picture calls itself when it is not a numbered part: "the bonus". `part` is then the part it follows, which orders it and loads its neighbour
+   * for "what changed". Absent for a numbered part, which is called "Part N".
+   */
+  label?: string;
+  /** The bonus's change request; absent for a numbered part. */
+  changeRequest?: ArchChangeRequest;
   status: "built" | "planned";
   summary: string;
   /**

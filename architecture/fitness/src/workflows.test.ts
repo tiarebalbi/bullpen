@@ -86,4 +86,8 @@ describe("ci workflow: the database tests", () => {
   it("validates the Part 3 moment strictly", () => {
     expect(text).toContain("moments/part-03.architecture.json");
   });
+
+  it("validates the bonus moment strictly too (ADR-0027)", () => {
+    expect(text).toMatch(/-a architecture\/calm\/moments\/bonus-handles\.architecture\.json\n\s+-p architecture\/calm\/bullpen\.pattern\.json\n\s+--strict/);
+  });
 });

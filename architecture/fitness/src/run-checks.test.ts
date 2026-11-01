@@ -17,6 +17,7 @@ describe("check:arch on the real repo", () => {
       "structure",
       "turbo boundaries",
       "entry-point imports",
+      "import boundaries",
       "secret containment",
       "model currency",
       "data ownership",

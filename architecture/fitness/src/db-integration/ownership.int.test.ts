@@ -2,6 +2,7 @@ import pg from "pg";
 import { afterAll, beforeAll, describe, expect, inject, it } from "vitest";
 import { createOwnerRoles } from "./create-roles.js";
 import { migrate as migrateMarketData } from "@bullpen/db-market-data";
+import { migrate as migrateHandles } from "@bullpen/db-handles";
 import { migrate as migrateTrading } from "@bullpen/db-trading";
 
 const urls = inject("dbUrls");
@@ -142,10 +143,21 @@ describe("the roles hold only what they should", () => {
     }
   });
 
+  it("refuses to migrate handles if its runtime role can read every schema", async () => {
+    const migrator = await as(urls.migrator);
+    await migrator.query("GRANT neon_superuser TO handles_owner");
+    try {
+      await expect(migrateHandles(migrator, "handles_owner")).rejects.toThrow(/can read or write every schema/);
+    } finally {
+      await migrator.query("REVOKE neon_superuser FROM handles_owner");
+    }
+  });
+
   it("is idempotent: applying the migrations again changes nothing and fails nothing", async () => {
     const migrator = await as(urls.migrator);
     expect(await migrateMarketData(migrator, "market_data_owner")).toEqual(["0001_schema.sql", "0002_quotes_and_price_contract.sql", "0003_provider_calls.sql"]);
-    expect(await migrateTrading(migrator, "trading_owner")).toEqual(["0001_schema.sql", "0002_accounts_orders_ledger.sql", "0003_leaderboard.sql", "0004_order_lifecycle.sql", "0005_leaderboard_counts_reserved_cash.sql", "0006_account_owner.sql"]);
+    expect(await migrateTrading(migrator, "trading_owner")).toEqual(["0001_schema.sql", "0002_accounts_orders_ledger.sql", "0003_leaderboard.sql", "0004_order_lifecycle.sql", "0005_leaderboard_counts_reserved_cash.sql", "0006_account_owner.sql", "0007_leaderboard_shows_approved_handles.sql"]);
+    expect(await migrateHandles(migrator, "handles_owner")).toEqual(["0001_schema.sql", "0002_handles.sql", "0003_handle_changes.sql"]);
   });
   it("a re-run of the migrations leaves the kind of a stored quote alone (the backfill runs once, when the column is added)", async () => {
     const migrator = await as(urls.migrator);

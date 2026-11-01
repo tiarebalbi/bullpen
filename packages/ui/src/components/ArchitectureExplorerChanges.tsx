@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import type { ArchChange, ArchPartData, ArchPrediction } from "./ArchitectureExplorer.types.js";
 import { ControlChip } from "./ControlChip.js";
+import { newInPart } from "../lib/newInPart.js";
 
 type Tone = "add" | "remove" | "change";
 
@@ -20,13 +21,14 @@ export function diffWhatChanged(prev: ArchPartData, curr: ArchPartData): NodeCha
   if (prev.part === curr.part) return [];
   const before = new Map(prev.nodes.map((n) => [n.id, n]));
   const currIds = new Set(curr.nodes.map((n) => n.id));
+  const added = newInPart(prev, curr).nodes;
   // An earlier node a new one says it took over is moved, not removed.
   const movedInto = new Map(curr.nodes.flatMap((n) => (n.replaces ?? []).map((id): [string, string] => [id, n.label])));
   const out: NodeChange[] = [];
   for (const n of curr.nodes) {
     const p = before.get(n.id);
-    if (!p) out.push({ id: n.id, label: n.label, tone: "add" });
-    else if (p.label !== n.label || p.kind !== n.kind || p.purpose !== n.purpose || p.meta !== n.meta) out.push({ id: n.id, label: n.label, tone: "change" });
+    if (added.has(n.id)) out.push({ id: n.id, label: n.label, tone: "add" });
+    else if (p && (p.label !== n.label || p.kind !== n.kind || p.purpose !== n.purpose || p.meta !== n.meta)) out.push({ id: n.id, label: n.label, tone: "change" });
   }
   for (const n of prev.nodes) {
     if (currIds.has(n.id)) continue;

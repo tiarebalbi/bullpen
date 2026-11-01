@@ -34,7 +34,7 @@ Sign-in uses Neon's managed auth with GitHub as the only provider, and a player 
   (`<auth URL>/.well-known/jwks.json`, with `jose`) and takes the user id from its `sub` claim; a cookie that is merely present is not a player.
   The tests sign tokens with a key made for the test and give the verifier that key's public half.
 - **A player is a neutral label.** A GitHub username is not a public handle. The account's handle is `Player` and four hex characters of a hash of
-  the user id (more characters when four are taken). Name, email and login are never stored or shown. Handles proper are later work.
+  the user id (more characters when four are taken). Name, email and login are never stored or shown. Until a player has an approved handle this stays the label; handles are no longer deferred, and ADR-0027 adds them, moderated, as a bonus between Part 4 and Part 5.
 - **One account per user.** `trading.accounts.owner_user_id` holds the Neon Auth user id (unique). First sign-in makes the account with
   100,000 in play money, a named constant (`STARTING_CASH`); every later sign-in finds the same one, also under concurrent sign-ins.
 - **No sign-in on previews.** A preview's address changes with every deployment and is not a trusted domain; the proxy answers 404 and the
@@ -65,4 +65,5 @@ Sign-in uses Neon's managed auth with GitHub as the only provider, and a player 
 
 - ADR-0012 (schema and role per owner) — why no auth role was added.
 - ADR-0017 (the order lifecycle) — what the account is for.
+- ADR-0027 (player handles, moderated) — the handles this ADR left for later.
 - Neon's quickstart for Next.js (read 2026-10-21) and its page on verifying a token against the project's JWKS.

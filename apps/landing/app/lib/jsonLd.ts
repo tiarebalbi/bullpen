@@ -1,5 +1,5 @@
 import { validateJsonLd } from "@bullpen/contracts";
-import type { SeriesPart } from "../../lib/series.js";
+import type { SeriesEntry } from "../../lib/series.js";
 import { PRIVACY_UPDATED } from "./contentDates.js";
 import { PRODUCTION_HOST } from "./productionHost.js";
 
@@ -38,7 +38,7 @@ const AUTHOR = {
  *
  * No `license` on the source code: the repo declares none, and none is invented.
  */
-export function buildJsonLd(page: JsonLdPage, parts: SeriesPart[]): object {
+export function buildJsonLd(page: JsonLdPage, parts: SeriesEntry[]): object {
   const graph = { "@context": "https://schema.org", "@graph": nodesFor(page, parts) };
 
   if (page === "home") {
@@ -48,7 +48,7 @@ export function buildJsonLd(page: JsonLdPage, parts: SeriesPart[]): object {
   return graph;
 }
 
-function nodesFor(page: JsonLdPage, parts: SeriesPart[]): object[] {
+function nodesFor(page: JsonLdPage, parts: SeriesEntry[]): object[] {
   if (page === "home") {
     return [
       { "@type": "WebSite", "@id": `${ORIGIN}/#website`, name: "Bullpen", url: `${ORIGIN}/` },
@@ -82,11 +82,18 @@ function nodesFor(page: JsonLdPage, parts: SeriesPart[]): object[] {
   ];
 }
 
-function seriesNode(parts: SeriesPart[]): object {
+/** Where an entry sorts: a part at its number, the bonus half a step after the part that precedes it in content/series.json. */
+function orderKey(entries: SeriesEntry[], entry: SeriesEntry): number {
+  if (entry.kind === "part") return entry.part;
+  const before = entries.slice(0, entries.indexOf(entry)).reverse().find((candidate) => candidate.kind === "part");
+  return (before?.kind === "part" ? before.part : 0) + 0.5;
+}
+
+function seriesNode(parts: SeriesEntry[]): object {
   const published = parts
-    // A post with no date yet (the publish placeholder) is not listed: a BlogPosting needs the day it was published.
+    // The series order, from content/series.json (the bonus sits between Part 4 and Part 5). A post with no date yet is not listed: a BlogPosting needs the day it was published. `plannedDate` is a plan and is never read here.
     .filter((part) => part.status === "published" && part.date !== null)
-    .sort((a, b) => a.part - b.part)
+    .sort((a, b) => orderKey(parts, a) - orderKey(parts, b))
     .map((part) => ({
       "@type": "BlogPosting",
       headline: part.headline ?? part.title,

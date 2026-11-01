@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import type { AdlLine } from "../../lib/adl.js";
 import type { Adr } from "../../lib/adr.js";
 import type { ArchitecturePageData } from "../../lib/architecturePage.js";
 import type { RulesTabData } from "../../lib/rulesView.js";
-import { ArchitectureExplorer, latestBuiltPart, type ArchPartData } from "../components/ui.js";
+import { ArchitectureExplorer, type ArchPartData } from "../components/ui.js";
+import { explorerPartsWithBonus } from "../../lib/bonusParts.js";
+import { useSeriesPosition } from "./useSeriesPosition.js";
 import type { RuleCardView } from "../components/RuleCardGrid.js";
 import { DataTab } from "./DataTab.js";
 import { DecisionsTab } from "./DecisionsTab.js";
 import { FlowsTab } from "./FlowsTab.js";
-import { PartScrubber } from "./PartScrubber.js";
+import { BONUS_NODE_TITLE, PartScrubber, type BonusStop } from "./PartScrubber.js";
 import { RulesTab } from "./RulesTab.js";
 import { ServicesTab } from "./ServicesTab.js";
 
@@ -24,8 +26,6 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
-
-const PLAY_MS = 2400;
 
 function subscribeToHash(onChange: () => void): () => void {
   window.addEventListener("hashchange", onChange);
@@ -58,30 +58,23 @@ export interface ArchitectureAppProps {
   since: Record<string, number>;
   /** structure.adl, as the parser read it, for the Rules tab's modal and rows. */
   adl: { source: string; lines: AdlLine[] };
+  /** The bonus between two parts (ADR-0027), as an explorer part labelled "the bonus"; absent when the series has none. */
+  bonus?: ArchPartData | null;
+  /** The bonus's title in the series ("Changing the plan mid-flight"), for the heading above its picture. */
+  bonusTitle?: string;
 }
 
-export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since, adl }: ArchitectureAppProps): ReactNode {
+
+export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since, adl, bonus = null, bonusTitle }: ArchitectureAppProps): ReactNode {
   const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
   const tab = tabFromHash(hash);
-  const last = parts.length;
 
-  // Opens on the latest built part, read from the explorer content, so a part that ships needs no pointer moved.
-  const [part, setPart] = useState(latestBuiltPart(parts));
-  const [playing, setPlaying] = useState(false);
-  // Playback stops by itself at the last part without an effect that sets state.
-  const running = playing && part < last;
+  // Where the reader is on the series (a part, or the bonus) and whether it plays: shared with the home page's explorer.
+  const { part, bonusSelected: bonusOn, running, select, selectBonus, togglePlay } = useSeriesPosition(parts, bonus);
   const [focusNode, setFocusNode] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setPart((p) => Math.min(p + 1, last)), PLAY_MS);
-    return () => clearInterval(id);
-  }, [running, last]);
-
-  const select = (next: number): void => {
-    setPlaying(false);
-    setPart(next);
-  };
+  const bonusStop: BonusStop | undefined = bonus ? { after: bonus.part, title: BONUS_NODE_TITLE, status: bonus.status } : undefined;
+  // The explorer draws the bonus beside the part it follows, so "what changed" and "new in this part" are read against that part.
+  const bonusParts: ArchPartData[] = bonus ? explorerPartsWithBonus(parts, bonus) : [];
   const go = (id: TabId): void => {
     window.location.hash = id;
   };
@@ -107,13 +100,7 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
       </header>
 
       <div className="bp-ap__bar">
-        <PartScrubber parts={data.scrubber} part={part} playing={running} onSelect={select} onTogglePlay={() => {
-          if (running) setPlaying(false);
-          else {
-            if (part >= last) setPart(1);
-            setPlaying(true);
-          }
-        }} />
+        <PartScrubber parts={data.scrubber} part={part} bonus={bonusStop} bonusSelected={bonusOn} playing={running} onSelect={select} onSelectBonus={selectBonus} onTogglePlay={togglePlay} />
         <div role="tablist" aria-label="Architecture views" className="bp-ap__tabs" onKeyDown={onTabKeyDown}>
           {TABS.map((t) => (
             <a
@@ -137,11 +124,12 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
       <div id="bp-ap-panel" role="tabpanel" aria-labelledby={`bp-ap-tab-${tab}`} className="bp-ap__panel">
         {tab === "overview" ? (
           <>
-            <h2 className="bp-ap-overview-title">{data.scrubber.find((p) => p.part === part)?.title}</h2>
+            <h2 className="bp-ap-overview-title">{bonusOn ? (bonusTitle ?? BONUS_NODE_TITLE) : data.scrubber.find((p) => p.part === part)?.title}</h2>
             <ArchitectureExplorer
-              parts={parts}
-              part={part}
-              onPartChange={select}
+              key={bonusOn ? "bonus" : "parts"}
+              parts={bonusOn ? bonusParts : parts}
+              part={bonusOn ? 2 : part}
+              onPartChange={bonusOn ? () => undefined : select}
               hideScrubber
               initialSelectedId={focusNode ?? undefined}
               adrTitles={adrTitles}
@@ -149,7 +137,13 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
             />
           </>
         ) : null}
-        {tab === "services" ? (
+        {bonusOn && tab !== "overview" ? (
+          <p className="bp-ap-bonus-note" role="status">
+            The bonus is a detour between Part 4 and Part 5, and it lives on the Overview: its picture of the system, what it changed, and its change request. This tab follows the numbered
+            parts. <a href="#overview" onClick={() => setFocusNode(null)}>Back to the bonus</a>, or pick a part above.
+          </p>
+        ) : null}
+        {!bonusOn && tab === "services" ? (
           <ServicesTab
             part={part}
             services={data.services[part]!}
@@ -160,10 +154,10 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
             }}
           />
         ) : null}
-        {tab === "flows" ? <FlowsTab key={part} part={part} flows={[data.flows[part]!, ...(data.moreFlows[part] ?? [])]} /> : null}
-        {tab === "data" ? <DataTab part={part} data={data.data[part]!} preview={data.data[3]!} onJump={select} /> : null}
-        {tab === "decisions" ? <DecisionsTab part={part} adrs={adrs} /> : null}
-        {tab === "rules" ? <RulesTab part={part} cards={ruleCards} data={rules} adl={adl} /> : null}
+        {!bonusOn && tab === "flows" ? <FlowsTab key={part} part={part} flows={[data.flows[part]!, ...(data.moreFlows[part] ?? [])]} /> : null}
+        {!bonusOn && tab === "data" ? <DataTab part={part} data={data.data[part]!} preview={data.data[3]!} onJump={select} /> : null}
+        {!bonusOn && tab === "decisions" ? <DecisionsTab part={part} adrs={adrs} /> : null}
+        {!bonusOn && tab === "rules" ? <RulesTab part={part} cards={ruleCards} data={rules} adl={adl} /> : null}
       </div>
     </div>
   );

@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import type { Adr } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import type { ArchPartData } from "./ui.js";
-import { TrackedArchitectureExplorer } from "./TrackedArchitectureExplorer.js";
+import type { ScrubberPart } from "../../lib/architecturePage.js";
+import { HomeExplorer } from "./HomeExplorer.js";
 import { LinkButton } from "./LinkButton.js";
 
 /**
@@ -13,7 +14,7 @@ import { LinkButton } from "./LinkButton.js";
  * `check:arch`'s explorer-consistency check keeps in sync with the real
  * CALM model in architecture/calm/.
  */
-export function Architecture({ parts, adrs }: { parts: ArchPartData[]; adrs: Adr[] }): ReactNode {
+export function Architecture({ parts, adrs, bonus = null, scrubber }: { parts: ArchPartData[]; adrs: Adr[]; bonus?: ArchPartData | null; scrubber: ScrubberPart[] }): ReactNode {
   const adrTitles = Object.fromEntries(adrs.map((a) => [a.id, a.title]));
   const adrHrefs = Object.fromEntries(adrs.map((a) => [a.id, `#${adrHashId(a.id)}`]));
 
@@ -33,7 +34,7 @@ export function Architecture({ parts, adrs }: { parts: ArchPartData[]; adrs: Adr
         </p>
       </div>
 
-      <TrackedArchitectureExplorer parts={parts} adrTitles={adrTitles} adrHrefs={adrHrefs} />
+      <HomeExplorer parts={parts} bonus={bonus} scrubber={scrubber} adrTitles={adrTitles} adrHrefs={adrHrefs} />
     </section>
   );
 }

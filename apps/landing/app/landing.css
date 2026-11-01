@@ -303,10 +303,12 @@ code {
   max-width: 520px;
   text-wrap: pretty;
 }
-/* Six across at desktop, matching the design's own
+/* Six parts across at desktop, matching the design's own
    `repeat(6, minmax(0,1fr))` (~line 105 of Bullpen Landing.dc.html) --
    the previous auto-fit/minmax(200px) grid wrapped to 5+1 inside a
-   narrower container. */
+   narrower container. The bonus (ADR-0027) is a seventh card between Part 4
+   and Part 5, in the same row, and a little wider than its neighbours: that is
+   the extra weight, and the rail keeps one row. */
 .bp-series-grid {
   list-style: none;
   margin: var(--space-8) 0 0;
@@ -314,6 +316,13 @@ code {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--space-4);
+}
+/* One height across the row: seven cards are narrower than six, so some titles wrap further, and the tallest sets the row. */
+.bp-series-grid > li > .bp-series-card {
+  height: 100%;
+}
+.bp-series-grid:has(> li:nth-child(7)) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
 }
 
 @media (max-width: 900px) {
@@ -916,9 +925,9 @@ code {
   color: var(--foreground-muted);
 }
 
-/* The eight rule tiles and their shared detail panel */
+/* The nine rule tiles (one for each # heading of structure.adl, the CALM model and the budget) and their shared detail panel: three to a row. */
 .bp-tile {
-  grid-column: span 3;
+  grid-column: span 4;
   text-align: left;
   cursor: pointer;
   color: var(--foreground);
@@ -1493,6 +1502,7 @@ code {
 }
 .bp-ap-scrub__play:focus-visible,
 .bp-ap-scrub__stop:focus-visible,
+.bp-ap-scrub__bonus:focus-visible,
 .bp-ap-playback button:focus-visible,
 .bp-ap-chips button:focus-visible,
 .bp-ap-step:focus-visible {
@@ -1571,6 +1581,79 @@ code {
   text-wrap: balance;
 }
 .bp-ap-scrub__stop[data-state="current"] {
+  color: var(--foreground);
+}
+
+/* the bonus: a diamond on a short branch above the line, between Part 4 and Part 5 */
+.bp-ap-scrub[data-has-bonus] .bp-ap-scrub__group {
+  padding-top: 56px;
+}
+.bp-ap-scrub[data-has-bonus] .bp-ap-scrub__track {
+  top: 64px;
+}
+.bp-ap-scrub__bonus {
+  position: absolute;
+  top: 20px;
+  left: 66.667%;
+  transform: translateX(-9px);
+  display: grid;
+  grid-template-columns: 18px auto;
+  grid-template-areas:
+    "diamond kicker"
+    "diamond title";
+  column-gap: 8px;
+  align-items: center;
+  padding: 0 6px 0 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-lg);
+  color: var(--foreground-muted);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+.bp-ap-scrub__bonus .bp-ap-scrub__kicker {
+  grid-area: kicker;
+}
+.bp-ap-scrub__bonus .bp-ap-scrub__title {
+  grid-area: title;
+  text-align: left;
+}
+.bp-ap-scrub__stub {
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  height: 26px;
+  border-left: 2px solid var(--bp-hair);
+}
+.bp-ap-scrub__bonus[data-status="planned"] .bp-ap-scrub__stub {
+  border-left-style: dashed;
+  border-left-color: var(--foreground-muted);
+}
+.bp-ap-scrub__diamond {
+  grid-area: diamond;
+  justify-self: center;
+  width: 13px;
+  height: 13px;
+  background: var(--bp-panel);
+  border: 1.5px solid var(--foreground-muted);
+  transform: rotate(45deg);
+  position: relative;
+  z-index: 1;
+}
+.bp-ap-scrub__bonus[data-status="planned"] .bp-ap-scrub__diamond {
+  border-style: dashed;
+}
+.bp-ap-scrub__bonus[data-state="past"] .bp-ap-scrub__diamond {
+  background: var(--foreground);
+  border-color: var(--foreground);
+}
+.bp-ap-scrub__bonus[data-state="current"] .bp-ap-scrub__diamond {
+  background: var(--ember);
+  border: 0;
+  transform: rotate(45deg) scale(1.25);
+}
+.bp-ap-scrub__bonus[data-state="current"] {
   color: var(--foreground);
 }
 
@@ -2127,8 +2210,36 @@ code {
   }
   .bp-ap-scrub__track,
   .bp-ap-scrub__dot,
-  .bp-ap-scrub__title {
+  .bp-ap-scrub__title,
+  .bp-ap-scrub__stub {
     display: none;
+  }
+  /* the bonus keeps its name on a phone: it is a chip in the strip, straight after Part 4 */
+  .bp-ap-scrub[data-has-bonus] .bp-ap-scrub__group {
+    padding-top: 0;
+  }
+  .bp-ap-scrub__stops li {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .bp-ap-scrub__bonus {
+    position: static;
+    transform: none;
+    grid-template-columns: 18px auto auto;
+    grid-template-areas: "diamond kicker title";
+    min-height: 44px;
+    padding: 0 var(--space-4) 0 var(--space-3);
+    border: 1px dashed var(--ember);
+    border-radius: var(--radius-pill);
+  }
+  .bp-ap-scrub__bonus .bp-ap-scrub__title {
+    display: inline;
+    font-weight: 500;
+  }
+  .bp-ap-scrub__bonus[data-state="current"] {
+    background: var(--foreground);
+    border-color: var(--foreground);
+    color: var(--background);
   }
   .bp-ap-scrub__stops {
     display: flex;

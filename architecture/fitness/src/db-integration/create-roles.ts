@@ -1,11 +1,11 @@
 import { randomBytes } from "node:crypto";
 import type { Client } from "pg";
 
-export const OWNER_ROLES = ["market_data_owner", "trading_owner"] as const;
+export const OWNER_ROLES = ["market_data_owner", "trading_owner", "handles_owner"] as const;
 export type OwnerRole = (typeof OWNER_ROLES)[number];
 
 /**
- * Creates the two owner roles as plain roles: login only, no superuser, no
+ * Creates the owner roles as plain roles: login only, no superuser, no
  * CREATEDB, no CREATEROLE, no BYPASSRLS. A role made in some providers'
  * consoles joins a superuser-like role that reads and writes every schema,
  * and the admin role cannot take that back, so the roles are made here with

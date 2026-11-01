@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadArchitectureParts, parseArchitecturePart, predictionOfPart } from "./architecture.js";
+import { loadArchitectureParts, loadBonusPart, parseArchitecturePart, predictionOfPart } from "./architecture.js";
+import { parseAdr } from "./adr.js";
+import { explorerPartsWithBonus } from "./bonusParts.js";
+import { newInPart } from "@bullpen/ui/new-in-part";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const architectureDir = join(repoRoot, "content", "architecture");
@@ -366,5 +369,86 @@ describe("Part 3's explorer content is the moment, drawn", () => {
 
   it("says the Market Data Service took over the Price Snapshot Service", () => {
     expect(part3.nodes.find((n) => n.id === "market-data-service")!.replaces).toEqual(["price-snapshot-service"]);
+  });
+});
+
+describe("loadBonusPart", () => {
+  const adrPath = join(repoRoot, "architecture", "adr", "0027-player-handles-are-moderated-by-a-decision-model-and-a-queue.md");
+  const adr = parseAdr(readFileSync(adrPath, "utf8"), "0027.md");
+  const source = { adr: adr.id, adrHref: "#adr-0027", changeRequest: adr.changeRequest! };
+  const bonus = loadBonusPart(architectureDir, calmDir, source)!;
+
+  it("is the bonus, labelled and ordered after Part 4, and planned until the owner publishes it", () => {
+    expect(bonus.label).toBe("the bonus");
+    expect(bonus.part).toBe(4);
+    expect(bonus.status).toBe("planned");
+    expect(bonus.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(["vercel-ai-gateway", "schema-handles", "approved-handles-v1", "trading-app"]));
+    expect(bonus.edges.map((e) => e.id)).toEqual(expect.arrayContaining(["trading-app-to-ai-gateway", "trading-app-to-approved-handles-v1"]));
+  });
+
+  it("takes its change request from ADR-0027 as written: why now, in scope and out of scope", () => {
+    expect(bonus.changeRequest).toMatchObject({ adr: "ADR-0027", adrHref: "#adr-0027" });
+    // A distinctive phrase from each part of the ADR's own "## Change request" section appears in the panel's HTML, and nothing else was written for it.
+    expect(readFileSync(adrPath, "utf8")).toContain("Part 4 left handles out on purpose");
+    expect(bonus.changeRequest!.whyNowHtml).toContain("Part 4 left handles out on purpose");
+    expect(bonus.changeRequest!.inScopeHtml).toContain("strictly above the threshold approves the handle");
+    expect(bonus.changeRequest!.outOfScopeHtml).toContain("Avatars, display names, profile pages");
+    for (const html of [bonus.changeRequest!.whyNowHtml, bonus.changeRequest!.inScopeHtml, bonus.changeRequest!.outOfScopeHtml]) expect(html).toMatch(/^<(p|ul)>/);
+  });
+
+  it("derives what changed from the two CALM documents: the gateway and the handles owner are new", () => {
+    const text = JSON.stringify(bonus.changes);
+    expect(bonus.changes).toBeDefined();
+    expect(text).toContain("ADR-0027");
+  });
+
+  it("is not one of the numbered parts, and the numbered parts are still six", () => {
+    expect(loadArchitectureParts(architectureDir, plannedDir, calmDir).map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it("refuses to build without the change request, since the panel is made of it", () => {
+    expect(() => loadBonusPart(architectureDir, calmDir, null)).toThrow(/needs its ADR's change request/);
+  });
+});
+
+describe("what each moment adds (the nodes and lines drawn in the accent)", () => {
+  const parts = loadArchitectureParts(architectureDir, plannedDir, calmDir);
+  const adr = parseAdr(readFileSync(join(repoRoot, "architecture", "adr", "0027-player-handles-are-moderated-by-a-decision-model-and-a-queue.md"), "utf8"), "0027.md");
+  const bonus = loadBonusPart(architectureDir, calmDir, { adr: adr.id, changeRequest: adr.changeRequest! })!;
+  const before = (n: number) => parts.find((p) => p.part === n - 1)!;
+  const at = (n: number) => parts.find((p) => p.part === n)!;
+  const sorted = (set: ReadonlySet<string>) => [...set].sort();
+
+  it("marks the gateway, the handles schema and its published view, and their three lines, in the bonus, and nothing else", () => {
+    const [beside, shown] = explorerPartsWithBonus(parts, bonus);
+    const added = newInPart(beside!, shown!);
+    expect(sorted(added.nodes)).toEqual(["approved-handles-v1", "schema-handles", "vercel-ai-gateway"]);
+    expect(sorted(added.edges)).toEqual(["trading-app-to-ai-gateway", "trading-app-to-approved-handles-v1", "trading-app-to-handles-schema"]);
+  });
+
+  it("marks Neon Auth as new in Part 4, and not what Parts 1 to 3 built", () => {
+    const added = newInPart(before(4), at(4));
+    expect(added.nodes.has("neon-auth")).toBe(true);
+    expect(added.edges.has("trading-app-to-neon-auth")).toBe(true);
+    for (const carried of ["landing-app", "trading-app", "market-data-service", "schema-trading", "schema-market-data", "prices-v1", "market-data-provider", "stock-data-provider"]) {
+      expect(added.nodes.has(carried), carried).toBe(false);
+    }
+  });
+
+  it("never marks a node carried over from an earlier part, in any part, and marks nothing in Part 1", () => {
+    expect(newInPart(at(1), at(1)).nodes.size).toBe(0);
+    for (const part of parts.slice(1)) {
+      const added = newInPart(before(part.part), part);
+      for (const n of part.nodes.filter((n) => n.carried)) expect(added.nodes.has(n.id), `${n.id} in part ${part.part}`).toBe(false);
+      for (const e of part.edges.filter((e) => e.carried)) expect(added.edges.has(e.id), `${e.id} in part ${part.part}`).toBe(false);
+    }
+  });
+
+  it("marks only ids the part has", () => {
+    for (const part of parts.slice(1)) {
+      const added = newInPart(before(part.part), part);
+      const ids = new Set(part.nodes.map((n) => n.id));
+      for (const id of added.nodes) expect(ids.has(id)).toBe(true);
+    }
   });
 });

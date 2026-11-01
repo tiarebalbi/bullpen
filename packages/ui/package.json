@@ -10,7 +10,8 @@
     "./tokens.css": "./src/tokens.css",
     "./styles.css": "./src/styles.css",
     "./analytics-config": "./src/analytics/config.ts",
-    "./theme-init": "./src/lib/themeInit.ts"
+    "./theme-init": "./src/lib/themeInit.ts",
+    "./new-in-part": "./src/lib/newInPart.ts"
   },
   "scripts": {
     "lint": "eslint .",

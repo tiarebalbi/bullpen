@@ -3,10 +3,11 @@ import { joinUsageWithAllowances } from "./cost.js";
 import { SERVICE_ARRIVES_IN_PART, humanAllowance, metricLabel, serviceLabel } from "./costDisplay.js";
 
 /**
- * Tracked in cost/allowances.json ahead of time, but used by nothing in Bullpen's plan: the landing does not list them, so the count it
- * shows and the list it opens agree. They stay in the ledger file (owner's decision, 2026-10-20).
+ * Tracked in cost/allowances.json, but not listed on the landing: upstash-redis and aws-lambda are used by nothing in Bullpen's plan (owner's decision,
+ * 2026-10-20); vercel-ai-gateway is used by the bonus, which has no part number to arrive in, and joins the list when the owner publishes the bonus.
+ * The count the landing shows and the list it opens agree.
  */
-export const OFF_LANDING_SERVICES: ReadonlySet<string> = new Set(["upstash-redis", "aws-lambda"]);
+export const OFF_LANDING_SERVICES: ReadonlySet<string> = new Set(["upstash-redis", "aws-lambda", "vercel-ai-gateway"]);
 
 /**
  * Planned for a part that has since been built without them: Part 4 did not build Workflows (decision-1-sweep-driver.md), so the usage card, which

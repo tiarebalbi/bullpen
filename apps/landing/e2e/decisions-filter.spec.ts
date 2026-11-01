@@ -4,10 +4,16 @@ import { expect, test, type Page } from "@playwright/test";
 
 // The tabs, counts and captions are checked against the ADR files themselves, so a new ADR changes them with no edit here.
 const adrDir = join(import.meta.dirname, "..", "..", "..", "architecture", "adr");
-const parts = readdirSync(adrDir)
+// An ADR belongs to a numbered part, or to the bonus between Part 4 and Part 5 (ADR-0027), whose "## Part" says "Bonus".
+const allParts = readdirSync(adrDir)
   .filter((name) => /^\d{4}-.*\.md$/.test(name))
-  .map((name) => Number(/^## Part\s+(\d+)/m.exec(readFileSync(join(adrDir, name), "utf8"))![1]));
-const total = parts.length;
+  .map((name) => {
+    const raw = /^## Part\s+(\w+)/m.exec(readFileSync(join(adrDir, name), "utf8"))![1]!;
+    return /^bonus$/i.test(raw) ? ("bonus" as const) : Number(raw);
+  });
+const parts = allParts.filter((p): p is number => p !== "bonus");
+const bonusCount = allParts.length - parts.length;
+const total = allParts.length;
 const partsPresent = [...new Set(parts)].sort((a, b) => a - b);
 const countIn = (part: number): number => parts.filter((p) => p === part).length;
 
@@ -23,10 +29,20 @@ test.describe("Decisions filter and View all", () => {
 
   test("has an All tab and a tab for each part with a decision, each with its count, and All is selected", async ({ page }) => {
     const tabs = page.locator("#decisions").getByRole("tab");
-    await expect(tabs).toHaveCount(1 + partsPresent.length);
+    await expect(tabs).toHaveCount(1 + partsPresent.length + (bonusCount > 0 ? 1 : 0));
     await expect(tabs.first()).toHaveText(`All ${total}`);
     await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
     for (const [i, part] of partsPresent.entries()) await expect(tabs.nth(i + 1)).toHaveText(`Part ${part} ${countIn(part)}`);
+    if (bonusCount > 0) await expect(tabs.last()).toHaveText(`Bonus ${bonusCount}`);
+  });
+
+  test("the Bonus tab lists only the bonus's decisions, labelled Bonus, with its own caption", async ({ page }) => {
+    test.skip(bonusCount === 0, "no ADR belongs to the bonus");
+    const card = page.locator("#decisions");
+    await card.getByRole("tab", { name: /^Bonus / }).click();
+    await expect(card.locator(".bp-decisions-row")).toHaveCount(Math.min(6, bonusCount));
+    for (const meta of await card.locator(".bp-decisions-row__meta").allTextContents()) expect(meta).toContain("Bonus");
+    await expect(card.getByText(`${Math.min(6, bonusCount)} of ${bonusCount} in the bonus`)).toBeVisible();
   });
 
   test("shows six rows and the caption '6 of N decisions'; View all expands in place and Show fewer puts it back", async ({ page }) => {

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { carryForward, momentChanges, momentIdOfPart, plannedNamesOf, type CalmChangeDoc, type CalmIds } from "@bullpen/contracts/architecture";
-import type { ArchGroupData, ArchNodeData, ArchPartData, ArchPrediction } from "@bullpen/ui";
+import type { ArchChangeRequest, ArchGroupData, ArchNodeData, ArchPartData, ArchPrediction } from "@bullpen/ui";
 
 const VALID_KIND = new Set(["actor", "app", "service", "data", "infra", "ext"]);
 const VALID_EDGE_TYPE = new Set(["sync", "async"]);
@@ -320,4 +320,37 @@ export function loadArchitectureParts(dirPath: string, plannedDir: string, calmD
   const carried = carryForward(parts, plannedNamesOf(loadPlannedCalmDocs(plannedDir)));
   checkGroupsResolve(carried);
   return calmDir ? withMomentChanges(carried, plannedDir, calmDir) : carried;
+}
+
+/** What the bonus needs from its ADR and the page: the change request in HTML and where the ADR is linked. */
+export interface BonusSource {
+  adr: string;
+  adrHref?: string;
+  changeRequest: { whyNowHtml: string; inScopeHtml: string; outOfScopeHtml: string };
+}
+
+/**
+ * The bonus's explorer part: its own content file (`content/architecture/<moment>.json`, which draws the whole system as the bonus build left it),
+ * labelled "the bonus", ordered by the part it follows, with what its CALM document changed against that part's, and its change request, taken from
+ * its ADR. Null when the timeline has no bonus moment. The bonus is not a numbered part: it never joins `loadArchitectureParts`, so nothing that counts
+ * Parts 1 to 6 sees it. Its status follows the timeline, as a part's does: "planned" until the owner publishes it, then "built" (the check keeps the two in step).
+ */
+export function loadBonusPart(contentDir: string, calmDir: string, source: BonusSource | null): ArchPartData | null {
+  const timeline = JSON.parse(readFileSync(join(calmDir, "bullpen.timeline.json"), "utf8")) as { moments?: Array<TimelineMoment & { metadata?: { kind?: string; after?: string } }> };
+  const moment = (timeline.moments ?? []).find((m) => m.metadata?.kind === "bonus");
+  if (!moment) return null;
+  const after = /^part-(\d{2})$/.exec(moment.metadata?.after ?? "");
+  if (!after) throw new Error(`bullpen.timeline.json: the bonus moment "${moment["unique-id"]}" needs metadata.after naming the part it follows, such as "part-04"`);
+  if (!source) throw new Error(`the bonus moment "${moment["unique-id"]}" needs its ADR's change request, and none was given`);
+
+  const file = `content/architecture/${moment["unique-id"]}.json`;
+  const raw = JSON.parse(readFileSync(join(contentDir, `${moment["unique-id"]}.json`), "utf8")) as Record<string, unknown>;
+  const parsed = parseArchitecturePart(JSON.stringify({ ...raw, part: Number(after[1]) }), file);
+
+  const moments = new Map((timeline.moments ?? []).map((m) => [m["unique-id"], m as TimelineMoment]));
+  const previous = moments.get(`part-${after[1]}`);
+  const [before, now] = [readCalmDoc(calmDir, previous), readCalmDoc(calmDir, moment)];
+  const changes = before && now ? momentChanges(before, now, previous?.adrs ?? [], moment.adrs ?? []) : [];
+  const changeRequest: ArchChangeRequest = { adr: source.adr, ...(source.adrHref ? { adrHref: source.adrHref } : {}), ...source.changeRequest };
+  return { ...parsed, label: "the bonus", changeRequest, ...(changes.length > 0 ? { changes } : {}) };
 }

@@ -36,12 +36,23 @@
     "introduced": "Fills, cancels and retries"
   },
   {
-    "part": 5,
-    "title": "The market open and the bill",
+    "kind": "bonus",
+    "moment": "bonus-handles",
+    "title": "Changing the plan mid-flight",
     "status": "next",
     "url": "",
     "date": null,
-    "introduced": "A load test, and cost as a check"
+    "plannedDate": "2026-11-09",
+    "introduced": "Player handles, moderated through a planned change"
+  },
+  {
+    "part": 5,
+    "title": "The market open and the bill",
+    "status": "planned",
+    "url": "",
+    "date": null,
+    "introduced": "A load test, and cost as a check",
+    "plannedDate": "2026-11-16"
   },
   {
     "part": 6,
@@ -49,6 +60,7 @@
     "status": "planned",
     "url": "",
     "date": null,
-    "introduced": "The diff and the full bill"
+    "introduced": "The diff and the full bill",
+    "plannedDate": "2026-11-23"
   }
 ]
