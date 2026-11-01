@@ -5,7 +5,8 @@ import { loadAdl } from "../../lib/adl.js";
 import { loadAdrs } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import { buildArchitecturePage } from "../../lib/architecturePage.js";
-import { loadArchitectureParts, loadBonusPart } from "../../lib/architecture.js";
+import { loadArchitectureParts } from "../../lib/architecture.js";
+import { loadBonusFor } from "../../lib/bonusLoad.js";
 import { loadCalmDocs } from "../../lib/calm.js";
 import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
@@ -57,12 +58,7 @@ export default function ArchitecturePage(): ReactNode {
   });
 
   // The bonus (ADR-0027): its picture from its own content file, its change request from its ADR, labelled and ordered as a detour after Part 4.
-  const bonusAdr = adrs.find((adr) => adr.part === "bonus" && adr.changeRequest);
-  const bonus = loadBonusPart(
-    join(repoRoot, "content", "architecture"),
-    join(repoRoot, "architecture", "calm"),
-    bonusAdr?.changeRequest ? { adr: bonusAdr.id, adrHref: `#${adrHashId(bonusAdr.id)}`, changeRequest: bonusAdr.changeRequest } : null,
-  );
+  const bonus = loadBonusFor(repoRoot, adrs);
   const bonusEntry = series.find(isBonus);
 
   const since: Record<string, number> = {};

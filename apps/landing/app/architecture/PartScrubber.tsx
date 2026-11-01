@@ -13,6 +13,9 @@ export interface BonusStop {
   status: "built" | "planned";
 }
 
+/** The scrubber's name for the bonus's node. */
+export const BONUS_NODE_TITLE = "Change request";
+
 /** Where on the line a stop sits: a part at its number, the bonus half a step after the part it follows. */
 export const BONUS_OFFSET = 0.5;
 

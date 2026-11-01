@@ -31,6 +31,9 @@ export type { MarketStripProps, MarketStripQuote, MarketStripStatus } from "./co
 export { ThemeToggle } from "./components/ThemeToggle.js";
 export type { ThemeToggleProps } from "./components/ThemeToggle.js";
 
+export { newInPart } from "./lib/newInPart.js";
+export type { NewInPart, PartIds } from "./lib/newInPart.js";
+
 export { ArchitectureExplorer } from "./components/ArchitectureExplorer.js";
 export type {
   ArchitectureExplorerProps,

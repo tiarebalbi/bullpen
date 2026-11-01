@@ -21,6 +21,7 @@ import { DetailsSheet } from "./ArchitectureExplorerTrafficSheet.js";
 import { cardNodesOf, groupBounds, groupFlowNodes, groupsToDraw } from "./ArchitectureExplorerGroups.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
 import { partBefore } from "./ArchitectureExplorerChanges.js";
+import { newInPart } from "../lib/newInPart.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup } from "./ArchitectureExplorerGroup.js";
@@ -249,6 +250,9 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
 
   const selectedNode = selectedId ? current.nodes.find((n) => n.id === selectedId) : null;
 
+  // What this moment adds: the nodes and lines the part before it does not have, which is what "What changed" counts as added. They carry the accent.
+  const added = useMemo(() => newInPart(partBefore(partsById, current), current), [partsById, current]);
+
   // Ghosting marks a node/edge as not real yet: present in a *planned* part
   // but absent from the built system (only Part 1 is built today). Real
   // parts never ghost anything of their own.
@@ -312,6 +316,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           node: n,
           visualState: nodeStates.get(n.id) ?? "same",
           ghosted: current.status === "planned" && (nodeStates.get(n.id) ?? "same") !== "removed" && !builtNodeIds.has(n.id),
+          isNew: added.nodes.has(n.id),
           reduced,
           dimmed: Boolean(selectedId) && selectedId !== n.id && !(request.on && touchedIds.has(n.id)),
           touched: request.on && touchedIds.has(n.id),
@@ -324,7 +329,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     }),
   ];
 
-  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, nodesById, activeStep, requestOn: request.on, showData, showType, reduced, paused: traffic.paused, ownerHues });
+  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, newEdgeIds: added.edges, nodesById, activeStep, requestOn: request.on, showData, showType, reduced, paused: traffic.paused, ownerHues });
 
   // React Flow's `fitView` prop only fits once, on mount (for whichever
   // part happened to be initial). Without this, scrubbing to a part whose
@@ -392,7 +397,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
             height: 480,
           }}
         >
-          <Legend showType={showType} planned={current.status === "planned"} />
+          <Legend showType={showType} planned={current.status === "planned"} hasNew={added.nodes.size + added.edges.size > 0} />
           <div style={{ height: "calc(100% - 28px)" }}>
             <ReactFlow
               nodes={flowNodes}
@@ -709,7 +714,7 @@ function MomentScrubber({
   );
 }
 
-function Legend({ showType, planned }: { showType: boolean; planned: boolean }): ReactNode {
+function Legend({ showType, planned, hasNew }: { showType: boolean; planned: boolean; hasNew: boolean }): ReactNode {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 18, font: "500 11.5px/1 var(--font-body)", color: "var(--foreground-muted)", marginBottom: 6 }}>
       {showType ? (
@@ -728,6 +733,12 @@ function Legend({ showType, planned }: { showType: boolean; planned: boolean }):
         <span style={{ width: 16, height: 10, borderRadius: 3, border: "1px dashed var(--foreground-muted)", display: "inline-block" }} />
         External
       </span>
+      {hasNew ? (
+        <span data-testid="legend-new" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span aria-hidden="true" className="bp-arch-node--new bp-arch-node--new-static" style={{ width: 16, height: 10, borderRadius: 3, border: "1.5px solid var(--ember)", display: "inline-block" }} />
+          New in this part
+        </span>
+      ) : null}
       {planned ? (
         <span style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.7 }}>
           <span style={{ width: 16, height: 10, borderRadius: 3, border: "1px dashed var(--foreground-muted)", display: "inline-block" }} />

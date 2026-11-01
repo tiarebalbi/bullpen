@@ -611,3 +611,71 @@ for (const viewport of [
     });
   });
 }
+
+// The home page's explorer has the bonus stop too (ADR-0027): the same PartScrubber as /architecture, so the same diamond node, states, keyboard order and selection.
+test.describe("Architecture Explorer: the bonus stop", () => {
+  test.use({ viewport: { width: 1440, height: 1200 } });
+
+  test.beforeEach(async ({ page }) => {
+    await mockPriceRoute(page);
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+  });
+
+  const scrubberOf = (page: Page) => page.locator("#architecture").getByRole("group", { name: "Series part" });
+  const bonusNode = (page: Page) => scrubberOf(page).getByRole("button", { name: /BONUS/ });
+
+  test("has a diamond BONUS node labelled 'Change request', planned, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
+    await expect(bonusNode(page)).toHaveCount(1);
+    await expect(bonusNode(page)).toContainText("BONUS · PLANNED");
+    await expect(bonusNode(page)).toContainText("Change request");
+    await expect(bonusNode(page)).toHaveAttribute("data-status", "planned");
+    await expect(scrubberOf(page).locator(".bp-ap-scrub__stop")).toHaveCount(6);
+    const order = await scrubberOf(page).getByRole("button").evaluateAll((buttons) => buttons.map((b) => (b.textContent ?? "").slice(0, 12)));
+    expect(order.findIndex((t) => t.startsWith("BONUS"))).toBe(order.findIndex((t) => t.startsWith("PART 4")) + 1);
+    expect(order.findIndex((t) => t.startsWith("PART 5"))).toBe(order.findIndex((t) => t.startsWith("BONUS")) + 1);
+  });
+
+  test("selecting it shows the bonus: 'Overview · The bonus' and 'What changed in the bonus' with the Change request, and takes the current mark off Part 4", async ({ page }) => {
+    const architecture = page.locator("#architecture");
+    await scrubberOf(page).getByRole("button", { name: "PART 4" }).click();
+    await bonusNode(page).click();
+    await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+    await expect(bonusNode(page)).toHaveAttribute("data-state", "current");
+    await expect(scrubberOf(page).getByRole("button", { name: "PART 4" })).not.toHaveAttribute("aria-current", "step");
+    await expect(architecture.getByText("Overview · The bonus")).toBeVisible();
+    await expect(architecture.getByText("What changed in the bonus")).toBeVisible();
+    const request = architecture.getByRole("region", { name: "Change request" });
+    for (const heading of ["Why now", "In scope", "Out of scope"]) await expect(request.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(request).toContainText("Part 4 left handles out on purpose");
+  });
+
+  test("can be reached and picked from the keyboard, in order: Part 4, the bonus, Part 5", async ({ page }) => {
+    await scrubberOf(page).getByRole("button", { name: "PART 4" }).click();
+    await scrubberOf(page).getByRole("button", { name: "PART 4" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(bonusNode(page)).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+    await page.keyboard.press("ArrowRight");
+    await expect(scrubberOf(page).getByRole("button", { name: "PART 5" })).toHaveAttribute("aria-current", "step");
+    await page.keyboard.press("ArrowLeft");
+    await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+  });
+
+  test("is past once a later part is picked, and picking a part leaves the bonus", async ({ page }) => {
+    await bonusNode(page).click();
+    await scrubberOf(page).getByRole("button", { name: "PART 5" }).click();
+    await expect(bonusNode(page)).toHaveAttribute("data-state", "past");
+    await expect(page.locator("#architecture").getByText("Overview · Part 5")).toBeVisible();
+    await scrubberOf(page).getByRole("button", { name: "PART 1" }).click();
+    await expect(bonusNode(page)).toHaveAttribute("data-state", "future");
+  });
+
+  test("playing steps through the parts and leaves the bonus", async ({ page }) => {
+    await bonusNode(page).click();
+    await page.locator("#architecture").getByRole("button", { name: "Play the series" }).click();
+    await expect(bonusNode(page)).not.toHaveAttribute("aria-current", "step");
+    await page.locator("#architecture").getByRole("button", { name: "Pause the series" }).click();
+  });
+});

@@ -8,6 +8,8 @@ export interface FlowEdgeInput {
   edges: ArchEdgeData[];
   current: ArchPartData;
   builtEdgeIds: Set<string>;
+  /** The lines this moment adds (see newInPart). */
+  newEdgeIds?: ReadonlySet<string>;
   nodesById: Map<string, ArchNodeData>;
   /** The request step being followed, if the request is playing. */
   activeStep: ArchRequestStep | null | undefined;
@@ -65,7 +67,7 @@ function flowEdgeOf(input: FlowEdgeInput, e: ArchEdgeData): Edge {
   const dimmed = requestOn && !onPath;
   const traffic = trafficOf(e, ghosted, reduced || paused || dimmed, pulseColor(e, nodesById, ownerHues, showData));
   const label = writtenOn(e, showData, traffic !== undefined && (reduced || paused));
-  const data: ArchFlowEdgeData = { type: e.type, ghosted, onPath, dimmed, showType, reduced, label, traffic };
+  const data: ArchFlowEdgeData = { type: e.type, ghosted, onPath, dimmed, isNew: input.newEdgeIds?.has(e.id) ?? false, showType, reduced, label, traffic };
   return { id: e.id, source: backwards ? e.b : e.a, target: backwards ? e.a : e.b, ...sidesOf(current, nodesById, e, backwards), type: "archEdge", data };
 }
 

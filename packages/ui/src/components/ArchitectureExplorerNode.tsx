@@ -12,6 +12,8 @@ export interface ArchFlowNodeData extends Record<string, unknown> {
   visualState: ArchNodeVisualState;
   /** Planned but not yet built: this part predicts it, the real system doesn't have it. */
   ghosted: boolean;
+  /** This moment adds the node: the part before it does not have it (the set "What changed" counts as added). It carries the accent, whatever else it is. */
+  isNew?: boolean;
   reduced: boolean;
   dimmed: boolean;
   touched: boolean;
@@ -42,7 +44,7 @@ const NODE_HEIGHT = 60;
  * design's external-system treatment.
  */
 export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNode {
-  const { node, visualState, ghosted, reduced, dimmed, touched, showData, ownerHue, flow, onSelect } = data as ArchFlowNodeData;
+  const { node, visualState, ghosted, isNew = false, reduced, dimmed, touched, showData, ownerHue, flow, onSelect } = data as ArchFlowNodeData;
   const isExternal = node.kind === "ext";
   const hot = selected || touched;
   const removed = visualState === "removed";
@@ -52,7 +54,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     height: NODE_HEIGHT,
     borderRadius: node.kind === "data" ? 26 : 10,
     background: showData && ownerHue !== undefined && !hot ? `color-mix(in oklch, var(--surface-elevated) 82%, oklch(66% 0.14 ${ownerHue}))` : isExternal ? "var(--background)" : hot ? "color-mix(in oklch, var(--ember) 14%, var(--surface-elevated))" : "var(--surface-elevated)",
-    border: showData && ownerHue !== undefined && !hot ? `1.5px solid oklch(66% 0.14 ${ownerHue})` : hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
+    border: isNew && !hot ? `1.5px ${ghosted ? "dashed" : "solid"} var(--ember)` : showData && ownerHue !== undefined && !hot ? `1.5px solid oklch(66% 0.14 ${ownerHue})` : hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
     padding: "8px 14px",
     boxSizing: "border-box",
     display: "flex",
@@ -60,7 +62,8 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     justifyContent: "center",
     gap: 3,
     cursor: removed ? "default" : "pointer",
-    opacity: dimmed ? 0.38 : ghosted ? 0.55 : 1,
+    // A planned node that is also new is drawn at full strength: the accent is what the reader is being pointed at, so it is not ghosted.
+    opacity: dimmed ? 0.38 : ghosted && !isNew ? 0.55 : 1,
     transition: "opacity 240ms, border-color 200ms, background 200ms",
     outline: "none",
     pointerEvents: removed ? "none" : "auto",
@@ -82,7 +85,8 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     <div
       role="button"
       tabIndex={removed ? -1 : 0}
-      aria-label={`${node.label}, ${KIND_LABEL[node.kind]}${carriedNameSuffix(node)}`}
+      aria-label={`${node.label}, ${KIND_LABEL[node.kind]}${carriedNameSuffix(node)}${isNew ? ", new in this part" : ""}`}
+      data-new={isNew ? "true" : undefined}
       aria-pressed={selected}
       onClick={() => !removed && onSelect(node.id)}
       onKeyDown={(e) => {
@@ -95,7 +99,26 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
       style={{ position: "relative" }}
     >
       {flow === "right" ? <SideHandles type="target" /> : <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />}
-      <div style={boxStyle}>
+      <div style={boxStyle} className={isNew ? (reduced ? "bp-arch-node--new bp-arch-node--new-static" : "bp-arch-node--new") : undefined}>
+        {isNew ? (
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: -8,
+              left: 8,
+              font: "700 8.5px/1 var(--font-body)",
+              letterSpacing: "0.16em",
+              color: "var(--bp-accent-text)",
+              background: "var(--background)",
+              border: "1px solid var(--ember)",
+              borderRadius: 9999,
+              padding: "2px 5px",
+            }}
+          >
+            NEW
+          </span>
+        ) : null}
         {ghosted ? (
           <span
             style={{

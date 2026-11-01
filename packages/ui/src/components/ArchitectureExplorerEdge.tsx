@@ -10,6 +10,8 @@ export interface ArchFlowEdgeData extends Record<string, unknown> {
   ghosted: boolean;
   onPath: boolean;
   dimmed: boolean;
+  /** This moment adds the line (the part before it has no line with its id): it is drawn in the accent, with a glow. */
+  isNew?: boolean;
   showType: boolean;
   reduced: boolean;
   /** The database role and access, written on the connection while the "Data ownership" toggle is on. */
@@ -38,10 +40,10 @@ export function ArchitectureExplorerEdge({
   targetPosition,
   data,
 }: EdgeProps): ReactNode {
-  const { type, ghosted, onPath, dimmed, showType, reduced, label, traffic } = data as ArchFlowEdgeData;
+  const { type, ghosted, onPath, dimmed, isNew = false, showType, reduced, label, traffic } = data as ArchFlowEdgeData;
   const [path, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const isAsync = type === "async" && showType;
-  const stroke = onPath ? "var(--ember)" : LINE;
+  const stroke = onPath || isNew ? "var(--ember)" : LINE;
 
   return (
     <>
@@ -49,11 +51,13 @@ export function ArchitectureExplorerEdge({
         id={id}
         path={path}
         markerEnd="url(#bp-arch-arrow)"
+        className={isNew ? (reduced ? "bp-arch-edge--new bp-arch-edge--new-static" : "bp-arch-edge--new") : undefined}
+        data-new={isNew ? "true" : undefined}
         style={{
           stroke,
-          strokeWidth: onPath ? 1.75 : 1.25,
+          strokeWidth: onPath ? 1.75 : isNew ? 2 : 1.25,
           strokeDasharray: isAsync ? "4 5" : undefined,
-          opacity: dimmed ? 0.25 : ghosted ? 0.4 : 1,
+          opacity: dimmed ? 0.25 : ghosted && !isNew ? 0.4 : 1,
           transition: "opacity 240ms, stroke 200ms",
         }}
         label={label}

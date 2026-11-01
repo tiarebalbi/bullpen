@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import { useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import type { AdlLine } from "../../lib/adl.js";
 import type { Adr } from "../../lib/adr.js";
 import type { ArchitecturePageData } from "../../lib/architecturePage.js";
 import type { RulesTabData } from "../../lib/rulesView.js";
-import { ArchitectureExplorer, latestBuiltPart, type ArchPartData } from "../components/ui.js";
+import { ArchitectureExplorer, type ArchPartData } from "../components/ui.js";
+import { explorerPartsWithBonus } from "../../lib/bonusParts.js";
+import { useSeriesPosition } from "./useSeriesPosition.js";
 import type { RuleCardView } from "../components/RuleCardGrid.js";
 import { DataTab } from "./DataTab.js";
 import { DecisionsTab } from "./DecisionsTab.js";
 import { FlowsTab } from "./FlowsTab.js";
-import { PartScrubber, type BonusStop } from "./PartScrubber.js";
+import { BONUS_NODE_TITLE, PartScrubber, type BonusStop } from "./PartScrubber.js";
 import { RulesTab } from "./RulesTab.js";
 import { ServicesTab } from "./ServicesTab.js";
 
@@ -24,8 +26,6 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
-
-const PLAY_MS = 2400;
 
 function subscribeToHash(onChange: () => void): () => void {
   window.addEventListener("hashchange", onChange);
@@ -64,43 +64,17 @@ export interface ArchitectureAppProps {
   bonusTitle?: string;
 }
 
-/** The scrubber's name for the bonus's node. */
-export const BONUS_NODE_TITLE = "Change request";
 
 export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since, adl, bonus = null, bonusTitle }: ArchitectureAppProps): ReactNode {
   const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
   const tab = tabFromHash(hash);
-  const last = parts.length;
 
-  // Opens on the latest built part, read from the explorer content, so a part that ships needs no pointer moved.
-  const [part, setPart] = useState(latestBuiltPart(parts));
-  const [playing, setPlaying] = useState(false);
-  const [bonusSelected, setBonusSelected] = useState(false);
-  const bonusOn = bonus !== null && bonusSelected;
-  const bonusStop: BonusStop | undefined = bonus ? { after: bonus.part, title: BONUS_NODE_TITLE, status: bonus.status } : undefined;
-  // The explorer draws the bonus beside the part it follows, so "what changed" is read against that part.
-  const bonusParts: ArchPartData[] = bonus ? [{ ...parts.find((p) => p.part === bonus.part)!, part: 1 }, { ...bonus, part: 2 }] : [];
-  // Playback stops by itself at the last part without an effect that sets state.
-  const running = playing && part < last;
+  // Where the reader is on the series (a part, or the bonus) and whether it plays: shared with the home page's explorer.
+  const { part, bonusSelected: bonusOn, running, select, selectBonus, togglePlay } = useSeriesPosition(parts, bonus);
   const [focusNode, setFocusNode] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setPart((p) => Math.min(p + 1, last)), PLAY_MS);
-    return () => clearInterval(id);
-  }, [running, last]);
-
-  const select = (next: number): void => {
-    setPlaying(false);
-    setBonusSelected(false);
-    setPart(next);
-  };
-  const selectBonus = (): void => {
-    if (!bonus) return;
-    setPlaying(false);
-    setPart(bonus.part);
-    setBonusSelected(true);
-  };
+  const bonusStop: BonusStop | undefined = bonus ? { after: bonus.part, title: BONUS_NODE_TITLE, status: bonus.status } : undefined;
+  // The explorer draws the bonus beside the part it follows, so "what changed" and "new in this part" are read against that part.
+  const bonusParts: ArchPartData[] = bonus ? explorerPartsWithBonus(parts, bonus) : [];
   const go = (id: TabId): void => {
     window.location.hash = id;
   };
@@ -126,13 +100,7 @@ export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles
       </header>
 
       <div className="bp-ap__bar">
-        <PartScrubber parts={data.scrubber} part={part} bonus={bonusStop} bonusSelected={bonusOn} playing={running} onSelect={select} onSelectBonus={selectBonus} onTogglePlay={() => {
-          if (running) setPlaying(false);
-          else {
-            if (part >= last) setPart(1);
-            setPlaying(true);
-          }
-        }} />
+        <PartScrubber parts={data.scrubber} part={part} bonus={bonusStop} bonusSelected={bonusOn} playing={running} onSelect={select} onSelectBonus={selectBonus} onTogglePlay={togglePlay} />
         <div role="tablist" aria-label="Architecture views" className="bp-ap__tabs" onKeyDown={onTabKeyDown}>
           {TABS.map((t) => (
             <a
