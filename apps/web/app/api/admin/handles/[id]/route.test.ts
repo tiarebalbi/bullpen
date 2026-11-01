@@ -24,7 +24,7 @@ const call = (id: string, body: unknown) => POST(new Request(`http://x/api/admin
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => undefined);
   vi.spyOn(console, "info").mockImplementation(() => undefined);
-  for (const m of Object.values(mocks).filter((m): m is ReturnType<typeof vi.fn> => typeof m === "function")) m.mockReset();
+  for (const m of [mocks.signInAvailable, mocks.currentPlayer, mocks.resolveReview, mocks.readStuckPending, mocks.recordDecision, mocks.submitHandle, mocks.askGateway]) m.mockReset();
   mocks.signInAvailable.mockReturnValue(true);
   mocks.currentPlayer.mockResolvedValue({ userId: "admin-1", label: "Player 0000" });
   mocks.resolveReview.mockResolvedValue(true);
