@@ -40,6 +40,16 @@ describe("the part sent to Clarity", () => {
     expect(currentPartFromTimeline('{"current-moment":"part-01"}')).toBe(1);
     expect(currentPartFromTimeline('{"current-moment":"part-02"}')).toBe(2);
   });
+  it("is the part a bonus moment follows, when the bonus is the current moment (it has no part number)", () => {
+    const timeline = (current: string) => JSON.stringify({ "current-moment": current, moments: [{ "unique-id": "part-04" }, { "unique-id": "bonus-handles", metadata: { kind: "bonus", after: "part-04" } }, { "unique-id": "part-05" }] });
+    expect(currentPartFromTimeline(timeline("bonus-handles"))).toBe(4);
+    expect(currentPartFromTimeline(timeline("part-04"))).toBe(4);
+    expect(currentPartFromTimeline(timeline("part-05"))).toBe(5);
+  });
+  it("does not take a moment that is not a bonus for one, or a bonus with no part to follow", () => {
+    expect(currentPartFromTimeline(JSON.stringify({ "current-moment": "bonus-x", moments: [{ "unique-id": "bonus-x", metadata: { kind: "bonus" } }] }))).toBeNull();
+    expect(currentPartFromTimeline(JSON.stringify({ "current-moment": "extra", moments: [{ "unique-id": "extra", metadata: { after: "part-02" } }] }))).toBeNull();
+  });
   it("is null when the timeline does not say", () => {
     expect(currentPartFromTimeline("{}")).toBeNull();
     expect(currentPartFromTimeline("not json")).toBeNull();

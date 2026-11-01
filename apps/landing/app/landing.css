@@ -303,10 +303,12 @@ code {
   max-width: 520px;
   text-wrap: pretty;
 }
-/* Six across at desktop, matching the design's own
+/* Six parts across at desktop, matching the design's own
    `repeat(6, minmax(0,1fr))` (~line 105 of Bullpen Landing.dc.html) --
    the previous auto-fit/minmax(200px) grid wrapped to 5+1 inside a
-   narrower container. */
+   narrower container. The bonus (ADR-0027) is a seventh card between Part 4
+   and Part 5, in the same row, and a little wider than its neighbours: that is
+   the extra weight, and the rail keeps one row. */
 .bp-series-grid {
   list-style: none;
   margin: var(--space-8) 0 0;
@@ -314,6 +316,13 @@ code {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--space-4);
+}
+/* One height across the row: seven cards are narrower than six, so some titles wrap further, and the tallest sets the row. */
+.bp-series-grid > li > .bp-series-card {
+  height: 100%;
+}
+.bp-series-grid:has(> li:nth-child(7)) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.2fr) repeat(2, minmax(0, 1fr));
 }
 
 @media (max-width: 900px) {

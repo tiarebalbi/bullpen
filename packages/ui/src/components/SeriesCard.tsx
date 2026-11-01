@@ -72,6 +72,7 @@ const VISUALLY_HIDDEN: CSSProperties = { position: "absolute", width: 1, height:
 
 const PLANNED_STYLE: CSSProperties = {
   font: "italic 500 11.5px/1 var(--font-mono)",
+  whiteSpace: "nowrap",
   color: "var(--foreground-muted)",
   border: "1px dashed var(--foreground-muted)",
   borderRadius: "var(--radius-pill)",
@@ -102,14 +103,14 @@ export function SeriesCard({
 }: SeriesCardProps): ReactNode {
   return (
     <div className={["bp-series-card", bonus ? "bp-series-card--bonus" : undefined, className].filter(Boolean).join(" ")} data-kind={bonus ? "bonus" : "part"} style={bonus ? { ...CARD_STYLE, ...BONUS_STYLE } : CARD_STYLE}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px 8px" }}>
         {bonus ? (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 11px/1 var(--font-mono)", color: "var(--bp-accent-text)" }}>
             <Diamond />
             Bonus · Detour
           </span>
         ) : (
-          <span style={{ font: "600 11px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>Part {part}</span>
+          <span style={{ font: "600 11px/1 var(--font-mono)", color: "var(--foreground-muted)", whiteSpace: "nowrap" }}>Part {part}</span>
         )}
         <Chip tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Chip>
       </div>
@@ -140,12 +141,14 @@ export function SeriesCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "8px 6px",
           paddingTop: 12,
           borderTop: "1px solid var(--bp-hair)",
         }}
       >
         {date && dateLabel ? (
-          <span style={{ font: "500 11.5px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>{dateLabel}</span>
+          <span style={{ font: "500 11.5px/1 var(--font-mono)", color: "var(--foreground-muted)", whiteSpace: "nowrap" }}>{dateLabel}</span>
         ) : plannedLabel && !date ? (
           <time dateTime={plannedDate} style={PLANNED_STYLE} data-planned="true">
             {/^Planned/.test(plannedLabel) ? plannedLabel : <><span style={VISUALLY_HIDDEN}>Planned for </span>{plannedLabel}</>}
@@ -161,6 +164,7 @@ export function SeriesCard({
               font: "700 12.5px/1 var(--font-body)",
               textDecoration: "none",
               padding: "6px 0",
+              whiteSpace: "nowrap",
             }}
           >
             See it →

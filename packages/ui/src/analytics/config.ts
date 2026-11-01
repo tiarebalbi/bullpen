@@ -36,12 +36,17 @@ export function resolveAnalyticsConfig(env: AnalyticsEnv): AnalyticsConfig | nul
 /**
  * The part of the series the timeline calls current ("part-02" -> 2), for the
  * Clarity `part` tag. Takes the timeline's text, so each app reads the file
- * itself and this stays free of node:fs.
+ * itself and this stays free of node:fs. A bonus moment (ADR-0027) has no part
+ * number of its own: when it is the current moment, the part is the one it
+ * follows, named in its metadata (`after`), because the next part is not out yet.
  */
 export function currentPartFromTimeline(timelineJson: string): number | null {
   try {
-    const moment = (JSON.parse(timelineJson) as { "current-moment"?: unknown })["current-moment"];
-    const match = typeof moment === "string" ? /^part-(\d{2})$/.exec(moment) : null;
+    const timeline = JSON.parse(timelineJson) as { "current-moment"?: unknown; moments?: Array<{ "unique-id"?: unknown; metadata?: { kind?: unknown; after?: unknown } }> };
+    const moment = timeline["current-moment"];
+    const bonus = timeline.moments?.find((m) => m["unique-id"] === moment && m.metadata?.kind === "bonus");
+    const named = bonus ? bonus.metadata?.after : moment;
+    const match = typeof named === "string" ? /^part-(\d{2})$/.exec(named) : null;
     return match ? Number(match[1]) : null;
   } catch {
     return null;
