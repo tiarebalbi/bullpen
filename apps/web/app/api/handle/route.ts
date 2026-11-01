@@ -1,6 +1,6 @@
-import { readOwnHandle, recordDecision, submitHandle } from "@bullpen/db-handles";
+import { CHANGE_LIMIT, CHANGE_WINDOW_HOURS, readOwnHandle, recordDecision, submitHandle } from "@bullpen/db-handles";
 import { handlesPool } from "../../lib/handles/pool.js";
-import { handleError, logHandleFailure, noStore } from "../../lib/handles/respond.js";
+import { handleError, limitMessage, logHandleFailure, noStore } from "../../lib/handles/respond.js";
 import { requirePlayer } from "../../lib/handles/session.js";
 import { saveAndModerate } from "../../lib/moderation/moderate.js";
 
@@ -22,7 +22,8 @@ export async function GET(): Promise<Response> {
 }
 
 /**
- * Saves a new or changed handle and moderates it. A rule that fails is a 400 and no model is asked; a name that is taken is a 409. Whatever moderation does,
+ * Saves a new or changed handle and moderates it. A rule that fails is a 400 and no model is asked; a name that is taken is a 409; a player who has already changed
+ * their handle CHANGE_LIMIT times in the window gets a 429 with a plain message, checked before any model call, so nothing is saved and nothing is asked. Whatever moderation does,
  * including failing, the answer is 200 with where the handle stands, and the handle is never shown anywhere until it is approved.
  */
 export async function POST(request: Request): Promise<Response> {
@@ -37,6 +38,11 @@ export async function POST(request: Request): Promise<Response> {
       store: { submit: (userId, handle) => submitHandle(pool, userId, handle), record: (decision) => recordDecision(pool, decision) },
     });
     if (!outcome.ok && outcome.kind === "invalid") return handleError(400, { error: "invalid-handle", message: outcome.error });
+    if (!outcome.ok && outcome.kind === "limit") {
+      const response = handleError(429, { error: "handle-limit", message: limitMessage(CHANGE_LIMIT, CHANGE_WINDOW_HOURS, outcome.retryAfterSeconds) });
+      response.headers.set("retry-after", String(outcome.retryAfterSeconds));
+      return response;
+    }
     if (!outcome.ok) return handleError(409, { error: "handle-taken", message: "Someone already has that handle. Try another." });
     return Response.json({ status: outcome.status }, { headers: noStore });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, inject, it } from "vitest";
-import { createPool as createHandlesPool, listReviewQueue, readOwnHandle, recordDecision, resolveReview, submitHandle } from "@bullpen/db-handles";
+import { CHANGE_LIMIT, STUCK_AFTER_MINUTES, createPool as createHandlesPool, listReviewQueue, listStuckPending, readOwnHandle, readStuckPending, recordDecision, resolveReview, submitHandle } from "@bullpen/db-handles";
 import { createPool as createTradingPool, ensurePlayerAccount, neutralHandle, refreshLeaderboard, readLeaderboardRows } from "@bullpen/db-trading";
 
 const urls = inject("dbUrls");
@@ -123,5 +123,149 @@ describe("the leaderboard shows an approved handle and nothing else", () => {
     if (!next.ok) throw new Error("setup");
     await recordDecision(handles, { handleId: next.handleId, handle: approved, outcome: "approved", probability: 0.99 });
     expect(await shown()).toBe(approved);
+  });
+});
+
+describe("the limit on changes", () => {
+  it("allows five saves in 24 hours and refuses the sixth, changing and counting nothing", async () => {
+    expect(CHANGE_LIMIT).toBe(5);
+    const owner = user();
+    let last = "";
+    for (let i = 0; i < CHANGE_LIMIT; i++) {
+      last = name();
+      expect((await submitHandle(handles, owner, last)).ok).toBe(true);
+    }
+    const refused = await submitHandle(handles, owner, name());
+    expect(refused).toMatchObject({ ok: false, reason: "limit" });
+    expect(refused.ok === false && refused.reason === "limit" && refused.retryAfterSeconds).toBeGreaterThan(0);
+    expect(refused.ok === false && refused.reason === "limit" && refused.retryAfterSeconds).toBeLessThanOrEqual(24 * 3600);
+    // the player keeps the handle they had, and the refusal left no trace
+    expect((await readOwnHandle(handles, owner))?.handle).toBe(last);
+    const { rows } = await handles.query<{ n: string }>("SELECT count(*)::text AS n FROM handles.handle_changes WHERE owner_user_id = $1", [owner]);
+    expect(rows[0]!.n).toBe("5");
+  });
+
+  it("is per player: one player's limit does not touch another's", async () => {
+    const busy = user();
+    for (let i = 0; i < CHANGE_LIMIT; i++) await submitHandle(handles, busy, name());
+    expect((await submitHandle(handles, busy, name())).ok).toBe(false);
+    expect((await submitHandle(handles, user(), name())).ok).toBe(true);
+  });
+
+  it("counts a retry of the same handle as a change, and frees a change when it is more than 24 hours old", async () => {
+    const owner = user();
+    const handle = name();
+    for (let i = 0; i < CHANGE_LIMIT; i++) await submitHandle(handles, owner, handle);
+    expect(await submitHandle(handles, owner, handle)).toMatchObject({ ok: false, reason: "limit" });
+    await handles.query("UPDATE handles.handle_changes SET changed_at = now() - interval '25 hours' WHERE change_id = (SELECT min(change_id) FROM handles.handle_changes WHERE owner_user_id = $1)", [owner]);
+    expect((await submitHandle(handles, owner, handle)).ok).toBe(true);
+    expect(await submitHandle(handles, owner, handle)).toMatchObject({ ok: false, reason: "limit" });
+  });
+
+  it("holds when saves race: ten at once from one player let exactly five through", async () => {
+    const owner = user();
+    const results = await Promise.all(Array.from({ length: 10 }, () => submitHandle(handles, owner, name())));
+    expect(results.filter((r) => r.ok)).toHaveLength(CHANGE_LIMIT);
+  });
+
+  it("does not count a save that was refused because the name is taken", async () => {
+    const taken = name();
+    await submitHandle(handles, user(), taken);
+    const owner = user();
+    expect(await submitHandle(handles, owner, taken)).toEqual({ ok: false, reason: "taken" });
+    const { rows } = await handles.query<{ n: string }>("SELECT count(*)::text AS n FROM handles.handle_changes WHERE owner_user_id = $1", [owner]);
+    expect(rows[0]!.n).toBe("0");
+  });
+});
+
+describe("saving is one transaction", () => {
+  it("leaves the old handle, its status and its queue entry exactly as they were when the new name is taken", async () => {
+    const owner = user();
+    const original = name();
+    const saved = await submitHandle(handles, owner, original);
+    if (!saved.ok) throw new Error("setup");
+    await recordDecision(handles, { handleId: saved.handleId, handle: original, outcome: "review", probability: 0.4, reason: "below-threshold" });
+    const taken = name();
+    await submitHandle(handles, user(), taken);
+
+    expect(await submitHandle(handles, owner, taken)).toEqual({ ok: false, reason: "taken" });
+
+    expect(await readOwnHandle(handles, owner)).toMatchObject({ handle: original, status: "review" });
+    expect((await listReviewQueue(handles)).some((item) => item.handleId === saved.handleId)).toBe(true);
+    const { rows } = await handles.query<{ n: string }>("SELECT count(*)::text AS n FROM handles.handle_changes WHERE owner_user_id = $1", [owner]);
+    expect(rows[0]!.n).toBe("1"); // the first save only
+  });
+
+  it("makes the new handle pending, drops the queue entry and counts the change together", async () => {
+    const owner = user();
+    const saved = await submitHandle(handles, owner, name());
+    if (!saved.ok) throw new Error("setup");
+    const first = (await handles.query<{ handle: string }>("SELECT handle FROM handles.handle WHERE handle_id = $1", [saved.handleId])).rows[0]!.handle;
+    await recordDecision(handles, { handleId: saved.handleId, handle: first, outcome: "review", probability: 0.4, reason: "no-key" });
+    expect((await submitHandle(handles, owner, name())).ok).toBe(true);
+    expect((await readOwnHandle(handles, owner))?.status).toBe("pending");
+    expect((await listReviewQueue(handles)).some((item) => item.handleId === saved.handleId)).toBe(false);
+    const { rows } = await handles.query<{ n: string }>("SELECT count(*)::text AS n FROM handles.handle_changes WHERE owner_user_id = $1", [owner]);
+    expect(rows[0]!.n).toBe("2");
+  });
+});
+
+describe("handles stuck pending", () => {
+  const age = (handleId: string, minutes: number) => handles.query("UPDATE handles.handle SET submitted_at = now() - make_interval(mins => $2) WHERE handle_id = $1", [handleId, minutes]);
+  const stuckIds = async () => (await listStuckPending(handles, 500)).map((item) => item.handleId);
+
+  it("lists a handle pending for more than 10 minutes, and not one that is newer", async () => {
+    expect(STUCK_AFTER_MINUTES).toBe(10);
+    const old = await submitHandle(handles, user(), name());
+    const fresh = await submitHandle(handles, user(), name());
+    if (!old.ok || !fresh.ok) throw new Error("setup");
+    await age(old.handleId, 11);
+    await age(fresh.handleId, 5);
+    const ids = await stuckIds();
+    expect(ids).toContain(old.handleId);
+    expect(ids).not.toContain(fresh.handleId);
+    expect(await readStuckPending(handles, old.handleId)).toMatchObject({ handleId: old.handleId });
+    expect(await readStuckPending(handles, fresh.handleId)).toBeNull();
+  });
+
+  it("does not list a handle that has been decided, or one in review", async () => {
+    const decided = await submitHandle(handles, user(), name());
+    if (!decided.ok) throw new Error("setup");
+    const text = (await handles.query<{ handle: string }>("SELECT handle FROM handles.handle WHERE handle_id = $1", [decided.handleId])).rows[0]!.handle;
+    await age(decided.handleId, 30);
+    await recordDecision(handles, { handleId: decided.handleId, handle: text, outcome: "approved", probability: 0.99 });
+    expect(await stuckIds()).not.toContain(decided.handleId);
+    expect(await readStuckPending(handles, decided.handleId)).toBeNull();
+  });
+
+  it("lets a person approve or reject it, once, and not before it is stuck", async () => {
+    const approved = await submitHandle(handles, user(), name());
+    const rejected = await submitHandle(handles, user(), name());
+    const young = await submitHandle(handles, user(), name());
+    if (!approved.ok || !rejected.ok || !young.ok) throw new Error("setup");
+    await age(approved.handleId, 12);
+    await age(rejected.handleId, 12);
+    expect(await resolveReview(handles, young.handleId, "approve")).toBe(false); // the answer may still arrive
+    expect(await resolveReview(handles, approved.handleId, "approve")).toBe(true);
+    expect(await resolveReview(handles, rejected.handleId, "reject")).toBe(true);
+    expect(await resolveReview(handles, approved.handleId, "reject")).toBe(false);
+    const status = async (id: string) => (await handles.query<{ status: string }>("SELECT status FROM handles.handle WHERE handle_id = $1", [id])).rows[0]!.status;
+    expect([await status(approved.handleId), await status(rejected.handleId), await status(young.handleId)]).toEqual(["approved", "rejected", "pending"]);
+    expect(await stuckIds()).not.toContain(approved.handleId);
+  });
+
+  it("lets a retry record the model's verdict on a stuck handle, and drops it if the player changed the handle meanwhile", async () => {
+    const owner = user();
+    const first = name();
+    const saved = await submitHandle(handles, owner, first);
+    if (!saved.ok) throw new Error("setup");
+    await age(saved.handleId, 15);
+    const stuck = await readStuckPending(handles, saved.handleId);
+    expect(stuck?.handle).toBe(first);
+    const changed = name();
+    await submitHandle(handles, owner, changed); // the player acts while the retry is in flight
+    expect(await recordDecision(handles, { handleId: saved.handleId, handle: first, outcome: "approved", probability: 0.99 })).toBe(false);
+    expect((await readOwnHandle(handles, owner))?.status).toBe("pending");
+    expect(await readStuckPending(handles, saved.handleId)).toBeNull(); // saving again made it fresh
   });
 });

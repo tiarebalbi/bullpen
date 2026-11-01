@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../lib/auth/server.js", () => ({ signInAvailable: mocks.signInAvailable }));
 vi.mock("../../lib/auth/player.js", () => ({ currentPlayer: mocks.currentPlayer }));
 vi.mock("../../lib/handles/pool.js", () => ({ handlesPool: () => ({}) }));
-vi.mock("@bullpen/db-handles", () => ({ submitHandle: mocks.submitHandle, recordDecision: mocks.recordDecision, readOwnHandle: mocks.readOwnHandle }));
+vi.mock("@bullpen/db-handles", () => ({ CHANGE_LIMIT: 5, CHANGE_WINDOW_HOURS: 24, submitHandle: mocks.submitHandle, recordDecision: mocks.recordDecision, readOwnHandle: mocks.readOwnHandle }));
 vi.mock("../../lib/moderation/gateway.js", () => ({ askGateway: mocks.askGateway }));
 
 const { GET, POST } = await import("./route.js");
@@ -107,6 +107,29 @@ describe("POST: saving a handle", () => {
     const line = String(infoLog.mock.calls[0]?.[0]);
     expect(JSON.parse(line)).toEqual({ at: "moderation", handleId: "h-1", status: "approved", probability: 0.99, latencyMs: 10 });
     expect(line).not.toMatch(/BullRun|user-1/);
+  });
+});
+
+describe("POST: the limit on changes", () => {
+  it("answers 429 with a plain message and a Retry-After, and asks no model", async () => {
+    mocks.submitHandle.mockResolvedValue({ ok: false, reason: "limit", retryAfterSeconds: 7300 });
+    const response = await post({ handle: "BullRun" });
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("7300");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const body = (await response.json()) as { error: string; message: string };
+    expect(body.error).toBe("handle-limit");
+    expect(body.message).toBe("You have changed your handle 5 times in the last 24 hours, which is as many as I allow. Try again in about 3 hours.");
+    expect(mocks.askGateway).not.toHaveBeenCalled();
+    expect(mocks.recordDecision).not.toHaveBeenCalled();
+  });
+
+  it("is checked after the rules and before the model: a bad handle is still a 400, an allowed one reaches the model", async () => {
+    mocks.submitHandle.mockResolvedValue({ ok: false, reason: "limit", retryAfterSeconds: 60 });
+    expect((await post({ handle: "no good!" })).status).toBe(400);
+    mocks.submitHandle.mockResolvedValue({ ok: true, handleId: "h-1" });
+    expect((await post({ handle: "BullRun" })).status).toBe(200);
+    expect(mocks.askGateway).toHaveBeenCalledOnce();
   });
 });
 

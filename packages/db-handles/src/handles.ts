@@ -12,29 +12,60 @@ export interface OwnHandle {
   status: HandleStatus;
 }
 
-export type Submitted = { ok: true; handleId: string } | { ok: false; reason: "taken" };
+/** How many times a player may save a handle in the window, and how long the window is. */
+export const CHANGE_LIMIT = 5;
+export const CHANGE_WINDOW_HOURS = 24;
+/** A handle that has stayed `pending` this long was saved but never decided (the decision could not be recorded): an admin may approve, reject or retry it. */
+export const STUCK_AFTER_MINUTES = 10;
+
+export type Submitted =
+  | { ok: true; handleId: string }
+  | { ok: false; reason: "taken" }
+  /** The player has saved CHANGE_LIMIT handles in the window. Nothing was saved, and no model should be asked. */
+  | { ok: false; reason: "limit"; retryAfterSeconds: number };
 
 const UNIQUE_VIOLATION = "23505";
 
 /**
- * Saves a new or changed handle as 'pending' and drops any queue entry the old one had, in one statement. A handle already held by another player, ignoring case,
- * is refused with 'taken'. The same player saving the same handle again is allowed: it puts the handle back to 'pending', which is how a decision that never
- * arrived is retried. Nothing here decides anything.
+ * Saves a new or changed handle as 'pending', drops any queue entry the old one had, and counts the change, all in one transaction: a failure part way
+ * leaves the old handle and its queue entry exactly as they were. The limit is checked first, under a lock on the player so two saves at once cannot both
+ * pass, and a refused save changes nothing and counts nothing. A handle already held by another player, ignoring case, is refused with 'taken'. The same
+ * player saving the same handle again is allowed (it counts as a change): it puts the handle back to 'pending', which is how a decision that never arrived is
+ * retried by the player. Nothing here decides anything.
  */
 export async function submitHandle(pool: Pool, userId: string, handle: string): Promise<Submitted> {
+  const client = await pool.connect();
   try {
-    const { rows } = await pool.query<{ handle_id: string }>(
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`handle-changes:${userId}`]);
+    await client.query("DELETE FROM handles.handle_changes WHERE owner_user_id = $1 AND changed_at < now() - make_interval(hours => $2)", [userId, CHANGE_WINDOW_HOURS]);
+    const recent = await client.query<{ count: string; retry_after: string | null }>(
+      `SELECT count(*)::text AS count, GREATEST(0, EXTRACT(EPOCH FROM (min(changed_at) + make_interval(hours => $2) - now())))::text AS retry_after
+         FROM handles.handle_changes WHERE owner_user_id = $1`,
+      [userId, CHANGE_WINDOW_HOURS],
+    );
+    if (Number(recent.rows[0]!.count) >= CHANGE_LIMIT) {
+      await client.query("ROLLBACK");
+      return { ok: false, reason: "limit", retryAfterSeconds: Math.max(1, Math.ceil(Number(recent.rows[0]!.retry_after ?? 0))) };
+    }
+    const saved = await client.query<{ handle_id: string }>(
       `INSERT INTO handles.handle (owner_user_id, handle, status) VALUES ($1, $2, 'pending')
        ON CONFLICT (owner_user_id) DO UPDATE
          SET handle = EXCLUDED.handle, status = 'pending', probability = NULL, submitted_at = now(), decided_at = NULL
        RETURNING handle_id`,
       [userId, handle],
     );
-    await pool.query("DELETE FROM handles.review_queue WHERE handle_id = $1", [rows[0]!.handle_id]);
-    return { ok: true, handleId: rows[0]!.handle_id };
+    const handleId = saved.rows[0]!.handle_id;
+    await client.query("DELETE FROM handles.review_queue WHERE handle_id = $1", [handleId]);
+    await client.query("INSERT INTO handles.handle_changes (owner_user_id) VALUES ($1)", [userId]);
+    await client.query("COMMIT");
+    return { ok: true, handleId };
   } catch (error) {
+    await client.query("ROLLBACK");
     if ((error as { code?: unknown }).code === UNIQUE_VIOLATION) return { ok: false, reason: "taken" };
     throw error;
+  } finally {
+    client.release();
   }
 }
 
@@ -104,12 +135,47 @@ export async function listReviewQueue(pool: Pool, limit = 100): Promise<QueueIte
   return rows.map((row) => ({ handleId: row.handle_id, handle: row.handle, probability: row.probability === null ? null : Number(row.probability), reason: row.reason, enqueuedAt: row.enqueued_at }));
 }
 
-/** A person's decision on a handle in review. False when it is no longer in review (decided already, or changed by the player). */
+export interface StuckItem {
+  handleId: string;
+  handle: string;
+  submittedAt: Date;
+}
+
+/** Handles that have been 'pending' for more than STUCK_AFTER_MINUTES, oldest first: saved, never decided. Carries no user id. */
+export async function listStuckPending(pool: Pool, limit = 100): Promise<StuckItem[]> {
+  const { rows } = await pool.query<{ handle_id: string; handle: string; submitted_at: Date }>(
+    `SELECT handle_id, handle, submitted_at FROM handles.handle
+      WHERE status = 'pending' AND submitted_at < now() - make_interval(mins => $1)
+      ORDER BY submitted_at, handle_id LIMIT $2`,
+    [STUCK_AFTER_MINUTES, Math.max(1, Math.min(limit, 500))],
+  );
+  return rows.map((row) => ({ handleId: row.handle_id, handle: row.handle, submittedAt: row.submitted_at }));
+}
+
+/** One stuck pending handle, or null when it is not (or no longer) stuck: decided meanwhile, changed by the player, or not yet old enough. */
+export async function readStuckPending(pool: Pool, handleId: string): Promise<StuckItem | null> {
+  const { rows } = await pool.query<{ handle_id: string; handle: string; submitted_at: Date }>(
+    `SELECT handle_id, handle, submitted_at FROM handles.handle
+      WHERE handle_id = $1 AND status = 'pending' AND submitted_at < now() - make_interval(mins => $2)`,
+    [handleId, STUCK_AFTER_MINUTES],
+  );
+  const row = rows[0];
+  return row ? { handleId: row.handle_id, handle: row.handle, submittedAt: row.submitted_at } : null;
+}
+
+/**
+ * A person's decision on a handle in review, or on one stuck pending. False when it is neither any more (decided already, changed by the player, or a pending
+ * handle that is not yet old enough to be stuck: the model's answer may still arrive).
+ */
 export async function resolveReview(pool: Pool, handleId: string, action: "approve" | "reject"): Promise<boolean> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const updated = await client.query("UPDATE handles.handle SET status = $2, decided_at = now() WHERE handle_id = $1 AND status = 'review'", [handleId, action === "approve" ? "approved" : "rejected"]);
+    const updated = await client.query(
+      `UPDATE handles.handle SET status = $2, decided_at = now()
+        WHERE handle_id = $1 AND (status = 'review' OR (status = 'pending' AND submitted_at < now() - make_interval(mins => $3)))`,
+      [handleId, action === "approve" ? "approved" : "rejected", STUCK_AFTER_MINUTES],
+    );
     if (updated.rowCount !== 1) {
       await client.query("ROLLBACK");
       return false;

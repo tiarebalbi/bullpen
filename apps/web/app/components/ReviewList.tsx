@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Button, EmptyState, Panel } from "@bullpen/ui";
 
@@ -9,6 +10,13 @@ export interface ReviewItem {
   probability: number | null;
   reason: string;
   enqueuedAt: string;
+}
+
+/** A handle saved as pending and never decided, for longer than the stuck threshold. */
+export interface StuckRow {
+  handleId: string;
+  handle: string;
+  submittedAt: string;
 }
 
 const REASON: Record<string, string> = {
@@ -22,33 +30,67 @@ const REASON: Record<string, string> = {
 
 export const probabilityLabel = (probability: number | null): string => (probability === null ? "no probability" : `p = ${probability.toFixed(3)}`);
 
-export function ReviewList({ items }: { items: ReviewItem[] }): ReactNode {
+/** How long ago, in plain words, for a stuck handle: "12 minutes", "3 hours". */
+export function ageLabel(iso: string, now: Date = new Date()): string {
+  const minutes = Math.max(0, Math.floor((now.getTime() - new Date(iso).getTime()) / 60_000));
+  return minutes < 120 ? `${minutes} minutes` : `${Math.floor(minutes / 60)} hours`;
+}
+
+type Action = "approve" | "reject" | "retry";
+
+export function ReviewList({ items, stuck = [], stuckAfterMinutes = 10 }: { items: ReviewItem[]; stuck?: StuckRow[]; stuckAfterMinutes?: number }): ReactNode {
+  const router = useRouter();
   const [rows, setRows] = useState(items);
+  const [stuckRows, setStuckRows] = useState(stuck);
   const [failed, setFailed] = useState<string | null>(null);
 
-  async function decide(id: string, action: "approve" | "reject"): Promise<void> {
+  async function act(id: string, action: Action, from: "review" | "stuck"): Promise<void> {
     setFailed(null);
     const response = await fetch(`/api/admin/handles/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action }) }).catch(() => null);
-    if (response && (response.ok || response.status === 409)) setRows((current) => current.filter((row) => row.handleId !== id));
-    else setFailed(id);
+    if (response && (response.ok || response.status === 409)) {
+      if (from === "review") setRows((current) => current.filter((row) => row.handleId !== id));
+      else setStuckRows((current) => current.filter((row) => row.handleId !== id));
+      // A retry can put the handle in review: the server knows its probability and reason, so ask it for the lists again.
+      if (action === "retry") router.refresh();
+    } else setFailed(id);
   }
 
   return (
-    <Panel title="Handles in review">
-      {rows.length === 0 ? (
-        <EmptyState title="Nothing to review" description="A handle lands here when the model is not sure, or could not be asked." />
-      ) : (
-        <ul aria-label="Handles waiting for review">
-          {rows.map((row) => (
-            <li key={row.handleId}>
-              <strong>{row.handle}</strong> <span>{probabilityLabel(row.probability)}</span> <span>({REASON[row.reason] ?? row.reason})</span>
-              <Button variant="secondary" onClick={() => void decide(row.handleId, "approve")} aria-label={`Approve ${row.handle}`}>Approve</Button>
-              <Button variant="destructive" onClick={() => void decide(row.handleId, "reject")} aria-label={`Reject ${row.handle}`}>Reject</Button>
-              {failed === row.handleId ? <p role="alert">I could not record that. Try again.</p> : null}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
+    <>
+      <Panel title="Stuck pending">
+        <p>Saved more than {stuckAfterMinutes} minutes ago and never decided, because the decision could not be recorded. Retry asks the model again.</p>
+        {stuckRows.length === 0 ? (
+          <EmptyState title="Nothing stuck" description={`A handle shows here when it has been pending for more than ${stuckAfterMinutes} minutes.`} />
+        ) : (
+          <ul aria-label="Handles stuck pending">
+            {stuckRows.map((row) => (
+              <li key={row.handleId}>
+                <strong>{row.handle}</strong> <span>pending for {ageLabel(row.submittedAt)}</span>
+                <Button variant="secondary" onClick={() => void act(row.handleId, "retry", "stuck")} aria-label={`Retry ${row.handle}`}>Retry</Button>
+                <Button variant="secondary" onClick={() => void act(row.handleId, "approve", "stuck")} aria-label={`Approve ${row.handle}`}>Approve</Button>
+                <Button variant="destructive" onClick={() => void act(row.handleId, "reject", "stuck")} aria-label={`Reject ${row.handle}`}>Reject</Button>
+                {failed === row.handleId ? <p role="alert">I could not record that. Try again.</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+      <Panel title="Handles in review">
+        {rows.length === 0 ? (
+          <EmptyState title="Nothing to review" description="A handle lands here when the model is not sure, or could not be asked about it." />
+        ) : (
+          <ul aria-label="Handles waiting for review">
+            {rows.map((row) => (
+              <li key={row.handleId}>
+                <strong>{row.handle}</strong> <span>{probabilityLabel(row.probability)}</span> <span>({REASON[row.reason] ?? row.reason})</span>
+                <Button variant="secondary" onClick={() => void act(row.handleId, "approve", "review")} aria-label={`Approve ${row.handle}`}>Approve</Button>
+                <Button variant="destructive" onClick={() => void act(row.handleId, "reject", "review")} aria-label={`Reject ${row.handle}`}>Reject</Button>
+                {failed === row.handleId ? <p role="alert">I could not record that. Try again.</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </>
   );
 }

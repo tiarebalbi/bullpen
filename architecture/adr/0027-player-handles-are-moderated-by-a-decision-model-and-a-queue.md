@@ -33,6 +33,7 @@ other player reads, so the requirement is a moderation problem before it is a fe
 ### In scope
 
 - A signed-in player sets or changes a handle on their account page: 3 to 20 characters, letters, digits, `_` and `-`, unique ignoring case. A failing rule is a form error and no model is asked.
+- A player may change a handle at most 5 times in 24 hours, checked before any model call: over the limit the answer is a 429 with a plain message and no gateway call. That, and the gateway budget, are what cap the cost of one player.
 - A handle that passes is saved as pending. The public label stays "Player ####" until the handle is approved, everywhere, including the player's own row seen by others.
 - Moderation asks one Boolean question per new or changed handle through Vercel AI Gateway, model `typesafe-ai/jev`: is this handle acceptable to show publicly?
 - A probability strictly above the threshold approves the handle. Anything else goes to review.
@@ -45,7 +46,6 @@ other player reads, so the requirement is a moderation problem before it is a fe
 - Avatars, display names, profile pages, or anything else a player can type that other players read.
 - Reports from other players, appeals, and re-checking a handle that was approved.
 - A queue service, a second model, or a fallback when the model fails.
-- Limiting how often a player may change a handle. Every change is one decision, so the gateway budget is the cap.
 - Using a GitHub login, a name or an email for anything.
 
 ## Decision
@@ -68,6 +68,7 @@ Moderate a handle with one Boolean question to a decision model, approve only a 
 - A new request text leaves the system: the handle goes to Vercel AI Gateway and TypeSafe. TypeSafe says it does not train on it; it states no retention period (`docs/data-sources.md`).
 - Production needs two things the code cannot do: the `handles_owner` role created with `db:create-roles` and `DATABASE_URL_HANDLES` set, before the first production build after this merges, because the build applies the migrations (ADR-0023). `AI_GATEWAY_API_KEY` is the owner's to set.
 - A handle in review is waiting for one person. That is the cost of "anything else goes to review", and the share of clean handles that land there is a measured number in `post-facts/bonus.md`.
+- A handle saved but never decided (the verdict could not be recorded) stays `pending`; after 10 minutes it is listed on the admin page, in its own section, where it can be approved, rejected or retried (a retry asks the model again and is not a change by the player).
 - A rejected name stays taken until its player picks another, and a player may save the same handle again, which retries a decision that never arrived.
 - The ADL now holds a `handles` library, so the bonus moment (not Part 4) is the latest built moment. This adds a bonus moment to ADR-0015's "latest built" in timeline order, after `part-04` and before `part-05`; ADR-0015 itself is unchanged.
 - The timeline's explorer and series gain a bonus entry that has no part number. Its Part 5 and Part 6 neighbours keep their numbers.

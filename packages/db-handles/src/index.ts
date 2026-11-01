@@ -3,8 +3,13 @@ import pg from "pg";
 export { migrate } from "./migrate.js";
 export {
   HANDLE_REVIEW_REASONS,
+  CHANGE_LIMIT,
+  CHANGE_WINDOW_HOURS,
+  STUCK_AFTER_MINUTES,
   readOwnHandle,
   listReviewQueue,
+  listStuckPending,
+  readStuckPending,
   recordDecision,
   resolveReview,
   submitHandle,
@@ -12,6 +17,7 @@ export {
   type HandleStatus,
   type OwnHandle,
   type QueueItem,
+  type StuckItem,
   type ReviewReason,
   type Submitted,
 } from "./handles.js";

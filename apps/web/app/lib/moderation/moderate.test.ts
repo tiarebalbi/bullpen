@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Decision, Submitted } from "@bullpen/db-handles";
 import type { GatewayResult } from "./gateway.js";
-import { saveAndModerate, type ModerationStore } from "./moderate.js";
+import { moderateSaved, saveAndModerate, type ModerationStore } from "./moderate.js";
 
 function setup(over: { submitted?: Submitted; ask?: () => Promise<GatewayResult>; record?: () => Promise<boolean> } = {}) {
   const recorded: Decision[] = [];
@@ -71,5 +71,43 @@ describe("saving a handle", () => {
     expect(t.lines).toHaveLength(1);
     expect(JSON.parse(t.lines[0]!)).toEqual({ at: "moderation", handleId: "h-1", status: "approved", probability: 0.99, latencyMs: 12 });
     expect(t.lines.join("")).not.toMatch(/BullRun|user-secret/);
+  });
+});
+
+describe("the limit on changes", () => {
+  it("refuses a player over the limit without asking the model, and says when to try again", async () => {
+    const t = setup({ submitted: { ok: false, reason: "limit", retryAfterSeconds: 5400 } });
+    expect(await saveAndModerate("user-1", "BullRun", t.deps)).toEqual({ ok: false, kind: "limit", retryAfterSeconds: 5400 });
+    expect(t.ask).not.toHaveBeenCalled();
+    expect(t.store.record).not.toHaveBeenCalled();
+    expect(t.lines).toEqual([]);
+  });
+
+  it("checks the rules first: a handle that fails them does not use up the player's chance", async () => {
+    const t = setup({ submitted: { ok: false, reason: "limit", retryAfterSeconds: 1 } });
+    expect(await saveAndModerate("user-1", "no good!", t.deps)).toMatchObject({ ok: false, kind: "invalid" });
+    expect(t.store.submit).not.toHaveBeenCalled();
+  });
+});
+
+describe("moderating a handle that is already saved (a retry)", () => {
+  it("asks the model once about that handle and records the verdict, without saving anything", async () => {
+    const t = setup();
+    expect(await moderateSaved("h-9", "StuckOne", t.deps)).toBe("approved");
+    expect(t.ask).toHaveBeenCalledExactlyOnceWith("StuckOne");
+    expect(t.store.submit).not.toHaveBeenCalled();
+    expect(t.recorded).toEqual([{ handleId: "h-9", handle: "StuckOne", outcome: "approved", probability: 0.99 }]);
+  });
+
+  it("sends a failure to review, as when a player saves it", async () => {
+    const t = setup({ ask: async () => ({ ok: false, reason: "timeout", latencyMs: 2000 }) });
+    expect(await moderateSaved("h-9", "StuckOne", t.deps)).toBe("review");
+    expect(t.recorded[0]).toMatchObject({ outcome: "review", reason: "timeout" });
+  });
+
+  it("stays pending, and does not claim a verdict, when the answer is dropped because the handle changed", async () => {
+    const t = setup({ record: async () => false });
+    expect(await moderateSaved("h-9", "StuckOne", t.deps)).toBe("pending");
+    expect(t.lines).toEqual([]);
   });
 });
