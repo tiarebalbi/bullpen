@@ -66,9 +66,10 @@ test.describe("Architecture Explorer", () => {
     await expect(architecture.getByText("Overview · Part 2")).toBeVisible();
     await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
 
-    await scrubber.getByRole("button", { name: "PART 3" }).click();
+    await scrubber.getByRole("button", { name: "PART 5" }).click();
 
-    await expect(architecture.getByText("Overview · Part 3")).toBeVisible();
+    // Part 5 is the plan: the status chip says so (the scrubber is the shared one, which says it in its own labels).
+    await expect(architecture.getByText("Overview · Part 5")).toBeVisible();
     await expect(architecture.getByText("Planned", { exact: true }).first()).toBeVisible();
   });
 

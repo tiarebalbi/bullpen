@@ -54,7 +54,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
     height: NODE_HEIGHT,
     borderRadius: node.kind === "data" ? 26 : 10,
     background: showData && ownerHue !== undefined && !hot ? `color-mix(in oklch, var(--surface-elevated) 82%, oklch(66% 0.14 ${ownerHue}))` : isExternal ? "var(--background)" : hot ? "color-mix(in oklch, var(--ember) 14%, var(--surface-elevated))" : "var(--surface-elevated)",
-    border: isNew && !hot ? `1.5px ${ghosted ? "dashed" : "solid"} var(--ember)` : showData && ownerHue !== undefined && !hot ? `1.5px solid oklch(66% 0.14 ${ownerHue})` : hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
+    border: isNew && !hot ? `1.5px ${ghosted ? "dashed" : "solid"} var(--bp-accent-text)` : showData && ownerHue !== undefined && !hot ? `1.5px solid oklch(66% 0.14 ${ownerHue})` : hot ? "1.5px solid var(--ember)" : touched ? "1px solid color-mix(in oklch, var(--ember) 60%, transparent)" : ghosted ? "1px dashed var(--foreground-muted)" : isExternal ? "1px dashed color-mix(in oklch, var(--foreground) 30%, transparent)" : "1px solid color-mix(in oklch, var(--foreground) 16%, transparent)",
     padding: "8px 14px",
     boxSizing: "border-box",
     display: "flex",
@@ -111,7 +111,7 @@ export function ArchitectureExplorerNode({ data, selected }: NodeProps): ReactNo
               letterSpacing: "0.16em",
               color: "var(--bp-accent-text)",
               background: "var(--background)",
-              border: "1px solid var(--ember)",
+              border: "1px solid var(--bp-accent-text)",
               borderRadius: 9999,
               padding: "2px 5px",
             }}

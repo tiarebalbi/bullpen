@@ -735,7 +735,7 @@ function Legend({ showType, planned, hasNew }: { showType: boolean; planned: boo
       </span>
       {hasNew ? (
         <span data-testid="legend-new" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span aria-hidden="true" className="bp-arch-node--new bp-arch-node--new-static" style={{ width: 16, height: 10, borderRadius: 3, border: "1.5px solid var(--ember)", display: "inline-block" }} />
+          <span aria-hidden="true" className="bp-arch-node--new bp-arch-node--new-static" style={{ width: 16, height: 10, borderRadius: 3, border: "1.5px solid var(--bp-accent-text)", display: "inline-block" }} />
           New in this part
         </span>
       ) : null}

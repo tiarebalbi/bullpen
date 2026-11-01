@@ -56,7 +56,7 @@ describe("a node the moment adds", () => {
     const button = container.querySelector('[role="button"]')!;
     expect(button).toHaveAttribute("data-new", "true");
     expect(button.getAttribute("aria-label")).toBe("C, External, new in this part");
-    expect(nodeBox(container).getAttribute("style")).toContain("1.5px solid var(--ember)");
+    expect(nodeBox(container).getAttribute("style")).toContain("1.5px solid var(--bp-accent-text)");
     expect(within(button as HTMLElement).getByText("NEW")).toBeInTheDocument();
   });
 
@@ -66,7 +66,7 @@ describe("a node the moment adds", () => {
     const button = container.querySelector('[role="button"]')!;
     expect(button).not.toHaveAttribute("data-new");
     expect(button.getAttribute("aria-label")).toBe("C, External");
-    expect(nodeBox(container).getAttribute("style")).not.toContain("var(--ember)");
+    expect(nodeBox(container).getAttribute("style")).not.toContain("var(--bp-accent-text)");
     expect(within(button as HTMLElement).queryByText("NEW")).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe("a node the moment adds", () => {
     installMatchMedia();
     const { container } = renderNode(flowNode({ isNew: true, ghosted: true }));
     const style = nodeBox(container).getAttribute("style")!;
-    expect(style).toContain("1.5px dashed var(--ember)");
+    expect(style).toContain("1.5px dashed var(--bp-accent-text)");
     expect(style).toContain("opacity: 1");
     expect(style).not.toContain("opacity: 0.55");
     expect(within(container).getByText("PLANNED")).toBeInTheDocument();
@@ -117,12 +117,12 @@ describe("a line the moment adds", () => {
     const base = { type: "sync", ghosted: false, onPath: false, dimmed: false, showType: true, reduced: false };
     const added = renderEdge({ ...base, isNew: true }).container.querySelector("path.react-flow__edge-path")!;
     expect(added).toHaveAttribute("data-new", "true");
-    expect(added.getAttribute("style")).toContain("stroke: var(--ember)");
+    expect(added.getAttribute("style")).toContain("stroke: var(--bp-accent-text)");
     expect(added.getAttribute("style")).toContain("stroke-width: 2");
     expect(added.getAttribute("class")).toContain("bp-arch-edge--new");
     expect(added.getAttribute("class")).not.toContain("bp-arch-edge--new-static");
     const plain = renderEdge({ ...base, isNew: false }).container.querySelectorAll("path.react-flow__edge-path");
-    expect(plain[plain.length - 1]!.getAttribute("style")).not.toContain("stroke: var(--ember)");
+    expect(plain[plain.length - 1]!.getAttribute("style")).not.toContain("stroke: var(--bp-accent-text)");
   });
 
   it("holds the glow still when motion is reduced, and is not ghosted when it is planned and new", () => {

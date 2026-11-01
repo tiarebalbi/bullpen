@@ -43,7 +43,8 @@ export function ArchitectureExplorerEdge({
   const { type, ghosted, onPath, dimmed, isNew = false, showType, reduced, label, traffic } = data as ArchFlowEdgeData;
   const [path, labelX, labelY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const isAsync = type === "async" && showType;
-  const stroke = onPath || isNew ? "var(--ember)" : LINE;
+  // The line the moment adds is the accent as the stroke (--bp-accent-text: the accent, darkened in light mode so the line is 3:1 against the canvas); the glow is the ember.
+  const stroke = onPath ? "var(--ember)" : isNew ? "var(--bp-accent-text)" : LINE;
 
   return (
     <>
