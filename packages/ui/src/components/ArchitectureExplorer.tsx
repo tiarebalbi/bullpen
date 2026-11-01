@@ -716,7 +716,7 @@ function MomentScrubber({
 
 function Legend({ showType, planned, hasNew }: { showType: boolean; planned: boolean; hasNew: boolean }): ReactNode {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 18, font: "500 11.5px/1 var(--font-body)", color: "var(--foreground-muted)", marginBottom: 6 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 18px", font: "500 11.5px/1.2 var(--font-body)", color: "var(--foreground-muted)", marginBottom: 6 }}>
       {showType ? (
         <>
           <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
