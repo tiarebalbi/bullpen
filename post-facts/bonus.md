@@ -80,7 +80,7 @@ Test: a pending, review and rejected handle all show the neutral label after a r
 
 ## 10. ADR numbers and statuses
 
-- **ADR-0027** (new): Accepted, dated 2026-11-01, "the owner approved the direction and scope on 2026-11-01, before the build". I had drafted it as Proposed; the owner chose Accepted, because ADR-0016 lets only an Accepted ADR authorize the gateway as an external system in the model. The threshold in it is marked provisional.
+- **ADR-0027** (new): Accepted, dated 2026-11-01, "the owner approved the direction and scope on 2026-11-01, before the build". The brief asked for Proposed; the owner chose Accepted when I flagged the conflict, because ADR-0016 lets only an Accepted ADR authorize the gateway as an external system in the model. The threshold in it is marked provisional.
 - **ADR-0020**: still Accepted; handles are no longer deferred, and it links ADR-0027.
 - ADR-0015 is unchanged. ADR-0027 records that the latest built moment is placed by the part a bonus follows, so the bonus (not Part 4) is the latest built moment while `handles` is in the ADL.
 
@@ -164,7 +164,7 @@ Nothing in the code crossed a rule on its own: no trading or market-data file im
 
 ## 14. The schedule effect
 
-About two hours and ten minutes of build time on 2026-11-01, from the go to a draft PR, spread over six pieces: the data owner and moderation (about 40 minutes), the ADL, checks and records (35), the labelled set and script (10), and the landing (45, the most of it e2e and layout work). Part 5
+Roughly two hours and ten minutes of build time (my own estimate of the split, from the commit times) on 2026-11-01, from the go to a draft PR, spread over six pieces: the data owner and moderation (about 40 minutes), the ADL, checks and records (35), the labelled set and script (10), and the landing (45, the most of it e2e and layout work). Part 5
 (Nov 16) is not at risk from the build. It is at risk from the four things only the owner can do before merge, in order (see the PR): create `handles_owner`, set `DATABASE_URL_HANDLES`, add the admin id, set the gateway budget. A production build applies migrations (ADR-0023),
 so merging before the role exists fails the build. The measurement is the one open item that can still change a number in the post.
 
