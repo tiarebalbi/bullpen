@@ -6,7 +6,7 @@ import { TARGETS, compareToTargets, lowestSafeThreshold, parseLabelled, percenti
 
 const ok = (probability: number, latencyMs = 100, costUsd: number | null = 0.00002) => ({ ok: true as const, probability, costUsd, latencyMs });
 const fail = (latencyMs = 2000) => ({ ok: false as const, reason: "timeout" as const, latencyMs });
-const item = (handle: string, label: "clean" | "reject", result: Measured["result"]): Measured => ({ handle, label, result });
+const item = (handle: string, label: "clean" | "reject", result: Measured["result"]): Measured => ({ id: `${label}-${handle}`, handle, label, result });
 
 describe("percentile", () => {
   it("is the nearest rank", () => {
@@ -39,8 +39,8 @@ describe("summarising a run", () => {
 
   it("counts rejects approved and clean sent to review with the product's own verdict, failures included", () => {
     const s = summarize(run, 0.9);
-    expect(s.rejectsApproved).toEqual(["y"]);
-    expect(s.cleanToReview).toEqual({ count: 2, share: 0.5, failures: 1 });
+    expect(s.rejectsApproved).toEqual(["reject-y"]);
+    expect(s.cleanToReview).toEqual({ count: 2, share: 0.5, failures: 1, ids: ["clean-c", "clean-d"] });
     expect(s.failures).toBe(1);
   });
 
@@ -62,6 +62,11 @@ describe("summarising a run", () => {
     expect(verdicts.map((v) => v.met)).toEqual([false, false, false, true]);
     expect(verdicts[0]).toMatchObject({ target: "0 rejects accepted", actual: "1 of 2" });
     expect(TARGETS.p95LatencyMs).toBe(500);
+  });
+
+  it("gives every handle a stable id, so a run can name a reject without printing it", () => {
+    const ids = parseLabelled("a\nb\n", "clean").map((h) => h.id);
+    expect(ids).toEqual(["clean-001", "clean-002"]);
   });
 
   it("does not call a missing cost a pass", () => {
@@ -114,8 +119,8 @@ describe("the labelled set", () => {
 describe("parsing", () => {
   it("skips comments and blank lines and reads a category after a tab", () => {
     expect(parseLabelled("# note\n\nabc\tinsult\r\nxyz\tthreat\n", "reject")).toEqual([
-      { handle: "abc", label: "reject", category: "insult" },
-      { handle: "xyz", label: "reject", category: "threat" },
+      { id: "reject-001", handle: "abc", label: "reject", category: "insult" },
+      { id: "reject-002", handle: "xyz", label: "reject", category: "threat" },
     ]);
   });
 });

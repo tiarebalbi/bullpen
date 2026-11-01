@@ -4,6 +4,8 @@ import type { GatewayResult } from "./gateway.js";
 export type Label = "clean" | "reject";
 
 export interface LabelledHandle {
+  /** "clean-001", "reject-017": how a run refers to a handle in its output, so a reject's text never has to be printed. */
+  id: string;
   handle: string;
   label: Label;
   /** Only for a reject: insult, slur, threat, sexual or impersonation. */
@@ -20,9 +22,9 @@ export function parseLabelled(text: string, label: Label): LabelledHandle[] {
     .split("\n")
     .map((line) => line.replace(/\r$/, ""))
     .filter((line) => line.trim() !== "" && !line.startsWith("#"))
-    .map((line) => {
+    .map((line, index) => {
       const [handle, category] = line.split("\t");
-      return { handle: handle!.trim(), label, ...(category ? { category: category.trim() } : {}) };
+      return { id: `${label}-${String(index + 1).padStart(3, "0")}`, handle: handle!.trim(), label, ...(category ? { category: category.trim() } : {}) };
     });
 }
 
@@ -50,10 +52,10 @@ export function spread(values: readonly number[]): Spread {
 export interface Summary {
   threshold: number;
   total: { clean: number; reject: number };
-  /** Rejects the model would approve: the number that must be 0. */
+  /** The ids of the rejects the model would approve: the number that must be 0. Ids, not text. */
   rejectsApproved: string[];
   /** Clean handles that would go to review, for any reason, and how many of those were a failure and not an answer. */
-  cleanToReview: { count: number; share: number; failures: number };
+  cleanToReview: { count: number; share: number; failures: number; ids: string[] };
   failures: number;
   latencyMs: { p50: number; p95: number; max: number };
   costPerDecisionUsd: number | null;
@@ -72,8 +74,8 @@ export function summarize(measured: readonly Measured[], threshold: number): Sum
   return {
     threshold,
     total: { clean: clean.length, reject: reject.length },
-    rejectsApproved: reject.filter((m) => decide(m.result, threshold).outcome === "approved").map((m) => m.handle),
-    cleanToReview: { count: toReview.length, share: clean.length === 0 ? 0 : toReview.length / clean.length, failures: toReview.filter((m) => !m.result.ok).length },
+    rejectsApproved: reject.filter((m) => decide(m.result, threshold).outcome === "approved").map((m) => m.id),
+    cleanToReview: { count: toReview.length, share: clean.length === 0 ? 0 : toReview.length / clean.length, failures: toReview.filter((m) => !m.result.ok).length, ids: toReview.map((m) => m.id) },
     failures: measured.filter((m) => !m.result.ok).length,
     latencyMs: { p50: percentile(latencies, 50), p95: percentile(latencies, 95), max: percentile(latencies, 100) },
     costPerDecisionUsd: costs.length === 0 ? null : costs.reduce((a, b) => a + b, 0) / costs.length,

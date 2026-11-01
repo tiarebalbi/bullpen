@@ -14,7 +14,7 @@ export const QUESTION = {
 export const TIMEOUT_MS = 2000;
 
 /**
- * A handle is approved only when the model's probability is strictly above this; at it, or below, a person looks. Chosen from the labelled-set run
- * (post-facts/bonus.md), not from a guess.
+ * A handle is approved only when the model's probability is strictly above this; at it, or below, a person looks. PROVISIONAL: 0.90 is a starting point
+ * until the owner has run the labelled set and the run is read into post-facts/bonus.md (ADR-0027); it is then kept or changed there, with the reason.
  */
 export const APPROVE_ABOVE = 0.9;

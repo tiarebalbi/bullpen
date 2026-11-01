@@ -39,8 +39,9 @@ describe("asking the gateway", () => {
 
   it("reports a rate limit, and any other refusal (budget, key, server) as unavailable", async () => {
     const reply = (status: number) => askGateway("abc", { fetch: (async () => new Response("{}", { status })) as unknown as typeof fetch, apiKey: key });
-    expect(await reply(429)).toMatchObject({ ok: false, reason: "rate-limited" });
-    for (const status of [401, 402, 403, 500, 503]) expect(await reply(status)).toMatchObject({ ok: false, reason: "unavailable" });
+    expect(await reply(429)).toMatchObject({ ok: false, reason: "rate-limited", httpStatus: 429 });
+    // the status travels with a refusal, so a caller can tell "no credits" (402) from "key refused" (401, 403); the body never does
+    for (const status of [401, 402, 403, 500, 503]) expect(await reply(status)).toMatchObject({ ok: false, reason: "unavailable", httpStatus: status });
   });
 
   it("reports a network failure as unavailable", async () => {
@@ -88,5 +89,13 @@ describe("probing where a request is served from", () => {
   it("is null when the header is absent or the host cannot be reached", async () => {
     expect(await probeGatewayRegion({ fetch: (async () => new Response("")) as unknown as typeof fetch })).toBeNull();
     expect(await probeGatewayRegion({ fetch: (async () => Promise.reject(new Error("offline"))) as unknown as typeof fetch })).toBeNull();
+  });
+});
+
+describe("the test setup's guard", () => {
+  it("refuses a test that reaches the real gateway without mocking it, even with a key in the environment", async () => {
+    const result = await askGateway("abc", { apiKey: "test-key-not-real" });
+    expect(result).toMatchObject({ ok: false, reason: "unavailable" });
+    await expect(fetch("https://ai-gateway.vercel.sh/v1/evaluate")).rejects.toThrow(/real AI Gateway/);
   });
 });

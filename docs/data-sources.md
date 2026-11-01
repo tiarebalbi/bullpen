@@ -119,8 +119,9 @@ Read 2026-11-01:
 - **How it is used:** `POST https://ai-gateway.vercel.sh/v1/evaluate` with the handle text and a fixed question, from `apps/web/app/lib/moderation` only. Vercel's
   Decision docs (last updated 2026-10-07) name this route and the AI SDK's `experimental_decide`; the route is used because its response carries the gateway's own
   cost field, which the AI SDK result does not.
-- **Price:** $0.042 per 1M input tokens, no output charge listed ([model page](https://vercel.com/ai-gateway/models/jev)); TypeSafe's own price is the same
-  ([TypeSafe's models page](https://docs.typesafe.ai/models.md)). A decision sends a few hundred tokens.
+- **Price:** Vercel's [model page](https://vercel.com/ai-gateway/models/jev) says, verbatim, "Pricing: $0.042/1M input tokens" and lists no output price (read 2026-11-01); a rounded "$0.04/1M" appears in
+  the model catalogue's table row, which is the same price shown to two places. TypeSafe's [models page](https://docs.typesafe.ai/models.md) says "$42 / $0.042" per billion / per million tokens and "Output tokens are free"
+  (read 2026-11-01). A decision sends a few hundred tokens.
 - **Free tier:** Vercel's [pricing page](https://vercel.com/docs/ai-gateway/pricing) (last updated 2026-09-08) says every team gets a monthly free credit on "a subset of
   models, not the full catalog". It gives no dollar amount and the model page for Jev does not say whether Jev is in the subset, so whether Jev is free is **not
   confirmed**. Buying credits moves a team to the paid tier and ends the free credit; that is the owner's decision, not the code's.

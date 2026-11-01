@@ -3,11 +3,14 @@ import { MODERATION_MODEL, QUESTION, TIMEOUT_MS } from "./config.js";
 
 /** The one place that reaches the AI Gateway and the one place that reads its key (ADL: only this directory). */
 const ENDPOINT = "https://ai-gateway.vercel.sh/v1/evaluate";
+/** The gateway's origin, for a test setup that must make sure no test reaches it. */
+export const GATEWAY_ORIGIN = new URL(ENDPOINT).origin;
 const QUESTION_ID = "acceptable";
 
 export type GatewayResult =
   | { ok: true; probability: number; costUsd: number | null; latencyMs: number }
-  | { ok: false; reason: ReviewReason; latencyMs: number };
+  /** `httpStatus` is the gateway's status when it answered with a refusal, so a caller can tell "no credits" (402) from "key refused" (401, 403); never its body. */
+  | { ok: false; reason: ReviewReason; latencyMs: number; httpStatus?: number };
 
 export interface GatewayOptions {
   /** Defaults to the global fetch. */
@@ -48,9 +51,9 @@ export async function askGateway(handle: string, options: GatewayOptions = {}): 
     return done({ ok: false, reason: name === "TimeoutError" || name === "AbortError" ? "timeout" : "unavailable" });
   }
 
-  if (response.status === 429) return done({ ok: false, reason: "rate-limited" });
+  if (response.status === 429) return done({ ok: false, reason: "rate-limited", httpStatus: 429 });
   // 401, 402 (credits or budget exhausted), 403, 5xx: all the same to the player, a handle for a person to look at.
-  if (!response.ok) return done({ ok: false, reason: "unavailable" });
+  if (!response.ok) return done({ ok: false, reason: "unavailable", httpStatus: response.status });
 
   let body: unknown;
   try {
@@ -78,7 +81,7 @@ export async function askGateway(handle: string, options: GatewayOptions = {}): 
  */
 export async function probeGatewayRegion(options: Pick<GatewayOptions, "fetch" | "timeoutMs"> = {}): Promise<string | null> {
   try {
-    const response = await (options.fetch ?? fetch)(new URL(ENDPOINT).origin, { signal: AbortSignal.timeout(options.timeoutMs ?? 5000) });
+    const response = await (options.fetch ?? fetch)(GATEWAY_ORIGIN, { signal: AbortSignal.timeout(options.timeoutMs ?? 5000) });
     return response.headers.get("x-vercel-id")?.split("::")[0] ?? null;
   } catch {
     return null;
