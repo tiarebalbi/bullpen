@@ -70,7 +70,7 @@ test("landing page renders every section with no console/page errors", async ({ 
   // Rules: a tile for each # heading of structure.adl plus the CALM and budget tiles, each with a real
   // result chip: the pass or fail the last committed rules snapshot recorded, never a fabricated pass.
   const ruleTiles = page.locator("#rules ~ .bp-tile");
-  await expect(ruleTiles).toHaveCount(8);
+  await expect(ruleTiles).toHaveCount(9);
   for (let i = 0; i < 8; i++) {
     await expect(ruleTiles.nth(i).locator(".bp-chip")).toHaveText(/pass|fail/);
   }

@@ -36,13 +36,13 @@ test.describe("Status grid (Decisions, Rules, What's defined, rule tiles, Cost, 
     expect(Math.abs(decisions!.y + decisions!.height - (defined!.y + defined!.height))).toBeLessThan(2);
   });
 
-  test("the eight rule tiles run four to a row, three columns each, below the pair", async ({ page }) => {
+  test("the nine rule tiles run three to a row, four columns each, below the pair", async ({ page }) => {
     const tiles = page.locator(".bp-tile");
-    await expect(tiles).toHaveCount(8);
+    await expect(tiles).toHaveCount(9);
     const boxes = await tiles.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
     const ys = [...new Set(boxes.map((b) => Math.round(b.top)))];
-    expect(ys).toHaveLength(2);
-    expect(boxes.slice(0, 4).every((b) => Math.round(b.top) === ys[0])).toBe(true);
+    expect(ys).toHaveLength(3);
+    expect(boxes.slice(0, 3).every((b) => Math.round(b.top) === ys[0])).toBe(true);
     const widths = boxes.map((b) => Math.round(b.width));
     expect(new Set(widths).size).toBe(1);
     const defined = await page.locator("#defined").boundingBox();

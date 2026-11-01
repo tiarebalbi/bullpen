@@ -925,9 +925,9 @@ code {
   color: var(--foreground-muted);
 }
 
-/* The eight rule tiles and their shared detail panel */
+/* The nine rule tiles (one for each # heading of structure.adl, the CALM model and the budget) and their shared detail panel: three to a row. */
 .bp-tile {
-  grid-column: span 3;
+  grid-column: span 4;
   text-align: left;
   cursor: pointer;
   color: var(--foreground);
