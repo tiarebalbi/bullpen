@@ -16,6 +16,15 @@ describe("sitemap", () => {
     expect(byPath).toEqual({ "/": latest, "/architecture": latest, "/privacy": PRIVACY_UPDATED });
   });
 
+  it("never uses a planned date: the latest planned date is later than every lastmod", () => {
+    const planned = series.flatMap((entry) => (entry.plannedDate ? [entry.plannedDate] : []));
+    expect(planned.length).toBeGreaterThan(0);
+    for (const entry of sitemap()) {
+      expect(planned).not.toContain(entry.lastModified);
+      expect(String(entry.lastModified) < planned.sort()[0]!).toBe(true);
+    }
+  });
+
   it("is the same on two builds made at different times", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-10T08:00:00Z"));

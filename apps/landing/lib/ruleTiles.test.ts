@@ -38,8 +38,8 @@ function snapshot(options: { failing?: string[]; extras?: SnapshotRule[]; calm?:
 describe("buildRuleTiles", () => {
   const view = buildRuleTiles(adl, allowances, snapshot());
 
-  it("makes one tile per # heading of structure.adl, then the CALM model and the free-tier budget: eight tiles", () => {
-    expect(view.tiles).toHaveLength(8);
+  it("makes one tile per # heading of structure.adl, then the CALM model and the free-tier budget: nine tiles", () => {
+    expect(view.tiles).toHaveLength(9);
     expect(view.tiles.slice(0, -2).map((t) => t.title)).toEqual(adl.groups.map((g) => g.heading.replace(/\s*\(.+\)$/, "")));
     expect(view.tiles.slice(-2).map((t) => [t.id, t.countLabel])).toEqual([["calm", "CLI check"], ["budget", "Fitness function"]]);
   });

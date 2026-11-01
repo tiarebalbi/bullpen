@@ -6,7 +6,7 @@ import { buildArchitecturePage, CHECK_NAME_BY_FILE, type ArchitecturePageData } 
 import { loadCalmDocs } from "./calm.js";
 import { readPriceCacheSeconds } from "./priceCache.js";
 import { loadRuleHistory, type RulesSnapshot } from "./rulesSnapshot.js";
-import { loadSeries } from "./series.js";
+import { loadSeries, partsOf } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const adl = loadAdl(join(import.meta.dirname, "..", ".generated", "adl.json"));
@@ -36,7 +36,7 @@ const snapshot = (passing: boolean): RulesSnapshot => ({
 function build(withSnapshot: RulesSnapshot | null): ArchitecturePageData {
   return buildArchitecturePage({
     parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
-    series: loadSeries(join(repoRoot, "content", "series.json")),
+    series: partsOf(loadSeries(join(repoRoot, "content", "series.json"))),
     calm: loadCalmDocs(repoRoot),
     ruleHistory: loadRuleHistory(join(repoRoot, "architecture", "reports")),
     adlRules: adl.rules.map((rule) => rule.text),
@@ -200,7 +200,7 @@ describe("buildArchitecturePage, from the real repo", () => {
       expect(page.flows[5]!.steps.every((s) => !/cached/i.test(s.detail))).toBe(true);
       const unread = buildArchitecturePage({
         parts: loadArchitectureParts(join(repoRoot, "content", "architecture"), join(repoRoot, "architecture", "calm", "planned")),
-        series: loadSeries(join(repoRoot, "content", "series.json")),
+        series: partsOf(loadSeries(join(repoRoot, "content", "series.json"))),
         calm: loadCalmDocs(repoRoot),
         adlRules: adl.rules.map((rule) => rule.text),
         snapshot: null,

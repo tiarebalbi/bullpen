@@ -49,6 +49,7 @@ describe("buildRuleCards", () => {
       "adl-disallowed-dependencies-direct-and-transitive",
       "adl-entry-points-and-secrets",
       "adl-data-ownership",
+      "adl-handles-and-moderation",
       "adl-model-currency",
       "calm",
       "budget",

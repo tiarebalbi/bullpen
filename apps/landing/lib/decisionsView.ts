@@ -3,7 +3,8 @@ import type { Adr } from "./adr.js";
 /** How many decisions the card shows before "View all". */
 export const DECISIONS_SHOWN = 6;
 
-export type DecisionsPart = "all" | number;
+/** All of them, one numbered part's, or the bonus's (ADR-0027). */
+export type DecisionsPart = "all" | "bonus" | number;
 
 export interface DecisionTab {
   value: DecisionsPart;
@@ -31,21 +32,23 @@ export interface DecisionsView {
  * counts and captions are tested without a browser. A new ADR changes the tabs and counts with no copy edit.
  */
 export function buildDecisionsView(adrs: readonly Adr[], requested: DecisionsPart = "all", expanded = false): DecisionsView {
-  const parts = [...new Set(adrs.map((adr) => adr.part))].sort((a, b) => a - b);
-  const part: DecisionsPart = requested !== "all" && parts.includes(requested) ? requested : "all";
+  const parts = [...new Set(adrs.flatMap((adr) => (adr.part === "bonus" ? [] : [adr.part])))].sort((a, b) => a - b);
+  const hasBonus = adrs.some((adr) => adr.part === "bonus");
+  const part: DecisionsPart = requested === "bonus" ? (hasBonus ? "bonus" : "all") : requested !== "all" && parts.includes(requested) ? requested : "all";
   const filtered = part === "all" ? [...adrs] : adrs.filter((adr) => adr.part === part);
   const over = filtered.length > DECISIONS_SHOWN;
   const rows = expanded || !over ? filtered : filtered.slice(0, DECISIONS_SHOWN);
   const tabs: DecisionTab[] = [
     { value: "all", label: "All", count: adrs.length, selected: part === "all" },
     ...parts.map((p) => ({ value: p as DecisionsPart, label: `Part ${p}`, count: adrs.filter((adr) => adr.part === p).length, selected: part === p })),
+    ...(hasBonus ? [{ value: "bonus" as DecisionsPart, label: "Bonus", count: adrs.filter((adr) => adr.part === "bonus").length, selected: part === "bonus" }] : []),
   ];
   return {
     tabs,
     part,
     rows,
     total: filtered.length,
-    caption: `${rows.length} of ${filtered.length} ${part === "all" ? "decisions" : `in Part ${part}`}`,
+    caption: `${rows.length} of ${filtered.length} ${part === "all" ? "decisions" : part === "bonus" ? "in the bonus" : `in Part ${part}`}`,
     more: { show: over, expanded: over && expanded, label: over && expanded ? "Show fewer" : `View all ${filtered.length} →` },
   };
 }

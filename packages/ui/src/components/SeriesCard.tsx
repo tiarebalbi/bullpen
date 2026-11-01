@@ -13,7 +13,10 @@ import { Chip, type ChipTone } from "./Chip.js";
 export type SeriesCardStatus = "published" | "next" | "planned";
 
 export interface SeriesCardProps {
-  part: number;
+  /** The part number. Absent for the bonus, which is a detour between two parts and has none. */
+  part?: number;
+  /** The bonus: a diamond and a "Bonus · Detour" tag where the part number goes, and an accent dashed border. */
+  bonus?: boolean;
   title: string;
   status: SeriesCardStatus;
   /** What this part's architecture record introduces, e.g. "A queue absorbs the market-open burst." */
@@ -24,6 +27,12 @@ export interface SeriesCardProps {
   href?: string;
   /** Rendered date text when `date` is set, e.g. "Oct 4, 2026" -- callers format it (locale-aware). */
   dateLabel?: string;
+  /**
+   * When the post is planned, as text ("Planned · Nov 9", "Nov 16"), with its ISO date. Shown only while there is no published `date`, and set apart from
+   * one: dashed, italic, in a `<time>`. A plan, never a publish date.
+   */
+  plannedLabel?: string;
+  plannedDate?: string;
   className?: string;
 }
 
@@ -53,25 +62,60 @@ const CARD_STYLE: CSSProperties = {
   boxSizing: "border-box",
 };
 
+const BONUS_STYLE: CSSProperties = {
+  // The accent as a dashed border and a glow: a little more weight than its neighbours, in the same box, so the rail keeps its rhythm.
+  border: "1.5px dashed var(--ember)",
+  boxShadow: "var(--shadow-ember-glow)",
+};
+
+const VISUALLY_HIDDEN: CSSProperties = { position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
+
+const PLANNED_STYLE: CSSProperties = {
+  font: "italic 500 11.5px/1 var(--font-mono)",
+  color: "var(--foreground-muted)",
+  border: "1px dashed var(--foreground-muted)",
+  borderRadius: "var(--radius-pill)",
+  padding: "4px 8px",
+};
+
+/** A diamond, for the bonus where a part has its number. Decorative: the tag beside it says what it is. */
+function Diamond(): ReactNode {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false" style={{ color: "var(--bp-accent-text)", flex: "none" }}>
+      <path d="M6 0.5 11.5 6 6 11.5 0.5 6Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function SeriesCard({
   part,
+  bonus = false,
   title,
   status,
   introduced,
   date,
   href,
   dateLabel,
+  plannedLabel,
+  plannedDate,
   className,
 }: SeriesCardProps): ReactNode {
   return (
-    <div className={["bp-series-card", className].filter(Boolean).join(" ")} style={CARD_STYLE}>
+    <div className={["bp-series-card", bonus ? "bp-series-card--bonus" : undefined, className].filter(Boolean).join(" ")} data-kind={bonus ? "bonus" : "part"} style={bonus ? { ...CARD_STYLE, ...BONUS_STYLE } : CARD_STYLE}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ font: "600 11px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>Part {part}</span>
+        {bonus ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 11px/1 var(--font-mono)", color: "var(--bp-accent-text)" }}>
+            <Diamond />
+            Bonus · Detour
+          </span>
+        ) : (
+          <span style={{ font: "600 11px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>Part {part}</span>
+        )}
         <Chip tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Chip>
       </div>
       <div
         style={{
-          font: "500 21px/1.12 var(--font-display)",
+          font: bonus ? "500 23px/1.12 var(--font-display)" : "500 21px/1.12 var(--font-display)",
           letterSpacing: "-0.02em",
           textWrap: "pretty",
         }}
@@ -100,9 +144,15 @@ export function SeriesCard({
           borderTop: "1px solid var(--bp-hair)",
         }}
       >
-        <span style={{ font: "500 11.5px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>
-          {date && dateLabel ? dateLabel : status === "published" ? "" : "Not yet published"}
-        </span>
+        {date && dateLabel ? (
+          <span style={{ font: "500 11.5px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>{dateLabel}</span>
+        ) : plannedLabel && !date ? (
+          <time dateTime={plannedDate} style={PLANNED_STYLE} data-planned="true">
+            {/^Planned/.test(plannedLabel) ? plannedLabel : <><span style={VISUALLY_HIDDEN}>Planned for </span>{plannedLabel}</>}
+          </time>
+        ) : (
+          <span style={{ font: "500 11.5px/1 var(--font-mono)", color: "var(--foreground-muted)" }}>{status === "published" ? "" : "Not yet published"}</span>
+        )}
         {href ? (
           <a
             href={href}

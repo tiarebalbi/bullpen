@@ -40,8 +40,11 @@ describe("loadAdrs / parseAdr", () => {
       expect(adr.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(adr.summary.length).toBeGreaterThan(0);
       expect(adr.summary.length).toBeLessThanOrEqual(SUMMARY_MAX_LENGTH);
-      expect(adr.part).toBeGreaterThanOrEqual(1);
-      expect(adr.part).toBeLessThanOrEqual(6);
+      // A numbered part 1-6, or "bonus" (ADR-0027: the detour between Part 4 and Part 5).
+      if (adr.part !== "bonus") {
+        expect(adr.part).toBeGreaterThanOrEqual(1);
+        expect(adr.part).toBeLessThanOrEqual(6);
+      }
       expect(adr.contextHtml).toContain("<p>");
       expect(adr.decisionHtml).toContain("<p>");
       expect(adr.consequencesHtml.length).toBeGreaterThan(0);

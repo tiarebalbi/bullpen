@@ -15,6 +15,9 @@ import { useHashDialog, useLocationHash } from "./useHashDialog.js";
  * a native focus trap and Escape-to-close for free (see ADR-0006/0007 for
  * the sibling "why a real platform primitive over hand-rolled" precedent).
  */
+/** "Part 3", or "Bonus" for the decision that belongs to the detour between two parts. */
+const partLabel = (adr: Adr): string => (adr.part === "bonus" ? "Bonus" : `Part ${adr.part}`);
+
 export function DecisionsList({
   adrs,
   closeHash = "",
@@ -42,7 +45,7 @@ export function DecisionsList({
               <span className="bp-decisions-row__id">{adr.id}</span>
               <span className="bp-decisions-row__summary">{adr.summary}</span>
               <span className="bp-decisions-row__meta">
-                {adr.status === "Accepted" ? null : <Chip tone={statusTone(adr.status)}>{adr.status}</Chip>} Part {adr.part}
+                {adr.status === "Accepted" ? null : <Chip tone={statusTone(adr.status)}>{adr.status}</Chip>} {partLabel(adr)}
               </span>
             </a>
           ) : (
@@ -50,7 +53,7 @@ export function DecisionsList({
               <span className="bp-decisions-row__id">{adr.id}</span>
               <span className="bp-decisions-row__body">
                 <span className="bp-decisions-row__summary">{adr.summary}</span>
-                <span className="bp-decisions-row__meta">Part {adr.part}</span>
+                <span className="bp-decisions-row__meta">{partLabel(adr)}</span>
               </span>
               <Chip tone={statusTone(adr.status)}>{adr.status}</Chip>
               <span className="bp-decisions-row__hint" aria-hidden="true">

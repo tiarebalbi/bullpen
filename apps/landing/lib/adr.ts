@@ -10,8 +10,8 @@ export interface Adr {
   date: string;
   /** The "## Summary" section: one line, at or under SUMMARY_MAX_LENGTH characters. */
   summary: string;
-  /** The "## Part" section: which series part this decision belongs to (1-PART_COUNT). */
-  part: number;
+  /** The "## Part" section: which series part this decision belongs to (1-PART_COUNT), or "bonus" for the detour between Part 4 and Part 5 (ADR-0027). */
+  part: number | "bonus";
   /** "## Context", rendered from Markdown to HTML at build time (see ADR-0007). */
   contextHtml: string;
   /** "## Decision", rendered from Markdown to HTML at build time. */
@@ -91,9 +91,9 @@ export function parseAdr(content: string, filename: string): Adr {
   }
 
   const partRaw = sections.get("part")!.trim();
-  const part = Number(partRaw);
-  if (!Number.isInteger(part) || part < 1 || part > PART_COUNT) {
-    throw new Error(`${filename}: "## Part" must be an integer 1-${PART_COUNT}, got ${JSON.stringify(partRaw)}`);
+  const part = partRaw.toLowerCase() === "bonus" ? "bonus" : Number(partRaw);
+  if (part !== "bonus" && (!Number.isInteger(part) || part < 1 || part > PART_COUNT)) {
+    throw new Error(`${filename}: "## Part" must be an integer 1-${PART_COUNT} or "Bonus", got ${JSON.stringify(partRaw)}`);
   }
 
   return {
