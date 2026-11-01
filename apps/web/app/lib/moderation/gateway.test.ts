@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { askGateway } from "./gateway.js";
+import { askGateway, probeGatewayRegion } from "./gateway.js";
 
 const ok = (probability: unknown = 0.98, extra: Record<string, unknown> = {}) =>
   new Response(JSON.stringify({ model: "typesafe-ai/jev", answers: { acceptable: { type: "boolean", probability } }, usage: { inputTokens: 200, outputTokens: 20 }, providerMetadata: { gateway: { cost: "0.00001155" } }, ...extra }), { status: 200 });
@@ -72,5 +72,21 @@ describe("asking the gateway", () => {
     let now = 1000;
     const result = await askGateway("abc", { fetch: (async () => { now += 137; return ok(); }) as unknown as typeof fetch, apiKey: key, clock: () => now });
     expect(result.latencyMs).toBe(137);
+  });
+});
+
+describe("probing where a request is served from", () => {
+  it("reads the region from x-vercel-id, sending no key and no handle", async () => {
+    const fetcher = vi.fn(async () => new Response("", { headers: { "x-vercel-id": "iad1::abcde-123" } }));
+    expect(await probeGatewayRegion({ fetch: fetcher as unknown as typeof fetch })).toBe("iad1");
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit | undefined];
+    expect(url).toBe("https://ai-gateway.vercel.sh");
+    expect(init?.headers).toBeUndefined();
+    expect(init?.body).toBeUndefined();
+  });
+
+  it("is null when the header is absent or the host cannot be reached", async () => {
+    expect(await probeGatewayRegion({ fetch: (async () => new Response("")) as unknown as typeof fetch })).toBeNull();
+    expect(await probeGatewayRegion({ fetch: (async () => Promise.reject(new Error("offline"))) as unknown as typeof fetch })).toBeNull();
   });
 });

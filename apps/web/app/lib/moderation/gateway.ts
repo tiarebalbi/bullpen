@@ -71,3 +71,16 @@ export async function askGateway(handle: string, options: GatewayOptions = {}): 
   const cost = meta ? Number(meta.cost) : Number.NaN;
   return done({ ok: true, probability, costUsd: Number.isFinite(cost) ? cost : null });
 }
+
+/**
+ * Where a request from here is served from: the first part of `x-vercel-id` on an unauthenticated GET to the gateway's host (for example `iad1`). It sends no
+ * key and no handle, and lets a measurement say where it ran from. Null when the host cannot be reached or the header is absent.
+ */
+export async function probeGatewayRegion(options: Pick<GatewayOptions, "fetch" | "timeoutMs"> = {}): Promise<string | null> {
+  try {
+    const response = await (options.fetch ?? fetch)(new URL(ENDPOINT).origin, { signal: AbortSignal.timeout(options.timeoutMs ?? 5000) });
+    return response.headers.get("x-vercel-id")?.split("::")[0] ?? null;
+  } catch {
+    return null;
+  }
+}
