@@ -28,10 +28,9 @@ CREATE TABLE IF NOT EXISTS handles.reports (
 );
 CREATE INDEX IF NOT EXISTS reports_open_idx ON handles.reports (handle_id) WHERE dismissed_at IS NULL;
 
--- The handles a player had taken down, kept after they change their handle, so the same player cannot save the same text again. Lower case, as the name is unique ignoring case.
+-- The handle texts that were taken down, kept after the player changes their handle: nobody can save one again, the player who had it or any other. Lower case, as the name is
+-- unique ignoring case. The text and the time, and no player: a save is checked by the text alone, so who had it is not recorded here and cannot be said to anyone.
 CREATE TABLE IF NOT EXISTS handles.revoked (
-  owner_user_id text        NOT NULL,
-  handle_lower  text        NOT NULL,
-  revoked_at    timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (owner_user_id, handle_lower)
+  handle_lower text        PRIMARY KEY,
+  revoked_at   timestamptz NOT NULL DEFAULT now()
 );

@@ -379,7 +379,7 @@ describe("taking a handle down", () => {
     expect(await revokeHandle(handles, "00000000-0000-4000-8000-000000000000")).toBe(false);
   });
 
-  it("the same player cannot save a revoked handle again, in any case, and it costs them no change; they can choose another", async () => {
+  it("the player who had it cannot save a revoked handle again, in any case, and it costs them no change; they can choose another", async () => {
     const target = await approvedPlayer();
     await revokeHandle(handles, target.handleId);
     const count = async (): Promise<number> => (await handles.query("SELECT count(*)::int AS n FROM handles.handle_changes WHERE owner_user_id = $1", [target.owner])).rows[0].n;
@@ -392,15 +392,43 @@ describe("taking a handle down", () => {
     const other = name();
     expect((await submitHandle(handles, target.owner, other)).ok).toBe(true);
     expect((await readOwnHandle(handles, target.owner))?.handle).toBe(other);
-    // still refused after they have moved on: the ban is on the text, for them
+    // still refused after they have moved on: the block is on the text
     expect(await submitHandle(handles, target.owner, target.handle)).toEqual({ ok: false, reason: "revoked" });
   });
 
-  it("is a ban for that player only: once they have chosen another handle, someone else may take the old name", async () => {
-    const target = await approvedPlayer();
-    await revokeHandle(handles, target.handleId);
-    await submitHandle(handles, target.owner, name());
-    expect((await submitHandle(handles, user(), target.handle)).ok).toBe(true);
+  it("is blocked for everyone: player B cannot save player A's revoked handle, while A still holds it and after A has moved on, with the same answer both times", async () => {
+    const a = await approvedPlayer();
+    await revokeHandle(handles, a.handleId);
+    const b = user();
+    const changes = async (): Promise<number> => (await handles.query("SELECT count(*)::int AS n FROM handles.handle_changes WHERE owner_user_id = $1", [b])).rows[0].n;
+
+    // A's row still holds the text (status revoked, the name unique): B gets 'revoked', not 'taken', so B is not told that anyone holds it
+    const held = await submitHandle(handles, b, a.handle);
+    expect(held).toEqual({ ok: false, reason: "revoked" });
+    expect(await submitHandle(handles, b, a.handle.toUpperCase())).toEqual({ ok: false, reason: "revoked" });
+    expect(await readOwnHandle(handles, b)).toBeNull(); // nothing was saved for B
+    expect(await changes()).toBe(0); // and nothing was counted
+
+    // A moves on, so the text is free in handles.handle: B is still refused, with the same answer
+    await submitHandle(handles, a.owner, name());
+    expect(await submitHandle(handles, b, a.handle)).toEqual(held);
+    expect(await changes()).toBe(0);
+
+    // B can choose another handle
+    expect((await submitHandle(handles, b, name())).ok).toBe(true);
+  });
+
+  it("an answer for B that says nothing about A: it carries only the reason, never an id, a time or a handle", async () => {
+    const a = await approvedPlayer();
+    await revokeHandle(handles, a.handleId);
+    const answer = await submitHandle(handles, user(), a.handle);
+    expect(answer).toEqual({ ok: false, reason: "revoked" });
+    expect(JSON.stringify(answer)).not.toContain(a.owner);
+  });
+
+  it("keeps the text and the time of a taken-down handle, and no player", async () => {
+    const { rows } = await handles.query<{ column_name: string }>("SELECT column_name FROM information_schema.columns WHERE table_schema = 'handles' AND table_name = 'revoked' ORDER BY ordinal_position");
+    expect(rows.map((row) => row.column_name)).toEqual(["handle_lower", "revoked_at"]);
   });
 
   it("the new tables belong to the handles owner and trading cannot read them", async () => {

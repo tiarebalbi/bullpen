@@ -6,7 +6,7 @@ import { checkHandle } from "./rules.js";
 export type SaveOutcome =
   | { ok: false; kind: "invalid"; error: string }
   | { ok: false; kind: "taken" }
-  /** The player had this handle taken down after a report: nothing was saved, counted or asked. */
+  /** This text was taken down after a report, for whoever had it: nothing was saved, counted or asked. */
   | { ok: false; kind: "revoked" }
   /** The player has used up their changes for the window: nothing was saved and no model was asked. */
   | { ok: false; kind: "limit"; retryAfterSeconds: number }

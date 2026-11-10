@@ -309,7 +309,7 @@ for (const viewport of [
       await expect(handleSection).toContainText("your account’s id, the handle’s id and the time");
       await expect(handleSection).toContainText("Nothing you type is kept");
       await expect(handleSection).toContainText("not told who reported them");
-      await expect(handleSection).toContainText("cannot save it again");
+      await expect(handleSection).toContainText("nobody can save it again");
       await expect(page.getByText("Last updated 10 November 2026")).toBeVisible();
       await expect(page.getByRole("link", { name: "my site" })).toHaveAttribute("href", "https://tiarebalbi.com");
       await expect(page.getByRole("button", { name: "Cookie settings" })).toBeVisible();

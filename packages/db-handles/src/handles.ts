@@ -21,7 +21,7 @@ export const STUCK_AFTER_MINUTES = 10;
 export type Submitted =
   | { ok: true; handleId: string }
   | { ok: false; reason: "taken" }
-  /** This player had this handle taken down after a report, and may not save it again (they may choose another). Nothing was saved, counted or asked. */
+  /** This text was taken down after a report, for whoever had it, and nobody may save it again (they may choose another). The same answer for every player: it never says who had it. Nothing was saved, counted or asked. */
   | { ok: false; reason: "revoked" }
   /** The player has saved CHANGE_LIMIT handles in the window. Nothing was saved, and no model should be asked. */
   | { ok: false; reason: "limit"; retryAfterSeconds: number };
@@ -31,8 +31,8 @@ const UNIQUE_VIOLATION = "23505";
 /**
  * Saves a new or changed handle as 'pending', drops any queue entry the old one had, and counts the change, all in one transaction: a failure part way
  * leaves the old handle and its queue entry exactly as they were. The limit is checked first, under a lock on the player so two saves at once cannot both
- * pass, and a refused save changes nothing and counts nothing. A handle this player had taken down is refused with 'revoked' (before the limit is counted, so it
- * costs nothing); a handle already held by another player, ignoring case, is refused with 'taken'. The same
+ * pass, and a refused save changes nothing and counts nothing. A handle text that was ever taken down after a report is refused with 'revoked', to any player (before the limit is counted, so it
+ * costs nothing, and whether or not its old owner still holds the row); a handle already held by another player, ignoring case, is refused with 'taken'. The same
  * player saving the same handle again is allowed (it counts as a change): it puts the handle back to 'pending', which is how a decision that never arrived is
  * retried by the player. Nothing here decides anything.
  */
@@ -41,7 +41,7 @@ export async function submitHandle(pool: Pool, userId: string, handle: string): 
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`handle-changes:${userId}`]);
-    const taken = await client.query("SELECT 1 FROM handles.revoked WHERE owner_user_id = $1 AND handle_lower = lower($2)", [userId, handle]);
+    const taken = await client.query("SELECT 1 FROM handles.revoked WHERE handle_lower = lower($1) LIMIT 1", [handle]);
     if (taken.rowCount === 1) {
       await client.query("ROLLBACK");
       return { ok: false, reason: "revoked" };
@@ -246,16 +246,16 @@ export async function listReported(pool: Pool, limit = 100): Promise<ReportedIte
 }
 
 /**
- * Takes an approved handle down: its status becomes 'revoked' (so handles.approved_v1 drops it and the leaderboard shows the neutral label at its next refresh), the player may
- * not save the same text again, and its reports are deleted (they have done their work). False when the handle is not approved any more (changed by the player, or already
+ * Takes an approved handle down: its status becomes 'revoked' (so handles.approved_v1 drops it and the leaderboard shows the neutral label at its next refresh), nobody may
+ * save the same text again, and its reports are deleted (they have done their work). False when the handle is not approved any more (changed by the player, or already
  * decided).
  */
 export async function revokeHandle(pool: Pool, handleId: string): Promise<boolean> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const updated = await client.query<{ owner_user_id: string; handle: string }>(
-      "UPDATE handles.handle SET status = 'revoked', decided_at = now() WHERE handle_id = $1 AND status = 'approved' RETURNING owner_user_id, handle",
+    const updated = await client.query<{ handle: string }>(
+      "UPDATE handles.handle SET status = 'revoked', decided_at = now() WHERE handle_id = $1 AND status = 'approved' RETURNING handle",
       [handleId],
     );
     const row = updated.rows[0];
@@ -263,7 +263,7 @@ export async function revokeHandle(pool: Pool, handleId: string): Promise<boolea
       await client.query("ROLLBACK");
       return false;
     }
-    await client.query("INSERT INTO handles.revoked (owner_user_id, handle_lower) VALUES ($1, lower($2)) ON CONFLICT DO NOTHING", [row.owner_user_id, row.handle]);
+    await client.query("INSERT INTO handles.revoked (handle_lower) VALUES (lower($1)) ON CONFLICT DO NOTHING", [row.handle]);
     await client.query("DELETE FROM handles.reports WHERE handle_id = $1", [handleId]);
     await client.query("COMMIT");
     return true;

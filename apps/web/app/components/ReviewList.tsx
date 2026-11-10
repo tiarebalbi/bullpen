@@ -68,7 +68,7 @@ export function ReviewList({ items, stuck = [], reported = [], stuckAfterMinutes
   return (
     <>
       <Panel title="Reported">
-        <p>Approved handles that other players reported. Revoke takes one down: its player shows as “Player ####” again at the next leaderboard refresh and cannot save that handle again. Dismiss keeps it.</p>
+        <p>Approved handles that other players reported. Revoke takes one down: its player shows as “Player ####” again at the next leaderboard refresh, and nobody can save that handle again. Dismiss keeps it.</p>
         {reportedRows.length === 0 ? (
           <EmptyState title="Nothing reported" description="A handle shows here when a player reports it and you have not decided on it." />
         ) : (

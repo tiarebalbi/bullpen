@@ -147,12 +147,23 @@ describe("GET: the player's own handle", () => {
 });
 
 describe("a handle that was taken down after a report", () => {
-  it("is a 409 in words for that player, and nothing is asked of the model", async () => {
+  it("is a 409 in words, the same for any player, and nothing is asked of the model", async () => {
     mocks.submitHandle.mockResolvedValue({ ok: false, reason: "revoked" });
     const response = await post({ handle: "BullRun" });
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: "handle-revoked", message: "That handle was taken down after a report, so it cannot be used again. Try another." });
+    expect(await response.json()).toEqual({ error: "handle-unavailable", message: "That handle cannot be used. Try another." });
     expect(mocks.askGateway).not.toHaveBeenCalled();
     expect(mocks.recordDecision).not.toHaveBeenCalled();
+  });
+
+  it("says the same to a player who never had it, and never says a report or an owner was involved", async () => {
+    mocks.submitHandle.mockResolvedValue({ ok: false, reason: "revoked" });
+    mocks.currentPlayer.mockResolvedValue({ userId: "someone-else", label: "Player 9F3C" });
+    const response = await post({ handle: "BullRun" });
+    expect(response.status).toBe(409);
+    const body = (await response.json()) as { error: string; message: string };
+    expect(body).toEqual({ error: "handle-unavailable", message: "That handle cannot be used. Try another." });
+    expect(JSON.stringify(body)).not.toMatch(/report|taken down|someone|owner|player/i);
+    expect(mocks.askGateway).not.toHaveBeenCalled();
   });
 });
