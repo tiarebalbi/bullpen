@@ -4,7 +4,8 @@ import { readOwnHandle } from "@bullpen/db-handles";
 import { currentPlayer } from "../lib/auth/player.js";
 import { signInAvailable } from "../lib/auth/server.js";
 import { handlesPool } from "../lib/handles/pool.js";
-import { HandleForm, type OwnHandleView } from "../components/HandleForm.js";
+import { AccountScreen } from "../components/AccountScreen.js";
+import type { OwnHandleView } from "../components/HandleForm.js";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Your account — Bullpen", robots: { index: false } };
@@ -21,11 +22,5 @@ export default async function AccountPage(): Promise<ReactNode> {
       unavailable = true;
     }
   }
-  return (
-    <main className="bp-app">
-      <h1>Your account</h1>
-      <p><a href="/">Back to the terminal</a></p>
-      {!player ? <p>Sign in with GitHub on the terminal to set a handle. Until you do, and until a handle is approved, you appear as “Player” and four characters.</p> : unavailable ? <p role="alert">Handles are not available right now. Try again in a moment.</p> : <HandleForm initial={own} label={player.label} />}
-    </main>
-  );
+  return <AccountScreen player={player} own={own} unavailable={unavailable} />;
 }

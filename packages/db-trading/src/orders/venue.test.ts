@@ -33,6 +33,16 @@ describe("a stock fills in whole shares", () => {
     }
   });
 
+  it("every stock fill is a whole number of shares and the parts sum to the order, for many order sizes and 40 seeds each", async () => {
+    for (const quantity of ["2", "3", "7", "13", "50", "200", "999", "1000"]) {
+      for (let seed = 1; seed <= 40; seed += 1) {
+        const sizes = await fillsOf("end-of-day", quantity, seed * 7919);
+        for (const size of sizes) expect(units(size) % UNIT, `${quantity} shares, seed ${seed * 7919}: ${size}`).toBe(0n);
+        expect(sizes.reduce((sum, size) => sum + units(size), 0n), `${quantity} shares, seed ${seed * 7919}`).toBe(BigInt(quantity) * UNIT);
+      }
+    }
+  });
+
   it("with every fill partial, a 200-share order still ends in more than one fill and never a fraction", async () => {
     const sizes = await fillsOf("end-of-day", "200", 7);
     expect(sizes.length).toBeGreaterThan(1);

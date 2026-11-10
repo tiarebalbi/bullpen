@@ -132,29 +132,14 @@ export function clockLabel(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date(iso));
 }
 
-/** A crypto symbol, as the price contract writes it ("BTC-USD"); everything else the terminal trades is a stock. */
-export const isCryptoSymbol = (symbol: string): boolean => symbol.endsWith("-USD");
-
-/**
- * A fill's quantity for a line that must not wrap. A stock is a whole number of shares ("200"); a crypto quantity keeps its decimals, at most 8, with no trailing zeros
- * ("0.25"). A stock fill that is not whole (one booked before the simulator filled in whole shares: 116.83359884) is drawn as the nearest whole share, and
- * `fillExactQuantity` gives its exact figure for the tooltip. Less than one share stays as it is, to 4 places.
- */
-export function fillQuantityLabel(symbol: string, quantity: string): string {
-  if (isCryptoSymbol(symbol)) return quantityLabel(quantity);
-  const value = Number(quantity);
-  if (Number.isInteger(value)) return String(value);
-  return value >= 1 ? String(Math.round(value)) : String(Number(value.toFixed(4)));
-}
-
-/** The quantity as booked, for a tooltip: no rounding, no trailing zeros. */
-export const fillExactQuantity = (quantity: string): string => quantityLabel(quantity);
-
 const fillPriceFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** One recent fill as a line, as in the design: `18:03:00  Buy 20 AAPL  @ 236.10`. */
+/**
+ * One recent fill as a line, as in the design: `18:03:00  Buy 20 AAPL  @ 236.10`. The quantity is the stored one with its trailing zeros trimmed ("200", "0.25",
+ * "116.83359884"): never rounded, whatever the symbol, so a fraction that was booked is a fraction that is shown.
+ */
 export function fillLine(f: FillView): { time: string; side: string; quantity: string; symbol: string; price: string } {
-  return { time: clockLabel(f.executedAt), side: "Buy", quantity: fillQuantityLabel(f.symbol, f.quantity), symbol: f.symbol.replace("-USD", ""), price: fillPriceFormat.format(Number(f.price)) };
+  return { time: clockLabel(f.executedAt), side: "Buy", quantity: quantityLabel(f.quantity), symbol: f.symbol.replace("-USD", ""), price: fillPriceFormat.format(Number(f.price)) };
 }
 
 /** The order the active panel draws: the player's latest, with the events that belong to it. Null before the first order. */

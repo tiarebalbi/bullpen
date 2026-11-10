@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { TerminalHeader, TerminalShell, ThemeToggle, handleInitials, useTheme } from "@bullpen/ui";
+import { TerminalShell } from "@bullpen/ui";
 import type { AccountView, LeaderboardSnapshot, PriceSnapshot, StockPriceSnapshot } from "@bullpen/contracts";
 import { signInWithProvider } from "../lib/auth/actions.js";
-import { formatMoney } from "../lib/trading/orderView.js";
 import { approvedHandleOf, cancellableOrderId, rankLabel } from "../lib/trading/terminalView.js";
 import { useAccount } from "../lib/trading/useAccount.js";
 import { useTerminalShortcuts } from "../lib/trading/useTerminalShortcuts.js";
@@ -12,40 +11,15 @@ import { usePolled, type Polled } from "../lib/usePolled.js";
 import { useWide } from "../lib/useWide.js";
 import { AccountPanels, OrdersAndLeaderboard, Orders } from "./AccountPanels.js";
 import { ActiveOrderPanel } from "./ActiveOrder.js";
+import { HeaderBar } from "./AppHeader.js";
 import { Leaderboard } from "./Leaderboard.js";
 import { OrderTicket, TradeBar } from "./OrderTicket.js";
-import { PaletteToggle } from "./PaletteToggle.js";
 import { RecentFills } from "./RecentFills.js";
 import { ShortcutsSheet } from "./ShortcutsSheet.js";
 import { SymbolDetail } from "./SymbolDetail.js";
-import { BTC_SYMBOL, CryptoSection, MarketStatus, StocksSection } from "./Watchlist.js";
+import { BTC_SYMBOL, CryptoSection, StocksSection } from "./Watchlist.js";
 
-/**
- * The signed-in player in the header: a tile and the "Player ####" label, never a GitHub name or picture. The tile's two characters come from the player's approved
- * handle once there is one (their own, which the ranking shows to everyone), and from the end of the label until then.
- */
-export function AvatarSlot({ label, approvedHandle = null }: { label: string; approvedHandle?: string | null }): ReactNode {
-  return (
-    <span className="bp-avatar" role="img" aria-label={`Signed in as ${label}`}>
-      <span className="bp-avatar__tile" aria-hidden="true">{approvedHandle ? handleInitials(approvedHandle) : label.slice(-2)}</span>
-      <span className="bp-avatar__label" aria-hidden="true">{label}</span>
-    </span>
-  );
-}
-
-/** Equity and rank, only from what the account and the leaderboard say. No change for today: there is no intraday equity history. */
-export function HeaderFigures({ equity, rank }: { equity: string | null; rank: string | null }): ReactNode {
-  return (
-    <>
-      {equity !== null ? (
-        <span className="bp-terminal__stat"><span>Equity</span><strong>{formatMoney(equity)}</strong></span>
-      ) : null}
-      {rank !== null ? (
-        <span className="bp-terminal__stat"><span>Rank</span><strong>{rank}</strong></span>
-      ) : null}
-    </>
-  );
-}
+export { AvatarSlot, HeaderFigures } from "./AppHeader.js";
 
 /** The last stored price of a stock; Bitcoin and a stock with no price have none to order against. */
 function storedPrice(stocks: Polled<StockPriceSnapshot>, symbol: string): string | null {
@@ -60,20 +34,6 @@ function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceS
     stocks: usePolled<StockPriceSnapshot>("/api/stock-prices", 5 * 60_000, "Stock prices unavailable."),
     leaderboard: usePolled<LeaderboardSnapshot>("/api/leaderboard", 60_000, "Leaderboard unavailable."),
   };
-}
-
-/** The header's right side: the player's figures, the feeds, the toggles and the avatar slot. */
-function HeaderBar({ view, rank, approvedHandle, crypto }: { view: AccountView | null; rank: string | null; approvedHandle: string | null; crypto: Polled<PriceSnapshot> }): ReactNode {
-  const [theme, toggleTheme] = useTheme();
-  return (
-    <TerminalHeader title="Trading app">
-      <HeaderFigures equity={view ? view.equity : null} rank={rank} />
-      <MarketStatus crypto={crypto} />
-      <PaletteToggle />
-      <ThemeToggle theme={theme} onToggle={toggleTheme} />
-      {view ? <AvatarSlot label={view.label} approvedHandle={approvedHandle} /> : null}
-    </TerminalHeader>
-  );
 }
 
 /** The active order and the recent fills: in the rail on the desktop frame, in the main column on a phone. */

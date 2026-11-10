@@ -44,6 +44,30 @@ describe("LeaderboardRow", () => {
     expect(container.textContent).not.toMatch(/[▲▼%]/);
   });
 
+  it("with a full sentence, the short line is what is seen and the sentence is what is read and the tooltip, on one line", () => {
+    render(
+      <LeaderboardList label="x">
+        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} you note="Handle in review" noteFull="Your handle is waiting for review. Until it is approved you show as above." />
+      </LeaderboardList>,
+    );
+    const note = screen.getByTestId("leaderboard-own-note");
+    expect(note.querySelector("[aria-hidden='true']")).toHaveTextContent("Handle in review");
+    expect(note.querySelector(".bp-visually-hidden")).toHaveTextContent("Your handle is waiting for review. Until it is approved you show as above.");
+    expect(note).toHaveAttribute("title", "Your handle is waiting for review. Until it is approved you show as above.");
+    expect(note.style.whiteSpace).toBe("nowrap");
+    expect(note.style.position).toBe("relative"); // the hidden sentence is absolutely positioned: it must stay in the row
+  });
+
+  it("gives the monogram tile a class a narrow column can hide, and keeps it out of the accessible tree", () => {
+    const { container } = render(
+      <LeaderboardList label="x">
+        <LeaderboardRow rank={1} handle="Player 4F2A" equity={10} cash={10} />
+      </LeaderboardList>,
+    );
+    const tile = container.querySelector(".bp-leaderboard-row__avatar");
+    expect(tile).toHaveAttribute("aria-hidden", "true");
+  });
+
   it("shows a note under the name only when one is given, and says it in words", () => {
     const { rerender } = render(
       <LeaderboardList label="x">

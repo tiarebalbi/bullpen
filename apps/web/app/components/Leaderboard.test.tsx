@@ -136,15 +136,25 @@ describe("ageLabel", () => {
     });
 
     it.each([
-      ["review", "Your handle is waiting for review."],
-      ["pending", "Your handle is waiting for review."],
-      ["rejected", "Your handle was not approved. Try another."],
-    ] as const)("tells the player alone, on their own row, where a %s handle stands", (status, text) => {
+      ["review", "Handle in review", "Your handle is waiting for review. Until it is approved you show as above."],
+      ["pending", "Handle in review", "Your handle is waiting for review. Until it is approved you show as above."],
+      ["rejected", "Handle not approved", "Your handle was not approved. Try another."],
+    ] as const)("tells the player alone, on their own row, in one short line, where a %s handle stands, with the whole sentence for a screen reader and the tooltip", (status, short, full) => {
       render(<Leaderboard polled={ok(withViewer({ accountId: "a2", handle: { status, approved: null } }))} />);
       const notes = screen.getAllByTestId("leaderboard-own-note");
       expect(notes).toHaveLength(1);
-      expect(notes[0]).toHaveTextContent(text);
       expect(screen.getAllByRole("listitem")[1]).toContainElement(notes[0]!);
+      // what is seen: the short line only
+      expect(notes[0]!.querySelector("[aria-hidden='true']")).toHaveTextContent(new RegExp(`^${short}$`));
+      // what is read and what the tooltip says: the whole sentence
+      expect(notes[0]!.querySelector(".bp-visually-hidden")).toHaveTextContent(full);
+      expect(notes[0]).toHaveAttribute("title", full);
+      expect(screen.getByText(full)).toBeInTheDocument();
+    });
+
+    it("a short line is what ownNote gives for the row, and the full sentence beside it", () => {
+      expect(ownNote({ accountId: "a2", handle: { status: "review", approved: null } })).toEqual({ short: "Handle in review", full: "Your handle is waiting for review. Until it is approved you show as above." });
+      expect(ownNote({ accountId: "a2", handle: { status: "rejected", approved: null } })?.short).toBe("Handle not approved");
     });
 
     it("says nothing on the row for an approved handle or none: it reads as every other row", () => {

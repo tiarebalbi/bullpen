@@ -276,21 +276,22 @@ a {
   font-variant-numeric: tabular-nums;
 }
 .bp-fills li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  /* Sized so the longest line a crypto fill makes ("14:50:00 Buy 0.25 BTC @ 108,900.00") fits the rail at 1440 without being cut. */
-  gap: 0.375rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  /* Sized so the longest line a crypto fill makes ("14:50:00 Buy 0.25 BTC @ 108,900.00") fits the rail at 1440. A quantity that is longer (a stock fill booked with a fraction before
+     fills were whole shares) is shown whole: nothing is cut or rounded, and the price moves to the next line, at the right. */
+  column-gap: 0.375rem;
   white-space: nowrap;
 }
-.bp-fills__what {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.bp-fills li time {
+  flex: none;
 }
-.bp-fills time {
-  color: var(--foreground-muted);
+.bp-fills__what {
+  flex: 0 1 auto;
 }
 .bp-fills__price {
+  margin-left: auto;
   text-align: right;
 }
 

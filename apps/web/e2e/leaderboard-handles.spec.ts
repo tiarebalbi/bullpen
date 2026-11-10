@@ -48,13 +48,22 @@ test("the player's row is marked You, and says a handle in review is waiting, to
   const mine = board(page).getByRole("listitem").filter({ hasText: "You" });
   await expect(mine).toHaveCount(1);
   await expect(mine).toContainText("Player 4F2A");
-  await expect(mine).toContainText("Your handle is waiting for review");
-  await expect(board(page).getByRole("listitem").filter({ hasText: "ada" })).not.toContainText("waiting for review");
+  const note = mine.getByTestId("leaderboard-own-note");
+  await expect(note).toContainText("Handle in review");
+  // one short line, not a paragraph in the narrower column; the whole sentence is the tooltip and what a screen reader reads
+  expect((await note.boundingBox())!.height).toBeLessThan(20);
+  // and read in full: the short line is not cut off by an ellipsis in the narrower column
+  expect(await note.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  await expect(note).toHaveAttribute("title", "Your handle is waiting for review. Until it is approved you show as above.");
+  await expect(board(page).getByRole("listitem").filter({ hasText: "ada" })).not.toContainText("Handle in review");
 });
 
 test("a handle that was not approved says so on the player's row: try another", async ({ page }) => {
   await open(page, { signedIn: true, viewer: { accountId: ME, handle: { status: "rejected", approved: null } } });
-  await expect(board(page).getByRole("listitem").filter({ hasText: "You" })).toContainText("Your handle was not approved. Try another.");
+  const note = board(page).getByRole("listitem").filter({ hasText: "You" }).getByTestId("leaderboard-own-note");
+  await expect(note).toContainText("Handle not approved");
+  expect((await note.boundingBox())!.height).toBeLessThan(20);
+  await expect(note).toHaveAttribute("title", "Your handle was not approved. Try another.");
 });
 
 test("an approved handle shows as everyone sees it, the row is still marked You, and the avatar and rank follow it", async ({ page }) => {

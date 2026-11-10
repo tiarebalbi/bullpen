@@ -1188,3 +1188,154 @@ html[data-consent-open] body {
     animation: none;
   }
 }
+
+/* ──────────────────────────────────────────────
+   Pages in the terminal's frame (account, handle review): the header of the terminal over one column. The card, the field, the button and the text sizes
+   are the design system's ("Bullpen League Admin and System", "Bullpen Portfolio and Leaderboard"): a borderless input on a 2px --bp-hair rule that turns --ember on
+   focus, a 10.5px uppercase label, a pill button, 14px body text.
+   ────────────────────────────────────────────── */
+.bp-terminal.bp-page {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+  min-height: 0;
+}
+.bp-page .bp-terminal__header {
+  grid-area: auto;
+}
+.bp-page__main {
+  min-width: 0;
+  padding: var(--space-5);
+}
+.bp-page__body {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  max-width: 44rem;
+  font: 400 14px/1.55 var(--font-body);
+  color: var(--foreground);
+}
+.bp-page__body p {
+  margin: 0;
+}
+.bp-page__title {
+  margin: 0;
+  font: 500 28px/1.15 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.bp-page__back {
+  font: 600 13px/1.3 var(--font-body);
+}
+.bp-page__back a {
+  color: var(--bp-accent-text);
+}
+.bp-page .bp-panel {
+  padding: var(--space-5) !important;
+}
+.bp-field {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 32.5rem;
+}
+.bp-field__label {
+  font: 600 10.5px/1 var(--font-body);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+.bp-input {
+  height: 3rem;
+  border: 0;
+  border-bottom: 2px solid var(--bp-hair);
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: var(--foreground);
+  font: 500 19px/1 var(--font-body);
+  outline: none;
+}
+.bp-input:focus-visible {
+  border-bottom-color: var(--ember);
+}
+.bp-input[aria-invalid="true"] {
+  border-bottom-color: var(--bp-loss);
+}
+.bp-field__help {
+  font: 400 13px/1.5 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-page .bp-btn {
+  min-height: 44px;
+  font-size: 14px;
+}
+/* Reject reads against the card in both themes: the words are the foreground, the red is the fill and the rule, so the contrast does not depend on the red. */
+.bp-page .bp-btn--destructive:not(:disabled) {
+  background: color-mix(in oklch, var(--destructive) 20%, var(--bp-panel)) !important;
+  color: var(--foreground) !important;
+  box-shadow: inset 0 0 0 1.5px var(--destructive);
+}
+.bp-page .bp-btn:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.bp-review {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.bp-review__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--bp-hair);
+}
+.bp-review__row:first-child {
+  border-top: 0;
+}
+.bp-review__who {
+  font: 600 15px/1.3 var(--font-mono);
+}
+.bp-review__meta {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font: 500 12.5px/1.4 var(--font-mono);
+  color: var(--foreground-muted);
+}
+.bp-review__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+@media (min-width: 64rem) {
+  .bp-page__main {
+    padding: var(--space-6);
+  }
+}
+
+/* The ranking in a narrow column (side by side with the orders): the list is the container, and under 18.5rem the monogram tile gives its place to the name, so a name and the
+   one-line note under the player's row are read in full. */
+.bp-leaderboard-list {
+  container-type: inline-size;
+}
+@container (max-width: 18.5rem) {
+  .bp-leaderboard-row {
+    grid-template-columns: 24px minmax(0, 1fr) auto !important;
+  }
+  .bp-leaderboard-row__avatar {
+    display: none !important;
+  }
+}
+/* A card's text in the pages frame: the same size and the same space between a paragraph and what follows. */
+.bp-page .bp-panel p {
+  margin: 0;
+  font: 400 14px/1.55 var(--font-body);
+}
+.bp-page .bp-panel > header + * {
+  margin-top: 0;
+}
+.bp-page .bp-panel > p + *,
+.bp-page .bp-panel > ul + *,
+.bp-page .bp-panel > form + * {
+  margin-top: var(--space-4);
+}

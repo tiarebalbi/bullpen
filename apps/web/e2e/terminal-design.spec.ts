@@ -90,7 +90,7 @@ for (const viewport of [
   test.describe(`Recent fills and the watchlist at ${viewport.label}`, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
-    test("each fill is one line, `time Buy 20 AAPL @ 236.10`, and nothing is cut or wrapped", async ({ page }) => {
+    test("each fill is `time Buy 20 AAPL @ 236.10` on one line, the stored quantity is shown as stored, and nothing is cut", async ({ page }) => {
       await open(page);
       const fills = page.getByRole("list", { name: "Recent fills" }).getByRole("listitem");
       await expect(fills).toHaveCount(10);
@@ -103,14 +103,19 @@ for (const viewport of [
         }),
       );
       for (const line of lines) {
-        expect(line.height, `${line.text} is one line`).toBeLessThan(26);
+        // nothing is ever cut or wider than its row
         expect(line.fits, `${line.text} fits`).toBe(true);
         expect(line.whatCut, `${line.text} is not cut off`).toBe(false);
+        // a line is one line, except a stock fill booked with a fraction, whose whole quantity is shown and whose price then sits on the next line
+        const fraction = /\d+\.\d{4,}\s*GOOGL/.test(line.text);
+        if (!fraction) expect(line.height, `${line.text} is one line`).toBeLessThan(26);
       }
       const texts = lines.map((l) => l.text);
       expect(texts.some((t) => /Buy 0\.25 BTC\s*@ 108,900\.00/.test(t))).toBe(true); // crypto: its own decimals
-      expect(texts.some((t) => /Buy 117 GOOGL/.test(t))).toBe(true); // a stock: whole shares
-      expect(texts.join(" ")).not.toContain("116.8335");
+      // a fraction that was booked is shown as booked, never rounded to a whole share
+      expect(texts.some((t) => /Buy 116\.83359884 GOOGL/.test(t))).toBe(true);
+      expect(texts.some((t) => /Buy 83\.16640116 GOOGL/.test(t))).toBe(true);
+      expect(texts.join(" ")).not.toMatch(/Buy 117 GOOGL|Buy 83 GOOGL/);
     });
 
     test("every watchlist row has one height and one sub-line; a held position says '30 held' and keeps the date in its tooltip and name", async ({ page }) => {
