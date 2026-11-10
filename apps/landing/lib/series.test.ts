@@ -31,9 +31,9 @@ describe("parseSeries", () => {
     // Part 4 is published, with its post's address, headline and publish date; Part 5 is the next one.
     expect(parts[3]).toMatchObject({ part: 4, status: "published", url: "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services", date: "2026-10-26", headline: "The Saga Pattern Is About Time, Not Services" });
     // The bonus is next and has no part number; Part 5 and Part 6 are planned, each with a planned date and no real one.
-    expect(parts[4]).toEqual({ kind: "bonus", moment: "bonus-handles", title: "Changing the plan mid-flight", status: "next", url: "", date: null, plannedDate: "2026-11-09", introduced: "Player handles, moderated through a planned change" });
-    expect(parts[5]).toMatchObject({ part: 5, status: "planned", url: "", date: null, plannedDate: "2026-11-16" });
-    expect(parts[6]).toMatchObject({ part: 6, status: "planned", url: "", date: null, plannedDate: "2026-11-23" });
+    expect(parts[4]).toEqual({ kind: "bonus", moment: "bonus-handles", title: "Changing the plan mid-flight", status: "next", url: "", date: null, plannedDate: "2026-11-11", introduced: "Player handles, moderated through a planned change" });
+    expect(parts[5]).toMatchObject({ part: 5, status: "planned", url: "", date: null, plannedDate: "2026-11-23" });
+    expect(parts[6]).toMatchObject({ part: 6, status: "planned", url: "", date: null, plannedDate: "2026-11-30" });
     for (const part of parts) {
       expect(part.title.length).toBeGreaterThan(0);
       expect(part.introduced.length).toBeGreaterThan(0);
@@ -231,14 +231,14 @@ describe("parseSeries: the bonus and planned dates", () => {
   });
 
   it("accepts a planned date on an unpublished entry, and keeps it apart from the real date", () => {
-    const [part] = parseSeries(entries({ part: 5, ...base, status: "planned", plannedDate: "2026-11-16" }));
-    expect(part).toMatchObject({ date: null, plannedDate: "2026-11-16" });
+    const [part] = parseSeries(entries({ part: 5, ...base, status: "planned", plannedDate: "2026-11-23" }));
+    expect(part).toMatchObject({ date: null, plannedDate: "2026-11-23" });
     const [none] = parseSeries(entries({ part: 5, ...base, status: "planned" }));
     expect("plannedDate" in none!).toBe(false);
   });
 
   it("refuses a planned date that is not a date, or that sits on a published entry", () => {
-    for (const plannedDate of ["Nov 16", "2026-13-40", 20261116, null]) {
+    for (const plannedDate of ["Nov 23", "2026-13-40", 20261123, null]) {
       expect(() => parseSeries(entries({ part: 5, ...base, status: "planned", plannedDate }))).toThrow(/invalid "plannedDate"/);
     }
     const published = { part: 1, title: "T", introduced: "Y", status: "published", url: "https://x.test/a", date: "2026-10-04" };
@@ -248,8 +248,8 @@ describe("parseSeries: the bonus and planned dates", () => {
 
 describe("formatPlannedDate", () => {
   it("shows the day without a year, in UTC, with the bonus's prefix on request", () => {
-    expect(formatPlannedDate("2026-11-16")).toBe("Nov 16");
-    expect(formatPlannedDate("2026-11-09", true)).toBe("Planned · Nov 9");
     expect(formatPlannedDate("2026-11-23")).toBe("Nov 23");
+    expect(formatPlannedDate("2026-11-11", true)).toBe("Planned · Nov 11");
+    expect(formatPlannedDate("2026-11-30")).toBe("Nov 30");
   });
 });

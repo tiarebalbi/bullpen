@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // The series section as it stands: Parts 1 to 4 published, each with its date and a link that opens its post; the bonus (ADR-0027) next, between
-// Part 4 and Part 5, planned for Nov 9; Parts 5 and 6 planned, with their planned dates. The facts are the ones in content/series.json.
+// Part 4 and Part 5, planned for Nov 11; Parts 5 and 6 planned, with their planned dates. The facts are the ones in content/series.json.
 
 const POST_1 = "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026";
 const POST_2 = "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember";
@@ -107,7 +107,7 @@ for (const viewport of [
       await expect(cards.nth(5)).toContainText("Part 5");
     });
 
-    test("the bonus is next: a diamond and 'Bonus · Detour' instead of a part number, 'Planned · Nov 9', no link", async ({ page }) => {
+    test("the bonus is next: a diamond and 'Bonus · Detour' instead of a part number, 'Planned · Nov 11', no link", async ({ page }) => {
       const card_ = bonus(page);
       await expect(card_).toContainText("Bonus · Detour");
       await expect(card_.locator("svg[aria-hidden='true']")).toHaveCount(1);
@@ -115,8 +115,8 @@ for (const viewport of [
       await expect(card_).toContainText("Changing the plan mid-flight");
       await expect(card_).toContainText("Player handles, moderated through a planned change");
       await expect(card_.locator(".bp-chip")).toHaveText("Next");
-      await expect(card_.locator("time")).toHaveText("Planned · Nov 9");
-      await expect(card_.locator("time")).toHaveAttribute("datetime", "2026-11-09");
+      await expect(card_.locator("time")).toHaveText("Planned · Nov 11");
+      await expect(card_.locator("time")).toHaveAttribute("datetime", "2026-11-11");
       await expect(card_).not.toContainText("Not yet published");
       await expect(card_.getByRole("link")).toHaveCount(0);
     });
@@ -140,8 +140,8 @@ for (const viewport of [
     });
 
     for (const planned of [
-      { part: 5, date: "Nov 16" },
-      { part: 6, date: "Nov 23" },
+      { part: 5, date: "Nov 23" },
+      { part: 6, date: "Nov 30" },
     ]) {
       test(`Part ${planned.part} is planned: the Planned chip, a planned date set apart from a publish date, no link`, async ({ page }) => {
         const card_ = card(page, planned.part);

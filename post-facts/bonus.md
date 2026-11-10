@@ -165,7 +165,7 @@ Nothing in the code crossed a rule on its own: no trading or market-data file im
 ## 14. The schedule effect
 
 Roughly two hours and ten minutes of build time (my own estimate of the split, from the commit times) on 2026-11-01, from the go to a draft PR, spread over six pieces: the data owner and moderation (about 40 minutes), the ADL, checks and records (35), the labelled set and script (10), and the landing (45, the most of it e2e and layout work). Part 5
-(Nov 16) is not at risk from the build. It is at risk from the four things only the owner can do before merge, in order (see the PR): create `handles_owner`, set `DATABASE_URL_HANDLES`, add the admin id, set the gateway budget. A production build applies migrations (ADR-0023),
+(Nov 23, after the schedule slipped from Nov 16) is not at risk from the build. It was at risk from the four things only the owner can do before merge, in order (see the PR): create `handles_owner`, set `DATABASE_URL_HANDLES`, add the admin id, set the gateway budget. On 2026-11-10 the owner reported three done (`handles_owner` created with `db:create-roles`, `DATABASE_URL_HANDLES` set for Production, a $5 gateway budget with an alert at 75%); the admin id is the one still open here. A production build applies migrations (ADR-0023),
 so merging before the role exists fails the build. The measurement is the one open item that can still change a number in the post.
 
 ## Other things worth knowing

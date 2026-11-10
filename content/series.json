@@ -42,7 +42,7 @@
     "status": "next",
     "url": "",
     "date": null,
-    "plannedDate": "2026-11-09",
+    "plannedDate": "2026-11-11",
     "introduced": "Player handles, moderated through a planned change"
   },
   {
@@ -52,7 +52,7 @@
     "url": "",
     "date": null,
     "introduced": "A load test, and cost as a check",
-    "plannedDate": "2026-11-16"
+    "plannedDate": "2026-11-23"
   },
   {
     "part": 6,
@@ -61,6 +61,6 @@
     "url": "",
     "date": null,
     "introduced": "The diff and the full bill",
-    "plannedDate": "2026-11-23"
+    "plannedDate": "2026-11-30"
   }
 ]

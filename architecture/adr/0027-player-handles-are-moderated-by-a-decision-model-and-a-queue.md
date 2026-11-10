@@ -20,7 +20,7 @@ Bonus
 
 Part 4 (ADR-0020) shows every player as a neutral label, "Player" and four hash characters, and never shows a GitHub login. Handles were left for later on purpose.
 This is the later: one requirement that arrived while Part 5 was being planned, costed and scoped before it was built. A public name is text a stranger typed and every
-other player reads, so the requirement is a moderation problem before it is a feature. The owner approved the direction and the scope on 2026-11-01, before the build began, which is why this ADR is Accepted and dated that day. The brief approved the dates: the bonus on 2026-11-09, Part 5 on 2026-11-16 and Part 6 on 2026-11-23.
+other player reads, so the requirement is a moderation problem before it is a feature. The owner approved the direction and the scope on 2026-11-01, before the build began, which is why this ADR is Accepted and dated that day. The brief approved the dates: the bonus on 2026-11-11, Part 5 on 2026-11-23 and Part 6 on 2026-11-30, slipped from 11-09, 11-16 and 11-23.
 
 ## Change request
 

@@ -82,7 +82,7 @@ describe("SeriesCard: the bonus", () => {
   const card = (container: HTMLElement) => container.querySelector(".bp-series-card") as HTMLElement;
 
   it("has a diamond and 'Bonus · Detour' where a part has its number, and no part number", () => {
-    const { container } = render(<SeriesCard bonus title="Changing the plan mid-flight" status="next" introduced="X" plannedLabel="Planned · Nov 9" plannedDate="2026-11-09" />);
+    const { container } = render(<SeriesCard bonus title="Changing the plan mid-flight" status="next" introduced="X" plannedLabel="Planned · Nov 11" plannedDate="2026-11-11" />);
     expect(screen.getByText("Bonus · Detour")).toBeInTheDocument();
     expect(container.querySelector("svg[aria-hidden='true']")).not.toBeNull();
     expect(screen.queryByText(/^Part \d/)).not.toBeInTheDocument();
@@ -103,27 +103,27 @@ describe("SeriesCard: the bonus", () => {
   });
 
   it("next: the Next chip, a planned date that says Planned, no link and no 'Not yet published'", () => {
-    render(<SeriesCard bonus title="T" status="next" introduced="X" plannedLabel="Planned · Nov 9" plannedDate="2026-11-09" />);
+    render(<SeriesCard bonus title="T" status="next" introduced="X" plannedLabel="Planned · Nov 11" plannedDate="2026-11-11" />);
     expect(screen.getByText("Next")).toBeInTheDocument();
-    const planned = screen.getByText("Planned · Nov 9");
+    const planned = screen.getByText("Planned · Nov 11");
     expect(planned.tagName).toBe("TIME");
-    expect(planned).toHaveAttribute("datetime", "2026-11-09");
+    expect(planned).toHaveAttribute("datetime", "2026-11-11");
     expect(screen.queryByText("Not yet published")).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("published: the real date and the link, and no planned date even if one is passed", () => {
-    render(<SeriesCard bonus title="T" status="published" introduced="X" date="2026-11-09" dateLabel="Nov 9, 2026" href="https://tiarebalbi.com/en/blog/the-bonus" plannedLabel="Planned · Nov 9" plannedDate="2026-11-09" />);
+    render(<SeriesCard bonus title="T" status="published" introduced="X" date="2026-11-11" dateLabel="Nov 11, 2026" href="https://tiarebalbi.com/en/blog/the-bonus" plannedLabel="Planned · Nov 11" plannedDate="2026-11-11" />);
     expect(screen.getByText("Published")).toBeInTheDocument();
-    expect(screen.getByText("Nov 9, 2026")).toBeInTheDocument();
+    expect(screen.getByText("Nov 11, 2026")).toBeInTheDocument();
     expect(screen.queryByText(/Planned · /)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "See it →" })).toHaveAttribute("href", "https://tiarebalbi.com/en/blog/the-bonus");
   });
 
   it("planned: the Planned chip and a date that is set apart from a published one", () => {
-    render(<SeriesCard bonus title="T" status="planned" introduced="X" plannedLabel="Planned · Nov 9" plannedDate="2026-11-09" />);
+    render(<SeriesCard bonus title="T" status="planned" introduced="X" plannedLabel="Planned · Nov 11" plannedDate="2026-11-11" />);
     expect(screen.getAllByText("Planned")).toHaveLength(1);
-    const planned = screen.getByText("Planned · Nov 9");
+    const planned = screen.getByText("Planned · Nov 11");
     expect(styleOf(planned)).toContain("dashed");
     expect(styleOf(planned)).toContain("italic");
   });
@@ -131,10 +131,10 @@ describe("SeriesCard: the bonus", () => {
 
 describe("SeriesCard: a planned date on a numbered part", () => {
   it("shows the date alone, set apart, with 'Planned for' for a screen reader", () => {
-    render(<SeriesCard part={5} title="T" status="planned" introduced="X" plannedLabel="Nov 16" plannedDate="2026-11-16" />);
-    const time = screen.getByText("Nov 16", { exact: false });
-    expect(time.closest("time")).toHaveAttribute("datetime", "2026-11-16");
-    expect(time.closest("time")!.textContent).toBe("Planned for Nov 16");
+    render(<SeriesCard part={5} title="T" status="planned" introduced="X" plannedLabel="Nov 23" plannedDate="2026-11-23" />);
+    const time = screen.getByText("Nov 23", { exact: false });
+    expect(time.closest("time")).toHaveAttribute("datetime", "2026-11-23");
+    expect(time.closest("time")!.textContent).toBe("Planned for Nov 23");
     expect(screen.queryByText("Not yet published")).not.toBeInTheDocument();
     expect(styleOf2(time.closest("time")!)).toContain("dashed");
     // the hidden text is placed against the date, which is positioned, so it cannot widen a scrolling rail
@@ -142,9 +142,9 @@ describe("SeriesCard: a planned date on a numbered part", () => {
   });
 
   it("never shows a planned date as a published one: a part with a real date shows only that", () => {
-    render(<SeriesCard part={1} title="T" status="published" introduced="X" date="2026-10-04" dateLabel="Oct 4, 2026" plannedLabel="Nov 16" plannedDate="2026-11-16" href="https://x.test" />);
+    render(<SeriesCard part={1} title="T" status="published" introduced="X" date="2026-10-04" dateLabel="Oct 4, 2026" plannedLabel="Nov 23" plannedDate="2026-11-23" href="https://x.test" />);
     expect(screen.getByText("Oct 4, 2026")).toBeInTheDocument();
-    expect(screen.queryByText(/Nov 16/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Nov 23/)).not.toBeInTheDocument();
   });
 });
 

@@ -34,14 +34,14 @@ describe("SeriesRail with the real series", () => {
     expect(labels).toEqual(["1", "2", "3", "4", "bonus", "5", "6"]);
   });
 
-  it("shows the bonus as next with 'Planned · Nov 9' and the two parts after it as planned with their dates", () => {
+  it("shows the bonus as next with 'Planned · Nov 11' and the two parts after it as planned with their dates", () => {
     expect(cards[4]).toContain("Bonus · Detour");
     expect(cards[4]).toContain("Next");
-    expect(cards[4]).toContain("Planned · Nov 9");
-    expect(cards[4]).toContain('dateTime="2026-11-09"');
+    expect(cards[4]).toContain("Planned · Nov 11");
+    expect(cards[4]).toContain('dateTime="2026-11-11"');
     expect(cards[5]).toContain("Planned for ");
-    expect(cards[5]).toContain(">Nov 16<");
-    expect(cards[6]).toContain(">Nov 23<");
+    expect(cards[5]).toContain(">Nov 23<");
+    expect(cards[6]).toContain(">Nov 30<");
     for (const card of cards.slice(5)) expect(card).not.toContain("Next");
   });
 

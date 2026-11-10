@@ -30,7 +30,7 @@ describe("formatLongDate", () => {
 
 describe("latestPublishedDate and planned dates", () => {
   it("ignores a planned date, which is later than every published one", () => {
-    const planned: SeriesPart = { ...part(5, "planned", null), plannedDate: "2026-11-16" };
+    const planned: SeriesPart = { ...part(5, "planned", null), plannedDate: "2026-11-23" };
     expect(latestPublishedDate([part(1, "published", "2026-10-04"), planned])).toBe("2026-10-04");
     expect(latestPublishedDate([planned])).toBeNull();
   });

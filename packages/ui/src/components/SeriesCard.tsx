@@ -28,7 +28,7 @@ export interface SeriesCardProps {
   /** Rendered date text when `date` is set, e.g. "Oct 4, 2026" -- callers format it (locale-aware). */
   dateLabel?: string;
   /**
-   * When the post is planned, as text ("Planned · Nov 9", "Nov 16"), with its ISO date. Shown only while there is no published `date`, and set apart from
+   * When the post is planned, as text ("Planned · Nov 11", "Nov 23"), with its ISO date. Shown only while there is no published `date`, and set apart from
    * one: dashed, italic, in a `<time>`. A plan, never a publish date.
    */
   plannedLabel?: string;

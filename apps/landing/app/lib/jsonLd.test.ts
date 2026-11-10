@@ -117,7 +117,7 @@ describe("buildJsonLd: planned dates", () => {
   const planned = real.flatMap((entry) => (entry.plannedDate ? [entry.plannedDate] : []));
 
   it("never writes a planned date, or the word, anywhere in the graph", () => {
-    expect(planned).toEqual(["2026-11-09", "2026-11-16", "2026-11-23"]);
+    expect(planned).toEqual(["2026-11-11", "2026-11-23", "2026-11-30"]);
     for (const page of ["home", "architecture", "privacy"] as const) {
       const text = JSON.stringify(buildJsonLd(page, real));
       for (const date of planned) expect(text).not.toContain(date);
@@ -141,13 +141,13 @@ describe("buildJsonLd: planned dates", () => {
       status,
       url: status === "published" ? "https://tiarebalbi.com/en/blog/the-bonus" : "",
       introduced: "X",
-      date: status === "published" ? "2026-11-09" : null,
-      ...(status === "next" ? { plannedDate: "2026-11-09" } : {}),
+      date: status === "published" ? "2026-11-11" : null,
+      ...(status === "next" ? { plannedDate: "2026-11-11" } : {}),
     });
     const series = [part(4, "published"), bonus("published"), part(5, "planned")];
     const parts = seriesNode(series).hasPart as Array<{ headline: string; datePublished: string }>;
     expect(parts.map((p) => p.headline)).toEqual(["Part 4 title", "The Answer to a New Requirement Is a Price, Not a No"]);
-    expect(parts[1]!.datePublished).toBe("2026-11-09");
+    expect(parts[1]!.datePublished).toBe("2026-11-11");
     expect(seriesNode([part(4, "published"), bonus("next"), part(5, "planned")]).hasPart).toHaveLength(1);
   });
 });

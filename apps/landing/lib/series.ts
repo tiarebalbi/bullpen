@@ -201,8 +201,8 @@ export function formatPublishDate(iso: string): string {
 }
 
 /**
- * "2026-11-16" as "Nov 16", the planned date's format: no year, because it is a plan and not a record. Read as midnight UTC and shown in UTC like
- * formatPublishDate. The bonus's card says "Planned · Nov 9" (`prefix`); the numbered parts show the date alone, set apart in the card.
+ * "2026-11-23" as "Nov 23", the planned date's format: no year, because it is a plan and not a record. Read as midnight UTC and shown in UTC like
+ * formatPublishDate. The bonus's card says "Planned · Nov 11" (`prefix`); the numbered parts show the date alone, set apart in the card.
  */
 export function formatPlannedDate(iso: string, prefix = false): string {
   const day = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
