@@ -50,7 +50,7 @@ describe("the tick", () => {
 
   it("with every fill partial, takes several ticks, each fill has the id <order>:<n>, and the order ends filled", async () => {
     const { orderId } = await working("10");
-    // each partial fill takes a random share of what is left, so a 10-share order at 8 decimals takes a few dozen ticks to run out
+    // each partial fill takes a random share of what is left, so a 10-share order at 8 decimals takes a few dozen ticks to run out (a live price: a stock price, an end-of-day one, splits in whole shares, see orders-end-of-day.int.test.ts)
     for (let i = 0; i < 400; i += 1) {
       await tick(w.trading, venue({ partialRate: 1, seed: 5 }), new Date());
       if ((await w.order(orderId)).status === "filled") break;

@@ -56,11 +56,31 @@ export function isFillable(quote: Quote | null, now: Date, maxLiveAgeMs: number 
 }
 
 const SCALE = 8;
+const UNIT = 10n ** BigInt(SCALE);
 const toUnits = (decimal: string): bigint => {
   const [whole = "0", fraction = ""] = decimal.split(".");
   return BigInt(whole) * 10n ** BigInt(SCALE) + BigInt(fraction.padEnd(SCALE, "0").slice(0, SCALE));
 };
 const fromUnits = (units: bigint): string => `${units / 10n ** BigInt(SCALE)}.${(units % 10n ** BigInt(SCALE)).toString().padStart(SCALE, "0")}`;
+
+/**
+ * The size of a partial fill of `remaining` (1e-8 units), or null when this fill is not partial. A stock (an `end-of-day` price, ADR-0024) fills in whole
+ * shares, as a share cannot be split: the size is a whole number of shares, at least one and fewer than are left, and an order with no more than one whole share
+ * left fills in one go. Anything else keeps the 1e-8 steps of a live price. The random draw is the same either way, so a seed names the same run as before for
+ * the symbols that are not stocks.
+ */
+export function partialSize(rng: () => number, partialRate: number, remaining: bigint, kind: PriceKind): bigint | null {
+  const wantsPartial = rng() < partialRate;
+  if (kind === "end-of-day") {
+    const shares = remaining / UNIT;
+    if (!wantsPartial || shares < 2n) return null;
+    // 1 to (shares - 1) whole shares, or up to 90 % of the whole shares left, whichever is smaller (never the last share).
+    const ceiling = BigInt(Math.max(1, Math.floor(Number(shares - 1n) * 0.9)));
+    return (1n + BigInt(Math.floor(rng() * Number(ceiling)))) * UNIT;
+  }
+  if (!wantsPartial || remaining <= 1n) return null;
+  return 1n + BigInt(Math.floor(rng() * Number(remaining - 1n) * 0.9));
+}
 
 /** mulberry32: a small seeded generator, so a seed names a run. */
 export function seeded(seed: number): () => number {
@@ -173,8 +193,7 @@ export class SimulatedVenue implements Venue {
       working.held += 1;
       return null;
     }
-    const partial = this.rng() < this.partialRate && working.remaining > 1n;
-    const size = partial ? 1n + BigInt(Math.floor(this.rng() * Number(working.remaining - 1n) * 0.9)) : working.remaining;
+    const size = partialSize(this.rng, this.partialRate, working.remaining, quote.kind) ?? working.remaining;
     working.remaining -= size;
     working.nextFillAt = now.getTime() + this.fillDelayMs;
     const fill: FillEvent = { fillId: `${working.order.orderId}:${working.seq}`, orderId: working.order.orderId, quantity: fromUnits(size), price: quote.price, executedAt: now };
@@ -251,8 +270,7 @@ export class DerivedVenue implements Venue {
       const remaining = toUnits(order.open_qty);
       if (remaining <= 0n) continue;
       const rng = seeded(fnv1a(`${this.options.seed}:${order.order_id}:${order.fills}`));
-      const partial = rng() < this.partialRate && remaining > 1n;
-      const size = partial ? 1n + BigInt(Math.floor(rng() * Number(remaining - 1n) * 0.9)) : remaining;
+      const size = partialSize(rng, this.partialRate, remaining, quote.kind) ?? remaining;
       events.push({ kind: "fill", fill: { fillId: `${order.order_id}:${order.fills}`, orderId: order.order_id, quantity: fromUnits(size), price: quote.price, executedAt: now } });
     }
     return events;
