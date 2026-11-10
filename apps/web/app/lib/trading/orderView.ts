@@ -98,3 +98,30 @@ export function stepQuantity(text: string, direction: 1 | -1): string {
 export function buyLabel(symbol: string, quantity: string | null, cost: number | null): string {
   return quantity !== null && cost !== null ? `Buy ${quantityLabel(quantity)} ${symbol} · ${formatMoney(String(cost))}` : `Buy ${symbol}`;
 }
+
+/** The order rows: the open ones, then the finished ones newest first. */
+export function splitOrders(orders: OrderView[]): { open: OrderView[]; finished: OrderView[] } {
+  const newest = (a: OrderView, b: OrderView): number => Date.parse(b.createdAt) - Date.parse(a.createdAt);
+  return { open: orders.filter((o) => isOpenState(o.state)).sort(newest), finished: orders.filter((o) => !isOpenState(o.state)).sort(newest) };
+}
+
+/** How many finished orders show before "Show all". */
+export const FINISHED_SHOWN = 5;
+
+/**
+ * One short phrase for a finished order's compact row, from its own numbers: what it filled at, how much of it filled before it stopped ("10 of 30"), or "refused".
+ * The full sentence stays in `orderDetail`, which the row carries as its tooltip.
+ */
+export function orderSummary(o: OrderView): string {
+  switch (o.state) {
+    case "filled":
+      return o.avgPrice ? formatMoney(o.avgPrice) : "filled";
+    case "cancelled":
+    case "cancel_requested":
+      return `${quantityLabel(o.filledQty)} of ${quantityLabel(o.quantity)}`;
+    case "rejected":
+      return "refused";
+    default:
+      return orderDetail(o);
+  }
+}

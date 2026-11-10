@@ -131,7 +131,7 @@ for (const viewport of [
       await expect(steps.getByText("3 of 3 filled")).toBeVisible({ timeout: 15_000 });
       await expect(steps.getByText("$28.52 back in buying power")).toBeVisible();
       await expect(page.getByRole("list", { name: "Recent fills" })).toContainText("Buy 3 AAPL");
-      await expect(page.getByRole("list", { name: "Recent fills" })).toContainText("@ $190.12");
+      await expect(page.getByRole("list", { name: "Recent fills" })).toContainText("@ 190.12");
       const row = page.getByRole("row", { name: /AAPL/ });
       await expect(row).toContainText("$190.12");
       await expect(row).toContainText("$570.36");

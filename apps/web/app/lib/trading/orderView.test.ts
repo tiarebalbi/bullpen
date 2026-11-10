@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrderView } from "@bullpen/contracts";
-import { STATE_LOOK, canCancel, estimate, isOpenState, orderDetail, parseQuantity, stateLook } from "./orderView.js";
+import { FINISHED_SHOWN, STATE_LOOK, canCancel, estimate, isOpenState, orderDetail, orderSummary, parseQuantity, splitOrders, stateLook } from "./orderView.js";
 
 const order = (over: Partial<OrderView>): OrderView => ({
   orderId: "o1", symbol: "AAPL", side: "buy", type: "market", state: "accepted", quantity: "10.00000000", filledQty: "0.00000000", openQty: "10.00000000", cancelledQty: "0.00000000",
@@ -68,5 +68,39 @@ describe("the ticket's stepper and button words", () => {
     const { buyLabel } = await import("./orderView.js");
     expect(buyLabel("NVDA", "10.00000000", 1825.8)).toBe("Buy 10 NVDA · $1,825.80");
     expect(buyLabel("NVDA", null, null)).toBe("Buy NVDA");
+  });
+});
+
+describe("the order rows", () => {
+  const at = (minutes: number) => new Date(Date.UTC(2026, 9, 20, 10, minutes)).toISOString();
+
+  it("open orders come first and finished ones follow, each group newest first", () => {
+    const orders = [
+      order({ orderId: "old-filled", state: "filled", createdAt: at(1) }),
+      order({ orderId: "working", state: "working", createdAt: at(5) }),
+      order({ orderId: "new-filled", state: "filled", createdAt: at(9) }),
+      order({ orderId: "partial", state: "partially_filled", createdAt: at(8) }),
+      order({ orderId: "asked", state: "cancel_requested", createdAt: at(3) }),
+      order({ orderId: "cancelled", state: "cancelled", createdAt: at(4) }),
+    ];
+    const { open, finished } = splitOrders(orders);
+    expect(open.map((o) => o.orderId)).toEqual(["partial", "working", "asked"]);
+    expect(finished.map((o) => o.orderId)).toEqual(["new-filled", "cancelled", "old-filled"]);
+  });
+
+  it("splits nothing into nothing", () => {
+    expect(splitOrders([])).toEqual({ open: [], finished: [] });
+  });
+
+  it("five finished orders show before 'Show all'", () => {
+    expect(FINISHED_SHOWN).toBe(5);
+  });
+
+  it("a finished order's summary is one short phrase from its own numbers", () => {
+    expect(orderSummary(order({ state: "filled", avgPrice: "196.11000000" }))).toBe("$196.11");
+    expect(orderSummary(order({ state: "cancelled", filledQty: "10.00000000", quantity: "30.00000000" }))).toBe("10 of 30");
+    expect(orderSummary(order({ state: "cancelled", filledQty: "0.00000000" }))).toBe("0 of 10");
+    expect(orderSummary(order({ state: "rejected" }))).toBe("refused");
+    for (const state of ["filled", "cancelled", "rejected"] as const) expect(orderSummary(order({ state, avgPrice: "100", filledQty: "1" })).length).toBeLessThan(30);
   });
 });

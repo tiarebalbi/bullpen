@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { EmptyState, Panel } from "@bullpen/ui";
 import type { AccountView } from "@bullpen/contracts";
-import { fillLine } from "../lib/trading/terminalView.js";
+import { fillExactQuantity, fillLine } from "../lib/trading/terminalView.js";
 
 /** The last ten booked fills, newest first: time, side, quantity, symbol, price. */
 export function RecentFills({ view }: { view: AccountView }): ReactNode {
@@ -16,9 +16,9 @@ export function RecentFills({ view }: { view: AccountView }): ReactNode {
           {view.fills.map((fill) => {
             const line = fillLine(fill);
             return (
-              <li key={fill.fillId}>
+              <li key={fill.fillId} title={`${fillExactQuantity(fill.quantity)} ${fill.symbol} at ${Number(fill.price)}`}>
                 <time dateTime={fill.executedAt}>{line.time}</time>
-                <span>{line.side} {line.quantity} {line.symbol}</span>
+                <span className="bp-fills__what">{line.side} {line.quantity} {line.symbol}</span>
                 <span className="bp-fills__price">@ {line.price}</span>
               </li>
             );
