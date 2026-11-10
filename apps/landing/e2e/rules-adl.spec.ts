@@ -68,6 +68,8 @@ for (const viewport of [
 
       test("the Rules card links to the file, and a deep link to #structure-adl opens it", async ({ page }) => {
         await expect(page.locator("#rules").getByRole("link", { name: "View structure.adl" })).toHaveCount(1);
+        // The hash change is only heard once the page has hydrated; the page carries the bonus's explorer data now, so it takes a little longer.
+        await page.waitForLoadState("networkidle");
         await page.goto("/#structure-adl");
         await expect(page.getByRole("dialog")).toBeVisible();
       });

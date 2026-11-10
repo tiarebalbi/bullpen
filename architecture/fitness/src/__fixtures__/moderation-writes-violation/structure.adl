@@ -1,0 +1,10 @@
+DESCRIPTION Write ownership fixture
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Web AS apps/web
+  DEFINE LIBRARY trading AS packages/db-trading
+  DEFINE LIBRARY handles AS packages/db-handles
+
+# Handles and moderation
+ASSERT(ONLY trading WRITES trading)
+ASSERT(ONLY handles WRITES handles)

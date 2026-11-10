@@ -10,9 +10,9 @@ const usage = loadLatestUsage(join(repoRoot, "cost", "usage"));
 const BUILT_PART = 3;
 
 describe("landingAllowances", () => {
-  it("leaves Redis and Lambda off the landing and keeps every other entry, Grafana included", () => {
+  it("leaves Redis, Lambda and the AI Gateway (the bonus has no part number to arrive in) off the landing and keeps every other entry, Grafana included", () => {
     const shown = landingAllowances(all);
-    expect([...OFF_LANDING_SERVICES].sort()).toEqual(["aws-lambda", "upstash-redis"]);
+    expect([...OFF_LANDING_SERVICES].sort()).toEqual(["aws-lambda", "upstash-redis", "vercel-ai-gateway"]);
     expect(shown.some((a) => OFF_LANDING_SERVICES.has(a.service))).toBe(false);
     expect(shown.length).toBe(all.length - all.filter((a) => OFF_LANDING_SERVICES.has(a.service)).length);
     expect(shown.some((a) => a.service === "grafana-cloud")).toBe(true);

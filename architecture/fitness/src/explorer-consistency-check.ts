@@ -65,8 +65,12 @@ export interface BuiltMoment {
 
 export interface CalmTimeline {
   "current-moment": string;
-  moments: Array<{ "unique-id": string; details: { "detailed-architecture": string } }>;
+  moments: Array<{ "unique-id": string; details: { "detailed-architecture": string }; metadata?: { kind?: string; after?: string } }>;
 }
+
+/** A bonus moment (ADR-0027) sits beside the numbered parts, after the part named in its metadata, and has no part number. */
+const isBonus = (moment: CalmTimeline["moments"][number]): boolean => moment.metadata?.kind === "bonus";
+const bonusFile = (momentId: string): string => `content/architecture/${momentId}.json`;
 
 /**
  * Cross-checks one part's explorer content against its real CALM document:
@@ -93,8 +97,8 @@ export function checkExplorerConsistency(
   calmDoc: CalmDocument,
   builtMoments: readonly BuiltMoment[] = [],
   calmPath = "its CALM document",
+  where = partFile(explorerData.part),
 ): Violation[] {
-  const where = partFile(explorerData.part);
   const source = [...builtMoments].filter((m) => m.part < explorerData.part).sort((a, b) => b.part - a.part)[0];
 
   const ctx: PartContext = {
@@ -245,10 +249,43 @@ interface LoadedMoment {
   explorer: ExplorerPartData & CarryPart & { status?: string };
 }
 
+/** A bonus moment with its CALM document and its explorer content (`content/architecture/<id>.json`). */
+export interface LoadedBonus {
+  momentId: string;
+  /** The part it follows, from the timeline's metadata. */
+  after: number | null;
+  calm: CalmDocument;
+  calmPath: string;
+  explorer: ExplorerPartData & { status?: string };
+  file: string;
+}
+
+function loadBonus(repoRoot: string, moment: CalmTimeline["moments"][number], calmDir: string, violations: Violation[]): LoadedBonus | undefined {
+  const id = moment["unique-id"];
+  const calmPath = join(calmDir, moment.details["detailed-architecture"]);
+  const calmRelative = toRepoPath(repoRoot, calmPath);
+  const file = bonusFile(id);
+  if (!existsSync(calmPath)) {
+    violations.push(timelineViolation(`The bonus moment "${id}" names the CALM document ${calmRelative}, which does not exist`, `Add ${calmRelative}, or point the moment's detailed-architecture at the right file in ${TIMELINE_PATH}.`));
+    return undefined;
+  }
+  if (!existsSync(join(repoRoot, file))) {
+    violations.push({ check: CHECK, rule: EXPLORER_RULE, where: file, why: `The bonus moment "${id}" has no explorer content file (ADR-0006).`, fix: `Create ${file} from the bonus CALM document.` });
+    return undefined;
+  }
+  const after = partOfMomentId(moment.metadata?.after ?? "");
+  return { momentId: id, after, calm: readJson(calmPath), calmPath: calmRelative, explorer: readJson(join(repoRoot, file)), file };
+}
+
 /** Reads each moment's CALM document (the one the timeline names) and its explorer part; what is missing is a violation. */
-function loadMoments(repoRoot: string, timeline: CalmTimeline, calmDir: string, violations: Violation[]): LoadedMoment[] {
+function loadMoments(repoRoot: string, timeline: CalmTimeline, calmDir: string, violations: Violation[], bonuses: LoadedBonus[]): LoadedMoment[] {
   const loaded: LoadedMoment[] = [];
   for (const moment of timeline.moments) {
+    if (isBonus(moment)) {
+      const bonus = loadBonus(repoRoot, moment, calmDir, violations);
+      if (bonus) bonuses.push(bonus);
+      continue;
+    }
     const part = partOfMomentId(moment["unique-id"]);
     if (part === null) {
       violations.push(
@@ -289,6 +326,10 @@ export interface ResolvedExplorer {
   /** The explorer parts as the page renders them: what is built carried into the planned parts. */
   parts: Array<ExplorerPartData & CarryPart>;
   builtMoments: BuiltMoment[];
+  /** Bonus moments, each with its own explorer content; they follow a part and are not numbered. */
+  bonuses: LoadedBonus[];
+  /** True once the timeline's current-moment is the bonus or a part after it. */
+  bonusPublished: boolean;
   calmByPart: Map<number, CalmDocument>;
   /** Each part's CALM document, relative to the repo root, for the failure text. */
   calmPaths: Map<number, string>;
@@ -303,7 +344,7 @@ export interface ResolvedExplorer {
  */
 export function resolveExplorerParts(repoRoot: string): ResolvedExplorer {
   const violations: Violation[] = [];
-  const empty = { parts: [], builtMoments: [], calmByPart: new Map<number, CalmDocument>(), calmPaths: new Map<number, string>(), violations };
+  const empty = { parts: [], builtMoments: [], bonuses: [] as LoadedBonus[], bonusPublished: false, calmByPart: new Map<number, CalmDocument>(), calmPaths: new Map<number, string>(), violations };
   const timelinePath = join(repoRoot, "architecture", "calm", "bullpen.timeline.json");
   if (!existsSync(timelinePath)) {
     const missing = Array.from({ length: PART_COUNT }, (_, i) => i + 1).filter((part) => !existsSync(join(repoRoot, partFile(part))));
@@ -316,7 +357,9 @@ export function resolveExplorerParts(repoRoot: string): ResolvedExplorer {
     };
   }
   const timeline = readJson<CalmTimeline>(timelinePath);
-  const currentPart = partOfMomentId(timeline["current-moment"]);
+  // current-moment is a part, or a bonus moment, which stands for the part it follows (the bonus is published; the next part is not).
+  const currentBonus = timeline.moments.find((m) => isBonus(m) && m["unique-id"] === timeline["current-moment"]);
+  const currentPart = currentBonus ? partOfMomentId(currentBonus.metadata?.after ?? "") : partOfMomentId(timeline["current-moment"]);
   if (currentPart === null) {
     return {
       ...empty,
@@ -327,7 +370,21 @@ export function resolveExplorerParts(repoRoot: string): ResolvedExplorer {
   }
 
   const calmDir = dirname(timelinePath);
-  const loaded = loadMoments(repoRoot, timeline, calmDir, violations);
+  const bonuses: LoadedBonus[] = [];
+  const loaded = loadMoments(repoRoot, timeline, calmDir, violations, bonuses);
+  const bonusPublished = (bonus: LoadedBonus): boolean => (currentBonus ? true : bonus.after !== null && currentPart > bonus.after);
+  for (const bonus of bonuses) {
+    const expected = bonusPublished(bonus) ? "built" : "planned";
+    if (bonus.explorer.status !== expected) {
+      violations.push({
+        check: CHECK,
+        rule: EXPLORER_RULE,
+        where: bonus.file,
+        why: `The explorer content says status ${JSON.stringify(bonus.explorer.status)}, but the timeline makes the bonus ${expected} (ADR-0011).`,
+        fix: `Set "status" to "${expected}" in ${bonus.file}, or move current-moment in ${TIMELINE_PATH}.`,
+      });
+    }
+  }
 
   // The carry rule reads each explorer part's status; the timeline decides what is built.
   for (const l of loaded) {
@@ -346,6 +403,8 @@ export function resolveExplorerParts(repoRoot: string): ResolvedExplorer {
   return {
     parts: carryForward(loaded.map((l) => l.explorer), plannedNamesOf(loadPlannedDocs(calmDir))),
     builtMoments: loaded.filter((l) => l.part <= currentPart).map((l) => ({ momentId: l.momentId, part: l.part, doc: l.calm })),
+    bonuses,
+    bonusPublished: bonuses.some(bonusPublished),
     calmByPart: new Map(loaded.map((l) => [l.part, l.calm])),
     calmPaths: new Map(loaded.map((l) => [l.part, l.calmPath])),
     violations,
@@ -360,7 +419,9 @@ export function resolveExplorerParts(repoRoot: string): ResolvedExplorer {
  * forward by the same function the landing's loader uses (ADR-0011).
  */
 export function checkAllExplorerParts(repoRoot: string): Violation[] {
-  const { parts, builtMoments, calmByPart, calmPaths, violations } = resolveExplorerParts(repoRoot);
+  const { parts, builtMoments, bonuses, calmByPart, calmPaths, violations } = resolveExplorerParts(repoRoot);
+  // A bonus is self-contained: its CALM document repeats the nodes it draws, so nothing is carried into it.
+  for (const bonus of bonuses) violations.push(...checkExplorerConsistency({ ...bonus.explorer, part: bonus.after ?? 0 }, bonus.calm, [], bonus.calmPath, bonus.file));
   for (const explorer of parts) {
     violations.push(...checkExplorerConsistency(explorer, calmByPart.get(explorer.part)!, builtMoments, calmPaths.get(explorer.part)));
   }

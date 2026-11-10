@@ -21,12 +21,13 @@ import { DetailsSheet } from "./ArchitectureExplorerTrafficSheet.js";
 import { cardNodesOf, groupBounds, groupFlowNodes, groupsToDraw } from "./ArchitectureExplorerGroups.js";
 import { CarriedNote } from "./ArchitectureExplorerCarried.js";
 import { partBefore } from "./ArchitectureExplorerChanges.js";
+import { newInPart } from "../lib/newInPart.js";
 import { ArchitectureExplorerNode, type ArchFlowNodeData, type ArchNodeVisualState } from "./ArchitectureExplorerNode.js";
 import { ArchitectureExplorerEdge } from "./ArchitectureExplorerEdge.js";
 import { ArchitectureExplorerGroup } from "./ArchitectureExplorerGroup.js";
 import type { ArchEdgeData, ArchNodeData, ArchPartData } from "./ArchitectureExplorer.types.js";
 
-export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
+export type { ArchNodeKind, ArchNodeData, ArchEdgeData, ArchGroupData, ArchPartData, ArchChangeRequest, ArchRequestStep, ArchRequestData, ArchChange, ArchControlChange, ArchPrediction } from "./ArchitectureExplorer.types.js";
 
 export interface ArchitectureExplorerProps {
   /** All six parts, sorted by part number. */
@@ -249,6 +250,9 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
 
   const selectedNode = selectedId ? current.nodes.find((n) => n.id === selectedId) : null;
 
+  // What this moment adds: the nodes and lines the part before it does not have, which is what "What changed" counts as added. They carry the accent.
+  const added = useMemo(() => newInPart(partBefore(partsById, current), current), [partsById, current]);
+
   // Ghosting marks a node/edge as not real yet: present in a *planned* part
   // but absent from the built system (only Part 1 is built today). Real
   // parts never ghost anything of their own.
@@ -312,6 +316,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
           node: n,
           visualState: nodeStates.get(n.id) ?? "same",
           ghosted: current.status === "planned" && (nodeStates.get(n.id) ?? "same") !== "removed" && !builtNodeIds.has(n.id),
+          isNew: added.nodes.has(n.id),
           reduced,
           dimmed: Boolean(selectedId) && selectedId !== n.id && !(request.on && touchedIds.has(n.id)),
           touched: request.on && touchedIds.has(n.id),
@@ -324,7 +329,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
     }),
   ];
 
-  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, nodesById, activeStep, requestOn: request.on, showData, showType, reduced, paused: traffic.paused, ownerHues });
+  const flowEdges: Edge[] = flowEdgesOf({ edges: displayEdges, current, builtEdgeIds, newEdgeIds: added.edges, nodesById, activeStep, requestOn: request.on, showData, showType, reduced, paused: traffic.paused, ownerHues });
 
   // React Flow's `fitView` prop only fits once, on mount (for whichever
   // part happened to be initial). Without this, scrubbing to a part whose
@@ -342,7 +347,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
       <div style={{ display: "flex", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 260 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={eyebrowStyle}>Overview · Part {current.part}</span>
+            <span style={eyebrowStyle}>Overview · {nameOfPart(current, true)}</span>
             <span style={chipStyle(current.status)}>{current.status === "built" ? "Built" : "Planned"}</span>
           </div>
           <div style={{ marginTop: 10, font: "400 15px/1.6 var(--font-body)", color: "var(--foreground-muted)" }}>
@@ -392,7 +397,7 @@ function ArchitectureExplorerInner(props: ArchitectureExplorerProps): ReactNode 
             height: 480,
           }}
         >
-          <Legend showType={showType} planned={current.status === "planned"} />
+          <Legend showType={showType} planned={current.status === "planned"} hasNew={added.nodes.size + added.edges.size > 0} />
           <div style={{ height: "calc(100% - 28px)" }}>
             <ReactFlow
               nodes={flowNodes}
@@ -709,9 +714,9 @@ function MomentScrubber({
   );
 }
 
-function Legend({ showType, planned }: { showType: boolean; planned: boolean }): ReactNode {
+function Legend({ showType, planned, hasNew }: { showType: boolean; planned: boolean; hasNew: boolean }): ReactNode {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 18, font: "500 11.5px/1 var(--font-body)", color: "var(--foreground-muted)", marginBottom: 6 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 18px", font: "500 11.5px/1.2 var(--font-body)", color: "var(--foreground-muted)", marginBottom: 6 }}>
       {showType ? (
         <>
           <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -728,6 +733,12 @@ function Legend({ showType, planned }: { showType: boolean; planned: boolean }):
         <span style={{ width: 16, height: 10, borderRadius: 3, border: "1px dashed var(--foreground-muted)", display: "inline-block" }} />
         External
       </span>
+      {hasNew ? (
+        <span data-testid="legend-new" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span aria-hidden="true" className="bp-arch-node--new bp-arch-node--new-static" style={{ width: 16, height: 10, borderRadius: 3, border: "1.5px solid var(--bp-accent-text)", display: "inline-block" }} />
+          New in this part
+        </span>
+      ) : null}
       {planned ? (
         <span style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.7 }}>
           <span style={{ width: 16, height: 10, borderRadius: 3, border: "1px dashed var(--foreground-muted)", display: "inline-block" }} />
@@ -821,7 +832,8 @@ function SidePanel({
 
   return (
     <aside aria-label="Details" className="bp-arch-explorer__side" data-popover-bounds style={panelStyle}>
-      <div style={smallEyebrow}>What changed in Part {part.part}</div>
+      <div style={smallEyebrow}>What changed in {nameOfPart(part)}</div>
+      {part.changeRequest ? <ChangeRequest request={part.changeRequest} /> : null}
       <DetailsSheet part={part} before={before} adrTitles={adrTitles} adrHrefs={adrHrefs} />
       <div style={{ marginTop: "auto", paddingTop: 20, font: "400 12.5px/1.5 var(--font-body)", color: "var(--foreground-muted)" }}>
         Select a node for its purpose, decisions and cost.
@@ -978,10 +990,47 @@ const smallRoundBtn: CSSProperties = {
 };
 
 /** Text-list fallback for screen readers -- an SVG/React Flow canvas alone isn't meaningfully readable. */
+/** "Part 3", or the label of a part that is not numbered ("the bonus", or "The bonus" at the start of a heading). */
+function nameOfPart(part: ArchPartData, capitalise = false): string {
+  const name = part.label ?? `Part ${part.part}`;
+  return capitalise ? name[0]!.toUpperCase() + name.slice(1) : name;
+}
+
+const requestHeading: CSSProperties = { margin: "14px 0 4px", font: "600 12px/1.3 var(--font-body)", letterSpacing: "0.04em", color: "var(--foreground)" };
+
+/** The bonus's change request: three parts of its ADR, rendered at build time from the ADR's Markdown, as written. */
+function ChangeRequest({ request }: { request: NonNullable<ArchPartData["changeRequest"]> }): ReactNode {
+  const sections = [
+    { title: "Why now", html: request.whyNowHtml },
+    { title: "In scope", html: request.inScopeHtml },
+    { title: "Out of scope", html: request.outOfScopeHtml },
+  ];
+  return (
+    <section aria-labelledby="bp-arch-change-request" className="bp-arch-change-request" style={{ marginTop: 12, paddingBottom: 12, borderBottom: "1px dashed var(--ember)" }}>
+      <h3 id="bp-arch-change-request" style={{ margin: 0, font: "500 18px/1.2 var(--font-display)", letterSpacing: "-0.02em" }}>
+        Change request
+      </h3>
+      {sections.map((section) => (
+        <div key={section.title}>
+          <h4 style={requestHeading}>{section.title}</h4>
+          <div className="bp-arch-change-request__body" style={{ font: "400 13px/1.5 var(--font-body)" }} dangerouslySetInnerHTML={{ __html: section.html }} />
+        </div>
+      ))}
+      <p style={{ margin: "10px 0 0", font: "400 12px/1.4 var(--font-body)", color: "var(--foreground-muted)" }}>
+        From{" "}
+        <a href={request.adrHref ?? "#"} style={{ color: "var(--bp-accent-text)", fontFamily: "var(--font-mono)" }}>
+          {request.adr}
+        </a>
+        .
+      </p>
+    </section>
+  );
+}
+
 function ScreenReaderSummary({ part, adrTitles }: { part: ArchPartData; adrTitles: Record<string, string> }): ReactNode {
   return (
     <div style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-      <h3>Part {part.part} nodes and connections</h3>
+      <h3>{nameOfPart(part, true)} nodes and connections</h3>
       <ul>
         {part.nodes.map((n) => (
           <li key={n.id}>

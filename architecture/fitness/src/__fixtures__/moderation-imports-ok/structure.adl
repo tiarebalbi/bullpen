@@ -1,0 +1,10 @@
+DESCRIPTION Import boundary fixture
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Web AS apps/web
+  DEFINE COMPONENT Market Data Service AS apps/market-data
+  DEFINE LIBRARY trading AS packages/db-trading
+  DEFINE LIBRARY market-data AS packages/db-market-data
+
+# Handles and moderation
+ASSERT(NO packages/db-trading, packages/db-market-data, apps/market-data, apps/web/app/lib/trading IMPORTS apps/web/app/lib/moderation)

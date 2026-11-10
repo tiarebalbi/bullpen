@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { createOwnerRoles } from "./create-roles.js";
 import { migrate as migrateMarketData } from "@bullpen/db-market-data";
+import { migrate as migrateHandles } from "@bullpen/db-handles";
 import { migrate as migrateTrading } from "@bullpen/db-trading";
 
 export interface DbUrls {
@@ -12,6 +13,7 @@ export interface DbUrls {
   migrator: string;
   marketDataOwner: string;
   tradingOwner: string;
+  handlesOwner: string;
 }
 
 declare module "vitest" {
@@ -53,7 +55,7 @@ export default async function setup({ provide }: { provide: (key: "dbUrls", valu
 
   const superuser = await connect(adminUrl);
   await superuser.query(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`);
-  for (const role of ["migrator", "market_data_owner", "trading_owner", "neon_superuser"]) await superuser.query(`DROP ROLE IF EXISTS ${role}`);
+  for (const role of ["migrator", "market_data_owner", "trading_owner", "handles_owner", "neon_superuser"]) await superuser.query(`DROP ROLE IF EXISTS ${role}`);
   // A superuser-like role, as some consoles have: used to prove the guard refuses a runtime role that joins it.
   await superuser.query("CREATE ROLE neon_superuser NOLOGIN");
   await superuser.query("GRANT pg_read_all_data, pg_write_all_data TO neon_superuser");
@@ -66,8 +68,10 @@ export default async function setup({ provide }: { provide: (key: "dbUrls", valu
   const migratorUrl = url(base, "migrator", passwords.migrator);
   const migrator = await connect(migratorUrl);
   const created = await createOwnerRoles(migrator);
-  for (const pkg of ["db-market-data", "db-trading"]) await migrator.query(readFileSync(join(repoRoot, "packages", pkg, "roles.sql"), "utf8"));
+  for (const pkg of ["db-market-data", "db-handles", "db-trading"]) await migrator.query(readFileSync(join(repoRoot, "packages", pkg, "roles.sql"), "utf8"));
   await migrateMarketData(migrator, "market_data_owner");
+  // handles before trading: the leaderboard view reads handles.approved_v1.
+  await migrateHandles(migrator, "handles_owner");
   await migrateTrading(migrator, "trading_owner");
   await migrator.end();
 
@@ -75,13 +79,14 @@ export default async function setup({ provide }: { provide: (key: "dbUrls", valu
     migrator: migratorUrl,
     marketDataOwner: url(base, "market_data_owner", created.market_data_owner!),
     tradingOwner: url(base, "trading_owner", created.trading_owner!),
+    handlesOwner: url(base, "handles_owner", created.handles_owner!),
   };
 
   provide("dbUrls", urls);
   return async () => {
     const cleanup = await connect(adminUrl);
     await cleanup.query(`DROP DATABASE IF EXISTS ${DATABASE} WITH (FORCE)`);
-    for (const role of ["migrator", "market_data_owner", "trading_owner", "neon_superuser"]) await cleanup.query(`DROP ROLE IF EXISTS ${role}`);
+    for (const role of ["migrator", "market_data_owner", "trading_owner", "handles_owner", "neon_superuser"]) await cleanup.query(`DROP ROLE IF EXISTS ${role}`);
     await cleanup.end();
   };
 }

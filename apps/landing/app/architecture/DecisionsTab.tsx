@@ -11,10 +11,12 @@ import { DecisionsList } from "../components/DecisionsList.js";
  */
 export function DecisionsTab({ part, adrs }: { part: number; adrs: Adr[] }): ReactNode {
   const [only, setOnly] = useState<number | null>(null);
-  const upToPart = adrs.filter((adr) => adr.part <= part);
+  // The bonus decision is shown in the bonus panel, which links it; the numbered tabs hold the numbered parts' decisions.
+  const numbered = adrs.filter((adr): adr is Adr & { part: number } => adr.part !== "bonus");
+  const upToPart = numbered.filter((adr) => adr.part <= part);
   const parts = [...new Set(upToPart.map((adr) => adr.part))].sort((a, b) => a - b);
   const effective = only !== null && parts.includes(only) ? only : null;
-  const visible = (adr: Adr): boolean => adr.part <= part && (effective === null || adr.part === effective);
+  const visible = (adr: Adr): boolean => adr.part !== "bonus" && adr.part <= part && (effective === null || adr.part === effective);
   const shown = adrs.filter(visible).length;
 
   return (

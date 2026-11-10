@@ -104,4 +104,14 @@ describe("the header", () => {
     expect(screen.getByRole("img", { name: "Signed in as Player 4F2A" })).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /github/i })).not.toBeInTheDocument();
   });
+  it("the avatar's tile takes the end of the neutral label, which is what it showed before handles", () => {
+    render(<AvatarSlot label="Player 4F2A" />);
+    expect(screen.getByText("2A")).toBeInTheDocument();
+  });
+  it("the avatar's tile takes its initials from the approved handle when there is one, and the label stays the neutral one", () => {
+    render(<AvatarSlot label="Player 4F2A" approvedHandle="bull_run" />);
+    expect(screen.getByText("BU")).toBeInTheDocument();
+    expect(screen.queryByText("2A")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Signed in as Player 4F2A" })).toBeInTheDocument();
+  });
 });

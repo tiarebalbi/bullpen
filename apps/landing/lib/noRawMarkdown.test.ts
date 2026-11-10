@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadAdrs } from "./adr.js";
 import { loadArchitectureParts } from "./architecture.js";
-import { loadSeries } from "./series.js";
+import { loadSeries, nameOf } from "./series.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 
@@ -28,8 +28,8 @@ describe("no raw markdown in plain-text display fields", () => {
   it("content/series.json titles and introduced lines", () => {
     const series = loadSeries(join(repoRoot, "content", "series.json"));
     for (const part of series) {
-      assertNoRawMarkdown(`Part ${part.part} title`, part.title);
-      assertNoRawMarkdown(`Part ${part.part} introduced`, part.introduced);
+      assertNoRawMarkdown(`${nameOf(part)} title`, part.title);
+      assertNoRawMarkdown(`${nameOf(part)} introduced`, part.introduced);
     }
   });
 

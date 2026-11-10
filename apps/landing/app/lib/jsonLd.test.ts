@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { validateJsonLd } from "@bullpen/contracts";
 import { describe, expect, it } from "vitest";
-import { parseSeries, type SeriesPart } from "../../lib/series.js";
+import { isPart, parseSeries, type SeriesEntry, type SeriesPart } from "../../lib/series.js";
 import { buildJsonLd } from "./jsonLd.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..", "..");
@@ -10,11 +10,12 @@ const real = parseSeries(readFileSync(join(repoRoot, "content", "series.json"), 
 
 type Node = Record<string, unknown>;
 type Graph = { "@graph": Node[] };
-const nodes = (page: Parameters<typeof buildJsonLd>[0], parts: SeriesPart[]) => (buildJsonLd(page, parts) as Graph)["@graph"];
-const types = (page: Parameters<typeof buildJsonLd>[0], parts: SeriesPart[]) => nodes(page, parts).map((node) => node["@type"]);
-const seriesNode = (parts: SeriesPart[]) => nodes("home", parts).find((node) => node["@type"] === "CreativeWorkSeries")!;
+const nodes = (page: Parameters<typeof buildJsonLd>[0], parts: SeriesEntry[]) => (buildJsonLd(page, parts) as Graph)["@graph"];
+const types = (page: Parameters<typeof buildJsonLd>[0], parts: SeriesEntry[]) => nodes(page, parts).map((node) => node["@type"]);
+const seriesNode = (parts: SeriesEntry[]) => nodes("home", parts).find((node) => node["@type"] === "CreativeWorkSeries")!;
 
 const part = (n: number, status: SeriesPart["status"], headline?: string): SeriesPart => ({
+  kind: "part",
   part: n,
   title: `Part ${n} title`,
   ...(headline === undefined ? {} : { headline }),
@@ -31,7 +32,7 @@ describe("buildJsonLd: home", () => {
   });
 
   it("lists the four published parts, each with a date", () => {
-    expect(real.filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"], [4, "2026-10-26"]]);
+    expect(real.filter(isPart).filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"], [4, "2026-10-26"]]);
     expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(4);
   });
 
@@ -109,5 +110,44 @@ describe("buildJsonLd: the other pages", () => {
   it("/privacy is a plain WebPage, with no series", () => {
     expect(types("privacy", real)).toEqual(["WebPage"]);
     expect(JSON.stringify(buildJsonLd("privacy", real))).not.toContain("CreativeWorkSeries");
+  });
+});
+
+describe("buildJsonLd: planned dates", () => {
+  const planned = real.flatMap((entry) => (entry.plannedDate ? [entry.plannedDate] : []));
+
+  it("never writes a planned date, or the word, anywhere in the graph", () => {
+    expect(planned).toEqual(["2026-11-11", "2026-11-23", "2026-11-30"]);
+    for (const page of ["home", "architecture", "privacy"] as const) {
+      const text = JSON.stringify(buildJsonLd(page, real));
+      for (const date of planned) expect(text).not.toContain(date);
+      expect(text).not.toMatch(/planned/i);
+    }
+  });
+
+  it("is the same graph whatever the planned dates are, or whether there are any", () => {
+    const moved = real.map((entry) => (entry.plannedDate ? { ...entry, plannedDate: "2031-01-01" } : entry));
+    const stripped = real.map(({ plannedDate: _planned, ...entry }) => entry as SeriesEntry);
+    expect(buildJsonLd("home", moved)).toEqual(buildJsonLd("home", real));
+    expect(buildJsonLd("home", stripped)).toEqual(buildJsonLd("home", real));
+  });
+
+  it("lists a published bonus with its real date and headline, between Part 4 and Part 5, and an unpublished one not at all", () => {
+    const bonus = (status: "next" | "published"): SeriesEntry => ({
+      kind: "bonus",
+      moment: "bonus-handles",
+      title: "Changing the plan mid-flight",
+      headline: "The Answer to a New Requirement Is a Price, Not a No",
+      status,
+      url: status === "published" ? "https://tiarebalbi.com/en/blog/the-bonus" : "",
+      introduced: "X",
+      date: status === "published" ? "2026-11-11" : null,
+      ...(status === "next" ? { plannedDate: "2026-11-11" } : {}),
+    });
+    const series = [part(4, "published"), bonus("published"), part(5, "planned")];
+    const parts = seriesNode(series).hasPart as Array<{ headline: string; datePublished: string }>;
+    expect(parts.map((p) => p.headline)).toEqual(["Part 4 title", "The Answer to a New Requirement Is a Price, Not a No"]);
+    expect(parts[1]!.datePublished).toBe("2026-11-11");
+    expect(seriesNode([part(4, "published"), bonus("next"), part(5, "planned")]).hasPart).toHaveLength(1);
   });
 });

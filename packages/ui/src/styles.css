@@ -162,10 +162,37 @@
   animation: bp-arch-flow 1400ms linear infinite;
 }
 
+/* What the moment adds: the accent as the border (set inline) and a soft outer glow. The glow breathes slowly, every 2.6 s; when motion is reduced it stays
+   still at its resting strength. Both the class the explorer applies (from useReducedMotion) and the media query below stop it. */
+@keyframes bp-arch-new-glow {
+  from { box-shadow: 0 0 0 1px color-mix(in oklch, var(--ember) 30%, transparent), 0 0 8px 1px color-mix(in oklch, var(--ember) 28%, transparent); }
+  to { box-shadow: 0 0 0 3px color-mix(in oklch, var(--ember) 22%, transparent), 0 0 18px 4px color-mix(in oklch, var(--ember) 42%, transparent); }
+}
+.bp-arch-node--new {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ember) 24%, transparent), 0 0 13px 2px color-mix(in oklch, var(--ember) 34%, transparent);
+  animation: bp-arch-new-glow 2.6s ease-in-out infinite alternate;
+}
+.bp-arch-node--new-static {
+  animation: none;
+}
+@keyframes bp-arch-new-line {
+  from { filter: drop-shadow(0 0 1.5px color-mix(in oklch, var(--ember) 40%, transparent)); }
+  to { filter: drop-shadow(0 0 5px color-mix(in oklch, var(--ember) 75%, transparent)); }
+}
+.bp-arch-edge--new {
+  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--ember) 55%, transparent));
+  animation: bp-arch-new-line 2.6s ease-in-out infinite alternate;
+}
+.bp-arch-edge--new-static {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bp-arch-node--added,
   .bp-arch-node--removed,
   .bp-arch-node__ring,
+  .bp-arch-node--new,
+  .bp-arch-edge--new,
   .bp-arch-edge__flow {
     animation: none;
   }

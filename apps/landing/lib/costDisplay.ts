@@ -41,6 +41,7 @@ const SERVICE_LABELS: Record<string, string> = {
   "vercel-queues": "Vercel Queues",
   "vercel-services": "Vercel Services",
   "vercel-workflows": "Vercel Workflows",
+  "vercel-ai-gateway": "Vercel AI Gateway",
 };
 
 const METRIC_LABELS: Record<string, string> = {
@@ -71,6 +72,7 @@ const METRIC_LABELS: Record<string, string> = {
   daily_calls: "Daily calls",
   projects: "Projects",
   service_requests: "Service requests",
+  jev_input_rate: "Jev input rate",
 };
 
 /** Every allowance's service/metric must have a human label -- throws rather than silently falling back to the raw id, so a new entry in cost/allowances.json can't ship unlabeled. */

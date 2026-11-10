@@ -51,13 +51,13 @@ const IMPORT_SPECIFIER = [
   /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g, // require("...")
 ];
 
-interface ImportSite {
+export interface ImportSite {
   specifier: string;
   where: string;
 }
 
 /** Every import specifier in a file's code (strings and comments excluded), with `file:line`. */
-function importSites(file: ScannedFile): ImportSite[] {
+export function importSites(file: ScannedFile): ImportSite[] {
   const sites: ImportSite[] = [];
   for (const pattern of IMPORT_SPECIFIER) {
     for (const match of file.code.matchAll(pattern)) {

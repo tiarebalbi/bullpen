@@ -107,3 +107,27 @@ Read 2026-10-21:
   estimated.
 - **Settings to confirm in the Neon console** ([production checklist](https://neon.com/docs/auth/production-checklist)): trusted domains (set),
   "Allow Localhost" off in production, and email and password sign-up off so GitHub is the only way in.
+
+## Vercel AI Gateway, model typesafe-ai/jev — chosen
+
+Not a market-data provider: it answers one Boolean question about a player's handle (is it acceptable to show publicly?), and the model names Vercel AI Gateway
+as an external system. The record of the choice is ADR-0027, which the owner accepted on 2026-11-01; this entry says what is true now. The key
+(`AI_GATEWAY_API_KEY`) is set by the owner, not by code; until it is set every handle goes to review.
+
+Read 2026-11-01:
+
+- **How it is used:** `POST https://ai-gateway.vercel.sh/v1/evaluate` with the handle text and a fixed question, from `apps/web/app/lib/moderation` only. Vercel's
+  Decision docs (last updated 2026-10-07) name this route and the AI SDK's `experimental_decide`; the route is used because its response carries the gateway's own
+  cost field, which the AI SDK result does not.
+- **Price:** Vercel's [model page](https://vercel.com/ai-gateway/models/jev) says, verbatim, "Pricing: $0.042/1M input tokens" and lists no output price (read 2026-11-01); a rounded "$0.04/1M" appears in
+  the model catalogue's table row, which is the same price shown to two places. TypeSafe's [models page](https://docs.typesafe.ai/models.md) says "$42 / $0.042" per billion / per million tokens and "Output tokens are free"
+  (read 2026-11-01). A decision sends a few hundred tokens.
+- **Free tier:** Vercel's [pricing page](https://vercel.com/docs/ai-gateway/pricing) (last updated 2026-09-08) says every team gets a monthly free credit on "a subset of
+  models, not the full catalog". It gives no dollar amount and the model page for Jev does not say whether Jev is in the subset, so whether Jev is free is **not
+  confirmed**. Buying credits moves a team to the paid tier and ends the free credit; that is the owner's decision, not the code's.
+- **TypeSafe's terms for request text:** TypeSafe says it does not train or fine-tune models on the input it receives and does not disclose input to a third party other than
+  its service providers ([privacy policy](https://typesafe.ai/privacy), last updated 2025-11-19; [Jev's model page](https://docs.typesafe.ai/models.md)). It states no retention period or
+  logging policy for request text; zero data retention is offered to enterprise customers only. Vercel says the gateway itself does not retain prompt content
+  ([FAQ](https://vercel.com/docs/ai-gateway/faq), last updated 2026-09-13) and that what a provider does is a separate question. Only the handle text is sent: no user id, email, address or session.
+- **Limits:** rate limits are per organisation and set in TypeSafe's console (not read); a request over the limit gets a 429, which Bullpen treats as a failure and sends the handle to review.
+

@@ -31,7 +31,7 @@ export function checkSecretContainment(repoRoot: string): Violation[] {
   for (const rule of rules) {
     const directory = rule.form.directory.replace(/\/+$/, "");
     const secret = rule.form.secret;
-    const reading = new RegExp(`(?<![A-Za-z0-9_])${secret}(?![A-Za-z0-9_])`, "g");
+    const reading = new RegExp(`(?<![A-Za-z0-9_])${secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![A-Za-z0-9_])`, "g");
 
     for (const file of files) {
       if (file.path.startsWith(`${directory}/`)) continue;

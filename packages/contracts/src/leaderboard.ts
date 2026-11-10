@@ -9,6 +9,15 @@ export interface LeaderboardEntry {
 }
 
 /**
+ * Who is asking, when someone signed in is. It is for that player only: a visitor, or another player, gets no `viewer`. `handle` is where the player's own handle stands,
+ * never its text unless it is approved (an approved handle is public already, on the ranking). A handle that is pending, in review or rejected is a status and nothing else.
+ */
+export interface LeaderboardViewer {
+  accountId: string;
+  handle: null | { status: "pending" | "review" | "approved" | "rejected"; approved: string | null };
+}
+
+/**
  * GET /api/leaderboard: the current ranking and when it was computed. A
  * stale view still returns its ranking, with `stale` true and the age; a failed
  * refresh leaves the last good ranking and says so in `lastFailure`.
@@ -23,6 +32,8 @@ export interface LeaderboardSnapshot {
   ageMs: number;
   stale: boolean;
   lastFailure: { at: string; error: string } | null;
+  /** The signed-in caller, present only for them. */
+  viewer?: LeaderboardViewer;
 }
 
 /** One symbol's latest end-of-day price, as GET /api/stock-prices returns it. */

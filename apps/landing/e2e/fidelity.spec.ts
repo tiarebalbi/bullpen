@@ -125,12 +125,12 @@ test.describe("landing fidelity at 1440px", () => {
     await expect(page.getByTestId("market-strip-time")).toContainText("stale", { ignoreCase: true });
   });
 
-  test("six series cards render in one row", async ({ page }) => {
+  test("the six parts and the bonus render as seven cards in one row", async ({ page }) => {
     await mockPriceRoute(page, LIVE_QUOTE);
     await page.goto("/");
 
     const cards = page.locator(".bp-series-grid > li");
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(7);
 
     const tops = await cards.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
     expect(new Set(tops).size).toBe(1);
@@ -161,7 +161,7 @@ test.describe("landing fidelity at 390px", () => {
     const overflowX = await grid.evaluate((el) => getComputedStyle(el).overflowX);
     expect(overflowX).toBe("auto");
     const cardCount = await page.locator(".bp-series-grid > li").count();
-    expect(cardCount).toBe(6);
+    expect(cardCount).toBe(7);
   });
 
   test("theme toggle and menu button are visible in the mobile header, no CTA", async ({ page }) => {

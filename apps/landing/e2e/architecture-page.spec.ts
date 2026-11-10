@@ -264,7 +264,7 @@ test.describe("Architecture page, desktop", () => {
     await open(page, "rules", 2);
 
     await expect(panel(page)).toContainText(/Snapshot for Part \d, commit [0-9a-f]{7}/);
-    await expect(panel(page).locator(".bp-rule-card")).toHaveCount(8);
+    await expect(panel(page).locator(".bp-rule-card")).toHaveCount(9);
     const row = panel(page).locator("tr", { hasText: "UI HAS NO DEPENDENCY ON Landing, Trading App" });
     await expect(row).toContainText(/pass|fail/);
     await expect(row).not.toContainText("Arrives in Part");
@@ -392,3 +392,84 @@ test.describe("Architecture page, metadata and content", () => {
     expect(text).not.toContain("Tiare Balbi");
   });
 });
+
+// The bonus (ADR-0027): a diamond node on a short branch between Part 4 and Part 5, and a panel that says what changed in it.
+const bonusNode = (page: Page) => scrubber(page).getByRole("button", { name: /BONUS/ });
+
+for (const viewport of [
+  { label: "1440px", width: 1440, height: 1000 },
+  { label: "390px", width: 390, height: 844 },
+]) {
+  test.describe(`The bonus on the architecture page at ${viewport.label}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height } });
+
+    test("the scrubber has a BONUS node labelled 'Change request', planned, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
+      await page.goto("/architecture");
+      await expect(bonusNode(page)).toHaveCount(1);
+      await expect(bonusNode(page)).toContainText("BONUS · PLANNED");
+      await expect(bonusNode(page)).toContainText("Change request");
+      await expect(bonusNode(page)).toHaveAttribute("data-status", "planned");
+      await expect(scrubber(page).locator(".bp-ap-scrub__stop")).toHaveCount(6);
+      const order = await scrubber(page).getByRole("button").evaluateAll((buttons) => buttons.map((b) => (b.textContent ?? "").slice(0, 12)));
+      expect(order.findIndex((t) => t.startsWith("BONUS"))).toBe(order.findIndex((t) => t.startsWith("PART 4")) + 1);
+      expect(order.findIndex((t) => t.startsWith("PART 5"))).toBe(order.findIndex((t) => t.startsWith("BONUS")) + 1);
+    });
+
+    test("selecting it shows 'What changed in the bonus' and a Change request with Why now, In scope and Out of scope from ADR-0027", async ({ page }) => {
+      await page.goto("/architecture#overview");
+      await bonusNode(page).click();
+      await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+      await expect(bonusNode(page)).toHaveAttribute("data-state", "current");
+      await expect(scrubber(page).getByRole("button", { name: "PART 4" })).not.toHaveAttribute("aria-current", "step");
+      await expect(panel(page)).toContainText("Overview · The bonus");
+      await expect(panel(page)).toContainText("What changed in the bonus");
+      const request = panel(page).getByRole("region", { name: "Change request" });
+      for (const heading of ["Why now", "In scope", "Out of scope"]) await expect(request.getByRole("heading", { name: heading })).toBeVisible();
+      await expect(request).toContainText("Part 4 left handles out on purpose");
+      await expect(request).toContainText("Avatars, display names, profile pages");
+      await expect(request.getByRole("link", { name: "ADR-0027" })).toHaveAttribute("href", /#adr-0027/);
+    });
+
+    test("the bonus's picture has the gateway, the handles schema and its published view, which Part 4's does not", async ({ page }) => {
+      await page.goto("/architecture#overview");
+      await bonusNode(page).click();
+      const text = await panel(page).innerText();
+      for (const name of ["Vercel AI Gateway", "handles schema", "handles.approved_v1"]) expect(text).toContain(name);
+      await atPart(page, 4);
+      for (const name of ["Vercel AI Gateway", "handles schema"]) expect(await panel(page).innerText()).not.toContain(name);
+    });
+
+    test("another tab says it follows the numbered parts and offers the way back, and a part pick leaves the bonus", async ({ page }) => {
+      await page.goto("/architecture#overview");
+      await bonusNode(page).click();
+      await tab(page, "Services").click();
+      await expect(panel(page).getByRole("status")).toContainText("The bonus is a detour between Part 4 and Part 5");
+      await atPart(page, 5);
+      await expect(bonusNode(page)).toHaveAttribute("data-state", "past");
+      await expect(panel(page).getByRole("status")).toHaveCount(0);
+    });
+
+    test("it can be reached and picked from the keyboard, in order: Part 4, the bonus, Part 5", async ({ page }) => {
+      await page.goto("/architecture#overview");
+      await atPart(page, 4);
+      await scrubber(page).getByRole("button", { name: "PART 4" }).focus();
+      await page.keyboard.press("Tab");
+      await expect(bonusNode(page)).toBeFocused();
+      await expect(bonusNode(page)).toHaveCSS("outline-style", "solid");
+      await page.keyboard.press("Enter");
+      await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+      await page.keyboard.press("ArrowRight");
+      await expect(scrubber(page).getByRole("button", { name: "PART 5" })).toHaveAttribute("aria-current", "step");
+      await page.keyboard.press("ArrowLeft");
+      await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+    });
+
+    test("with reduced motion the line's fill does not animate", async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.goto("/architecture#overview");
+      await bonusNode(page).click();
+      const duration = await page.locator(".bp-ap-scrub__fill").evaluate((el) => getComputedStyle(el).transitionDuration);
+      expect(duration).toMatch(/^0s(, 0s)*$/);
+    });
+  });
+}

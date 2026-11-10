@@ -6,13 +6,14 @@ import { loadAdrs } from "../../lib/adr.js";
 import { adrHashId } from "../../lib/adrHashId.js";
 import { buildArchitecturePage } from "../../lib/architecturePage.js";
 import { loadArchitectureParts } from "../../lib/architecture.js";
+import { loadBonusFor } from "../../lib/bonusLoad.js";
 import { loadCalmDocs } from "../../lib/calm.js";
 import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
 import { buildRuleCards } from "../../lib/ruleCards.js";
 import { loadLatestRulesSnapshot, loadRuleHistory } from "../../lib/rulesSnapshot.js";
 import { buildRulesTabData } from "../../lib/rulesView.js";
-import { loadSeries } from "../../lib/series.js";
+import { isBonus, loadSeries, partsOf } from "../../lib/series.js";
 import { Footer } from "../components/Footer.js";
 import { JsonLd } from "../components/JsonLd.js";
 import { Nav } from "../components/Nav.js";
@@ -48,13 +49,17 @@ export default function ArchitecturePage(): ReactNode {
 
   const data = buildArchitecturePage({
     parts,
-    series: series.map(({ part, title }) => ({ part, title })),
+    series: partsOf(series).map(({ part, title }) => ({ part, title })),
     calm: loadCalmDocs(repoRoot),
     adlRules: adl.rules.map((rule) => rule.text),
     ruleHistory: loadRuleHistory(join(repoRoot, "architecture", "reports")),
     snapshot,
     cacheSeconds: readPriceCacheSeconds(repoRoot),
   });
+
+  // The bonus (ADR-0027): its picture from its own content file, its change request from its ADR, labelled and ordered as a detour after Part 4.
+  const bonus = loadBonusFor(repoRoot, adrs);
+  const bonusEntry = series.find(isBonus);
 
   const since: Record<string, number> = {};
   for (const part of parts) for (const node of part.nodes) since[node.id] = Math.min(since[node.id] ?? part.part, part.part);
@@ -74,6 +79,8 @@ export default function ArchitecturePage(): ReactNode {
           adrHrefs={Object.fromEntries(adrs.map((a) => [a.id, `#${adrHashId(a.id)}`]))}
           since={since}
           adl={{ source: adl.source, lines: adl.lines }}
+          bonus={bonus}
+          bonusTitle={bonusEntry?.title}
         />
       </main>
       <Footer />

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
-import { LeaderboardList, LeaderboardRow } from "./LeaderboardRow.js";
+import { LeaderboardList, LeaderboardRow, handleInitials } from "./LeaderboardRow.js";
 
 describe("LeaderboardRow", () => {
   it("shows the rank, the handle, the equity and the cash in tabular figures", () => {
@@ -23,7 +23,7 @@ describe("LeaderboardRow", () => {
         <LeaderboardRow rank={2} handle="grace" equity={10} cash={10} you />
       </LeaderboardList>,
     );
-    expect(screen.getByText("you")).toBeVisible();
+    expect(screen.getByText("You")).toBeVisible();
   });
 
   it("makes a monogram from the handle and hides it from assistive technology", () => {
@@ -42,5 +42,27 @@ describe("LeaderboardRow", () => {
       </LeaderboardList>,
     );
     expect(container.textContent).not.toMatch(/[▲▼%]/);
+  });
+
+  it("shows a note under the name only when one is given, and says it in words", () => {
+    const { rerender } = render(
+      <LeaderboardList label="x">
+        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} you note="Waiting for review" />
+      </LeaderboardList>,
+    );
+    expect(screen.getByTestId("leaderboard-own-note")).toHaveTextContent("Waiting for review");
+    rerender(
+      <LeaderboardList label="x">
+        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} />
+      </LeaderboardList>,
+    );
+    expect(screen.queryByTestId("leaderboard-own-note")).not.toBeInTheDocument();
+    expect(screen.queryByText("You")).not.toBeInTheDocument();
+  });
+
+  it("takes the monogram from the first two letters or digits, and a question mark from none", () => {
+    expect(handleInitials("zz-lin")).toBe("ZZ");
+    expect(handleInitials("_a9")).toBe("A9");
+    expect(handleInitials("--")).toBe("?");
   });
 });

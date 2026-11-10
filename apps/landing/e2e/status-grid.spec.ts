@@ -4,8 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const ledger = JSON.parse(readFileSync(join(repoRoot, "cost", "allowances.json"), "utf8")) as Array<{ service: string }>;
-// The landing leaves Redis and Lambda off (they stay in the ledger file): the count it shows is the ledger without them.
-const OFF_LANDING = new Set(["upstash-redis", "aws-lambda"]);
+// The landing leaves Redis, Lambda and the AI Gateway off (they stay in the ledger file): the count it shows is the ledger without them.
+const OFF_LANDING = new Set(["upstash-redis", "aws-lambda", "vercel-ai-gateway"]);
 const SHOWN_ALLOWANCES = ledger.filter((a) => !OFF_LANDING.has(a.service)).length;
 const latestUsage = JSON.parse(readFileSync(join(repoRoot, "cost", "usage", readdirSync(join(repoRoot, "cost", "usage")).sort().pop()!), "utf8")) as { week: string };
 
@@ -36,13 +36,13 @@ test.describe("Status grid (Decisions, Rules, What's defined, rule tiles, Cost, 
     expect(Math.abs(decisions!.y + decisions!.height - (defined!.y + defined!.height))).toBeLessThan(2);
   });
 
-  test("the eight rule tiles run four to a row, three columns each, below the pair", async ({ page }) => {
+  test("the nine rule tiles run three to a row, four columns each, below the pair", async ({ page }) => {
     const tiles = page.locator(".bp-tile");
-    await expect(tiles).toHaveCount(8);
+    await expect(tiles).toHaveCount(9);
     const boxes = await tiles.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
     const ys = [...new Set(boxes.map((b) => Math.round(b.top)))];
-    expect(ys).toHaveLength(2);
-    expect(boxes.slice(0, 4).every((b) => Math.round(b.top) === ys[0])).toBe(true);
+    expect(ys).toHaveLength(3);
+    expect(boxes.slice(0, 3).every((b) => Math.round(b.top) === ys[0])).toBe(true);
     const widths = boxes.map((b) => Math.round(b.width));
     expect(new Set(widths).size).toBe(1);
     const defined = await page.locator("#defined").boundingBox();
@@ -137,7 +137,7 @@ test.describe("Status grid at 390px", () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     const boxes = await page.locator("#decisions, #rules, #defined, .bp-tile").evaluateAll((els) => els.map((el) => el.getBoundingClientRect()));
-    expect(boxes).toHaveLength(11);
+    expect(boxes).toHaveLength(12);
     for (const box of boxes) {
       expect(box.right).toBeLessThanOrEqual(391);
       expect(box.width).toBeGreaterThanOrEqual(300);

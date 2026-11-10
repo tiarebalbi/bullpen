@@ -1,0 +1,8 @@
+DESCRIPTION Moderation fixture
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Web AS apps/web
+
+# Handles and moderation
+ASSERT(ONLY apps/web/app/lib/moderation READS AI_GATEWAY_API_KEY)
+ASSERT(ONLY apps/web/app/lib/moderation READS ai-gateway.vercel.sh)

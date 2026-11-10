@@ -3,6 +3,7 @@ import type { SeriesPart } from "../../lib/series.js";
 import { formatLongDate, latestPublishedDate } from "./contentDates.js";
 
 const part = (n: number, status: SeriesPart["status"], date: string | null): SeriesPart => ({
+  kind: "part",
   part: n,
   title: "T",
   status,
@@ -24,5 +25,13 @@ describe("latestPublishedDate", () => {
 describe("formatLongDate", () => {
   it("shows a calendar date as that day, not the day before in a western time zone", () => {
     expect(formatLongDate("2026-10-01")).toBe("1 October 2026");
+  });
+});
+
+describe("latestPublishedDate and planned dates", () => {
+  it("ignores a planned date, which is later than every published one", () => {
+    const planned: SeriesPart = { ...part(5, "planned", null), plannedDate: "2026-11-23" };
+    expect(latestPublishedDate([part(1, "published", "2026-10-04"), planned])).toBe("2026-10-04");
+    expect(latestPublishedDate([planned])).toBeNull();
   });
 });
