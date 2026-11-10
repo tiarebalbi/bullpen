@@ -47,14 +47,15 @@ const COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: stri
 
 // The sign-in cookies, named as the Neon Auth SDK (@neondatabase/auth) sets them in the trading app (its constants NEON_AUTH_SESSION_COOKIE_NAME, NEON_AUTH_SESSION_DATA_COOKIE_NAME
 // and NEON_AUTH_SESSION_CHALLENGE_COOKIE_NAME). All three are HttpOnly, Secure and SameSite=Lax. session_data is made by the SDK with its default lifetime of 300 seconds (the app sets none);
-// session_token and session_challenge come from Neon Auth's server, so their lifetimes are not in the SDK: session_token is set for 7 days (Max-Age=604800, the Better Auth default Neon
-// Auth is built on, and what a public bug report of the SDK shows), and the challenge's lifetime has not been read from a live response.
+// session_token and session_challenge come from Neon Auth's server, so their lifetimes are not in the SDK. session_token: the owner read neon_auth.session in the production database with a
+// read-only query on 2026-11-10: 12 sessions, and each lasted (expiresAt minus createdAt) from 6 days 23:59:59.999 to 12 days 04:38:07, so 7 days, extended while the session is used.
+// The challenge's lifetime has not been read from a live response.
 const SIGN_IN_COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: string }> = [
   {
     name: "__Secure-neon-auth.session_token",
     setBy: "Neon Auth, through the trading app",
     purpose: "Essential, and set only when you sign in. It is what keeps you signed in: the token of your sign-in session.",
-    lasts: "Up to 7 days at a time; removed when you sign out",
+    lasts: "7 days, extended while you keep using it",
   },
   {
     name: "__Secure-neon-auth.local.session_data",

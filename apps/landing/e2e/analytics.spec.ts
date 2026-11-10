@@ -312,12 +312,14 @@ for (const viewport of [
         await expect(page.locator("td code", { hasText: new RegExp(`^${cookie}$`) })).toBeVisible();
       }
       // The sign-in cookies, named as the Neon Auth SDK sets them in the trading app (@neondatabase/auth: NEON_AUTH_SESSION_COOKIE_NAME, ..._SESSION_DATA_COOKIE_NAME, ..._SESSION_CHALLENGE_COOKIE_NAME).
+      // session_data's 5 minutes is the SDK's default. session_token's lifetime is from the owner's read-only query of neon_auth.session in the production database on 2026-11-10: 12 sessions,
+      // each lasting (expiresAt minus createdAt) from 6 days 23:59:59.999 to 12 days 04:38:07, which is 7 days, extended while the session is used. The challenge's lifetime is not read from a live response.
       const signIn = page.locator('section[aria-labelledby="privacy-signin-cookies"]');
       await expect(signIn.getByRole("heading", { name: "Cookies for signing in" })).toBeVisible();
       await expect(signIn).toContainText("essential for signing in");
       await expect(signIn).toContainText("set only when you sign in");
       const rows: Array<[string, RegExp, string]> = [
-        ["__Secure-neon-auth.session_token", /keeps you signed in/, "Up to 7 days at a time; removed when you sign out"],
+        ["__Secure-neon-auth.session_token", /keeps you signed in/, "7 days, extended while you keep using it"],
         ["__Secure-neon-auth.local.session_data", /signed copy of your session, which includes your name, email address and profile picture/, "Up to 5 minutes at a time, renewed while you stay signed in; removed when you sign out"],
         ["__Secure-neon-auth.session_challenge", /round trip to GitHub/, "round trip to GitHub"],
       ];
