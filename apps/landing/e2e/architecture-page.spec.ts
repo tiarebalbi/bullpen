@@ -489,6 +489,8 @@ for (const viewport of [
       await page.clock.install();
       await page.goto("/architecture#overview");
       await atPart(page, 3);
+      // `install` leaves the fake clock running with real time, so a slow runner would add steps of its own: pause it, and only runFor moves it.
+      await page.clock.pauseAt(new Date(Date.now() + 1000));
       await page.getByRole("button", { name: "Play the series" }).click();
       await page.clock.runFor(2400);
       await expect(scrubber(page).getByRole("button", { name: "PART 4" })).toHaveAttribute("aria-current", "step");

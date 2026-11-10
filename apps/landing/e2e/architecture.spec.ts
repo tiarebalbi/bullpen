@@ -292,6 +292,8 @@ test.describe("Architecture Explorer", () => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
     await scrubber.getByRole("button", { name: "PART 3" }).click();
+    // `install` leaves the fake clock running with real time, so a slow runner would add steps of its own: pause it, and only runFor moves it.
+    await page.clock.pauseAt(new Date(Date.now() + 1000));
     await architecture.getByRole("button", { name: "Play the series" }).click();
     await expect(architecture.getByRole("button", { name: "Pause the series" })).toBeVisible();
 
