@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { PRIVACY_URL } from "../lib/landingUrl.js";
 import { Analytics, ConsentBanner, useOutboundClickTracking, type AnalyticsConfig } from "./ui.js";
 
-export function AnalyticsHost({ config, part }: { config: AnalyticsConfig | null; part: number | null }): ReactNode {
+export function AnalyticsHost({ config, part }: { config: AnalyticsConfig | null; part: string | null }): ReactNode {
   const pathname = usePathname();
   useOutboundClickTracking();
   return (

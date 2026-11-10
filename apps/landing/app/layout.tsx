@@ -4,7 +4,7 @@ import "@bullpen/ui/styles.css";
 import "./landing.css";
 import { join } from "node:path";
 import { resolveAnalyticsConfig } from "@bullpen/ui/analytics-config";
-import { loadCurrentPart } from "../lib/currentPart.js";
+import { loadPartTag } from "../lib/currentPart.js";
 import { AnalyticsHost } from "./components/AnalyticsHost.js";
 import { PRODUCTION_HOST } from "./lib/productionHost.js";
 
@@ -56,7 +56,8 @@ const analyticsConfig = resolveAnalyticsConfig({
   NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   NEXT_PUBLIC_CLARITY_PROJECT_ID: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID,
 });
-const currentPart = loadCurrentPart(join(process.cwd(), "..", ".."));
+// The Clarity `part` tag: "4", or "bonus" while the bonus is the current moment. Every landing route is static, so this runs at build.
+const currentPart = loadPartTag(join(process.cwd(), "..", ".."));
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

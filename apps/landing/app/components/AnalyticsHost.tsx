@@ -37,7 +37,7 @@ function useSiteEvents(): void {
   }, []);
 }
 
-export function AnalyticsHost({ config, part }: { config: AnalyticsConfig | null; part: number | null }): ReactNode {
+export function AnalyticsHost({ config, part }: { config: AnalyticsConfig | null; part: string | null }): ReactNode {
   const pathname = usePathname();
   useSiteEvents();
   useOutboundClickTracking();

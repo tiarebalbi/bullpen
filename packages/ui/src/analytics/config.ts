@@ -33,22 +33,45 @@ export function resolveAnalyticsConfig(env: AnalyticsEnv): AnalyticsConfig | nul
   return { googleId, clarityId };
 }
 
+interface TimelineShape {
+  "current-moment"?: unknown;
+  moments?: Array<{ "unique-id"?: unknown; metadata?: { kind?: unknown; after?: unknown } }>;
+}
+
+const partNumber = (named: unknown): number | null => {
+  const match = typeof named === "string" ? /^part-(\d{2})$/.exec(named) : null;
+  return match ? Number(match[1]) : null;
+};
+
 /**
- * The part of the series the timeline calls current ("part-02" -> 2), for the
- * Clarity `part` tag. Takes the timeline's text, so each app reads the file
- * itself and this stays free of node:fs. A bonus moment (ADR-0027) has no part
- * number of its own: when it is the current moment, the part is the one it
- * follows, named in its metadata (`after`), because the next part is not out yet.
+ * The part of the series the timeline calls current ("part-02" -> 2), from the timeline as an object (a JSON import bundled at build time, or parsed text).
+ * A bonus moment (ADR-0027) has no part number of its own: when it is the current moment, the part is the one it follows, named in its metadata (`after`),
+ * because the next part is not out yet. This is for what is drawn; the analytics tag is `partTagFromTimeline`.
  */
+export function currentPartOf(timeline: unknown): number | null {
+  const t = (timeline ?? {}) as TimelineShape;
+  const moment = t["current-moment"];
+  const bonus = t.moments?.find((m) => m["unique-id"] === moment && m.metadata?.kind === "bonus");
+  return partNumber(bonus ? bonus.metadata?.after : moment);
+}
+
+/** `currentPartOf` for the timeline's text. */
 export function currentPartFromTimeline(timelineJson: string): number | null {
   try {
-    const timeline = JSON.parse(timelineJson) as { "current-moment"?: unknown; moments?: Array<{ "unique-id"?: unknown; metadata?: { kind?: unknown; after?: unknown } }> };
-    const moment = timeline["current-moment"];
-    const bonus = timeline.moments?.find((m) => m["unique-id"] === moment && m.metadata?.kind === "bonus");
-    const named = bonus ? bonus.metadata?.after : moment;
-    const match = typeof named === "string" ? /^part-(\d{2})$/.exec(named) : null;
-    return match ? Number(match[1]) : null;
+    return currentPartOf(JSON.parse(timelineJson));
   } catch {
     return null;
   }
+}
+
+/**
+ * What the Clarity `part` tag says: the part number as text ("4"), or "bonus" while a bonus moment (ADR-0027) is the current one, so the bonus is told apart
+ * from the part it follows instead of being counted as it. Null when the timeline does not say. A bonus is told by `metadata.kind`, never by its id.
+ */
+export function partTagFromTimeline(timeline: unknown): string | null {
+  const t = (timeline ?? {}) as TimelineShape;
+  const moment = t["current-moment"];
+  if (t.moments?.some((m) => m["unique-id"] === moment && m.metadata?.kind === "bonus")) return "bonus";
+  const part = partNumber(moment);
+  return part === null ? null : String(part);
 }

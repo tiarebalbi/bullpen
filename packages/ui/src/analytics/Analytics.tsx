@@ -13,7 +13,7 @@ export interface AnalyticsProps {
   /** Null outside production or with no ids: nothing is ever loaded. */
   config: AnalyticsConfig | null;
   /** The part of the series this deployment belongs to, sent to Clarity as the `part` tag. */
-  part: number | null;
+  part: string | null;
   /** The current route's pathname, so client-side navigation counts as a page view. */
   pathname: string;
   /** Test seam: how a withdrawal restarts the page. */
@@ -24,7 +24,7 @@ function reloadPage(): void {
   window.location.reload();
 }
 
-function startTags(config: { googleId: string | null; clarityId: string | null }, part: number | null): void {
+function startTags(config: { googleId: string | null; clarityId: string | null }, part: string | null): void {
   if (config.googleId) {
     loadGoogleTag(config.googleId, window.location.hostname);
     setTrackTransport(sendGoogleEvent);

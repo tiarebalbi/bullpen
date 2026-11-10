@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@bullpen/ui/styles.css";
 import "./web.css";
-import { join } from "node:path";
 import { resolveAnalyticsConfig } from "@bullpen/ui/analytics-config";
 import { THEME_INIT_SCRIPT } from "@bullpen/ui/theme-init";
 import { AnalyticsHost } from "./components/AnalyticsHost.js";
 import { Footer } from "./components/Footer.js";
-import { loadCurrentPart } from "./lib/currentPart.js";
+import { currentPartTag } from "./lib/currentPart.js";
 
 // This app's own production URL (see BULLPEN_WEB_URL's fallback in
 // apps/landing/app/lib/webAppUrl.ts, and PRODUCTION_LANDING_ORIGIN in this
@@ -34,7 +33,6 @@ const analyticsConfig = resolveAnalyticsConfig({
   NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   NEXT_PUBLIC_CLARITY_PROJECT_ID: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID,
 });
-const currentPart = loadCurrentPart(join(process.cwd(), "..", ".."));
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -47,7 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         {children}
         <Footer />
-        <AnalyticsHost config={analyticsConfig} part={currentPart} />
+        <AnalyticsHost config={analyticsConfig} part={currentPartTag} />
       </body>
     </html>
   );

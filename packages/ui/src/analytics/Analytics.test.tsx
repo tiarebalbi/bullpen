@@ -32,7 +32,7 @@ const dataLayer = (): unknown[][] =>
 
 describe("tags load only with production config AND consent", () => {
   it("loads nothing outside production, with no ids (config is null), even after Accept", () => {
-    render(<Analytics config={null} part={1} pathname="/" />);
+    render(<Analytics config={null} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     expect(document.getElementById(GOOGLE_SCRIPT_ID)).toBeNull();
     expect(document.getElementById(CLARITY_SCRIPT_ID)).toBeNull();
@@ -40,7 +40,7 @@ describe("tags load only with production config AND consent", () => {
   });
 
   it("loads nothing before the visitor chooses, or after Reject, and sets no cookie but its own", () => {
-    render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" />);
     expect(document.getElementById(GOOGLE_SCRIPT_ID)).toBeNull();
     expect(document.getElementById(CLARITY_SCRIPT_ID)).toBeNull();
     act(() => dispatchConsent("reject"));
@@ -51,14 +51,14 @@ describe("tags load only with production config AND consent", () => {
   });
 
   it("loads only the tool whose id is set", () => {
-    render(<Analytics config={{ googleId: null, clarityId: "clar1tytest" }} part={1} pathname="/" />);
+    render(<Analytics config={{ googleId: null, clarityId: "clar1tytest" }} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     expect(document.getElementById(GOOGLE_SCRIPT_ID)).toBeNull();
     expect(document.getElementById(CLARITY_SCRIPT_ID)?.getAttribute("src")).toBe("https://www.clarity.ms/tag/clar1tytest");
   });
 
   it("loads both after Accept", () => {
-    render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     expect(document.getElementById(GOOGLE_SCRIPT_ID)?.getAttribute("src")).toBe(
       "https://www.googletagmanager.com/gtag/js?id=G-TEST000000",
@@ -69,7 +69,7 @@ describe("tags load only with production config AND consent", () => {
 
 describe("Google consent", () => {
   it("runs the default call (all four denied) before anything else, then only analytics_storage changes", () => {
-    render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     const calls = dataLayer();
     expect(calls[0]).toEqual(["consent", "default", GOOGLE_CONSENT_DENIED]);
@@ -80,7 +80,7 @@ describe("Google consent", () => {
   });
 
   it("never grants an advertising signal in any call", () => {
-    render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     for (const call of dataLayer()) {
       if (call[0] !== "consent") continue;
@@ -98,7 +98,7 @@ describe("Google consent", () => {
       if ((node as HTMLElement).id === GOOGLE_SCRIPT_ID) appended.push(dataLayer().length);
       return original(node);
     }) as typeof document.head.appendChild);
-    render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     spy.mockRestore();
     expect(appended).toHaveLength(1);
@@ -108,7 +108,7 @@ describe("Google consent", () => {
 
 describe("Clarity consent and tag", () => {
   it("queues Consent API v2 (ads denied, analytics granted) and the part tag before the script", () => {
-    render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
     const queue = ((window as unknown as { clarity: { q: ArrayLike<unknown>[] } }).clarity.q).length
       ? Array.from((window as unknown as { clarity: { q: ArrayLike<unknown>[] } }).clarity.q).map((a) => Array.from(a))
@@ -120,10 +120,10 @@ describe("Clarity consent and tag", () => {
 
 describe("page views", () => {
   it("sends one page_view per pathname change, not one per render", () => {
-    const { rerender } = render(<Analytics config={CONFIG} part={1} pathname="/" />);
+    const { rerender } = render(<Analytics config={CONFIG} part="1" pathname="/" />);
     act(() => dispatchConsent("accept"));
-    rerender(<Analytics config={CONFIG} part={1} pathname="/" />);
-    rerender(<Analytics config={CONFIG} part={1} pathname="/privacy" />);
+    rerender(<Analytics config={CONFIG} part="1" pathname="/" />);
+    rerender(<Analytics config={CONFIG} part="1" pathname="/privacy" />);
     const views = dataLayer().filter((c) => c[0] === "event" && c[1] === "page_view");
     expect(views.map((v) => (v[2] as { page_path: string }).page_path)).toEqual(["/", "/privacy"]);
   });
@@ -146,7 +146,7 @@ describe("track", () => {
   });
 
   it("sends the event once consent is given and the tag is loaded, and stops after withdrawal", () => {
-    render(<Analytics config={CONFIG} part={1} pathname="/" reload={() => {}} />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" reload={() => {}} />);
     act(() => dispatchConsent("accept"));
     track("series_part_click", { part_number: 1 });
     expect(dataLayer().some((c) => c[0] === "event" && c[1] === "series_part_click")).toBe(true);
@@ -163,7 +163,7 @@ describe("withdrawing", () => {
     document.cookie = "_ga=GA1.1.1; Path=/";
     document.cookie = "_clck=abc; Path=/";
     const reload = vi.fn();
-    render(<Analytics config={CONFIG} part={1} pathname="/" reload={reload} />);
+    render(<Analytics config={CONFIG} part="1" pathname="/" reload={reload} />);
     act(() => dispatchConsent("accept"));
     act(() => dispatchConsent("withdraw"));
     const calls = dataLayer();
@@ -178,7 +178,7 @@ describe("withdrawing", () => {
 
   it("does not reload a page where no tag ever ran", () => {
     const reload = vi.fn();
-    render(<Analytics config={null} part={1} pathname="/" reload={reload} />);
+    render(<Analytics config={null} part="1" pathname="/" reload={reload} />);
     act(() => dispatchConsent("accept"));
     act(() => dispatchConsent("withdraw"));
     expect(reload).not.toHaveBeenCalled();

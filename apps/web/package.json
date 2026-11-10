@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --webpack",
+    "part-tag": "tsx scripts/emit-part-tag.ts",
+    "dev": "pnpm run part-tag && next dev --webpack",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run && playwright test",
-    "build": "next build --webpack",
-    "vercel-build": "pnpm --filter @bullpen/fitness-checks db:migrate && next build --webpack",
+    "typecheck": "pnpm run part-tag && tsc --noEmit",
+    "test": "pnpm run part-tag && vitest run && playwright test",
+    "build": "pnpm run part-tag && next build --webpack",
+    "vercel-build": "pnpm --filter @bullpen/fitness-checks db:migrate && pnpm run part-tag && next build --webpack",
     "measure:moderation": "tsx scripts/measure-moderation.ts"
   },
   "dependencies": {

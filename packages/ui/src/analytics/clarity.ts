@@ -17,7 +17,7 @@ export function clarityLoaded(): boolean {
  * granted. Call it only after the visitor accepted. `part` is the Clarity
  * tag naming the part of the series this deployment belongs to.
  */
-export function loadClarity(projectId: string, part: number | null): void {
+export function loadClarity(projectId: string, part: string | null): void {
   if (clarityLoaded()) return;
   const w = clarityWindow();
   const stub: ClarityFn =
@@ -29,7 +29,7 @@ export function loadClarity(projectId: string, part: number | null): void {
     };
   w.clarity = stub;
   stub("consentv2", { ad_Storage: "denied", analytics_Storage: "granted" });
-  if (part !== null) stub("set", "part", String(part));
+  if (part !== null) stub("set", "part", part);
 
   const script = document.createElement("script");
   script.id = CLARITY_SCRIPT_ID;
