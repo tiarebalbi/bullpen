@@ -55,8 +55,10 @@ describe("a market buy at an end-of-day price", () => {
     const symbol = w.symbol();
     await w.endOfDayPrice(symbol, "100");
     const accountId = await w.account("100000");
-    const { orderId } = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "200", clientOrderId: `whole-${symbol}` });
+    // Submitted and dispatched here, not placed through placePlayerOrder, which would run the order on its own venue (a tenth of fills partial) and fill it at once.
+    const { orderId, capPrice } = await submitOrder(w.trading, { accountId, symbol, quantity: "200", clientOrderId: `whole-${symbol}` });
     const venue = new DerivedVenue(w.trading, { seed: 5, prices: dbPriceSource(w.marketData), partialRate: 1, accountId });
+    await dispatchOrder(w.trading, venue, { orderId, symbol, quantity: "200", capPrice }, new Date());
     for (let poll = 0; poll < 400 && (await w.order(orderId)).status !== "filled"; poll += 1) await pump(w.trading, venue, new Date());
     expect(await w.order(orderId)).toMatchObject({ status: "filled", filled_qty: "200.00000000" });
     const fills = (await w.trading.query<{ quantity: string }>("SELECT quantity::text FROM trading.fills WHERE order_id = $1", [orderId])).rows.map((r) => r.quantity);
