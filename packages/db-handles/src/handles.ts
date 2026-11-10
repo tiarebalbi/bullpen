@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 
-export type HandleStatus = "pending" | "approved" | "review" | "rejected";
+export type HandleStatus = "pending" | "approved" | "review" | "rejected" | "revoked";
 
 export const HANDLE_REVIEW_REASONS = ["below-threshold", "timeout", "rate-limited", "malformed", "no-key", "unavailable"] as const;
 export type ReviewReason = (typeof HANDLE_REVIEW_REASONS)[number];
@@ -21,6 +21,8 @@ export const STUCK_AFTER_MINUTES = 10;
 export type Submitted =
   | { ok: true; handleId: string }
   | { ok: false; reason: "taken" }
+  /** This text was taken down after a report, for whoever had it, and nobody may save it again (they may choose another). The same answer for every player: it never says who had it. Nothing was saved, counted or asked. */
+  | { ok: false; reason: "revoked" }
   /** The player has saved CHANGE_LIMIT handles in the window. Nothing was saved, and no model should be asked. */
   | { ok: false; reason: "limit"; retryAfterSeconds: number };
 
@@ -29,7 +31,8 @@ const UNIQUE_VIOLATION = "23505";
 /**
  * Saves a new or changed handle as 'pending', drops any queue entry the old one had, and counts the change, all in one transaction: a failure part way
  * leaves the old handle and its queue entry exactly as they were. The limit is checked first, under a lock on the player so two saves at once cannot both
- * pass, and a refused save changes nothing and counts nothing. A handle already held by another player, ignoring case, is refused with 'taken'. The same
+ * pass, and a refused save changes nothing and counts nothing. A handle text that was ever taken down after a report is refused with 'revoked', to any player (before the limit is counted, so it
+ * costs nothing, and whether or not its old owner still holds the row); a handle already held by another player, ignoring case, is refused with 'taken'. The same
  * player saving the same handle again is allowed (it counts as a change): it puts the handle back to 'pending', which is how a decision that never arrived is
  * retried by the player. Nothing here decides anything.
  */
@@ -38,6 +41,11 @@ export async function submitHandle(pool: Pool, userId: string, handle: string): 
   try {
     await client.query("BEGIN");
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`handle-changes:${userId}`]);
+    const taken = await client.query("SELECT 1 FROM handles.revoked WHERE handle_lower = lower($1) LIMIT 1", [handle]);
+    if (taken.rowCount === 1) {
+      await client.query("ROLLBACK");
+      return { ok: false, reason: "revoked" };
+    }
     await client.query("DELETE FROM handles.handle_changes WHERE owner_user_id = $1 AND changed_at < now() - make_interval(hours => $2)", [userId, CHANGE_WINDOW_HOURS]);
     const recent = await client.query<{ count: string; retry_after: string | null }>(
       `SELECT count(*)::text AS count, GREATEST(0, EXTRACT(EPOCH FROM (min(changed_at) + make_interval(hours => $2) - now())))::text AS retry_after
@@ -48,6 +56,7 @@ export async function submitHandle(pool: Pool, userId: string, handle: string): 
       await client.query("ROLLBACK");
       return { ok: false, reason: "limit", retryAfterSeconds: Math.max(1, Math.ceil(Number(recent.rows[0]!.retry_after ?? 0))) };
     }
+    const before = await client.query<{ handle: string }>("SELECT handle FROM handles.handle WHERE owner_user_id = $1 FOR UPDATE", [userId]);
     const saved = await client.query<{ handle_id: string }>(
       `INSERT INTO handles.handle (owner_user_id, handle, status) VALUES ($1, $2, 'pending')
        ON CONFLICT (owner_user_id) DO UPDATE
@@ -57,6 +66,8 @@ export async function submitHandle(pool: Pool, userId: string, handle: string): 
     );
     const handleId = saved.rows[0]!.handle_id;
     await client.query("DELETE FROM handles.review_queue WHERE handle_id = $1", [handleId]);
+    // A report is about the text it was made against: a changed handle starts with none.
+    if (before.rows[0] && before.rows[0].handle.toLowerCase() !== handle.toLowerCase()) await client.query("DELETE FROM handles.reports WHERE handle_id = $1", [handleId]);
     await client.query("INSERT INTO handles.handle_changes (owner_user_id) VALUES ($1)", [userId]);
     await client.query("COMMIT");
     return { ok: true, handleId };
@@ -189,4 +200,83 @@ export async function resolveReview(pool: Pool, handleId: string, action: "appro
   } finally {
     client.release();
   }
+}
+
+export type ReportResult =
+  | { ok: true }
+  /** No approved handle by that name: it was changed, taken down, or never approved. Only an approved handle is public, so only one can be reported. */
+  | { ok: false; reason: "not-found" }
+  /** A player's own handle. */
+  | { ok: false; reason: "own" }
+  /** This player already reported this handle. */
+  | { ok: false; reason: "already" };
+
+/**
+ * A player's report of another player's approved handle, found by the name they saw on the leaderboard. One report for each reporter and handle; a second is "already". A report
+ * stores the handle's id and the reporter's user id and the time, and nothing the reporter typed. Reporting your own handle is refused.
+ */
+export async function reportHandle(pool: Pool, reporterUserId: string, handle: string): Promise<ReportResult> {
+  const found = await pool.query<{ handle_id: string; owner_user_id: string }>("SELECT handle_id, owner_user_id FROM handles.handle WHERE lower(handle) = lower($1) AND status = 'approved'", [handle]);
+  const row = found.rows[0];
+  if (!row) return { ok: false, reason: "not-found" };
+  if (row.owner_user_id === reporterUserId) return { ok: false, reason: "own" };
+  const inserted = await pool.query("INSERT INTO handles.reports (handle_id, reporter_user_id) VALUES ($1, $2) ON CONFLICT (handle_id, reporter_user_id) DO NOTHING", [row.handle_id, reporterUserId]);
+  return inserted.rowCount === 1 ? { ok: true } : { ok: false, reason: "already" };
+}
+
+export interface ReportedItem {
+  handleId: string;
+  handle: string;
+  /** How many players reported it and the admin has not dismissed. */
+  reports: number;
+  firstReportedAt: Date;
+}
+
+/** Approved handles with at least one report that has not been dismissed, the most reported first. Carries no user id and no reporter: a reviewer sees a count. */
+export async function listReported(pool: Pool, limit = 100): Promise<ReportedItem[]> {
+  const { rows } = await pool.query<{ handle_id: string; handle: string; reports: number; first_reported_at: Date }>(
+    `SELECT h.handle_id, h.handle, count(*)::int AS reports, min(r.reported_at) AS first_reported_at
+       FROM handles.reports r JOIN handles.handle h ON h.handle_id = r.handle_id
+      WHERE h.status = 'approved' AND r.dismissed_at IS NULL
+      GROUP BY h.handle_id, h.handle
+      ORDER BY count(*) DESC, min(r.reported_at), h.handle_id LIMIT $1`,
+    [Math.max(1, Math.min(limit, 500))],
+  );
+  return rows.map((row) => ({ handleId: row.handle_id, handle: row.handle, reports: row.reports, firstReportedAt: row.first_reported_at }));
+}
+
+/**
+ * Takes an approved handle down: its status becomes 'revoked' (so handles.approved_v1 drops it and the leaderboard shows the neutral label at its next refresh), nobody may
+ * save the same text again, and its reports are deleted (they have done their work). False when the handle is not approved any more (changed by the player, or already
+ * decided).
+ */
+export async function revokeHandle(pool: Pool, handleId: string): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const updated = await client.query<{ handle: string }>(
+      "UPDATE handles.handle SET status = 'revoked', decided_at = now() WHERE handle_id = $1 AND status = 'approved' RETURNING handle",
+      [handleId],
+    );
+    const row = updated.rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    await client.query("INSERT INTO handles.revoked (handle_lower) VALUES (lower($1)) ON CONFLICT DO NOTHING", [row.handle]);
+    await client.query("DELETE FROM handles.reports WHERE handle_id = $1", [handleId]);
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** The admin's "this handle is fine": the open reports are dismissed (their rows stay, so those reporters cannot report it again), and the handle leaves the Reported list until another player reports it. False when there was nothing open. */
+export async function dismissReports(pool: Pool, handleId: string): Promise<boolean> {
+  const updated = await pool.query("UPDATE handles.reports SET dismissed_at = now() WHERE handle_id = $1 AND dismissed_at IS NULL", [handleId]);
+  return (updated.rowCount ?? 0) > 0;
 }

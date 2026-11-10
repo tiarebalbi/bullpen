@@ -79,10 +79,17 @@ describe("POST: saving a handle", () => {
   });
 
   it("an unsure answer, a failure and a tie all end in review, never approved", async () => {
-    for (const answer of [{ ok: true, probability: 0.5, costUsd: 0, latencyMs: 1 }, { ok: true, probability: 0.9, costUsd: 0, latencyMs: 1 }, { ok: false, reason: "timeout", latencyMs: 2000 }, { ok: false, reason: "no-key", latencyMs: 0 }]) {
+    for (const answer of [{ ok: true, probability: 0.5, costUsd: 0, latencyMs: 1 }, { ok: true, probability: 0.88, costUsd: 0, latencyMs: 1 }, { ok: false, reason: "timeout", latencyMs: 2000 }, { ok: false, reason: "no-key", latencyMs: 0 }]) {
       mocks.askGateway.mockResolvedValue(answer);
       expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "review" });
     }
+  });
+
+  it("with the real threshold, an answer of exactly 0.88 goes to review and 0.89 approves, through the whole save path", async () => {
+    mocks.askGateway.mockResolvedValue({ ok: true, probability: 0.88, costUsd: 0, latencyMs: 1 });
+    expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "review" });
+    mocks.askGateway.mockResolvedValue({ ok: true, probability: 0.89, costUsd: 0, latencyMs: 1 });
+    expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "approved" });
   });
 
   it("answers 200 and 'pending' when the decision cannot be recorded, so moderation failing never fails the player", async () => {
@@ -143,5 +150,27 @@ describe("GET: the player's own handle", () => {
     expect(await (await GET()).json()).toEqual({ label: "Player 4F2A", handle: null });
     mocks.readOwnHandle.mockRejectedValue(new Error("down"));
     expect((await GET()).status).toBe(503);
+  });
+});
+
+describe("a handle that was taken down after a report", () => {
+  it("is a 409 in words, the same for any player, and nothing is asked of the model", async () => {
+    mocks.submitHandle.mockResolvedValue({ ok: false, reason: "revoked" });
+    const response = await post({ handle: "BullRun" });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "handle-unavailable", message: "That handle cannot be used. Try another." });
+    expect(mocks.askGateway).not.toHaveBeenCalled();
+    expect(mocks.recordDecision).not.toHaveBeenCalled();
+  });
+
+  it("says the same to a player who never had it, and never says a report or an owner was involved", async () => {
+    mocks.submitHandle.mockResolvedValue({ ok: false, reason: "revoked" });
+    mocks.currentPlayer.mockResolvedValue({ userId: "someone-else", label: "Player 9F3C" });
+    const response = await post({ handle: "BullRun" });
+    expect(response.status).toBe(409);
+    const body = (await response.json()) as { error: string; message: string };
+    expect(body).toEqual({ error: "handle-unavailable", message: "That handle cannot be used. Try another." });
+    expect(JSON.stringify(body)).not.toMatch(/report|taken down|someone|owner|player/i);
+    expect(mocks.askGateway).not.toHaveBeenCalled();
   });
 });

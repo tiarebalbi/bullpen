@@ -26,7 +26,7 @@ Only the handle text is sent: no user id, email, address or session (test: `gate
 
 ## 4. Threshold, and the labelled set
 
-- **Threshold: 0.90, kept (it was provisional until the run).** Approved only when the probability is strictly above it; exactly at it goes to review. The rule for choosing it: the
+- **Threshold: 0.90 on the first run, since moved to 0.88 (see "Re-measured on `/v1/decisions`" below and in section 5). The text of this bullet and the next is the first run's record.** On the first run it was kept at 0.90 (it was provisional until the run). Approved only when the probability is strictly above it; exactly at it goes to review. The rule for choosing it: the
   lowest threshold that approves no reject (the highest probability any reject got), with a margin, unless that sends more than 1 in 20 clean handles to review, in which case the
   trade is reported and the owner decides. Applied to the run: the highest probability any reject got is **0.88**, so a threshold strictly above 0.88 approves no reject; 0.90 is that plus a
   margin of 0.02, and the next candidate down, 0.85, approves 2 of the 40 rejects. So 0.90 is the lowest safe threshold with a margin, and it stays.
@@ -34,6 +34,7 @@ Only the handle text is sent: no user id, email, address or session (test: `gate
   approving no reject needs a threshold of at least 0.88 (the highest reject), and from the 17 printed probabilities that sends at least 10 of 106 clean handles (9.4%) to review at 0.88, and 17 at 0.90; the first tabulated threshold that sends 1 in 20 or fewer, 0.85 (4 of 106, 3.8%), approves 2 rejects.
   The rule leaves this to the owner, and **the owner decided on 2026-11-10: keep 0.90.** The reason: a wrongly accepted handle is public and costs trust, while a wrongly queued one costs a short wait. The miss is accepted, not fixed.
 - **What would reopen it:** a real review queue of more than 10 handles a week means rewriting the question and re-measuring (ADR-0027's first "what would flip it" condition, with that number). The labelled set is full of trading jokes, so its 16.0% is not a forecast; the real queue is what is watched.
+- **Re-measured on `/v1/decisions` (2026-11-10): the threshold is now 0.88.** The route changed from the deprecated `/v1/evaluate` (ADR-0027, follow-up), so the set was run again through the code the site uses. The highest reject is **0.86** (it was 0.88), so the rule (the lowest threshold that approves no reject, plus a margin of 0.02) gives **0.88**, and the owner decided on 2026-11-10 to apply it: `APPROVE_ABOVE` is 0.88 (exactly 0.88 goes to review, 0.89 approves; a test pins both). At 0.88, 0 of 40 rejects are accepted and **18 of 106 clean handles (17.0%) go to review**; at 0.90 it would have been **33 of 106 (31.1%)**, where the first run had 17 (16.0%). Still over the 1-in-20 target: the miss is reported, not fixed.
 - **Set:** 106 clean and 40 that must be rejected (146), written by me before any model saw them, none from a real player, labelled by the criteria in
   `app/lib/moderation/config.ts`; the reject set is mild and coded (leetspeak and padding), no slur spelled out, and the slur rows use placeholders, which is a weak test and is reported as such.
   Method and caveats: `apps/web/moderation-set/README.md`.
@@ -74,6 +75,43 @@ clean-070 River_Rat 0.87, clean-080 Card_Counter_Cal 0.80, clean-094 Paint_Brush
 The measured cost is about 39% above the Decision docs' example below (`$0.00001608` against `$0.00001155`), and still about six times under the target. The run's JSON (`bonus-run.json`: ids, probabilities, latencies and costs, no handle text) is on the owner's machine and is not in this repository.
 The script's format and its stops (no key; 402 no credits; 401 and 403 refusals) were checked against a stubbed gateway before the real run. A stub's numbers are not recorded here.
 For comparison, the Decision docs' example response carries `"cost": "0.00001155"` for 275 input tokens (Vercel's [Decision docs](https://vercel.com/docs/ai-gateway/modalities/decision), last updated 2026-10-07). That is a documentation example, not a measurement.
+
+### Re-measured on `/v1/decisions` (2026-11-10)
+
+The same 146 handles, one request at a time, from the owner's machine (darwin arm64, node v26.13.0, not Vercel; the gateway's nearest edge answered from `pdx1`), through the code the site runs: `askGateway(handle)` from `app/lib/moderation/gateway.ts`, now on `POST /v1/decisions` with a `predicate` whose instructions carry the two criteria, and an answer trusted only if it names `typesafe-ai/jev`. 0 failures (no timeout, 429 or refusal). Command:
+
+```bash
+export AI_GATEWAY_API_KEY=<a temporary key>
+pnpm --filter @bullpen/web measure:moderation -- --out ../../post-facts/bonus-run-decisions.json
+```
+
+| Target | `/v1/evaluate` (first run) | `/v1/decisions` (this run) |
+| --- | --- | --- |
+| 0 rejects accepted | **met**, 0 of 40 at 0.90 | **met**, 0 of 40 at 0.90 (and at 0.88) |
+| at most 1 in 20 clean sent to review | **MISS**, 17 of 106 (16.0%) at 0.90 | **MISS**: 33 of 106 (31.1%) at 0.90, **18 of 106 (17.0%) at the new 0.88** (derived, below); the allowed 1 in 20 is about 5 of 106 |
+| p95 latency under 500 ms | **met**, p95 215 ms | **met**, p50 185 ms, p95 296 ms, max 593 ms |
+| under $0.0001 a decision | **met**, $0.00001608 | **met**, $0.00001574 from the gateway's own cost field; $0.00229795 in all for 146 |
+| highest probability given to a reject | 0.88 | **0.86** (the lowest threshold that approves none of them) |
+
+Probability spread, this run: clean n=106, min 0.71, p05 0.83, median 0.92, p95 0.95, max 0.98; reject n=40, min 0.03, p05 0.04, median 0.28, p95 0.81, max 0.86. Against the first run (clean: min 0.78, p05 0.87, median 0.94, p95 0.96, max 0.97; reject: min 0.02, p05 0.03, median 0.25, p95 0.84, max 0.88) the whole spread moved down. The scores come back with two decimals: every probability in the output is a multiple of 0.01, so a score lands exactly on a threshold often, and exactly at it goes to review. The route and how the criteria are given (two fields before, one instruction string now) changed together, and this run cannot say which moved the numbers.
+
+| threshold | rejects accepted (first run → this run) | clean to review (first run → this run) |
+| --- | --- | --- |
+| 0.5 | 10 → 12 | 0 → 0 |
+| 0.6 | 8 → 9 | 0 → 0 |
+| 0.7 | 6 → 6 | 0 → 0 |
+| 0.8 | 4 → 3 | 2 → 1 |
+| 0.85 | 2 → 1 | 4 → 10 |
+| **0.88** (derived, see below) | 0 → 0 | 10 → **18** |
+| 0.9 | 0 → 0 | 17 → 33 |
+| 0.95 | 0 → 0 | 87 → 101 |
+| 0.98, 0.99, 0.995 | 0 → 0 | 106 → 106 |
+
+The 0.88 row is not in the run's own table (which stopped at 0.85, 0.9): it is derived from the printed list of the clean handles that went to review at 0.90, counting those at or below 0.88. The same count gives 10 at 0.85, which matches the run's own row; for the first run it uses the 17 printed. The next run prints 0.86 to 0.89 as well (the script's candidate list now includes them).
+
+The 33 clean handles sent to review at 0.90, by id and probability (the 18 at or below 0.88 are the ones that still go to review at the new threshold): clean-003 sam-the-trader 0.89, clean-004 LunaLovegood 0.90, clean-005 PaperHands 0.85, clean-007 bull_run_bob 0.82, clean-008 BearHug 0.90, clean-011 Compound_Carl 0.88, clean-013 Dividend_Dave 0.90, clean-018 PixelPirate 0.82, clean-019 QuietStorm 0.86, clean-035 Pork_Belly 0.81, clean-036 Wheat_Futures 0.89, clean-037 Gold_Digger_Gus 0.71, clean-040 Oil_and_Water 0.90, clean-046 Blue_Chip_Bill 0.83, clean-047 Market_Monk 0.88, clean-050 Stop_Loss_Steve 0.86, clean-051 Limit_Order_Lou 0.83, clean-052 Hedge_Fund_Hank 0.87, clean-054 Call_Me_Maybe 0.90, clean-055 Put_It_On_Red 0.82, clean-056 The_Long_Game 0.90, clean-058 Buy_the_Dip 0.88, clean-059 Hold_the_Line 0.90, clean-060 To_the_Moon 0.90, clean-062 Astro_Alex 0.90, clean-068 Desert_Fox 0.87, clean-070 River_Rat 0.83, clean-077 Rook_Takes_Pawn 0.90, clean-080 Card_Counter_Cal 0.84, clean-083 Sudoku_Sid 0.88, clean-091 Pen_Pal_Pam 0.89, clean-094 Paint_Brush_Pat 0.89, clean-096 Compost_Queen 0.90. Eleven of them sit at exactly 0.90 (clean-004, -008, -013, -040, -054, -056, -059, -060, -062, -077, -096). The run's JSON (`bonus-run-decisions.json`) is on the owner's machine and is not in this repository.
+
+**The decision, made by the owner on 2026-11-10: threshold 0.88.** The rule is the lowest threshold that approves no reject (the highest reject, 0.86) plus a margin of 0.02. At 0.88 no reject is accepted, with the margin the rule asks for, and 18 of 106 clean handles (17.0%) wait for a person where 33 would at 0.90. That is still over the 1-in-20 target, the same kind of miss accepted on the first run, and it is reported, not fixed. The ADR's flip condition stands: a real review queue of more than 10 handles a week means rewriting the question and re-measuring.
 
 ## 6. A handle the model and a blocklist disagree on
 

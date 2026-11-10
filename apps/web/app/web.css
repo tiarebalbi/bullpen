@@ -354,3 +354,37 @@ a {
 .bp-positions__cash {
   overflow-wrap: anywhere;
 }
+
+/* "Report" under another player's row: small, quiet and a real button, with its question and answer in words. */
+.bp-report {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font: 500 12px/1.4 var(--font-body);
+  color: var(--foreground-muted);
+}
+.bp-report__button {
+  min-height: 1.75rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--bp-accent-text);
+  font: 600 12px/1 var(--font-body);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.bp-report__button:hover {
+  background: var(--bp-panel-2);
+}
+.bp-report__button:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+.bp-report__button:disabled {
+  cursor: progress;
+}
+.bp-report__problem {
+  color: var(--foreground);
+}

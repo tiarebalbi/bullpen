@@ -62,3 +62,13 @@ describe("the handle form", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("could not reach");
   });
 });
+
+describe("a handle that was taken down", () => {
+  it("tells the player it was taken down after a report, that it cannot be used again, and what they appear as", () => {
+    const line = statusLine({ handle: "BullRun", status: "revoked" }, "Player 4F2A");
+    expect(line).toContain("BullRun was taken down after a report");
+    expect(line).toContain("you appear as Player 4F2A");
+    expect(line).toContain("It cannot be used again");
+    expect(line).toContain("Choose another");
+  });
+});

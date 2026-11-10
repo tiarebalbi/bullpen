@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { LeaderboardSnapshot } from "@bullpen/contracts";
 import { Leaderboard, ageLabel, ownNote } from "./Leaderboard.js";
 import type { Polled } from "../lib/usePolled.js";
@@ -180,5 +180,46 @@ describe("ageLabel", () => {
       expect(asVisitor.container.textContent).not.toMatch(/waiting for review|not approved/);
       expect(screen.queryByTestId("leaderboard-own-note")).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("reporting a handle from the ranking", () => {
+  const withViewer = (viewer: LeaderboardSnapshot["viewer"]) => snapshot({ rows: [
+    { accountId: "a1", handle: "ada", cash: "600", positionsValue: "400", equity: "1000", rank: 1 },
+    { accountId: "a2", handle: "grace", cash: "250", positionsValue: "0", equity: "250", rank: 2 },
+    { accountId: "a3", handle: "Player 9F3C", cash: "100", positionsValue: "0", equity: "100", rank: 3 },
+  ], total: 3, viewer });
+  const reportButtons = () => screen.queryAllByRole("button", { name: /^Report / });
+
+  it("offers a signed-in player a Report under every other player's chosen handle, not under their own row or a neutral label", () => {
+    render(<Leaderboard polled={ok(withViewer({ accountId: "a2", handle: { status: "approved", approved: "grace" } }))} />);
+    expect(reportButtons().map((b) => b.getAttribute("aria-label"))).toEqual(["Report ada"]);
+    expect(screen.queryByRole("button", { name: "Report grace" })).toBeNull(); // their own
+    expect(screen.queryByRole("button", { name: "Report Player 9F3C" })).toBeNull(); // nothing a player chose
+  });
+
+  it("offers a visitor nothing to report with: no button anywhere", () => {
+    render(<Leaderboard polled={ok(withViewer(undefined))} />);
+    expect(reportButtons()).toHaveLength(0);
+  });
+
+  it("sends the report for the name shown, after a second click", async () => {
+    const fetcher = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<Leaderboard polled={ok(withViewer({ accountId: "a2", handle: { status: "approved", approved: "grace" } }))} />);
+    screen.getByRole("button", { name: "Report ada" }).click();
+    (await screen.findByRole("button", { name: "Yes, report" })).click();
+    await screen.findByRole("status");
+    expect(fetcher).toHaveBeenCalledWith("/api/handle/report", expect.objectContaining({ body: JSON.stringify({ handle: "ada" }) }));
+    vi.unstubAllGlobals();
+  });
+
+  it("tells a player whose handle was taken down, on their own row alone, in one short line", () => {
+    render(<Leaderboard polled={ok(withViewer({ accountId: "a3", handle: { status: "revoked", approved: null } }))} />);
+    const notes = screen.getAllByTestId("leaderboard-own-note");
+    expect(notes).toHaveLength(1);
+    expect(notes[0]!.querySelector("[aria-hidden='true']")).toHaveTextContent("Handle taken down");
+    expect(notes[0]).toHaveAttribute("title", "Your handle was taken down after a report. Choose another.");
+    expect(ownNote({ accountId: "a3", handle: { status: "revoked", approved: null } })?.short).toBe("Handle taken down");
   });
 });

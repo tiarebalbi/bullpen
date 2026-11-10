@@ -76,6 +76,14 @@ for (const viewport of [
       await expect(rows.first()).toContainText("p = 0.620");
       for (const button of await page.getByRole("button", { name: /^(Approve|Reject|Retry) / }).all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
       await expect(page.getByRole("list", { name: "Handles stuck pending" })).toContainText("slowpoke");
+      // the reported handles: a count each, Dismiss and Revoke at 44px, and never who reported
+      const reported = page.getByRole("list", { name: "Reported handles" }).getByRole("listitem");
+      await expect(reported).toHaveCount(2);
+      await expect(reported.first()).toContainText("loud_bull");
+      await expect(reported.first()).toContainText("3 reports");
+      await expect(reported.nth(1)).toContainText("1 report");
+      await expect(reported.first().getByRole("button", { name: "Revoke loud_bull" })).toBeVisible();
+      await expect(reported.first().getByRole("button", { name: "Dismiss reports of loud_bull" })).toBeVisible();
     });
 
     test("neither page scrolls sideways", async ({ page }) => {

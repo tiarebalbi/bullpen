@@ -1,7 +1,7 @@
 // Runs the labelled handle set against the AI Gateway and reports what ADR-0027 asked to measure.
 //
 //   export AI_GATEWAY_API_KEY=<a temporary key>      # read by the moderation module, not by this script
-//   pnpm --filter @bullpen/web measure:moderation -- --out ../../post-facts/bonus-run.json [--threshold 0.9]
+//   pnpm --filter @bullpen/web measure:moderation -- --out ../../post-facts/bonus-run.json [--threshold 0.88]
 //
 // It prints no secret, no request header and no response body, and it names a reject only by its id (reject-017) and category, never by its text.
 // It makes 146 requests, one at a time. If the gateway refuses because the team has no credits (HTTP 402) it says so plainly and stops at once; if it
@@ -53,7 +53,7 @@ for (const [index, item] of labelled.entries()) {
 
 const summary = summarize(measured, threshold);
 const verdicts = compareToTargets(summary, TARGETS);
-const candidates = [0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.98, 0.99, 0.995];
+const candidates = [0.5, 0.6, 0.7, 0.8, 0.85, 0.86, 0.87, 0.88, 0.89, 0.9, 0.95, 0.98, 0.99, 0.995];
 const table = thresholdTable(measured, candidates);
 const safe = lowestSafeThreshold(measured);
 const byId = new Map(measured.map((m) => [m.id, m]));

@@ -22,7 +22,7 @@ export async function GET(): Promise<Response> {
 }
 
 /**
- * Saves a new or changed handle and moderates it. A rule that fails is a 400 and no model is asked; a name that is taken is a 409; a player who has already changed
+ * Saves a new or changed handle and moderates it. A rule that fails is a 400 and no model is asked; a name that is taken, or that was taken down after a report (for any player, with the same words, never saying who had it), is a 409; a player who has already changed
  * their handle CHANGE_LIMIT times in the window gets a 429 with a plain message, checked before any model call, so nothing is saved and nothing is asked. Whatever moderation does,
  * including failing, the answer is 200 with where the handle stands, and the handle is never shown anywhere until it is approved.
  */
@@ -43,6 +43,7 @@ export async function POST(request: Request): Promise<Response> {
       response.headers.set("retry-after", String(outcome.retryAfterSeconds));
       return response;
     }
+    if (!outcome.ok && outcome.kind === "revoked") return handleError(409, { error: "handle-unavailable", message: "That handle cannot be used. Try another." });
     if (!outcome.ok) return handleError(409, { error: "handle-taken", message: "Someone already has that handle. Try another." });
     return Response.json({ status: outcome.status }, { headers: noStore });
   } catch (error) {

@@ -9,7 +9,7 @@ const json = (body: unknown, status = 200) => ({ status, contentType: "applicati
 const row = (accountId: string, handle: string, rank: number) => ({ accountId, handle, cash: "100000", positionsValue: "0", equity: "100000", rank });
 const ME = "11111111-1111-4111-8111-111111111111";
 
-type Viewer = { accountId: string; handle: null | { status: "pending" | "review" | "approved" | "rejected"; approved: string | null } };
+type Viewer = { accountId: string; handle: null | { status: "pending" | "review" | "approved" | "rejected" | "revoked"; approved: string | null } };
 
 async function open(page: Page, who: { viewer?: Viewer; rows?: ReturnType<typeof row>[]; signedIn: boolean }): Promise<void> {
   const rows = who.rows ?? [row("22222222-2222-4222-8222-222222222222", "ada", 1), row(ME, "Player 4F2A", 2)];
@@ -85,5 +85,54 @@ test("the header link has a tap target of at least 44px", async ({ page }) => {
   await open(page, { signedIn: true, viewer: { accountId: ME, handle: null } });
   const box = await board(page).getByRole("link", { name: "Set your handle →" }).boundingBox();
   expect(box!.height).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+});
+
+test("a signed-in player can report another player's handle: one click asks, a second sends the name, and nothing else", async ({ page }) => {
+  const sent: unknown[] = [];
+  await page.route("**/api/handle/report", async (route) => {
+    sent.push(route.request().postDataJSON());
+    await route.fulfill(json({ ok: true }));
+  });
+  await open(page, { signedIn: true, viewer: { accountId: ME, handle: { status: "approved", approved: "bull_run" } }, rows: [row("22222222-2222-4222-8222-222222222222", "ada", 1), row(ME, "bull_run", 2)] });
+  // the player's own row has no Report; the other player's does
+  await expect(board(page).getByRole("button", { name: "Report bull_run" })).toHaveCount(0);
+  await board(page).getByRole("button", { name: "Report ada" }).click();
+  await expect(board(page).getByText("Report ada?")).toBeVisible();
+  expect(sent).toHaveLength(0); // the first click only asks
+  await board(page).getByRole("button", { name: "Yes, report" }).click();
+  await expect(board(page).getByRole("status").filter({ hasText: "Reported. A person will look." })).toBeVisible();
+  expect(sent).toEqual([{ handle: "ada" }]);
+});
+
+test("a report the server refuses says why in words and can be tried again", async ({ page }) => {
+  await page.route("**/api/handle/report", (route) => route.fulfill(json({ error: "already-reported", message: "You have already reported that handle." }, 409)));
+  await open(page, { signedIn: true, viewer: { accountId: ME, handle: null } });
+  await board(page).getByRole("button", { name: "Report ada" }).click();
+  await board(page).getByRole("button", { name: "Yes, report" }).click();
+  await expect(board(page).getByRole("alert")).toHaveText("You have already reported that handle.");
+  await expect(board(page).getByRole("button", { name: "Report ada" })).toBeVisible();
+});
+
+test("a visitor and a neutral label have nothing to report", async ({ page }) => {
+  await open(page, { signedIn: false });
+  await expect(board(page).getByRole("button", { name: /^Report / })).toHaveCount(0);
+  await open(page, { signedIn: true, viewer: { accountId: ME, handle: null }, rows: [row("33333333-3333-4333-8333-333333333333", "Player 9F3C", 1), row(ME, "Player 4F2A", 2)] });
+  await expect(board(page).getByRole("button", { name: /^Report / })).toHaveCount(0);
+});
+
+test("a handle that was taken down says so on the player's row, in one line", async ({ page }) => {
+  await open(page, { signedIn: true, viewer: { accountId: ME, handle: { status: "revoked", approved: null } } });
+  const note = board(page).getByRole("listitem").filter({ hasText: "You" }).getByTestId("leaderboard-own-note");
+  await expect(note).toContainText("Handle taken down");
+  expect((await note.boundingBox())!.height).toBeLessThan(20);
+  await expect(note).toHaveAttribute("title", "Your handle was taken down after a report. Choose another.");
+});
+
+test("the report button is a real, labelled control that does not widen the page", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, { signedIn: true, viewer: { accountId: ME, handle: null } });
+  const button = board(page).getByRole("button", { name: "Report ada" });
+  expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(24);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 });

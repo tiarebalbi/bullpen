@@ -1,11 +1,10 @@
 import type { ReviewReason } from "@bullpen/db-handles";
-import { MODERATION_MODEL, QUESTION, TIMEOUT_MS } from "./config.js";
+import { MODERATION_MODEL, QUESTION_INSTRUCTIONS, QUESTION_NAME, TIMEOUT_MS } from "./config.js";
 
 /** The one place that reaches the AI Gateway and the one place that reads its key (ADL: only this directory). */
-const ENDPOINT = "https://ai-gateway.vercel.sh/v1/evaluate";
+const ENDPOINT = "https://ai-gateway.vercel.sh/v1/decisions";
 /** The gateway's origin, for a test setup that must make sure no test reaches it. */
 export const GATEWAY_ORIGIN = new URL(ENDPOINT).origin;
-const QUESTION_ID = "acceptable";
 
 export type GatewayResult =
   | { ok: true; probability: number; costUsd: number | null; latencyMs: number }
@@ -24,7 +23,7 @@ export interface GatewayOptions {
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 /**
- * Asks the model one Boolean question about a handle: POST /v1/evaluate. The request carries the handle text and the fixed question and nothing else: no user,
+ * Asks the model one yes or no question about a handle: POST /v1/decisions (the route that replaced the deprecated /v1/evaluate). The request carries the handle text and the fixed question and nothing else: no user,
  * email, address or session in the body, the headers or any metadata. It never throws and never falls back to another model; every failure is a result the
  * caller sends to review.
  */
@@ -42,7 +41,7 @@ export async function askGateway(handle: string, options: GatewayOptions = {}): 
     response = await (options.fetch ?? fetch)(ENDPOINT, {
       method: "POST",
       headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model: MODERATION_MODEL, state: handle, questions: { [QUESTION_ID]: { type: "boolean", instructions: QUESTION.instructions, criteria: QUESTION.criteria } } }),
+      body: JSON.stringify({ model: MODERATION_MODEL, input: handle, questions: [{ type: "predicate", name: QUESTION_NAME, instructions: QUESTION_INSTRUCTIONS }] }),
       signal: AbortSignal.timeout(options.timeoutMs ?? TIMEOUT_MS),
       redirect: "error",
     });
@@ -63,14 +62,15 @@ export async function askGateway(handle: string, options: GatewayOptions = {}): 
     return done({ ok: false, reason: name === "TimeoutError" || name === "AbortError" ? "timeout" : "malformed" });
   }
   if (!isRecord(body)) return done({ ok: false, reason: "malformed" });
-  // An answer from some other model is never trusted, whatever it says.
-  if (body.model !== undefined && body.model !== MODERATION_MODEL) return done({ ok: false, reason: "malformed" });
-  const answer = isRecord(body.answers) ? body.answers[QUESTION_ID] : undefined;
-  if (!isRecord(answer) || answer.type !== "boolean") return done({ ok: false, reason: "malformed" });
+  // Only an answer that says it is from the model we asked is trusted: another model's, and one that names none, both go to review, whatever they say.
+  if (body.model !== MODERATION_MODEL) return done({ ok: false, reason: "malformed" });
+  // The answers are an array in question order, each with its `name`; ours is the predicate called QUESTION_NAME. A refusal, another type or another name is not an answer.
+  const answer = Array.isArray(body.answers) ? body.answers.find((a): a is Record<string, unknown> => isRecord(a) && a.name === QUESTION_NAME) : undefined;
+  if (!answer || answer.type !== "predicate") return done({ ok: false, reason: "malformed" });
   const probability = answer.probability;
   if (typeof probability !== "number" || !Number.isFinite(probability) || probability < 0 || probability > 1) return done({ ok: false, reason: "malformed" });
 
-  const meta = isRecord(body.providerMetadata) && isRecord(body.providerMetadata.gateway) ? body.providerMetadata.gateway : undefined;
+  const meta = isRecord(body.provider_metadata) && isRecord(body.provider_metadata.gateway) ? body.provider_metadata.gateway : undefined;
   const cost = meta ? Number(meta.cost) : Number.NaN;
   return done({ ok: true, probability, costUsd: Number.isFinite(cost) ? cost : null });
 }

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, inject, it } from "vitest";
-import { CHANGE_LIMIT, STUCK_AFTER_MINUTES, createPool as createHandlesPool, listReviewQueue, listStuckPending, readOwnHandle, readStuckPending, recordDecision, resolveReview, submitHandle } from "@bullpen/db-handles";
+import { CHANGE_LIMIT, STUCK_AFTER_MINUTES, createPool as createHandlesPool, dismissReports, listReported, listReviewQueue, listStuckPending, readOwnHandle, readStuckPending, recordDecision, reportHandle, resolveReview, revokeHandle, submitHandle } from "@bullpen/db-handles";
 import { createPool as createTradingPool, ensurePlayerAccount, neutralHandle, refreshLeaderboard, readLeaderboardRows } from "@bullpen/db-trading";
 
 const urls = inject("dbUrls");
@@ -267,5 +267,176 @@ describe("handles stuck pending", () => {
     expect(await recordDecision(handles, { handleId: saved.handleId, handle: first, outcome: "approved", probability: 0.99 })).toBe(false);
     expect((await readOwnHandle(handles, owner))?.status).toBe("pending");
     expect(await readStuckPending(handles, saved.handleId)).toBeNull(); // saving again made it fresh
+  });
+});
+
+/** A player with an approved handle: saved, then approved by the model's answer. */
+async function approvedPlayer(): Promise<{ owner: string; handle: string; handleId: string }> {
+  const owner = user();
+  const handle = name();
+  const saved = await submitHandle(handles, owner, handle);
+  if (!saved.ok) throw new Error("setup");
+  await recordDecision(handles, { handleId: saved.handleId, handle, outcome: "approved", probability: 0.99 });
+  return { owner, handle, handleId: saved.handleId };
+}
+const reported = async (handleId: string) => (await listReported(handles)).find((item) => item.handleId === handleId);
+
+describe("reporting a handle", () => {
+  it("takes one report for each reporter and handle, found by the name as shown, ignoring case", async () => {
+    const target = await approvedPlayer();
+    const first = user();
+    expect(await reportHandle(handles, first, target.handle.toUpperCase())).toEqual({ ok: true });
+    expect(await reportHandle(handles, first, target.handle)).toEqual({ ok: false, reason: "already" });
+    expect(await reportHandle(handles, user(), target.handle)).toEqual({ ok: true });
+    expect(await reported(target.handleId)).toMatchObject({ handle: target.handle, reports: 2 });
+    const { rows } = await handles.query("SELECT count(*)::int AS n FROM handles.reports WHERE handle_id = $1", [target.handleId]);
+    expect(rows[0].n).toBe(2);
+  });
+
+  it("refuses a report of your own handle, and of a handle that is not approved or does not exist", async () => {
+    const target = await approvedPlayer();
+    expect(await reportHandle(handles, target.owner, target.handle)).toEqual({ ok: false, reason: "own" });
+    const pending = name();
+    await submitHandle(handles, user(), pending);
+    expect(await reportHandle(handles, user(), pending)).toEqual({ ok: false, reason: "not-found" });
+    expect(await reportHandle(handles, user(), name())).toEqual({ ok: false, reason: "not-found" });
+    expect(await reported(target.handleId)).toBeUndefined();
+  });
+
+  it("stores ids and a time, and nothing the reporter typed or anything else about them", async () => {
+    const { rows } = await handles.query<{ column_name: string }>("SELECT column_name FROM information_schema.columns WHERE table_schema = 'handles' AND table_name = 'reports' ORDER BY ordinal_position");
+    expect(rows.map((row) => row.column_name)).toEqual(["report_id", "handle_id", "reporter_user_id", "reported_at", "dismissed_at"]);
+  });
+
+  it("lists the most reported first, with a count and no reporter", async () => {
+    const one = await approvedPlayer();
+    const two = await approvedPlayer();
+    await reportHandle(handles, user(), one.handle);
+    for (let i = 0; i < 3; i++) await reportHandle(handles, user(), two.handle);
+    const list = await listReported(handles);
+    expect(list.findIndex((item) => item.handleId === two.handleId)).toBeLessThan(list.findIndex((item) => item.handleId === one.handleId));
+    expect(Object.keys(list[0]!).sort()).toEqual(["firstReportedAt", "handle", "handleId", "reports"]);
+  });
+
+  it("a dismissed report leaves the list, its reporter still cannot report it again, and a new reporter brings it back", async () => {
+    const target = await approvedPlayer();
+    const reporter = user();
+    await reportHandle(handles, reporter, target.handle);
+    expect(await dismissReports(handles, target.handleId)).toBe(true);
+    expect(await reported(target.handleId)).toBeUndefined();
+    expect(await dismissReports(handles, target.handleId)).toBe(false); // nothing open
+    expect(await reportHandle(handles, reporter, target.handle)).toEqual({ ok: false, reason: "already" });
+    expect(await reportHandle(handles, user(), target.handle)).toEqual({ ok: true });
+    expect(await reported(target.handleId)).toMatchObject({ reports: 1 });
+  });
+
+  it("a player who changes the handle starts with no reports: a report is about the text", async () => {
+    const target = await approvedPlayer();
+    await reportHandle(handles, user(), target.handle);
+    await submitHandle(handles, target.owner, name());
+    const { rows } = await handles.query("SELECT count(*)::int AS n FROM handles.reports WHERE handle_id = $1", [target.handleId]);
+    expect(rows[0].n).toBe(0);
+    expect(await reported(target.handleId)).toBeUndefined();
+  });
+
+  it("saving the same handle again (a retry) keeps its reports", async () => {
+    const target = await approvedPlayer();
+    await reportHandle(handles, user(), target.handle);
+    await submitHandle(handles, target.owner, target.handle);
+    const { rows } = await handles.query("SELECT count(*)::int AS n FROM handles.reports WHERE handle_id = $1", [target.handleId]);
+    expect(rows[0].n).toBe(1);
+  });
+});
+
+describe("taking a handle down", () => {
+  it("revokes an approved handle: the view stops publishing it, the leaderboard shows the neutral label at the next refresh, and its reports go", async () => {
+    const target = await approvedPlayer();
+    const { accountId } = await ensurePlayerAccount(trading, target.owner);
+    const shown = async (): Promise<string | undefined> => {
+      await refreshLeaderboard(trading);
+      return (await readLeaderboardRows(trading)).find((row) => row.accountId === accountId)?.handle;
+    };
+    expect(await shown()).toBe(target.handle);
+    await reportHandle(handles, user(), target.handle);
+
+    expect(await revokeHandle(handles, target.handleId)).toBe(true);
+    expect((await readOwnHandle(handles, target.owner))?.status).toBe("revoked");
+    expect(await shown()).toBe(neutralHandle(target.owner));
+    const view = await trading.query("SELECT 1 FROM handles.approved_v1 WHERE owner_user_id = $1", [target.owner]);
+    expect(view.rowCount).toBe(0);
+    expect(await reported(target.handleId)).toBeUndefined();
+    const { rows } = await handles.query("SELECT count(*)::int AS n FROM handles.reports WHERE handle_id = $1", [target.handleId]);
+    expect(rows[0].n).toBe(0);
+  });
+
+  it("only an approved handle can be revoked, and once", async () => {
+    const target = await approvedPlayer();
+    expect(await revokeHandle(handles, target.handleId)).toBe(true);
+    expect(await revokeHandle(handles, target.handleId)).toBe(false);
+    const pending = await submitHandle(handles, user(), name());
+    if (!pending.ok) throw new Error("setup");
+    expect(await revokeHandle(handles, pending.handleId)).toBe(false);
+    expect(await revokeHandle(handles, "00000000-0000-4000-8000-000000000000")).toBe(false);
+  });
+
+  it("the player who had it cannot save a revoked handle again, in any case, and it costs them no change; they can choose another", async () => {
+    const target = await approvedPlayer();
+    await revokeHandle(handles, target.handleId);
+    const count = async (): Promise<number> => (await handles.query("SELECT count(*)::int AS n FROM handles.handle_changes WHERE owner_user_id = $1", [target.owner])).rows[0].n;
+    const before = await count();
+    expect(await submitHandle(handles, target.owner, target.handle)).toEqual({ ok: false, reason: "revoked" });
+    expect(await submitHandle(handles, target.owner, target.handle.toUpperCase())).toEqual({ ok: false, reason: "revoked" });
+    expect(await count()).toBe(before);
+    expect((await readOwnHandle(handles, target.owner))?.status).toBe("revoked"); // nothing was saved over it
+
+    const other = name();
+    expect((await submitHandle(handles, target.owner, other)).ok).toBe(true);
+    expect((await readOwnHandle(handles, target.owner))?.handle).toBe(other);
+    // still refused after they have moved on: the block is on the text
+    expect(await submitHandle(handles, target.owner, target.handle)).toEqual({ ok: false, reason: "revoked" });
+  });
+
+  it("is blocked for everyone: player B cannot save player A's revoked handle, while A still holds it and after A has moved on, with the same answer both times", async () => {
+    const a = await approvedPlayer();
+    await revokeHandle(handles, a.handleId);
+    const b = user();
+    const changes = async (): Promise<number> => (await handles.query("SELECT count(*)::int AS n FROM handles.handle_changes WHERE owner_user_id = $1", [b])).rows[0].n;
+
+    // A's row still holds the text (status revoked, the name unique): B gets 'revoked', not 'taken', so B is not told that anyone holds it
+    const held = await submitHandle(handles, b, a.handle);
+    expect(held).toEqual({ ok: false, reason: "revoked" });
+    expect(await submitHandle(handles, b, a.handle.toUpperCase())).toEqual({ ok: false, reason: "revoked" });
+    expect(await readOwnHandle(handles, b)).toBeNull(); // nothing was saved for B
+    expect(await changes()).toBe(0); // and nothing was counted
+
+    // A moves on, so the text is free in handles.handle: B is still refused, with the same answer
+    await submitHandle(handles, a.owner, name());
+    expect(await submitHandle(handles, b, a.handle)).toEqual(held);
+    expect(await changes()).toBe(0);
+
+    // B can choose another handle
+    expect((await submitHandle(handles, b, name())).ok).toBe(true);
+  });
+
+  it("an answer for B that says nothing about A: it carries only the reason, never an id, a time or a handle", async () => {
+    const a = await approvedPlayer();
+    await revokeHandle(handles, a.handleId);
+    const answer = await submitHandle(handles, user(), a.handle);
+    expect(answer).toEqual({ ok: false, reason: "revoked" });
+    expect(JSON.stringify(answer)).not.toContain(a.owner);
+  });
+
+  it("keeps the text and the time of a taken-down handle, and no player", async () => {
+    const { rows } = await handles.query<{ column_name: string }>("SELECT column_name FROM information_schema.columns WHERE table_schema = 'handles' AND table_name = 'revoked' ORDER BY ordinal_position");
+    expect(rows.map((row) => row.column_name)).toEqual(["handle_lower", "revoked_at"]);
+  });
+
+  it("the new tables belong to the handles owner and trading cannot read them", async () => {
+    const owners = await handles.query<{ tablename: string; tableowner: string }>("SELECT tablename, tableowner FROM pg_tables WHERE schemaname = 'handles' ORDER BY tablename");
+    expect(owners.rows.every((row) => row.tableowner === "handles_owner")).toBe(true);
+    expect(owners.rows.map((row) => row.tablename)).toEqual(expect.arrayContaining(["reports", "revoked", "handle", "review_queue", "handle_changes"]));
+    await expect(trading.query("SELECT 1 FROM handles.reports LIMIT 1")).rejects.toThrow(/permission denied/);
+    await expect(trading.query("SELECT 1 FROM handles.revoked LIMIT 1")).rejects.toThrow(/permission denied/);
+    await expect(trading.query("INSERT INTO handles.reports (handle_id, reporter_user_id) VALUES (gen_random_uuid(), 'x')")).rejects.toThrow(/permission denied/);
   });
 });

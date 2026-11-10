@@ -31,4 +31,20 @@ describe("the verdict", () => {
     expect(decide(answer(Number.NaN)).outcome).toBe("review");
     expect(decide(answer(Number.POSITIVE_INFINITY)).outcome).toBe("review");
   });
+
+  it("uses the threshold the rule gives: the highest reject of the re-measure (0.86) plus a margin of 0.02", () => {
+    expect(APPROVE_ABOVE).toBe(0.88);
+    expect(APPROVE_ABOVE).toBeCloseTo(0.86 + 0.02, 10);
+  });
+
+  it("with the real threshold, a probability of exactly 0.88 goes to review and 0.89 approves", () => {
+    expect(decide(answer(0.88))).toEqual({ outcome: "review", probability: 0.88, reason: "below-threshold" });
+    expect(decide(answer(0.89))).toEqual({ outcome: "approved", probability: 0.89 });
+  });
+
+  it("with the real threshold, the neighbours on either side behave the same way: 0.87 reviews, 0.9 and 0.95 approve", () => {
+    expect(decide(answer(0.87)).outcome).toBe("review");
+    expect(decide(answer(0.9)).outcome).toBe("approved");
+    expect(decide(answer(0.95)).outcome).toBe("approved");
+  });
 });
