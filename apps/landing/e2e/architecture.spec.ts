@@ -626,11 +626,11 @@ test.describe("Architecture Explorer: the bonus stop", () => {
   const scrubberOf = (page: Page) => page.locator("#architecture").getByRole("group", { name: "Series part" });
   const bonusNode = (page: Page) => scrubberOf(page).getByRole("button", { name: /BONUS/ });
 
-  test("has a diamond BONUS node labelled 'Change request', planned, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
+  test("has a diamond BONUS node labelled 'Change request', built, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
     await expect(bonusNode(page)).toHaveCount(1);
-    await expect(bonusNode(page)).toContainText("BONUS · PLANNED");
+    await expect(bonusNode(page)).toContainText("BONUS · BUILT");
     await expect(bonusNode(page)).toContainText("Change request");
-    await expect(bonusNode(page)).toHaveAttribute("data-status", "planned");
+    await expect(bonusNode(page)).toHaveAttribute("data-status", "built");
     await expect(scrubberOf(page).locator(".bp-ap-scrub__stop")).toHaveCount(6);
     const order = await scrubberOf(page).getByRole("button").evaluateAll((buttons) => buttons.map((b) => (b.textContent ?? "").slice(0, 12)));
     expect(order.findIndex((t) => t.startsWith("BONUS"))).toBe(order.findIndex((t) => t.startsWith("PART 4")) + 1);

@@ -28,11 +28,11 @@ describe("parseSeries", () => {
     // Part 3 is published, with its post's address and its publish date.
     expect(parts[2]).toMatchObject({ part: 3, status: "published", url: "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership", date: "2026-10-19" });
     expect(parts[2]).toMatchObject({ title: "Who owns the data", headline: "Database per Service Is Free Now. That Is Not a Reason to Use It", introduced: "One owner per transaction, one Market Data service" });
-    // Part 4 is published, with its post's address, headline and publish date; Part 5 is the next one.
+    // Part 4 is published, with its post's address, headline and publish date; the bonus after it is published too, and Part 5 is the next one.
     expect(parts[3]).toMatchObject({ part: 4, status: "published", url: "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services", date: "2026-10-26", headline: "The Saga Pattern Is About Time, Not Services" });
-    // The bonus is next and has no part number; Part 5 and Part 6 are planned, each with a planned date and no real one.
-    expect(parts[4]).toEqual({ kind: "bonus", moment: "bonus-handles", title: "Changing the plan mid-flight", status: "next", url: "", date: null, plannedDate: "2026-11-11", introduced: "Player handles, moderated through a planned change" });
-    expect(parts[5]).toMatchObject({ part: 5, status: "planned", url: "", date: null, plannedDate: "2026-11-23" });
+    // The bonus is published, has no part number and no planned date, and carries its post's address, headline and publish date; Part 5 is next and Part 6 is planned, each with a planned date and no real one.
+    expect(parts[4]).toEqual({ kind: "bonus", moment: "bonus-handles", title: "Changing the plan mid-flight", headline: "Every New Requirement Has a Cost. Make It Visible.", status: "published", url: "https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost", date: "2026-11-11", introduced: "Player handles, moderated through a planned change" });
+    expect(parts[5]).toMatchObject({ part: 5, status: "next", url: "", date: null, plannedDate: "2026-11-23" });
     expect(parts[6]).toMatchObject({ part: 6, status: "planned", url: "", date: null, plannedDate: "2026-11-30" });
     for (const part of parts) {
       expect(part.title.length).toBeGreaterThan(0);

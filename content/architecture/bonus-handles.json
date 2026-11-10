@@ -1,7 +1,7 @@
 {
   "kind": "bonus",
   "after": 4,
-  "status": "planned",
+  "status": "built",
   "flow": "right",
   "summary": "What runs at the end of the bonus build: Part 4's system plus player handles, moderated. A signed-in player saves a handle; the rules are checked first, then one Boolean question goes to a decision model through Vercel AI Gateway. A probability strictly above the threshold approves it, and anything else, including every failure, goes to a review queue that is a Postgres table. A new owner, the handles schema, publishes one view, handles.approved_v1, which the leaderboard view joins; nothing pending, in review or rejected reaches a page.",
   "nodes": [

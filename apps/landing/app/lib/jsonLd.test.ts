@@ -31,12 +31,13 @@ describe("buildJsonLd: home", () => {
     expect(validateJsonLd(buildJsonLd("home", real)).valid).toBe(true);
   });
 
-  it("lists the four published parts, each with a date", () => {
+  it("lists the four published parts and the published bonus, each with a date", () => {
     expect(real.filter(isPart).filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"], [4, "2026-10-26"]]);
-    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(4);
+    expect(real.filter((e) => !isPart(e) && e.status === "published").map((e) => e.date)).toEqual(["2026-11-11"]);
+    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(5);
   });
 
-  it("lists Parts 1 to 4 with each post's real headline, URL and date", () => {
+  it("lists Parts 1 to 4 and the bonus with each post's real headline, URL and date, the bonus between Part 4 and Part 5", () => {
     expect(seriesNode(real).hasPart).toEqual([
       {
         "@type": "BlogPosting",
@@ -61,6 +62,12 @@ describe("buildJsonLd: home", () => {
         headline: "The Saga Pattern Is About Time, Not Services",
         url: "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services",
         datePublished: "2026-10-26",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Every New Requirement Has a Cost. Make It Visible.",
+        url: "https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost",
+        datePublished: "2026-11-11",
       },
     ]);
   });
@@ -117,7 +124,7 @@ describe("buildJsonLd: planned dates", () => {
   const planned = real.flatMap((entry) => (entry.plannedDate ? [entry.plannedDate] : []));
 
   it("never writes a planned date, or the word, anywhere in the graph", () => {
-    expect(planned).toEqual(["2026-11-11", "2026-11-23", "2026-11-30"]);
+    expect(planned).toEqual(["2026-11-23", "2026-11-30"]);
     for (const page of ["home", "architecture", "privacy"] as const) {
       const text = JSON.stringify(buildJsonLd(page, real));
       for (const date of planned) expect(text).not.toContain(date);
@@ -137,7 +144,7 @@ describe("buildJsonLd: planned dates", () => {
       kind: "bonus",
       moment: "bonus-handles",
       title: "Changing the plan mid-flight",
-      headline: "The Answer to a New Requirement Is a Price, Not a No",
+      headline: "Every New Requirement Has a Cost. Make It Visible.",
       status,
       url: status === "published" ? "https://tiarebalbi.com/en/blog/the-bonus" : "",
       introduced: "X",
@@ -146,7 +153,7 @@ describe("buildJsonLd: planned dates", () => {
     });
     const series = [part(4, "published"), bonus("published"), part(5, "planned")];
     const parts = seriesNode(series).hasPart as Array<{ headline: string; datePublished: string }>;
-    expect(parts.map((p) => p.headline)).toEqual(["Part 4 title", "The Answer to a New Requirement Is a Price, Not a No"]);
+    expect(parts.map((p) => p.headline)).toEqual(["Part 4 title", "Every New Requirement Has a Cost. Make It Visible."]);
     expect(parts[1]!.datePublished).toBe("2026-11-11");
     expect(seriesNode([part(4, "published"), bonus("next"), part(5, "planned")]).hasPart).toHaveLength(1);
   });

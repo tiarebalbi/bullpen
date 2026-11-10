@@ -87,7 +87,7 @@ Only half of the reverse case is shown here: whether a coded reject (`1d10t_…`
 
 ## 7. The CALM diff for the bonus moment
 
-- New moment `bonus-handles` in `bullpen.timeline.json`, between `part-04` and `part-05`; `current-moment` stays `part-04` until the publish pull request. New file `moments/bonus-handles.architecture.json`; CI validates it with the CALM CLI strictly, as Parts 1 to 3.
+- New moment `bonus-handles` in `bullpen.timeline.json`, between `part-04` and `part-05`; `current-moment` stayed `part-04` until the publish pull request, which moved it to `bonus-handles`. New file `moments/bonus-handles.architecture.json`; CI validates it with the CALM CLI strictly, as Parts 1 to 3.
 - New nodes: `vercel-ai-gateway` (external system), `schema-handles`, `approved-handles-v1`.
 - New edges: `trading-app-to-ai-gateway` (HTTPS), `trading-app-to-handles-schema` (as `handles_owner`), `trading-app-to-approved-handles-v1` (read only, as `trading_owner`).
 - Changed: `trading-app` lists `packages/db-handles` and the two new settings; `bullpen-database` names the third schema and the second view; `database-composition` holds the two new data assets.

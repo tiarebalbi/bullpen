@@ -403,12 +403,12 @@ for (const viewport of [
   test.describe(`The bonus on the architecture page at ${viewport.label}`, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
-    test("the scrubber has a BONUS node labelled 'Change request', planned, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
+    test("the scrubber has a BONUS node labelled 'Change request', built, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
       await page.goto("/architecture");
       await expect(bonusNode(page)).toHaveCount(1);
-      await expect(bonusNode(page)).toContainText("BONUS · PLANNED");
+      await expect(bonusNode(page)).toContainText("BONUS · BUILT");
       await expect(bonusNode(page)).toContainText("Change request");
-      await expect(bonusNode(page)).toHaveAttribute("data-status", "planned");
+      await expect(bonusNode(page)).toHaveAttribute("data-status", "built");
       await expect(scrubber(page).locator(".bp-ap-scrub__stop")).toHaveCount(6);
       const order = await scrubber(page).getByRole("button").evaluateAll((buttons) => buttons.map((b) => (b.textContent ?? "").slice(0, 12)));
       expect(order.findIndex((t) => t.startsWith("BONUS"))).toBe(order.findIndex((t) => t.startsWith("PART 4")) + 1);

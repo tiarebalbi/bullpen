@@ -1,6 +1,6 @@
 {
   "$schema": "https://calm.finos.org/release/1.2/meta/calm-timeline.json",
-  "current-moment": "part-04",
+  "current-moment": "bonus-handles",
   "moments": [
     {
       "unique-id": "part-01",
@@ -98,7 +98,7 @@
       "unique-id": "bonus-handles",
       "node-type": "moment",
       "name": "Bonus — Changing the plan mid-flight",
-      "description": "What runs at the end of the bonus build: player handles, moderated. One requirement that arrived between Part 4 and Part 5, costed, scoped and built: a decision model answers one Boolean question per new or changed handle, a review queue (a Postgres table) holds what it is unsure of, and a new data owner publishes the approved handles to the leaderboard view. Not published: current-moment stays at part-04 until the publish pull request.",
+      "description": "What runs at the end of the bonus build: player handles, moderated. One requirement that arrived between Part 4 and Part 5, costed, scoped and built: a decision model answers one Boolean question per new or changed handle, a review queue (a Postgres table) holds what it is unsure of, and a new data owner publishes the approved handles to the leaderboard view. Published on 2026-11-11, so current-moment is this moment.",
       "details": {
         "detailed-architecture": "moments/bonus-handles.architecture.json",
         "required-pattern": "bullpen.pattern.json"

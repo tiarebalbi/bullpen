@@ -70,8 +70,8 @@ export default function PrivacyPage(): ReactNode {
           <h1 className="bp-privacy__title">What I collect, and why</h1>
           <p className="bp-section__lede">
             Bullpen is a project I build in public. You can sign in to the trading app with GitHub, and
-            Bullpen stores no name, email address or GitHub login for you, only a neutral player label. If
-            you accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
+            Bullpen stores no name, email address or GitHub login for you, only a neutral player label and,
+            if you choose one, the handle you pick. If you accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
             load.
           </p>
           <p className="bp-privacy__updated">Last updated {formatLongDate(PRIVACY_UPDATED)}</p>
@@ -178,6 +178,20 @@ export default function PrivacyPage(): ReactNode {
               Google and Microsoft handle the data they receive under their own terms:{" "}
               <a href="https://policies.google.com/privacy">Google&rsquo;s privacy policy</a> and{" "}
               <a href="https://privacy.microsoft.com/privacystatement">Microsoft&rsquo;s privacy statement</a>.
+            </p>
+          </section>
+
+          <section aria-labelledby="privacy-handle">
+            <h2 id="privacy-handle">Your handle</h2>
+            <p>
+              If you choose a handle in the trading app, Bullpen stores it, and it shows on the leaderboard only
+              once it is approved. To check it, the text of the handle, and nothing else about you, is sent to a
+              decision model (TypeSafe&rsquo;s Jev) through Vercel AI Gateway. A person looks at any handle the
+              model is unsure of.
+            </p>
+            <p>
+              TypeSafe handles what it receives under its own terms:{" "}
+              <a href="https://typesafe.ai/privacy">TypeSafe&rsquo;s privacy policy</a>.
             </p>
           </section>
 

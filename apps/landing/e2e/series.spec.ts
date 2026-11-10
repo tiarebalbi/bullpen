@@ -1,12 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// The series section as it stands: Parts 1 to 4 published, each with its date and a link that opens its post; the bonus (ADR-0027) next, between
-// Part 4 and Part 5, planned for Nov 11; Parts 5 and 6 planned, with their planned dates. The facts are the ones in content/series.json.
+// The series section as it stands: Parts 1 to 4 published, each with its date and a link that opens its post; the bonus (ADR-0027) published too, between
+// Part 4 and Part 5, on Nov 11, 2026; Part 5 next, planned for Nov 23, and Part 6 planned for Nov 30. The facts are the ones in content/series.json.
 
 const POST_1 = "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026";
 const POST_2 = "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember";
 const POST_3 = "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership";
 const POST_4 = "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services";
+const POST_BONUS = "https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost";
 
 async function mockPrice(page: Page): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) =>
@@ -107,18 +108,21 @@ for (const viewport of [
       await expect(cards.nth(5)).toContainText("Part 5");
     });
 
-    test("the bonus is next: a diamond and 'Bonus · Detour' instead of a part number, 'Planned · Nov 11', no link", async ({ page }) => {
+    test("the bonus is published: a diamond and 'Bonus · Detour' instead of a part number, its publish date, and a See it → link that opens the post", async ({ page }) => {
       const card_ = bonus(page);
       await expect(card_).toContainText("Bonus · Detour");
       await expect(card_.locator("svg[aria-hidden='true']")).toHaveCount(1);
       await expect(card_).not.toContainText(/Part \d/);
       await expect(card_).toContainText("Changing the plan mid-flight");
       await expect(card_).toContainText("Player handles, moderated through a planned change");
-      await expect(card_.locator(".bp-chip")).toHaveText("Next");
-      await expect(card_.locator("time")).toHaveText("Planned · Nov 11");
-      await expect(card_.locator("time")).toHaveAttribute("datetime", "2026-11-11");
+      await expect(card_.locator(".bp-chip")).toHaveText("Published");
+      await expect(card_).toContainText("Nov 11, 2026");
+      await expect(card_).not.toContainText("Planned");
       await expect(card_).not.toContainText("Not yet published");
-      await expect(card_.getByRole("link")).toHaveCount(0);
+      await expect(card_).not.toContainText(/Invalid|NaN/);
+      const link = card_.getByRole("link", { name: "See it →" });
+      await expect(link).toHaveCount(1);
+      await expect(link).toHaveAttribute("href", POST_BONUS);
     });
 
     test("the bonus wears the accent as a dashed border, in a card the same height as its neighbours", async ({ page }) => {
@@ -140,12 +144,12 @@ for (const viewport of [
     });
 
     for (const planned of [
-      { part: 5, date: "Nov 23" },
-      { part: 6, date: "Nov 30" },
+      { part: 5, date: "Nov 23", chip: "Next" },
+      { part: 6, date: "Nov 30", chip: "Planned" },
     ]) {
-      test(`Part ${planned.part} is planned: the Planned chip, a planned date set apart from a publish date, no link`, async ({ page }) => {
+      test(`Part ${planned.part} is ${planned.chip.toLowerCase()}: the ${planned.chip} chip, a planned date set apart from a publish date, no link`, async ({ page }) => {
         const card_ = card(page, planned.part);
-        await expect(card_.locator(".bp-chip")).toHaveText("Planned");
+        await expect(card_.locator(".bp-chip")).toHaveText(planned.chip);
         await expect(card_.locator("time")).toContainText(planned.date);
         await expect(card_.locator("time")).toContainText("Planned for");
         await expect(card_.locator("time")).toHaveCSS("border-top-style", "dashed");
@@ -156,11 +160,12 @@ for (const viewport of [
 
     test("a published card shows no planned date", async ({ page }) => {
       for (const part of [1, 2, 3, 4]) await expect(card(page, part).locator("time")).toHaveCount(0);
+      await expect(bonus(page).locator("time")).toHaveCount(0);
     });
 
-    test("the four posts are the only links out of the series cards", async ({ page }) => {
+    test("the four posts and the bonus's post are the only links out of the series cards, in series order", async ({ page }) => {
       const hrefs = await page.locator(".bp-series-grid a").evaluateAll((anchors) => anchors.map((a) => a.getAttribute("href")));
-      expect(hrefs).toEqual([POST_1, POST_2, POST_3, POST_4]);
+      expect(hrefs).toEqual([POST_1, POST_2, POST_3, POST_4, POST_BONUS]);
     });
   });
 }

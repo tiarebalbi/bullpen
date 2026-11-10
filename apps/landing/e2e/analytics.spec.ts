@@ -292,7 +292,14 @@ for (const viewport of [
       // Sign-in exists since Part 4, so the page no longer says there are no accounts.
       await expect(page.locator(".bp-privacy")).not.toContainText("no accounts or sign-in");
       await expect(page.locator(".bp-privacy")).toContainText("sign in to the trading app with GitHub");
-      await expect(page.getByText("Last updated 26 October 2026")).toBeVisible();
+      // The bonus (ADR-0027): the page says a handle is stored, and that its text alone goes to the decision model.
+      await expect(page.locator(".bp-privacy")).not.toContainText("only a neutral player label.");
+      await expect(page.locator(".bp-privacy")).toContainText("if you choose one, the handle you pick");
+      await expect(page.getByRole("heading", { name: "Your handle" })).toBeVisible();
+      const handleSection = page.locator('section[aria-labelledby="privacy-handle"]');
+      await expect(handleSection).toContainText("the text of the handle, and nothing else about you");
+      await expect(handleSection.getByRole("link", { name: /TypeSafe.s privacy policy/ })).toHaveAttribute("href", "https://typesafe.ai/privacy");
+      await expect(page.getByText("Last updated 10 November 2026")).toBeVisible();
       await expect(page.getByRole("link", { name: "my site" })).toHaveAttribute("href", "https://tiarebalbi.com");
       await expect(page.getByRole("button", { name: "Cookie settings" })).toBeVisible();
       for (const cookie of ["bullpen_consent", "_ga", "_clck", "_clsk"]) {

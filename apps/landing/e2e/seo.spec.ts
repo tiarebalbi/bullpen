@@ -98,7 +98,7 @@ test.describe("SEO metadata", () => {
     expect(result.valid).toBe(true);
   });
 
-  test("JSON-LD lists exactly the four published parts of the series, Parts 1 to 4, each with its headline, URL and date", async ({ page }) => {
+  test("JSON-LD lists exactly the published posts of the series, Parts 1 to 4 and the bonus after Part 4, each with its headline, URL and date", async ({ page }) => {
     await mockPriceRoute(page);
     await page.goto("/");
     const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!) as { "@graph": Array<Record<string, unknown>> };
@@ -127,6 +127,12 @@ test.describe("SEO metadata", () => {
         headline: "The Saga Pattern Is About Time, Not Services",
         url: "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services",
         datePublished: "2026-10-26",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "Every New Requirement Has a Cost. Make It Visible.",
+        url: "https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost",
+        datePublished: "2026-11-11",
       },
     ]);
   });
