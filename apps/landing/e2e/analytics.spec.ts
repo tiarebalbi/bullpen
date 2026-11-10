@@ -305,6 +305,11 @@ for (const viewport of [
       const handleSection = page.locator('section[aria-labelledby="privacy-handle"]');
       await expect(handleSection).toContainText("the text of the handle, and nothing else about you");
       await expect(handleSection.getByRole("link", { name: /TypeSafe.s privacy policy/ })).toHaveAttribute("href", "https://typesafe.ai/privacy");
+      // what a report stores, said plainly: ids and a time, no text, and the reported player is not told who
+      await expect(handleSection).toContainText("your account’s id, the handle’s id and the time");
+      await expect(handleSection).toContainText("Nothing you type is kept");
+      await expect(handleSection).toContainText("not told who reported them");
+      await expect(handleSection).toContainText("cannot save it again");
       await expect(page.getByText("Last updated 10 November 2026")).toBeVisible();
       await expect(page.getByRole("link", { name: "my site" })).toHaveAttribute("href", "https://tiarebalbi.com");
       await expect(page.getByRole("button", { name: "Cookie settings" })).toBeVisible();

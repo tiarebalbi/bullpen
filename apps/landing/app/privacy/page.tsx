@@ -254,6 +254,13 @@ export default function PrivacyPage(): ReactNode {
               model is unsure of.
             </p>
             <p>
+              If you report another player&rsquo;s handle from the leaderboard, Bullpen stores that you reported it:
+              your account&rsquo;s id, the handle&rsquo;s id and the time, once for each handle. Nothing you type is
+              kept, because there is nothing to type, and the player you reported is not told who reported them. A
+              person looks at reported handles and can take one down. A handle that was taken down is remembered
+              for the player who had it, so they cannot save it again.
+            </p>
+            <p>
               TypeSafe handles what it receives under its own terms:{" "}
               <a href="https://typesafe.ai/privacy">TypeSafe&rsquo;s privacy policy</a>.
             </p>
