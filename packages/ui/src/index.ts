@@ -80,7 +80,7 @@ export type { AnalyticsProps } from "./analytics/Analytics.js";
 export { ConsentBanner } from "./analytics/ConsentBanner.js";
 export type { ConsentBannerProps } from "./analytics/ConsentBanner.js";
 export { CookieSettingsButton } from "./analytics/CookieSettingsButton.js";
-export { currentPartFromTimeline, resolveAnalyticsConfig } from "./analytics/config.js";
+export { currentPartFromTimeline, currentPartOf, partTagFromTimeline, resolveAnalyticsConfig } from "./analytics/config.js";
 export type { AnalyticsConfig, AnalyticsEnv } from "./analytics/config.js";
 export { track } from "./analytics/track.js";
 export type { AnalyticsEvents } from "./analytics/track.js";

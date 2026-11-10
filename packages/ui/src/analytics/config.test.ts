@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentPartFromTimeline, resolveAnalyticsConfig } from "./config.js";
+import { currentPartFromTimeline, partTagFromTimeline, resolveAnalyticsConfig } from "./config.js";
 
 const IDS = { NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000", NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest" };
 
@@ -54,5 +54,25 @@ describe("the part sent to Clarity", () => {
     expect(currentPartFromTimeline("{}")).toBeNull();
     expect(currentPartFromTimeline("not json")).toBeNull();
     expect(currentPartFromTimeline('{"current-moment":"later"}')).toBeNull();
+  });
+});
+
+describe("partTagFromTimeline", () => {
+  const timeline = (current: string) => ({ "current-moment": current, moments: [{ "unique-id": "part-04" }, { "unique-id": "bonus-handles", metadata: { kind: "bonus", after: "part-04" } }, { "unique-id": "part-05" }] });
+  it("is the part number as text for a part", () => {
+    expect(partTagFromTimeline(timeline("part-04"))).toBe("4");
+    expect(partTagFromTimeline(timeline("part-05"))).toBe("5");
+  });
+  it("is 'bonus' while a bonus moment is the current one, told by its kind and not by its id", () => {
+    expect(partTagFromTimeline(timeline("bonus-handles"))).toBe("bonus");
+    expect(partTagFromTimeline({ "current-moment": "anything", moments: [{ "unique-id": "anything", metadata: { kind: "bonus" } }] })).toBe("bonus");
+  });
+  it("is the part again once the next part is the current moment", () => {
+    expect(partTagFromTimeline(timeline("part-05"))).not.toBe("bonus");
+  });
+  it("is null when the timeline does not say", () => {
+    expect(partTagFromTimeline({})).toBeNull();
+    expect(partTagFromTimeline(null)).toBeNull();
+    expect(partTagFromTimeline({ "current-moment": "later" })).toBeNull();
   });
 });

@@ -25,21 +25,31 @@ export default defineConfig({
     },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    // `next` directly, not `pnpm exec next` -- the extra pnpm layer put
-    // `next-server` outside the process group Playwright tears down after
-    // the run, orphaning it (see apps/landing/playwright.config.ts, same fix).
-    command: `pnpm run build && next start -p ${PORT}`,
-    url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    // Built as production, with dummy ids, so the tags are allowed to load.
-    // analytics.spec.ts answers every request to Google and Clarity itself,
-    // so nothing is ever sent to them.
-    env: {
-      VERCEL_ENV: "production",
-      NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000",
-      NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest",
+  webServer: [
+    {
+      // `next` directly, not `pnpm exec next` -- the extra pnpm layer put
+      // `next-server` outside the process group Playwright tears down after
+      // the run, orphaning it (see apps/landing/playwright.config.ts, same fix).
+      command: `pnpm run build && next start -p ${PORT}`,
+      url: `http://127.0.0.1:${PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      // Built as production, with dummy ids, so the tags are allowed to load.
+      // analytics.spec.ts answers every request to Google and Clarity itself,
+      // so nothing is ever sent to them.
+      env: {
+        VERCEL_ENV: "production",
+        NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000",
+        NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest",
+      },
     },
-  },
+    {
+      // The same build, served from a directory without the repository around it (see no-architecture-folder.spec.ts).
+      command: "node scripts/serve-without-architecture.mjs 4321 http://127.0.0.1:4320",
+      url: "http://127.0.0.1:4321",
+      reuseExistingServer: !process.env.CI,
+      timeout: 240_000,
+      env: { VERCEL_ENV: "production", NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000", NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest" },
+    },
+  ],
 });

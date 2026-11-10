@@ -1,1 +1,9 @@
-{ "extends": ["//"], "tags": ["trading-app"] }
+{
+  "extends": ["//"],
+  "tags": ["trading-app"],
+  "tasks": {
+    "build": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/architecture/calm/bullpen.timeline.json"] },
+    "typecheck": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/architecture/calm/bullpen.timeline.json"] },
+    "test": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/architecture/calm/bullpen.timeline.json"] }
+  }
+}

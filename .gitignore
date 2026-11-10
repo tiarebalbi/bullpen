@@ -12,6 +12,7 @@ coverage/
 .vercel/
 architecture/calm/generated/
 apps/landing/.generated/
+apps/web/.generated/
 test-results/
 playwright-report/
 blob-report/

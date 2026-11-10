@@ -130,7 +130,7 @@ for (const viewport of [
         ((window as unknown as { clarity?: { q?: ArrayLike<unknown>[] } }).clarity?.q ?? []).map((a) => Array.from(a)),
       );
       expect(clarity[0]).toEqual(["consentv2", { ad_Storage: "denied", analytics_Storage: "granted" }]);
-      expect(clarity[1]).toEqual(["set", "part", expect.stringMatching(/^[1-6]$/)]);
+      expect(clarity[1]).toEqual(["set", "part", expect.stringMatching(/^([1-6]|bonus)$/)]);
       expect(await consentCookie(page)).toBe("accepted");
 
       hits.length = 0;
