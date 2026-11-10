@@ -14,7 +14,19 @@ import { LinkButton } from "./LinkButton.js";
  * `check:arch`'s explorer-consistency check keeps in sync with the real
  * CALM model in architecture/calm/.
  */
-export function Architecture({ parts, adrs, bonus = null, scrubber }: { parts: ArchPartData[]; adrs: Adr[]; bonus?: ArchPartData | null; scrubber: ScrubberPart[] }): ReactNode {
+export function Architecture({
+  parts,
+  adrs,
+  bonus = null,
+  scrubber,
+  opensOnBonus = false,
+}: {
+  parts: ArchPartData[];
+  adrs: Adr[];
+  bonus?: ArchPartData | null;
+  scrubber: ScrubberPart[];
+  opensOnBonus?: boolean;
+}): ReactNode {
   const adrTitles = Object.fromEntries(adrs.map((a) => [a.id, a.title]));
   const adrHrefs = Object.fromEntries(adrs.map((a) => [a.id, `#${adrHashId(a.id)}`]));
 
@@ -34,7 +46,7 @@ export function Architecture({ parts, adrs, bonus = null, scrubber }: { parts: A
         </p>
       </div>
 
-      <HomeExplorer parts={parts} bonus={bonus} scrubber={scrubber} adrTitles={adrTitles} adrHrefs={adrHrefs} />
+      <HomeExplorer parts={parts} bonus={bonus} scrubber={scrubber} opensOnBonus={opensOnBonus} adrTitles={adrTitles} adrHrefs={adrHrefs} />
     </section>
   );
 }

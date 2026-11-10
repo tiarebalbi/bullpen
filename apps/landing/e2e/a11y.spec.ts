@@ -40,7 +40,7 @@ for (const theme of ["light", "dark"] as const) {
         await page.addInitScript((t) => window.localStorage.setItem("bp-theme", t), theme);
         await page.goto("/architecture#overview");
         await page.getByRole("group", { name: "Series part" }).getByRole("button", { name: /BONUS/ }).click();
-        await expect(page.getByRole("region", { name: "Change request" })).toBeVisible();
+        await expect(page.getByRole("group", { name: "Change request" })).toBeVisible();
         const results = await new AxeBuilder({ page }).include(".bp-ap__bar").include(".bp-arch-change-request").withTags(TAGS).analyze();
         expect(found(results)).toEqual([]);
       });

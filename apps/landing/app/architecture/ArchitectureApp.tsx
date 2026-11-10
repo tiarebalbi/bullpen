@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import type { AdlLine } from "../../lib/adl.js";
 import type { Adr } from "../../lib/adr.js";
 import type { ArchitecturePageData } from "../../lib/architecturePage.js";
@@ -62,16 +62,24 @@ export interface ArchitectureAppProps {
   bonus?: ArchPartData | null;
   /** The bonus's title in the series ("Changing the plan mid-flight"), for the heading above its picture. */
   bonusTitle?: string;
+  /** The timeline's current moment is the built bonus, so the page opens with the bonus selected. */
+  opensOnBonus?: boolean;
 }
 
 
-export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since, adl, bonus = null, bonusTitle }: ArchitectureAppProps): ReactNode {
+export function ArchitectureApp({ parts, data, adrs, ruleCards, rules, adrTitles, adrHrefs, since, adl, bonus = null, bonusTitle, opensOnBonus = false }: ArchitectureAppProps): ReactNode {
   const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
   const tab = tabFromHash(hash);
 
   // Where the reader is on the series (a part, or the bonus) and whether it plays: shared with the home page's explorer.
-  const { part, bonusSelected: bonusOn, running, select, selectBonus, togglePlay } = useSeriesPosition(parts, bonus);
+  const { part, bonusSelected: bonusOn, running, select, selectBonus, togglePlay } = useSeriesPosition(parts, bonus, opensOnBonus);
   const [focusNode, setFocusNode] = useState<string | null>(null);
+  // The bonus lives on the Overview. A link straight to another tab (the server cannot see the hash) opens on the part the bonus follows instead of an empty panel.
+  useEffect(() => {
+    if (opensOnBonus && bonus && tabFromHash(window.location.hash) !== "overview") select(bonus.part);
+    // Once, on arrival: later tab changes keep whatever the reader picked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const bonusStop: BonusStop | undefined = bonus ? { after: bonus.part, title: BONUS_NODE_TITLE, status: bonus.status } : undefined;
   // The explorer draws the bonus beside the part it follows, so "what changed" and "new in this part" are read against that part.
   const bonusParts: ArchPartData[] = bonus ? explorerPartsWithBonus(parts, bonus) : [];

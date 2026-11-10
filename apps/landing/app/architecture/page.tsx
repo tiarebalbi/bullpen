@@ -7,6 +7,7 @@ import { adrHashId } from "../../lib/adrHashId.js";
 import { buildArchitecturePage } from "../../lib/architecturePage.js";
 import { loadArchitectureParts } from "../../lib/architecture.js";
 import { loadBonusFor } from "../../lib/bonusLoad.js";
+import { loadCurrentMoment, opensOnBonus } from "../../lib/currentMoment.js";
 import { loadCalmDocs } from "../../lib/calm.js";
 import { readPriceCacheSeconds } from "../../lib/priceCache.js";
 import { loadAllowances } from "../../lib/cost.js";
@@ -80,6 +81,7 @@ export default function ArchitecturePage(): ReactNode {
           since={since}
           adl={{ source: adl.source, lines: adl.lines }}
           bonus={bonus}
+          opensOnBonus={opensOnBonus(loadCurrentMoment(repoRoot), bonus)}
           bonusTitle={bonusEntry?.title}
         />
       </main>

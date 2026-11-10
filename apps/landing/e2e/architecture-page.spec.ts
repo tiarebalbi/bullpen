@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectedOpeningPart } from "./builtParts.js";
+import { expectedOpening } from "./builtParts.js";
 
 // /architecture: six tabs, one moment scrubber shared by all of them, a deep
 // link per tab (/architecture#services), and no sample text from the design.
@@ -76,19 +76,26 @@ for (const viewport of [
       });
     }
 
-    test("opens on the latest built part, read from the explorer content", async ({ page }) => {
-      const opening = expectedOpeningPart();
+    test("opens on the timeline's current moment: the bonus when that is the built bonus, otherwise the latest built part", async ({ page }) => {
+      const opening = expectedOpening();
       await page.goto("/architecture");
-      await expect(scrubber(page).getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
-      await expect(panel(page)).toContainText(`Overview · Part ${opening}`);
+      if (opening.bonus) {
+        await expect(scrubber(page).getByRole("button", { name: /BONUS/ })).toHaveAttribute("aria-current", "step");
+        await expect(scrubber(page).getByRole("button", { name: `PART ${opening.part}` })).not.toHaveAttribute("aria-current", "step");
+        await expect(panel(page)).toContainText("What changed in the bonus");
+      } else {
+        await expect(scrubber(page).getByRole("button", { name: `PART ${opening.part}` })).toHaveAttribute("aria-current", "step");
+        await expect(panel(page)).toContainText(`Overview · Part ${opening.part}`);
+      }
     });
 
     test("a tab deep link picks the tab and leaves the part on the latest built one", async ({ page }) => {
-      const opening = expectedOpeningPart();
+      // The bonus lives on the Overview, so a link to another tab opens on the part the bonus follows (or the latest built part).
+      const opening = expectedOpening();
       await page.goto("/architecture#rules");
       await expect(tab(page, "Rules")).toHaveAttribute("aria-selected", "true");
-      await expect(scrubber(page).getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
-      await expect(panel(page)).toContainText(`Rules · Part ${opening}`);
+      await expect(scrubber(page).getByRole("button", { name: `PART ${opening.part}` })).toHaveAttribute("aria-current", "step");
+      await expect(panel(page)).toContainText(`Rules · Part ${opening.part}`);
     });
 
     test("a part the reader picks stays picked when they switch tabs", async ({ page }) => {
@@ -288,6 +295,7 @@ test.describe("Architecture page, desktop", () => {
 
   test("an ADR link in the Overview's side panel opens that decision in the Decisions tab", async ({ page }) => {
     await page.goto("/architecture#overview");
+    await atPart(page, 4);
     await page.getByRole("button", { name: "Bullpen Trading App, App" }).click();
     await panel(page).getByRole("complementary", { name: "Details" }).getByRole("link", { name: /ADR-0001/ }).click();
 
@@ -351,6 +359,8 @@ test.describe("Architecture page, metadata and content", () => {
   });
 
   test("every tab has an h2, and every h3 sits under one", async ({ page }) => {
+    await page.goto("/architecture#overview");
+    await atPart(page, expectedOpening().part);
     for (const t of TABS) {
       await page.goto(`/architecture#${t.id}`);
       await expect(tab(page, t.name)).toHaveAttribute("aria-selected", "true");
@@ -423,7 +433,7 @@ for (const viewport of [
       await expect(scrubber(page).getByRole("button", { name: "PART 4" })).not.toHaveAttribute("aria-current", "step");
       await expect(panel(page)).toContainText("Overview · The bonus");
       await expect(panel(page)).toContainText("What changed in the bonus");
-      const request = panel(page).getByRole("region", { name: "Change request" });
+      const request = panel(page).getByRole("group", { name: "Change request" });
       for (const heading of ["Why now", "In scope", "Out of scope"]) await expect(request.getByRole("heading", { name: heading })).toBeVisible();
       await expect(request).toContainText("Part 4 left handles out on purpose");
       await expect(request).toContainText("Avatars, display names, profile pages");
@@ -462,6 +472,49 @@ for (const viewport of [
       await expect(scrubber(page).getByRole("button", { name: "PART 5" })).toHaveAttribute("aria-current", "step");
       await page.keyboard.press("ArrowLeft");
       await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+    });
+
+    test("opened on the current moment, the bonus is selected with its highlight, its panel and its overview", async ({ page }) => {
+      test.skip(!expectedOpening().bonus, "the timeline's current moment is not the bonus");
+      await page.goto("/architecture");
+      await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+      await expect(scrubber(page).getByRole("button", { name: "PART 4" })).toHaveAttribute("data-state", "past");
+      await expect(page.getByTestId("legend-new")).toContainText("New in this part");
+      await expect(page.locator('[role="button"][data-new="true"]').first()).toBeVisible();
+      await expect(panel(page)).toContainText("What changed in the bonus");
+      await expect(page.getByRole("heading", { level: 2 }).filter({ hasText: "Changing the plan mid-flight" })).toBeVisible();
+    });
+
+    test("Play stops on the bonus between Part 4 and Part 5, for the same interval as a part", async ({ page }) => {
+      await page.clock.install();
+      await page.goto("/architecture#overview");
+      await atPart(page, 3);
+      await page.getByRole("button", { name: "Play the series" }).click();
+      await page.clock.runFor(2400);
+      await expect(scrubber(page).getByRole("button", { name: "PART 4" })).toHaveAttribute("aria-current", "step");
+      await page.clock.runFor(2400);
+      await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+      await page.clock.runFor(2300);
+      await expect(bonusNode(page)).toHaveAttribute("aria-current", "step");
+      await page.clock.runFor(100);
+      await expect(scrubber(page).getByRole("button", { name: "PART 5" })).toHaveAttribute("aria-current", "step");
+    });
+
+    test("the bonus's branch shows as reached, in the main line's accent, once the bonus is selected or past", async ({ page }) => {
+      await page.goto("/architecture#overview");
+      await atPart(page, 4);
+      const stub = page.locator(".bp-ap-scrub__bonus .bp-ap-scrub__stub");
+      const colour = (el: Element) => getComputedStyle(el).borderLeftColor;
+      const fill = await page.locator(".bp-ap-scrub__fill").evaluate((el) => getComputedStyle(el).backgroundColor);
+      const before = await stub.evaluate(colour);
+      expect(before).not.toBe(fill);
+      await bonusNode(page).click();
+      await expect(bonusNode(page)).toHaveAttribute("data-reached", "true");
+      await expect.poll(() => stub.evaluate(colour)).toBe(fill);
+      await atPart(page, 5);
+      await expect.poll(() => stub.evaluate(colour)).toBe(fill);
+      await atPart(page, 3);
+      await expect(bonusNode(page)).not.toHaveAttribute("data-reached");
     });
 
     test("with reduced motion the line's fill does not animate", async ({ page }) => {

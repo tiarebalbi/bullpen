@@ -16,16 +16,19 @@ export function HomeExplorer({
   parts,
   bonus,
   scrubber,
+  opensOnBonus = false,
   adrTitles,
   adrHrefs,
 }: {
   parts: ArchPartData[];
   bonus: ArchPartData | null;
   scrubber: ScrubberPart[];
+  /** The timeline's current moment is the built bonus, so the explorer opens with the bonus selected. */
+  opensOnBonus?: boolean;
   adrTitles: Record<string, string>;
   adrHrefs: Record<string, string>;
 }): ReactNode {
-  const { part, bonusSelected, running, select, selectBonus, togglePlay } = useSeriesPosition(parts, bonus);
+  const { part, bonusSelected, running, select, selectBonus, togglePlay } = useSeriesPosition(parts, bonus, opensOnBonus);
   const bonusStop: BonusStop | undefined = bonus ? { after: bonus.part, title: BONUS_NODE_TITLE, status: bonus.status } : undefined;
   const shown = bonusSelected && bonus ? explorerPartsWithBonus(parts, bonus) : parts;
 
