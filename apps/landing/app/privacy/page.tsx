@@ -73,7 +73,7 @@ export default function PrivacyPage(): ReactNode {
             trading app&rsquo;s own data holds only a neutral player label and, if you choose one, your handle,
             tied to your account by an id. Sign-in is handled by Neon Auth, which keeps, in its own tables, your
             account&rsquo;s name, email address and profile picture, the GitHub account&rsquo;s id and the tokens
-            GitHub issues for the sign-in, and a record of each session, which can include the IP address and
+            GitHub issues for the sign-in, and a record of each session, which includes the IP address and
             browser it was started from. It keeps them so you can sign in. Bullpen never shows any of that. If
             you accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
             load.

@@ -296,10 +296,10 @@ for (const viewport of [
       // The opening says what the trading app's own data holds and what sign-in (Neon Auth) keeps, and that none of it is shown; it no longer claims no name or email is stored.
       await expect(page.locator(".bp-privacy")).not.toContainText("stores no name, email address");
       await expect(page.locator(".bp-privacy")).toContainText("holds only a neutral player label and, if you choose one, your handle");
-      // What Neon Auth keeps, from the neon_auth schema of the production database: user (name, email, image), account (the GitHub account id and tokens) and session (which has ipAddress and userAgent columns).
+      // What Neon Auth keeps, from the neon_auth schema of the production database: user (name, email, image), account (the GitHub account id and tokens) and session (whose ipAddress and userAgent are filled in on every session, 12 of 12 when the owner counted them on 2026-11-10).
       await expect(page.locator(".bp-privacy")).toContainText("Neon Auth, which keeps, in its own tables, your account\u2019s name, email address and profile picture");
       await expect(page.locator(".bp-privacy")).toContainText("the GitHub account\u2019s id and the tokens GitHub issues for the sign-in");
-      await expect(page.locator(".bp-privacy")).toContainText("a record of each session, which can include the IP address and browser it was started from");
+      await expect(page.locator(".bp-privacy")).toContainText("a record of each session, which includes the IP address and browser it was started from");
       await expect(page.locator(".bp-privacy")).toContainText("It keeps them so you can sign in. Bullpen never shows any of that");
       await expect(page.getByRole("heading", { name: "Your handle" })).toBeVisible();
       const handleSection = page.locator('section[aria-labelledby="privacy-handle"]');
