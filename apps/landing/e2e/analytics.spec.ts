@@ -293,8 +293,11 @@ for (const viewport of [
       await expect(page.locator(".bp-privacy")).not.toContainText("no accounts or sign-in");
       await expect(page.locator(".bp-privacy")).toContainText("sign in to the trading app with GitHub");
       // The bonus (ADR-0027): the page says a handle is stored, and that its text alone goes to the decision model.
-      await expect(page.locator(".bp-privacy")).not.toContainText("only a neutral player label.");
-      await expect(page.locator(".bp-privacy")).toContainText("if you choose one, the handle you pick");
+      // The opening says what the trading app's own data holds and what sign-in (Neon Auth) keeps, and that none of it is shown; it no longer claims no name or email is stored.
+      await expect(page.locator(".bp-privacy")).not.toContainText("stores no name, email address");
+      await expect(page.locator(".bp-privacy")).toContainText("holds only a neutral player label and, if you choose one, your handle");
+      await expect(page.locator(".bp-privacy")).toContainText("Neon Auth, which keeps your account\u2019s name, email address and profile picture so you can sign in");
+      await expect(page.locator(".bp-privacy")).toContainText("Bullpen never shows any of those");
       await expect(page.getByRole("heading", { name: "Your handle" })).toBeVisible();
       const handleSection = page.locator('section[aria-labelledby="privacy-handle"]');
       await expect(handleSection).toContainText("the text of the handle, and nothing else about you");

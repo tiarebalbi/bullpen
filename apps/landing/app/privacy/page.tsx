@@ -69,9 +69,11 @@ export default function PrivacyPage(): ReactNode {
           <div className="bp-eyebrow">Privacy</div>
           <h1 className="bp-privacy__title">What I collect, and why</h1>
           <p className="bp-section__lede">
-            Bullpen is a project I build in public. You can sign in to the trading app with GitHub, and
-            Bullpen stores no name, email address or GitHub login for you, only a neutral player label and,
-            if you choose one, the handle you pick. If you accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
+            Bullpen is a project I build in public. You can sign in to the trading app with GitHub. The
+            trading app&rsquo;s own data holds only a neutral player label and, if you choose one, your handle,
+            tied to your account by an id. Sign-in is handled by Neon Auth, which keeps your account&rsquo;s
+            name, email address and profile picture so you can sign in. Bullpen never shows any of those. If you
+            accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
             load.
           </p>
           <p className="bp-privacy__updated">Last updated {formatLongDate(PRIVACY_UPDATED)}</p>
