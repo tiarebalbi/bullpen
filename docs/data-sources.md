@@ -101,8 +101,10 @@ choice is ADR-0020, which the owner accepted on 2026-10-21; this entry says what
 
 Read 2026-10-21:
 
-- **How it is used:** the trading app's sign-in proxy and session go through Neon's SDK; the app takes the user's id from the SDK's own session check (ADR-0022) and stores only that id.
-  Name, email and login are not stored or shown.
+- **How it is used:** the trading app's sign-in proxy and session go through Neon's SDK; the app takes the user's id from the SDK's own session check (ADR-0022) and stores only that id
+  in its own schemas. Neon Auth itself keeps the GitHub account's name, email address and profile picture, the GitHub account's id and the tokens GitHub issues, and a record of each session
+  (which includes the IP address and browser) in the `neon_auth` schema of the same database, so a player can sign in. None of it is shown on the site. An earlier version of this entry
+  said name and email were not stored; that was wrong, and the [correction in ADR-0020](../architecture/adr/0020-sign-in-is-neon-auth-with-github-only.md#correction-2026-11-10) says so.
 - **Terms and limits:** not read for this plan. What it costs on the project's plan is a line for the cost ledger when the console is read; nothing here is
   estimated.
 - **Settings to confirm in the Neon console** ([production checklist](https://neon.com/docs/auth/production-checklist)): trusted domains (set),
