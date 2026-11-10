@@ -145,3 +145,14 @@ describe("GET: the player's own handle", () => {
     expect((await GET()).status).toBe(503);
   });
 });
+
+describe("a handle that was taken down after a report", () => {
+  it("is a 409 in words for that player, and nothing is asked of the model", async () => {
+    mocks.submitHandle.mockResolvedValue({ ok: false, reason: "revoked" });
+    const response = await post({ handle: "BullRun" });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: "handle-revoked", message: "That handle was taken down after a report, so it cannot be used again. Try another." });
+    expect(mocks.askGateway).not.toHaveBeenCalled();
+    expect(mocks.recordDecision).not.toHaveBeenCalled();
+  });
+});

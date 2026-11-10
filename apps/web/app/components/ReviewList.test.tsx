@@ -100,3 +100,42 @@ describe("the stuck pending section", () => {
     expect(ageLabel("2026-11-02T09:00:00Z", now)).toBe("3 hours");
   });
 });
+
+describe("the reported handles", () => {
+  const reported = [
+    { handleId: "3e9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f44", handle: "loud_bull", reports: 3, firstReportedAt: "2026-11-02T08:00:00.000Z" },
+    { handleId: "4f9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f55", handle: "meme_lord", reports: 1, firstReportedAt: "2026-11-02T08:30:00.000Z" },
+  ];
+
+  it("posts a revoke and takes the handle off the list", async () => {
+    const fetcher = reply();
+    render(<ReviewList items={[]} reported={reported} />);
+    fireEvent.click(screen.getByRole("button", { name: "Revoke loud_bull" }));
+    await waitFor(() => expect(screen.queryByText("loud_bull")).toBeNull());
+    expect(fetcher).toHaveBeenCalledWith(`/api/admin/handles/${reported[0]!.handleId}`, expect.objectContaining({ method: "POST", body: JSON.stringify({ action: "revoke" }) }));
+    expect(screen.getByText("meme_lord")).toBeInTheDocument();
+  });
+
+  it("posts a dismissal and takes the handle off the list", async () => {
+    const fetcher = reply();
+    render(<ReviewList items={[]} reported={reported} />);
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss reports of meme_lord" }));
+    await waitFor(() => expect(screen.queryByText("meme_lord")).toBeNull());
+    expect(fetcher).toHaveBeenCalledWith(`/api/admin/handles/${reported[1]!.handleId}`, expect.objectContaining({ body: JSON.stringify({ action: "dismiss" }) }));
+  });
+
+  it("keeps the handle and says so when the revoke fails", async () => {
+    reply(503);
+    render(<ReviewList items={[]} reported={reported} />);
+    fireEvent.click(screen.getByRole("button", { name: "Revoke loud_bull" }));
+    await screen.findByRole("alert");
+    expect(screen.getByText("loud_bull")).toBeInTheDocument();
+  });
+
+  it("counts a handle already decided (409) as done, as the other lists do", async () => {
+    reply(409);
+    render(<ReviewList items={[]} reported={reported} />);
+    fireEvent.click(screen.getByRole("button", { name: "Revoke loud_bull" }));
+    await waitFor(() => expect(screen.queryByText("loud_bull")).toBeNull());
+  });
+});

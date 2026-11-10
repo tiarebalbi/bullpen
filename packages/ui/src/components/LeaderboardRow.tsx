@@ -16,16 +16,19 @@ export interface LeaderboardRowProps {
   cash: number;
   /** Marks the signed-in player's own row; the label is text, so it does not rest on colour. */
   you?: boolean;
-  /** A short line under the name, for the player's own row alone (where their handle stands: "Handle in review"). It is text, never colour, and one line. */
-  note?: string;
-  /** The whole sentence behind `note`, for the accessible name and the tooltip; what a screen reader reads instead of the short line. */
-  noteFull?: string;
+  /**
+   * A short line under the name, for the player's own row alone (where their handle stands: "Handle in review"). It is text, never colour, and one line. `full` is the whole
+   * sentence behind it, for the accessible name and the tooltip: what a screen reader reads instead of the short line.
+   */
+  note?: { text: string; full?: string };
+  /** Under the cash line: something the viewer can do about this row (reporting a handle). The row draws it and knows nothing about it. */
+  action?: ReactNode;
 }
 
 /** Two characters for a monogram: the first two letters or digits of a handle, upper case. */
 export const handleInitials = (handle: string): string => handle.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
 
-export function LeaderboardRow({ rank, handle, equity, cash, you = false, note, noteFull }: LeaderboardRowProps): ReactNode {
+export function LeaderboardRow({ rank, handle, equity, cash, you = false, note, action }: LeaderboardRowProps): ReactNode {
   return (
     <li className="bp-leaderboard-row" data-you={you || undefined} style={{ display: "grid", gridTemplateColumns: "32px 40px minmax(0, 1fr) auto", alignItems: "center", gap: 12, padding: "10px 4px" }}>
       <span style={{ font: "500 13px/1 var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "var(--foreground-muted)" }}>{rank}</span>
@@ -39,11 +42,12 @@ export function LeaderboardRow({ rank, handle, equity, cash, you = false, note, 
         </span>
         <span style={{ display: "block", font: "500 12px/1.4 var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "var(--foreground-muted)" }}>cash ${fmt(cash)}</span>
         {note ? (
-          <span data-testid="leaderboard-own-note" title={noteFull} style={{ position: "relative", display: "block", font: "500 12px/1.4 var(--font-body)", color: "var(--foreground-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            <span aria-hidden={noteFull ? true : undefined}>{note}</span>
-            {noteFull ? <span className="bp-visually-hidden">{noteFull}</span> : null}
+          <span data-testid="leaderboard-own-note" title={note.full} style={{ position: "relative", display: "block", font: "500 12px/1.4 var(--font-body)", color: "var(--foreground-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <span aria-hidden={note.full ? true : undefined}>{note.text}</span>
+            {note.full ? <span className="bp-visually-hidden">{note.full}</span> : null}
           </span>
         ) : null}
+        {action ? <span style={{ display: "block" }}>{action}</span> : null}
       </span>
       <span style={{ font: "500 15px/1.3 var(--font-mono)", fontVariantNumeric: "tabular-nums", textAlign: "right" }}>${fmt(equity)}</span>
     </li>

@@ -6,6 +6,8 @@ import { checkHandle } from "./rules.js";
 export type SaveOutcome =
   | { ok: false; kind: "invalid"; error: string }
   | { ok: false; kind: "taken" }
+  /** The player had this handle taken down after a report: nothing was saved, counted or asked. */
+  | { ok: false; kind: "revoked" }
   /** The player has used up their changes for the window: nothing was saved and no model was asked. */
   | { ok: false; kind: "limit"; retryAfterSeconds: number }
   /** `pending` means saved but not decided: the decision could not be recorded, and saving the same handle again retries it. */
@@ -33,7 +35,10 @@ export async function saveAndModerate(userId: string, input: unknown, deps: Mode
 
   // The limit and the name are checked inside the save, before any model call: a refusal here costs nothing.
   const saved = await deps.store.submit(userId, checked.handle);
-  if (!saved.ok) return saved.reason === "limit" ? { ok: false, kind: "limit", retryAfterSeconds: saved.retryAfterSeconds } : { ok: false, kind: "taken" };
+  if (!saved.ok) {
+    if (saved.reason === "limit") return { ok: false, kind: "limit", retryAfterSeconds: saved.retryAfterSeconds };
+    return { ok: false, kind: saved.reason };
+  }
   return { ok: true, status: await moderateSaved(saved.handleId, checked.handle, deps) };
 }
 

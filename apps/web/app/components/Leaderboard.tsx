@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ConnectionIndicator, EmptyState, LeaderboardList, LeaderboardRow, Panel, Skeleton, formatTime, useNow } from "@bullpen/ui";
 import type { LeaderboardSnapshot, LeaderboardViewer } from "@bullpen/contracts";
 import type { Polled } from "../lib/usePolled.js";
+import { ReportAction, isChosenHandle } from "./ReportAction.js";
 import { Unavailable } from "./Unavailable.js";
 
 /** "3 min ago", "45 s ago": the age the page shows next to the as-of time. */
@@ -20,6 +21,7 @@ export function ownNote(viewer: LeaderboardViewer): { short: string; full: strin
   const status = viewer.handle?.status;
   if (status === "pending" || status === "review") return { short: "Handle in review", full: "Your handle is waiting for review. Until it is approved you show as above." };
   if (status === "rejected") return { short: "Handle not approved", full: "Your handle was not approved. Try another." };
+  if (status === "revoked") return { short: "Handle taken down", full: "Your handle was taken down after a report. Choose another." };
   return undefined;
 }
 
@@ -32,7 +34,24 @@ export function HandleLink({ viewer }: { viewer: LeaderboardViewer | undefined }
   );
 }
 
-const noteProps = (note: { short: string; full: string } | undefined): { note?: string; noteFull?: string } => (note ? { note: note.short, noteFull: note.full } : {});
+type Row = LeaderboardSnapshot["rows"][number];
+
+/**
+ * The ranking's rows. Under the signed-in player's own row, where their handle stands (one short line); under every other player's chosen handle, a Report; under a visitor's
+ * view and a neutral label, neither.
+ */
+function LeaderboardRows({ rows, mine, viewer, signedIn }: { rows: Row[]; mine: (row: Row) => boolean; viewer: LeaderboardViewer | undefined; signedIn: boolean }): ReactNode {
+  return (
+    <LeaderboardList label="Players ranked by equity">
+      {rows.map((row) => {
+        const own = mine(row);
+        const note = viewer && own ? ownNote(viewer) : undefined;
+        const action = signedIn && !own && isChosenHandle(row.handle) ? <ReportAction handle={row.handle} /> : undefined;
+        return <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} you={own} note={note && { text: note.short, full: note.full }} action={action} />;
+      })}
+    </LeaderboardList>
+  );
+}
 
 const VISITOR_LINE = "Players show as Player #### until they choose a handle and it’s approved.";
 
@@ -88,11 +107,7 @@ export function Leaderboard({ polled, youLabel = null }: { polled: Polled<Leader
         <EmptyState title="No players yet" description="The ranking appears here once the first account has a position or cash to count." />
       ) : (
         <>
-          <LeaderboardList label="Players ranked by equity">
-            {snapshot.rows.map((row) => (
-              <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} you={mine(row)} {...noteProps(viewer && mine(row) ? ownNote(viewer) : undefined)} />
-            ))}
-          </LeaderboardList>
+          <LeaderboardRows rows={snapshot.rows} mine={mine} viewer={viewer} signedIn={signedIn} />
           {hidden > 0 ? <p className="bp-leaderboard__more">Showing the top {snapshot.rows.length} of {snapshot.total} players.</p> : null}
         </>
       )}

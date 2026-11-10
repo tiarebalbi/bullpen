@@ -1,7 +1,7 @@
 export const noStore = { "cache-control": "no-store" };
 
 export interface HandleApiError {
-  error: "sign-in-required" | "sign-in-unavailable" | "invalid-handle" | "handle-taken" | "handle-limit" | "not-found" | "already-decided" | "unavailable";
+  error: "sign-in-required" | "sign-in-unavailable" | "invalid-handle" | "handle-taken" | "handle-revoked" | "handle-limit" | "not-found" | "already-decided" | "already-reported" | "own-handle" | "unavailable";
   message: string;
 }
 

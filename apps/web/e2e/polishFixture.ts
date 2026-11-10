@@ -9,3 +9,8 @@ export const REVIEW_ITEMS = [
 ];
 /** Pending for 25 minutes, whenever it is read. */
 export const stuckRows = (): { handleId: string; handle: string; submittedAt: string }[] => [{ handleId: "h4", handle: "slowpoke", submittedAt: new Date(Date.now() - 25 * 60_000).toISOString() }];
+/** Approved handles other players reported (made up): a count and a first time, never who reported. */
+export const REPORTED_ROWS = [
+  { handleId: "h5", handle: "loud_bull", reports: 3, firstReportedAt: "2026-10-20T12:00:00.000Z" },
+  { handleId: "h6", handle: "meme_lord", reports: 1, firstReportedAt: "2026-10-20T13:10:00.000Z" },
+];

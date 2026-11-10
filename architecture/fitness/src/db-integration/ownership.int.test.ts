@@ -157,7 +157,7 @@ describe("the roles hold only what they should", () => {
     const migrator = await as(urls.migrator);
     expect(await migrateMarketData(migrator, "market_data_owner")).toEqual(["0001_schema.sql", "0002_quotes_and_price_contract.sql", "0003_provider_calls.sql"]);
     expect(await migrateTrading(migrator, "trading_owner")).toEqual(["0001_schema.sql", "0002_accounts_orders_ledger.sql", "0003_leaderboard.sql", "0004_order_lifecycle.sql", "0005_leaderboard_counts_reserved_cash.sql", "0006_account_owner.sql", "0007_leaderboard_shows_approved_handles.sql"]);
-    expect(await migrateHandles(migrator, "handles_owner")).toEqual(["0001_schema.sql", "0002_handles.sql", "0003_handle_changes.sql"]);
+    expect(await migrateHandles(migrator, "handles_owner")).toEqual(["0001_schema.sql", "0002_handles.sql", "0003_handle_changes.sql", "0004_reports.sql"]);
   });
   it("a re-run of the migrations leaves the kind of a stored quote alone (the backfill runs once, when the column is added)", async () => {
     const migrator = await as(urls.migrator);

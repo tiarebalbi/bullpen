@@ -19,6 +19,14 @@ export interface StuckRow {
   submittedAt: string;
 }
 
+/** An approved handle that players reported and the admin has not decided on. A count, never who reported. */
+export interface ReportedRow {
+  handleId: string;
+  handle: string;
+  reports: number;
+  firstReportedAt: string;
+}
+
 const REASON: Record<string, string> = {
   "below-threshold": "the model was not sure enough",
   timeout: "the model took too long",
@@ -36,19 +44,21 @@ export function ageLabel(iso: string, now: Date = new Date()): string {
   return minutes < 120 ? `${minutes} minutes` : `${Math.floor(minutes / 60)} hours`;
 }
 
-type Action = "approve" | "reject" | "retry";
+type Action = "approve" | "reject" | "retry" | "revoke" | "dismiss";
 
-export function ReviewList({ items, stuck = [], stuckAfterMinutes = 10 }: { items: ReviewItem[]; stuck?: StuckRow[]; stuckAfterMinutes?: number }): ReactNode {
+export function ReviewList({ items, stuck = [], reported = [], stuckAfterMinutes = 10 }: { items: ReviewItem[]; stuck?: StuckRow[]; reported?: ReportedRow[]; stuckAfterMinutes?: number }): ReactNode {
   const router = useRouter();
   const [rows, setRows] = useState(items);
   const [stuckRows, setStuckRows] = useState(stuck);
+  const [reportedRows, setReportedRows] = useState(reported);
   const [failed, setFailed] = useState<string | null>(null);
 
-  async function act(id: string, action: Action, from: "review" | "stuck"): Promise<void> {
+  async function act(id: string, action: Action, from: "review" | "stuck" | "reported"): Promise<void> {
     setFailed(null);
     const response = await fetch(`/api/admin/handles/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action }) }).catch(() => null);
     if (response && (response.ok || response.status === 409)) {
       if (from === "review") setRows((current) => current.filter((row) => row.handleId !== id));
+      else if (from === "reported") setReportedRows((current) => current.filter((row) => row.handleId !== id));
       else setStuckRows((current) => current.filter((row) => row.handleId !== id));
       // A retry can put the handle in review: the server knows its probability and reason, so ask it for the lists again.
       if (action === "retry") router.refresh();
@@ -57,6 +67,25 @@ export function ReviewList({ items, stuck = [], stuckAfterMinutes = 10 }: { item
 
   return (
     <>
+      <Panel title="Reported">
+        <p>Approved handles that other players reported. Revoke takes one down: its player shows as “Player ####” again at the next leaderboard refresh and cannot save that handle again. Dismiss keeps it.</p>
+        {reportedRows.length === 0 ? (
+          <EmptyState title="Nothing reported" description="A handle shows here when a player reports it and you have not decided on it." />
+        ) : (
+          <ul aria-label="Reported handles" className="bp-review">
+            {reportedRows.map((row) => (
+              <li key={row.handleId} className="bp-review__row">
+                <strong className="bp-review__who">{row.handle}</strong> <span className="bp-review__meta">{row.reports === 1 ? "1 report" : `${row.reports} reports`}</span>
+                <span className="bp-review__actions">
+                  <Button variant="secondary" onClick={() => void act(row.handleId, "dismiss", "reported")} aria-label={`Dismiss reports of ${row.handle}`}>Dismiss</Button>
+                  <Button variant="destructive" onClick={() => void act(row.handleId, "revoke", "reported")} aria-label={`Revoke ${row.handle}`}>Revoke</Button>
+                </span>
+                {failed === row.handleId ? <p role="alert">I could not record that. Try again.</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
       <Panel title="Stuck pending">
         <p>Saved more than {stuckAfterMinutes} minutes ago and never decided, because the decision could not be recorded. Retry asks the model again.</p>
         {stuckRows.length === 0 ? (

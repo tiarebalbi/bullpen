@@ -33,6 +33,13 @@ describe("saving a handle", () => {
     expect(t.ask).not.toHaveBeenCalled();
   });
 
+  it("asks no model when the player had this handle taken down, and records nothing", async () => {
+    const t = setup({ submitted: { ok: false, reason: "revoked" } });
+    expect(await saveAndModerate("user-1", "BullRun", t.deps)).toEqual({ ok: false, kind: "revoked" });
+    expect(t.ask).not.toHaveBeenCalled();
+    expect(t.store.record).not.toHaveBeenCalled();
+  });
+
   it("approves a handle the model is sure about", async () => {
     const t = setup();
     expect(await saveAndModerate("user-1", "BullRun", t.deps)).toEqual({ ok: true, status: "approved" });

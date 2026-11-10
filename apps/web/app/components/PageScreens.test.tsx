@@ -75,7 +75,7 @@ describe("the review screen", () => {
   const item = { handleId: "h1", handle: "bullrun99", probability: 0.62, reason: "below-threshold", enqueuedAt: "2026-10-20T14:05:00.000Z" };
 
   it("sits in the same frame, with the page's name in the header and its own heading in the page", () => {
-    const { container } = render(<ReviewScreen queue={[item]} stuck={[]} stuckAfterMinutes={10} />);
+    const { container } = render(<ReviewScreen queue={[item]} stuck={[]} reported={[]} stuckAfterMinutes={10} />);
     expect(container.querySelector(".bp-terminal.bp-page")).not.toBeNull();
     expect(container.querySelector("header.bp-terminal__header")).toHaveTextContent("Handle review");
     expect(container.querySelector("h2.bp-page__title")).toHaveTextContent("Handles in review");
@@ -83,7 +83,7 @@ describe("the review screen", () => {
   });
 
   it("lists each handle with the model's number, as a row with its own actions", () => {
-    render(<ReviewScreen queue={[item]} stuck={[]} stuckAfterMinutes={10} />);
+    render(<ReviewScreen queue={[item]} stuck={[]} reported={[]} stuckAfterMinutes={10} />);
     const row = screen.getByRole("list", { name: "Handles waiting for review" }).querySelector("li")!;
     expect(row).toHaveClass("bp-review__row");
     expect(row).toHaveTextContent("bullrun99");
@@ -92,8 +92,31 @@ describe("the review screen", () => {
     expect(within(row).getByRole("button", { name: "Reject bullrun99" })).toHaveClass("bp-btn--destructive");
   });
 
+  it("lists the reported handles with a count, and Dismiss and Revoke for each, and never who reported", () => {
+    render(<ReviewScreen queue={[]} stuck={[]} reported={[{ handleId: "h5", handle: "loud_bull", reports: 3, firstReportedAt: "2026-10-20T12:00:00.000Z" }, { handleId: "h6", handle: "meme_lord", reports: 1, firstReportedAt: "2026-10-20T13:10:00.000Z" }]} stuckAfterMinutes={10} />);
+    const list = screen.getByRole("list", { name: "Reported handles" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("loud_bull");
+    expect(rows[0]).toHaveTextContent("3 reports");
+    expect(rows[1]).toHaveTextContent("1 report");
+    expect(rows[1]).not.toHaveTextContent("1 reports");
+    expect(within(rows[0]!).getByRole("button", { name: "Revoke loud_bull" })).toHaveClass("bp-btn--destructive");
+    expect(within(rows[0]!).getByRole("button", { name: "Dismiss reports of loud_bull" })).toHaveClass("bp-btn--secondary");
+    expect(list.textContent).not.toMatch(/reporter|user/i);
+  });
+
+  it("says in words that nothing is reported, rather than showing nothing", () => {
+    render(<ReviewScreen queue={[]} stuck={[]} reported={[]} stuckAfterMinutes={10} />);
+    expect(screen.getByText("Nothing reported")).toBeInTheDocument();
+  });
+
+  it("says it cannot read the queue, as an alert, when the reported list alone cannot be read", () => {
+    render(<ReviewScreen queue={[item]} stuck={[]} reported={null} stuckAfterMinutes={10} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("I cannot read the review queue right now.");
+  });
+
   it("says it cannot read the queue, as an alert, rather than showing an empty one", () => {
-    render(<ReviewScreen queue={null} stuck={null} stuckAfterMinutes={10} />);
+    render(<ReviewScreen queue={null} stuck={null} reported={null} stuckAfterMinutes={10} />);
     expect(screen.getByRole("alert")).toHaveTextContent("I cannot read the review queue right now.");
     expect(screen.queryByText("Nothing to review")).toBeNull();
   });

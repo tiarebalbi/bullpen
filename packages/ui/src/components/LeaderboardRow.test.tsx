@@ -47,7 +47,7 @@ describe("LeaderboardRow", () => {
   it("with a full sentence, the short line is what is seen and the sentence is what is read and the tooltip, on one line", () => {
     render(
       <LeaderboardList label="x">
-        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} you note="Handle in review" noteFull="Your handle is waiting for review. Until it is approved you show as above." />
+        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} you note={{ text: "Handle in review", full: "Your handle is waiting for review. Until it is approved you show as above." }} />
       </LeaderboardList>,
     );
     const note = screen.getByTestId("leaderboard-own-note");
@@ -56,6 +56,21 @@ describe("LeaderboardRow", () => {
     expect(note).toHaveAttribute("title", "Your handle is waiting for review. Until it is approved you show as above.");
     expect(note.style.whiteSpace).toBe("nowrap");
     expect(note.style.position).toBe("relative"); // the hidden sentence is absolutely positioned: it must stay in the row
+  });
+
+  it("draws what it is given under the cash line as an action, and nothing when it is given none", () => {
+    const { rerender } = render(
+      <LeaderboardList label="x">
+        <LeaderboardRow rank={1} handle="ada" equity={10} cash={10} action={<button type="button">Report ada</button>} />
+      </LeaderboardList>,
+    );
+    expect(screen.getByRole("button", { name: "Report ada" })).toBeInTheDocument();
+    rerender(
+      <LeaderboardList label="x">
+        <LeaderboardRow rank={1} handle="ada" equity={10} cash={10} />
+      </LeaderboardList>,
+    );
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("gives the monogram tile a class a narrow column can hide, and keeps it out of the accessible tree", () => {
@@ -71,7 +86,7 @@ describe("LeaderboardRow", () => {
   it("shows a note under the name only when one is given, and says it in words", () => {
     const { rerender } = render(
       <LeaderboardList label="x">
-        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} you note="Waiting for review" />
+        <LeaderboardRow rank={2} handle="Player 4F2A" equity={10} cash={10} you note={{ text: "Waiting for review" }} />
       </LeaderboardList>,
     );
     expect(screen.getByTestId("leaderboard-own-note")).toHaveTextContent("Waiting for review");

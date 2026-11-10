@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   signInAvailable: vi.fn(),
   currentPlayer: vi.fn(),
   resolveReview: vi.fn(),
+  revokeHandle: vi.fn(),
+  dismissReports: vi.fn(),
   readStuckPending: vi.fn(),
   recordDecision: vi.fn(),
   submitHandle: vi.fn(),
@@ -13,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../../../lib/auth/server.js", () => ({ signInAvailable: mocks.signInAvailable }));
 vi.mock("../../../../lib/auth/player.js", () => ({ currentPlayer: mocks.currentPlayer }));
 vi.mock("../../../../lib/handles/pool.js", () => ({ handlesPool: () => ({}) }));
-vi.mock("@bullpen/db-handles", () => ({ resolveReview: mocks.resolveReview, readStuckPending: mocks.readStuckPending, recordDecision: mocks.recordDecision, submitHandle: mocks.submitHandle }));
+vi.mock("@bullpen/db-handles", () => ({ resolveReview: mocks.resolveReview, revokeHandle: mocks.revokeHandle, dismissReports: mocks.dismissReports, readStuckPending: mocks.readStuckPending, recordDecision: mocks.recordDecision, submitHandle: mocks.submitHandle }));
 vi.mock("../../../../lib/handles/admins.js", () => ({ isHandleAdmin: (id: string) => mocks.admins.list.includes(id) }));
 vi.mock("../../../../lib/moderation/gateway.js", () => ({ askGateway: mocks.askGateway }));
 
@@ -24,10 +26,12 @@ const call = (id: string, body: unknown) => POST(new Request(`http://x/api/admin
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => undefined);
   vi.spyOn(console, "info").mockImplementation(() => undefined);
-  for (const m of [mocks.signInAvailable, mocks.currentPlayer, mocks.resolveReview, mocks.readStuckPending, mocks.recordDecision, mocks.submitHandle, mocks.askGateway]) m.mockReset();
+  for (const m of [mocks.signInAvailable, mocks.currentPlayer, mocks.resolveReview, mocks.revokeHandle, mocks.dismissReports, mocks.readStuckPending, mocks.recordDecision, mocks.submitHandle, mocks.askGateway]) m.mockReset();
   mocks.signInAvailable.mockReturnValue(true);
   mocks.currentPlayer.mockResolvedValue({ userId: "admin-1", label: "Player 0000" });
   mocks.resolveReview.mockResolvedValue(true);
+  mocks.revokeHandle.mockResolvedValue(true);
+  mocks.dismissReports.mockResolvedValue(true);
   mocks.readStuckPending.mockResolvedValue({ handleId: ID, handle: "StuckOne", submittedAt: new Date() });
   mocks.recordDecision.mockResolvedValue(true);
   mocks.askGateway.mockResolvedValue({ ok: true, probability: 0.99, costUsd: 0, latencyMs: 10 });
@@ -36,8 +40,10 @@ beforeEach(() => {
 describe("the review route", () => {
   it("answers anyone not on the allowlist with a 404, and decides and asks nothing", async () => {
     mocks.currentPlayer.mockResolvedValue({ userId: "someone-else", label: "Player 1111" });
-    for (const action of ["approve", "reject", "retry"]) expect((await call(ID, { action })).status).toBe(404);
+    for (const action of ["approve", "reject", "retry", "revoke", "dismiss"]) expect((await call(ID, { action })).status).toBe(404);
     expect(mocks.resolveReview).not.toHaveBeenCalled();
+    expect(mocks.revokeHandle).not.toHaveBeenCalled();
+    expect(mocks.dismissReports).not.toHaveBeenCalled();
     expect(mocks.askGateway).not.toHaveBeenCalled();
   });
 
@@ -52,6 +58,35 @@ describe("the review route", () => {
     expect((await call(ID, { action: "reject" })).status).toBe(200);
     expect(mocks.resolveReview).toHaveBeenLastCalledWith({}, ID, "reject");
     expect(mocks.askGateway).not.toHaveBeenCalled();
+  });
+
+  it("revokes a reported handle for the admin, and asks nothing of the model", async () => {
+    const response = await call(ID, { action: "revoke" });
+    expect(response.status).toBe(200);
+    expect(mocks.revokeHandle).toHaveBeenCalledWith({}, ID);
+    expect(mocks.resolveReview).not.toHaveBeenCalled();
+    expect(mocks.askGateway).not.toHaveBeenCalled();
+  });
+
+  it("says a handle is no longer approved when it was changed or taken down already", async () => {
+    mocks.revokeHandle.mockResolvedValue(false);
+    const response = await call(ID, { action: "revoke" });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: "already-decided" });
+  });
+
+  it("dismisses the reports of a handle for the admin, and says when there are none open", async () => {
+    expect((await call(ID, { action: "dismiss" })).status).toBe(200);
+    expect(mocks.dismissReports).toHaveBeenCalledWith({}, ID);
+    expect(mocks.revokeHandle).not.toHaveBeenCalled();
+    mocks.dismissReports.mockResolvedValue(false);
+    expect((await call(ID, { action: "dismiss" })).status).toBe(409);
+  });
+
+  it("answers a failure to revoke with a 503 in words", async () => {
+    mocks.revokeHandle.mockRejectedValue(new Error("db down"));
+    const response = await call(ID, { action: "revoke" });
+    expect(response.status).toBe(503);
   });
 
   it("refuses an id or action it does not understand", async () => {

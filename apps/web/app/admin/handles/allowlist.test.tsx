@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => ({
   resolveReview: vi.fn(),
   listReviewQueue: vi.fn(),
   listStuckPending: vi.fn(),
+  listReported: vi.fn(),
+  revokeHandle: vi.fn(),
+  dismissReports: vi.fn(),
 }));
 vi.mock("../../lib/auth/server.js", () => ({ signInAvailable: mocks.signInAvailable }));
 vi.mock("../../lib/auth/player.js", () => ({ currentPlayer: mocks.currentPlayer }));
@@ -18,6 +21,9 @@ vi.mock("@bullpen/db-handles", () => ({
   STUCK_AFTER_MINUTES: 10,
   listReviewQueue: mocks.listReviewQueue,
   listStuckPending: mocks.listStuckPending,
+  listReported: mocks.listReported,
+  revokeHandle: mocks.revokeHandle,
+  dismissReports: mocks.dismissReports,
   resolveReview: mocks.resolveReview,
   readStuckPending: vi.fn(),
   recordDecision: vi.fn(),
@@ -34,10 +40,11 @@ const isNotFound = (error: unknown): boolean => typeof error === "object" && err
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => undefined);
-  for (const m of [mocks.signInAvailable, mocks.currentPlayer, mocks.resolveReview, mocks.listReviewQueue, mocks.listStuckPending]) m.mockReset();
+  for (const m of [mocks.signInAvailable, mocks.currentPlayer, mocks.resolveReview, mocks.listReviewQueue, mocks.listStuckPending, mocks.listReported, mocks.revokeHandle, mocks.dismissReports]) m.mockReset();
   mocks.signInAvailable.mockReturnValue(true);
   mocks.listReviewQueue.mockResolvedValue([]);
   mocks.listStuckPending.mockResolvedValue([]);
+  mocks.listReported.mockResolvedValue([]);
   mocks.resolveReview.mockResolvedValue(true);
 });
 
@@ -46,6 +53,7 @@ describe("the review page, with the real allowlist", () => {
     mocks.currentPlayer.mockResolvedValue({ userId: OWNER, label: "Player 0000" });
     await expect(ReviewPage()).resolves.toBeTruthy();
     expect(mocks.listReviewQueue).toHaveBeenCalled();
+    expect(mocks.listReported).toHaveBeenCalled();
   });
 
   it("gives any other signed-in id the 404 a missing page gets, and reads nothing", async () => {
@@ -56,6 +64,7 @@ describe("the review page, with the real allowlist", () => {
     }
     expect(mocks.listReviewQueue).not.toHaveBeenCalled();
     expect(mocks.listStuckPending).not.toHaveBeenCalled();
+    expect(mocks.listReported).not.toHaveBeenCalled(); // the reported handles are read for the owner alone
   });
 
   it("gives a visitor, and a build where sign-in is not available, the same 404", async () => {
@@ -74,11 +83,23 @@ describe("the review route, with the real allowlist", () => {
     expect(mocks.resolveReview).toHaveBeenCalledWith({}, ID, "approve");
   });
 
-  it("answers any other signed-in id with a 404 and decides nothing", async () => {
+  it("lets the owner's account revoke a handle and dismiss its reports", async () => {
+    mocks.currentPlayer.mockResolvedValue({ userId: OWNER, label: "Player 0000" });
+    mocks.revokeHandle.mockResolvedValue(true);
+    mocks.dismissReports.mockResolvedValue(true);
+    expect((await post("revoke")).status).toBe(200);
+    expect(mocks.revokeHandle).toHaveBeenCalledWith({}, ID);
+    expect((await post("dismiss")).status).toBe(200);
+    expect(mocks.dismissReports).toHaveBeenCalledWith({}, ID);
+  });
+
+  it("answers any other signed-in id with a 404 and decides nothing, a revoke and a dismissal included", async () => {
     for (const userId of ["someone-else", "7c48c226-1a7d-4ae1-975f-a22a746a1b0b", OWNER.toUpperCase()]) {
       mocks.currentPlayer.mockResolvedValue({ userId, label: "Player 1111" });
-      for (const action of ["approve", "reject", "retry"]) expect((await post(action)).status).toBe(404);
+      for (const action of ["approve", "reject", "retry", "revoke", "dismiss"]) expect((await post(action)).status).toBe(404);
     }
     expect(mocks.resolveReview).not.toHaveBeenCalled();
+    expect(mocks.revokeHandle).not.toHaveBeenCalled();
+    expect(mocks.dismissReports).not.toHaveBeenCalled();
   });
 });

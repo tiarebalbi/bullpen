@@ -11,7 +11,7 @@ export interface ViewerDeps {
   signInAvailable(): boolean;
   currentPlayer(): Promise<Player | null>;
   findAccount(userId: string): Promise<{ accountId: string } | null>;
-  readHandle(userId: string): Promise<{ handle: string; status: "pending" | "approved" | "review" | "rejected" } | null>;
+  readHandle(userId: string): Promise<{ handle: string; status: "pending" | "approved" | "review" | "rejected" | "revoked" } | null>;
 }
 
 const live: ViewerDeps = {
@@ -24,7 +24,7 @@ const live: ViewerDeps = {
 /**
  * The signed-in caller of the leaderboard: their account, and where their own handle stands. It is read for the caller alone and never from anything a request
  * names, so another player or a visitor cannot ask for it. A handle's text goes into the answer only when it is approved, which is public on the ranking anyway;
- * for one that is pending, in review or rejected the answer is its status. No account, or a failure reading it, is no viewer: the ranking is still served. If only the handle
+ * for one that is pending, in review, rejected or revoked the answer is its status. No account, or a failure reading it, is no viewer: the ranking is still served. If only the handle
  * cannot be read, the caller is still known by their account (their row is marked) and their handle reads as none.
  */
 export async function readViewer(deps: ViewerDeps = live): Promise<LeaderboardViewer | undefined> {

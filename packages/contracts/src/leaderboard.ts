@@ -14,7 +14,7 @@ export interface LeaderboardEntry {
  */
 export interface LeaderboardViewer {
   accountId: string;
-  handle: null | { status: "pending" | "review" | "approved" | "rejected"; approved: string | null };
+  handle: null | { status: "pending" | "review" | "approved" | "rejected" | "revoked"; approved: string | null };
 }
 
 /**
