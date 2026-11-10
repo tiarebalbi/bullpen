@@ -2,7 +2,7 @@
 
 Answers to the 14 questions in the brief. Each says where it came from. The labelled-set run (`apps/web/scripts/measure-moderation.ts`) was made by the owner
 with a temporary key and read into this file on 2026-11-10; its numbers below are the numbers in the output the owner pasted back, and nothing here is estimated.
-The threshold is **kept at 0.90** (section 4). One target is missed, and the rule makes that the owner's decision (section 4).
+The threshold is **kept at 0.90**, decided by the owner on 2026-11-10 (section 4). One target is missed, and the owner accepted that (section 4).
 
 ## 1. Targets: kept or changed
 
@@ -30,9 +30,10 @@ Only the handle text is sent: no user id, email, address or session (test: `gate
   lowest threshold that approves no reject (the highest probability any reject got), with a margin, unless that sends more than 1 in 20 clean handles to review, in which case the
   trade is reported and the owner decides. Applied to the run: the highest probability any reject got is **0.88**, so a threshold strictly above 0.88 approves no reject; 0.90 is that plus a
   margin of 0.02, and the next candidate down, 0.85, approves 2 of the 40 rejects. So 0.90 is the lowest safe threshold with a margin, and it stays.
-- **The trade, reported for the owner's decision.** At 0.90, **17 of 106 clean handles (16.0%) go to review, where the target is at most 1 in 20.** No threshold meets both targets on this set:
+- **The trade, and the owner's decision.** At 0.90, **17 of 106 clean handles (16.0%) go to review, where the target is at most 1 in 20.** No threshold meets both targets on this set:
   approving no reject needs a threshold of at least 0.88 (the highest reject), and from the 17 printed probabilities that sends at least 10 of 106 clean handles (9.4%) to review at 0.88, and 17 at 0.90; the first tabulated threshold that sends 1 in 20 or fewer, 0.85 (4 of 106, 3.8%), approves 2 rejects.
-  ADR-0027's first "what would flip it" condition is this one (more than 1 in 20 clean handles sent to review). Nothing was flipped here: that is a decision for the owner, and the options are listed in ADR-0027's measured paragraph.
+  The rule leaves this to the owner, and **the owner decided on 2026-11-10: keep 0.90.** The reason: a wrongly accepted handle is public and costs trust, while a wrongly queued one costs a short wait. The miss is accepted, not fixed.
+- **What would reopen it:** a real review queue of more than 10 handles a week means rewriting the question and re-measuring (ADR-0027's first "what would flip it" condition, with that number). The labelled set is full of trading jokes, so its 16.0% is not a forecast; the real queue is what is watched.
 - **Set:** 106 clean and 40 that must be rejected (146), written by me before any model saw them, none from a real player, labelled by the criteria in
   `app/lib/moderation/config.ts`; the reject set is mild and coded (leetspeak and padding), no slur spelled out, and the slur rows use placeholders, which is a weak test and is reported as such.
   Method and caveats: `apps/web/moderation-set/README.md`.
@@ -192,7 +193,7 @@ Nothing in the code crossed a rule on its own: no trading or market-data file im
 
 Roughly two hours and ten minutes of build time (my own estimate of the split, from the commit times) on 2026-11-01, from the go to a draft PR, spread over six pieces: the data owner and moderation (about 40 minutes), the ADL, checks and records (35), the labelled set and script (10), and the landing (45, the most of it e2e and layout work). Part 5
 (Nov 23, after the schedule slipped from Nov 16) is not at risk from the build. It was at risk from the four things only the owner can do before merge, in order (see the PR): create `handles_owner`, set `DATABASE_URL_HANDLES`, add the admin id, set the gateway budget. On 2026-11-10 the owner reported three done (`handles_owner` created with `db:create-roles`, `DATABASE_URL_HANDLES` set for Production, a $5 gateway budget with an alert at 75%); the admin id is the one still open here. A production build applies migrations (ADR-0023),
-so merging before the role exists fails the build. The measurement was run and is read into this file; what is still open is the owner's decision on the clean-to-review miss (section 4) and the admin id, which the owner has now given (it is in `admins.ts`).
+so merging before the role exists fails the build. The measurement was run and is read into this file, the owner decided to keep 0.90 and accept the clean-to-review miss (section 4), and the admin id the owner gave is in `admins.ts`; nothing from the owner is still open.
 
 ## Other things worth knowing
 
