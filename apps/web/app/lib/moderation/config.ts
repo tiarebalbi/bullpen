@@ -20,9 +20,10 @@ export const QUESTION_INSTRUCTIONS = `${QUESTION.question} Answer yes for: ${QUE
 export const TIMEOUT_MS = 2000;
 
 /**
- * A handle is approved only when the model's probability is strictly above this; at it, or below, a person looks. MEASURED, kept at 0.90 (ADR-0027, post-facts/bonus.md):
- * the labelled-set run's highest reject was 0.88, so 0.90 approves none of the 40 rejects with a margin of 0.02. It sends 17 of 106 clean handles (16.0%) to review, over the
- * 1-in-20 target; the owner decided on 2026-11-10 to keep 0.90 anyway (a wrongly accepted handle is public, a wrongly queued one costs a short wait), because lowering it
- * to fit the target would approve rejects (0.85 approves 2). A real queue over 10 handles a week means rewriting the question and re-measuring.
+ * A handle is approved only when the model's probability is strictly above this; at it, or below, a person looks. Set by ADR-0027's rule: the lowest threshold that approves no
+ * reject (the highest probability any reject got), plus a margin of 0.02. Re-measured on /v1/decisions on 2026-11-10 (post-facts/bonus.md): the highest reject is 0.86, so 0.88;
+ * it was 0.90 when the highest reject was 0.88 on /v1/evaluate. The scores come back with two decimals, so a probability lands exactly on a threshold often, and exactly at it goes
+ * to review: 0.88 goes to review and 0.89 approves. At 0.88, 0 of the 40 rejects are accepted and 18 of 106 clean handles (17.0%) go to review, still over the 1-in-20 target; the
+ * owner decided on 2026-11-10 to apply the rule as written. A real queue over 10 handles a week means rewriting the question and re-measuring.
  */
-export const APPROVE_ABOVE = 0.9;
+export const APPROVE_ABOVE = 0.88;

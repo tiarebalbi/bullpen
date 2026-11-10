@@ -79,10 +79,17 @@ describe("POST: saving a handle", () => {
   });
 
   it("an unsure answer, a failure and a tie all end in review, never approved", async () => {
-    for (const answer of [{ ok: true, probability: 0.5, costUsd: 0, latencyMs: 1 }, { ok: true, probability: 0.9, costUsd: 0, latencyMs: 1 }, { ok: false, reason: "timeout", latencyMs: 2000 }, { ok: false, reason: "no-key", latencyMs: 0 }]) {
+    for (const answer of [{ ok: true, probability: 0.5, costUsd: 0, latencyMs: 1 }, { ok: true, probability: 0.88, costUsd: 0, latencyMs: 1 }, { ok: false, reason: "timeout", latencyMs: 2000 }, { ok: false, reason: "no-key", latencyMs: 0 }]) {
       mocks.askGateway.mockResolvedValue(answer);
       expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "review" });
     }
+  });
+
+  it("with the real threshold, an answer of exactly 0.88 goes to review and 0.89 approves, through the whole save path", async () => {
+    mocks.askGateway.mockResolvedValue({ ok: true, probability: 0.88, costUsd: 0, latencyMs: 1 });
+    expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "review" });
+    mocks.askGateway.mockResolvedValue({ ok: true, probability: 0.89, costUsd: 0, latencyMs: 1 });
+    expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "approved" });
   });
 
   it("answers 200 and 'pending' when the decision cannot be recorded, so moderation failing never fails the player", async () => {
