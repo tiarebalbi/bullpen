@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AccountView, LeaderboardSnapshot, OrderEventView, OrderView } from "@bullpen/contracts";
-import { activeOrder, approvedHandleOf, changeVsPreviousClose, fillExactQuantity, fillLine, fillQuantityLabel, heldLabel, ownRow, positionLine, rankLabel, timelineSteps } from "./terminalView.js";
+import { activeOrder, approvedHandleOf, changeVsPreviousClose, fillLine, heldLabel, ownRow, positionLine, rankLabel, timelineSteps } from "./terminalView.js";
 
 const order = (over: Partial<OrderView> = {}): OrderView => ({
   orderId: "0b9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f11", symbol: "AAPL", side: "buy", type: "market", state: "working", quantity: "10.00000000", filledQty: "0.00000000", openQty: "10.00000000", cancelledQty: "0.00000000",
@@ -128,20 +128,22 @@ describe("recent fills and the active order", () => {
     const line = fillLine({ fillId: "f", symbol: "BTC-USD", side: "buy", quantity: "0.25000000", price: "108900.00000000", executedAt: "2026-10-20T10:00:00.000Z" });
     expect(line).toMatchObject({ quantity: "0.25", symbol: "BTC", price: "108,900.00" });
   });
-  it("quantities: whole numbers for a stock, at most 8 decimals with no trailing zeros for crypto", () => {
-    expect(fillQuantityLabel("AAPL", "200.00000000")).toBe("200");
-    expect(fillQuantityLabel("AAPL", "3")).toBe("3");
-    expect(fillQuantityLabel("BTC-USD", "0.25000000")).toBe("0.25");
-    expect(fillQuantityLabel("BTC-USD", "0.12345678")).toBe("0.12345678");
-    expect(fillQuantityLabel("BTC-USD", "2.00000000")).toBe("2");
-    expect(fillQuantityLabel("ETH-USD", "0.00000001")).toBe("0.00000001");
+  it("shows the stored quantity exactly, with trailing zeros trimmed and nothing rounded, for a stock and for crypto", () => {
+    const quantity = (symbol: string, stored: string) => fillLine({ fillId: "f", symbol, side: "buy", quantity: stored, price: "100.00000000", executedAt: "2026-10-20T10:00:00.000Z" }).quantity;
+    expect(quantity("AAPL", "200.00000000")).toBe("200");
+    expect(quantity("AAPL", "3")).toBe("3");
+    expect(quantity("BTC-USD", "0.25000000")).toBe("0.25");
+    expect(quantity("BTC-USD", "0.12345678")).toBe("0.12345678");
+    expect(quantity("BTC-USD", "2.00000000")).toBe("2");
+    expect(quantity("ETH-USD", "0.00000001")).toBe("0.00000001");
   });
-  it("a stock fill booked before whole-share fills is drawn as the nearest whole share, and its exact figure is kept for the tooltip", () => {
-    expect(fillQuantityLabel("GOOGL", "116.83359884")).toBe("117");
-    expect(fillQuantityLabel("GOOGL", "83.16640116")).toBe("83");
-    expect(fillQuantityLabel("GOOGL", "0.50000000")).toBe("0.5");
-    expect(fillExactQuantity("116.83359884")).toBe("116.83359884");
-    expect(fillExactQuantity("200.00000000")).toBe("200");
+  it("a stock fill booked with a fraction shows that fraction: it is never rounded to a whole share to hide it", () => {
+    const quantity = (stored: string) => fillLine({ fillId: "f", symbol: "GOOGL", side: "buy", quantity: stored, price: "196.11000000", executedAt: "2026-10-20T10:00:00.000Z" }).quantity;
+    expect(quantity("116.83359884")).toBe("116.83359884");
+    expect(quantity("83.16640116")).toBe("83.16640116");
+    expect(quantity("0.50000000")).toBe("0.5");
+    // whatever a stored quantity is, what is drawn is the same number: no digit is lost
+    for (const stored of ["1.00000001", "199.99999999", "116.83359884", "0.00000001", "20.50000000"]) expect(Number(quantity(stored))).toBe(Number(stored));
   });
   it("the active order is the latest order with its own events, and nothing before the first order", () => {
     const o = order();

@@ -54,11 +54,13 @@ export function HandleForm({ initial, label }: { initial: OwnHandleView | null; 
   return (
     <Panel title="Your handle">
       <p>{statusLine(own, label)}</p>
-      <form onSubmit={(event) => void submit(event)} aria-label="Set your handle">
-        <label htmlFor="handle-input">Handle</label>
-        <input id="handle-input" name="handle" value={text} onChange={(event) => setText(event.target.value)} autoComplete="off" spellCheck={false} aria-describedby="handle-help" aria-invalid={error ? true : undefined} />
-        <p id="handle-help">3 to 20 letters, digits, _ or -. A person or a model checks it before anyone else can see it.</p>
-        <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save handle"}</Button>
+      <form onSubmit={(event) => void submit(event)} aria-label="Set your handle" className="bp-page__body">
+        <div className="bp-field">
+          <label htmlFor="handle-input" className="bp-field__label">Handle</label>
+          <input id="handle-input" name="handle" className="bp-input" value={text} onChange={(event) => setText(event.target.value)} autoComplete="off" spellCheck={false} aria-describedby="handle-help" aria-invalid={error ? true : undefined} />
+          <p id="handle-help" className="bp-field__help">3 to 20 letters, digits, _ or -. A person or a model checks it before anyone else can see it.</p>
+        </div>
+        <div><Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save handle"}</Button></div>
       </form>
       {error ? <p role="alert">{error}</p> : null}
       {notice ? <p role="status">{notice}</p> : null}

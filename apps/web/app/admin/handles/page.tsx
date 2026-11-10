@@ -6,7 +6,8 @@ import { currentPlayer } from "../../lib/auth/player.js";
 import { signInAvailable } from "../../lib/auth/server.js";
 import { isHandleAdmin } from "../../lib/handles/admins.js";
 import { handlesPool } from "../../lib/handles/pool.js";
-import { ReviewList, type ReviewItem, type StuckRow } from "../../components/ReviewList.js";
+import type { ReviewItem, StuckRow } from "../../components/ReviewList.js";
+import { ReviewScreen } from "../../components/ReviewScreen.js";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Handles in review — Bullpen", robots: { index: false } };
@@ -22,10 +23,5 @@ export default async function ReviewPage(): Promise<ReactNode> {
   const stuck = await listStuckPending(pool())
     .then((rows): StuckRow[] => rows.map((row) => ({ handleId: row.handleId, handle: row.handle, submittedAt: row.submittedAt.toISOString() })))
     .catch(() => null);
-  return (
-    <main className="bp-app">
-      <h1>Handles in review</h1>
-      {items && stuck ? <ReviewList items={items} stuck={stuck} stuckAfterMinutes={STUCK_AFTER_MINUTES} /> : <p role="alert">I cannot read the review queue right now.</p>}
-    </main>
-  );
+  return <ReviewScreen queue={items} stuck={stuck} stuckAfterMinutes={STUCK_AFTER_MINUTES} />;
 }

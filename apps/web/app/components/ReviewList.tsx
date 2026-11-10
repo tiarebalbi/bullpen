@@ -62,13 +62,15 @@ export function ReviewList({ items, stuck = [], stuckAfterMinutes = 10 }: { item
         {stuckRows.length === 0 ? (
           <EmptyState title="Nothing stuck" description={`A handle shows here when it has been pending for more than ${stuckAfterMinutes} minutes.`} />
         ) : (
-          <ul aria-label="Handles stuck pending">
+          <ul aria-label="Handles stuck pending" className="bp-review">
             {stuckRows.map((row) => (
-              <li key={row.handleId}>
-                <strong>{row.handle}</strong> <span>pending for {ageLabel(row.submittedAt)}</span>
-                <Button variant="secondary" onClick={() => void act(row.handleId, "retry", "stuck")} aria-label={`Retry ${row.handle}`}>Retry</Button>
-                <Button variant="secondary" onClick={() => void act(row.handleId, "approve", "stuck")} aria-label={`Approve ${row.handle}`}>Approve</Button>
-                <Button variant="destructive" onClick={() => void act(row.handleId, "reject", "stuck")} aria-label={`Reject ${row.handle}`}>Reject</Button>
+              <li key={row.handleId} className="bp-review__row">
+                <strong className="bp-review__who">{row.handle}</strong> <span className="bp-review__meta">pending for {ageLabel(row.submittedAt)}</span>
+                <span className="bp-review__actions">
+                  <Button variant="secondary" onClick={() => void act(row.handleId, "retry", "stuck")} aria-label={`Retry ${row.handle}`}>Retry</Button>
+                  <Button variant="secondary" onClick={() => void act(row.handleId, "approve", "stuck")} aria-label={`Approve ${row.handle}`}>Approve</Button>
+                  <Button variant="destructive" onClick={() => void act(row.handleId, "reject", "stuck")} aria-label={`Reject ${row.handle}`}>Reject</Button>
+                </span>
                 {failed === row.handleId ? <p role="alert">I could not record that. Try again.</p> : null}
               </li>
             ))}
@@ -79,12 +81,14 @@ export function ReviewList({ items, stuck = [], stuckAfterMinutes = 10 }: { item
         {rows.length === 0 ? (
           <EmptyState title="Nothing to review" description="A handle lands here when the model is not sure, or could not be asked about it." />
         ) : (
-          <ul aria-label="Handles waiting for review">
+          <ul aria-label="Handles waiting for review" className="bp-review">
             {rows.map((row) => (
-              <li key={row.handleId}>
-                <strong>{row.handle}</strong> <span>{probabilityLabel(row.probability)}</span> <span>({REASON[row.reason] ?? row.reason})</span>
-                <Button variant="secondary" onClick={() => void act(row.handleId, "approve", "review")} aria-label={`Approve ${row.handle}`}>Approve</Button>
-                <Button variant="destructive" onClick={() => void act(row.handleId, "reject", "review")} aria-label={`Reject ${row.handle}`}>Reject</Button>
+              <li key={row.handleId} className="bp-review__row">
+                <strong className="bp-review__who">{row.handle}</strong> <span className="bp-review__meta"><span>{probabilityLabel(row.probability)}</span> <span>({REASON[row.reason] ?? row.reason})</span></span>
+                <span className="bp-review__actions">
+                  <Button variant="secondary" onClick={() => void act(row.handleId, "approve", "review")} aria-label={`Approve ${row.handle}`}>Approve</Button>
+                  <Button variant="destructive" onClick={() => void act(row.handleId, "reject", "review")} aria-label={`Reject ${row.handle}`}>Reject</Button>
+                </span>
                 {failed === row.handleId ? <p role="alert">I could not record that. Try again.</p> : null}
               </li>
             ))}

@@ -13,7 +13,9 @@ test("the terminal links to the account page from the footer", async ({ page }) 
 
 test("the account page tells a visitor to sign in, shows no form, and keeps the neutral label", async ({ page }) => {
   await page.goto("/account");
-  await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
+  // the terminal's header owns the page's one h1 (Bullpen); the page's own title sits under it
+  await expect(page.getByRole("heading", { level: 1, name: "Bullpen" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Your account" })).toBeVisible();
   await expect(page.getByText(/Sign in with GitHub on the terminal to set a handle/)).toBeVisible();
   await expect(page.getByText(/you appear as “Player” and four characters/)).toBeVisible();
   await expect(page.getByRole("form", { name: "Set your handle" })).toHaveCount(0);

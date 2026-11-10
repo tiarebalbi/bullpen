@@ -41,6 +41,8 @@ export default defineConfig({
         VERCEL_ENV: "production",
         NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST000000",
         NEXT_PUBLIC_CLARITY_PROJECT_ID: "clar1tytest",
+        // Turns on the fixture routes (app/e2e-fixtures): the account and review screens with made-up data, a 404 everywhere else, Vercel included.
+        BULLPEN_E2E_FIXTURES: "1",
       },
     },
     {

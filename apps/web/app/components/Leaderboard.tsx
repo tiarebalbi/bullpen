@@ -12,11 +12,14 @@ export function ageLabel(ageMs: number): string {
   return seconds < 90 ? `${seconds} s ago` : `${Math.round(seconds / 60)} min ago`;
 }
 
-/** Where the player's own handle stands, in words for them alone. Nothing for an approved handle or none: the row then says what it says to everyone. */
-export function ownNote(viewer: LeaderboardViewer): string | undefined {
+/**
+ * Where the player's own handle stands, for them alone: one short line under their row ("Handle in review") and the whole sentence for a screen reader and the tooltip.
+ * Nothing for an approved handle or none: the row then says what it says to everyone. The full copy is on /account.
+ */
+export function ownNote(viewer: LeaderboardViewer): { short: string; full: string } | undefined {
   const status = viewer.handle?.status;
-  if (status === "pending" || status === "review") return "Your handle is waiting for review. Until it is approved you show as above.";
-  if (status === "rejected") return "Your handle was not approved. Try another.";
+  if (status === "pending" || status === "review") return { short: "Handle in review", full: "Your handle is waiting for review. Until it is approved you show as above." };
+  if (status === "rejected") return { short: "Handle not approved", full: "Your handle was not approved. Try another." };
   return undefined;
 }
 
@@ -28,6 +31,8 @@ export function HandleLink({ viewer }: { viewer: LeaderboardViewer | undefined }
     </a>
   );
 }
+
+const noteProps = (note: { short: string; full: string } | undefined): { note?: string; noteFull?: string } => (note ? { note: note.short, noteFull: note.full } : {});
 
 const VISITOR_LINE = "Players show as Player #### until they choose a handle and it’s approved.";
 
@@ -85,7 +90,7 @@ export function Leaderboard({ polled, youLabel = null }: { polled: Polled<Leader
         <>
           <LeaderboardList label="Players ranked by equity">
             {snapshot.rows.map((row) => (
-              <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} you={mine(row)} note={viewer && mine(row) ? ownNote(viewer) : undefined} />
+              <LeaderboardRow key={row.accountId} rank={row.rank} handle={row.handle} equity={Number(row.equity)} cash={Number(row.cash)} you={mine(row)} {...noteProps(viewer && mine(row) ? ownNote(viewer) : undefined)} />
             ))}
           </LeaderboardList>
           {hidden > 0 ? <p className="bp-leaderboard__more">Showing the top {snapshot.rows.length} of {snapshot.total} players.</p> : null}

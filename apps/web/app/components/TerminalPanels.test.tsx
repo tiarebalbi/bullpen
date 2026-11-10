@@ -92,14 +92,13 @@ describe("recent fills", () => {
 
 describe("recent fills, one line each", () => {
   const fill = (fillId: string, symbol: string, quantity: string, price: string) => ({ fillId, symbol, side: "buy" as const, quantity, price, executedAt: "2026-10-20T10:00:00.000Z" });
-  it("reads as the design does, with whole shares for a stock and the crypto's own decimals", () => {
+  it("reads as the design does, with the stored quantity as stored: whole for a whole stock fill, the crypto's own decimals, and a stock fraction shown in full", () => {
     render(<RecentFills view={view({ fills: [fill("a", "AAPL", "20.00000000", "236.10000000"), fill("b", "BTC-USD", "0.25000000", "108900.00000000"), fill("c", "GOOGL", "116.83359884", "196.11000000")] })} />);
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent(/\d\d:\d\d:\d\dBuy 20 AAPL@ 236\.10/);
     expect(items[1]).toHaveTextContent(/Buy 0\.25 BTC@ 108,900\.00/);
-    expect(items[2]).toHaveTextContent(/Buy 117 GOOGL@ 196\.11/);
-    expect(items[2]).toHaveAttribute("title", "116.83359884 GOOGL at 196.11");
+    expect(items[2]).toHaveTextContent(/Buy 116\.83359884 GOOGL@ 196\.11/);
   });
   it("is three cells in a row that does not wrap: time, what, price", () => {
     render(<RecentFills view={view({ fills: [fill("a", "AAPL", "20.00000000", "236.10000000")] })} />);
