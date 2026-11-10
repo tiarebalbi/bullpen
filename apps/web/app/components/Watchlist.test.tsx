@@ -26,8 +26,28 @@ describe("StocksSection", () => {
     render(<StocksSection polled={stocks(withPrevious)} selected="" onSelect={() => undefined} positions={[{ symbol: "AAPL", quantity: "30.00000000", avgCost: "100.00000000", price: null, value: null }]} />);
     expect(screen.getByText("▲ +5.62%")).toBeInTheDocument();
     expect(screen.getAllByText(/[▲▼]/)).toHaveLength(1); // MSFT has one close only: no figure
-    expect(screen.getByText("Close · Oct 13 · 30 held")).toBeInTheDocument();
+    expect(screen.getByText("30 held")).toBeInTheDocument();
     expect(screen.getByText("Close · Oct 8")).toBeInTheDocument();
+  });
+
+  it("a held row has one sub-line, '30 held' instead of the date, and keeps the date in its tooltip and accessible name", () => {
+    render(<StocksSection polled={stocks(rows)} selected="" onSelect={() => undefined} positions={[{ symbol: "AAPL", quantity: "30.00000000", avgCost: "100.00000000", price: null, value: null }]} />);
+    const held = screen.getByRole("button", { name: /30 held.*190\.12.*Close · Oct 13$/ });
+    expect(held).toHaveAttribute("title", "AAPL: Close · Oct 13");
+    expect(held.querySelectorAll(".bp-watchlist__detail")).toHaveLength(1);
+    expect(held.querySelector(".bp-watchlist__detail")).toHaveTextContent(/^30 held$/);
+    expect(held.querySelector(".bp-visually-hidden")).toHaveTextContent("Close · Oct 13"); // after the row's words, never drawn as a second line
+    // the name is the row's own words, with the date after them: every word shown is in it, in order
+    expect(held).not.toHaveAttribute("aria-label");
+    expect(held.textContent).toMatch(/AAPL.*30 held.*190\.12.*Close · Oct 13$/);
+  });
+
+  it("a row with nothing held says the date alone and needs no tooltip of its own", () => {
+    render(<StocksSection polled={stocks(rows)} selected="" onSelect={() => undefined} />);
+    const row = screen.getAllByRole("button")[0]!;
+    expect(row).not.toHaveAttribute("title");
+    expect(row).not.toHaveAttribute("aria-label");
+    expect(row.querySelector(".bp-watchlist__detail")).toHaveTextContent("Close · Oct 13");
   });
 
   it("labels a stale price in words, and only the stale one", () => {

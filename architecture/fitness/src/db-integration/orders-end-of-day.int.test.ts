@@ -51,6 +51,37 @@ describe("a market buy at an end-of-day price", () => {
     expect(venue.heldPolls(order.orderId)).toBe(0);
   });
 
+  it("with every fill partial, a stock order fills in whole shares only, and the booked parts add up to the order (the venue production uses)", async () => {
+    const symbol = w.symbol();
+    await w.endOfDayPrice(symbol, "100");
+    const accountId = await w.account("100000");
+    // Submitted and dispatched here, not placed through placePlayerOrder, which would run the order on its own venue (a tenth of fills partial) and fill it at once.
+    const { orderId, capPrice } = await submitOrder(w.trading, { accountId, symbol, quantity: "200", clientOrderId: `whole-${symbol}` });
+    const venue = new DerivedVenue(w.trading, { seed: 5, prices: dbPriceSource(w.marketData), partialRate: 1, accountId });
+    await dispatchOrder(w.trading, venue, { orderId, symbol, quantity: "200", capPrice }, new Date());
+    for (let poll = 0; poll < 400 && (await w.order(orderId)).status !== "filled"; poll += 1) await pump(w.trading, venue, new Date());
+    expect(await w.order(orderId)).toMatchObject({ status: "filled", filled_qty: "200.00000000" });
+    const fills = (await w.trading.query<{ quantity: string }>("SELECT quantity::text FROM trading.fills WHERE order_id = $1", [orderId])).rows.map((r) => r.quantity);
+    expect(fills.length).toBeGreaterThan(1);
+    for (const quantity of fills) expect(quantity, "a stock fill is a whole number of shares").toMatch(/^\d+\.0{8}$/);
+    expect(fills.reduce((sum, quantity) => sum + Number(quantity), 0)).toBe(200);
+    expect(await w.position(accountId, symbol)).toBe("200.00000000");
+  });
+
+  it("the simulator splits a stock order into whole shares too", async () => {
+    const symbol = w.symbol();
+    await w.endOfDayPrice(symbol, "100");
+    const accountId = await w.account("100000");
+    const order = await submitOrder(w.trading, { accountId, symbol, quantity: "200", clientOrderId: `simwhole-${symbol}` });
+    const venue = new SimulatedVenue({ seed: 9, prices: dbPriceSource(w.marketData), partialRate: 1 });
+    await dispatchOrder(w.trading, venue, { orderId: order.orderId, symbol, quantity: "200", capPrice: order.capPrice }, new Date());
+    for (let poll = 0; poll < 400 && (await w.order(order.orderId)).status !== "filled"; poll += 1) await pump(w.trading, venue, new Date());
+    const fills = (await w.trading.query<{ quantity: string }>("SELECT quantity::text FROM trading.fills WHERE order_id = $1", [order.orderId])).rows.map((r) => r.quantity);
+    expect(fills.length).toBeGreaterThan(1);
+    for (const quantity of fills) expect(quantity).toMatch(/^\d+\.0{8}$/);
+    expect(fills.reduce((sum, quantity) => sum + Number(quantity), 0)).toBe(200);
+  });
+
   it("is refused at submit when the close is older than the latest completed trading day, and nothing is written", async () => {
     const symbol = w.symbol();
     await w.endOfDayPrice(symbol, "100", { ageHours: 100, staleClose: true });

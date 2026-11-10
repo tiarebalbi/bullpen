@@ -75,7 +75,9 @@ for (const viewport of [
       const look = async (state: string) => badge(state).evaluate((el) => { const s = getComputedStyle(el); return [s.borderTopStyle, s.borderTopWidth, s.fontStyle].join(" "); });
       expect(await look("cancel_requested")).not.toBe(await look("cancelled"));
       await expect(orders.locator('.bp-order[data-state="cancel_requested"]')).toContainText("Waiting for the fill engine to confirm");
-      await expect(orders.locator('.bp-order[data-state="cancelled"]')).toContainText("4 of 10 filled at $190.12. $1,235.78 back in buying power.");
+      // a finished order is one line: a short summary, with the whole sentence in its tooltip
+      await expect(orders.locator('.bp-order[data-state="cancelled"]')).toContainText("4 of 10");
+      await expect(orders.locator('.bp-order[data-state="cancelled"]')).toHaveAttribute("title", "4 of 10 filled at $190.12. $1,235.78 back in buying power.");
       await expect(orders.getByRole("button", { name: "Cancel order" })).toHaveCount(3);
       await shot(page, "orders-seven-states", viewport.width);
     });

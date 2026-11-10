@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AccountView, LeaderboardSnapshot, OrderEventView, OrderView } from "@bullpen/contracts";
-import { activeOrder, approvedHandleOf, changeVsPreviousClose, fillLine, heldLabel, ownRow, positionLine, rankLabel, timelineSteps } from "./terminalView.js";
+import { activeOrder, approvedHandleOf, changeVsPreviousClose, fillExactQuantity, fillLine, fillQuantityLabel, heldLabel, ownRow, positionLine, rankLabel, timelineSteps } from "./terminalView.js";
 
 const order = (over: Partial<OrderView> = {}): OrderView => ({
   orderId: "0b9b1a1e-6d5c-4a5e-9b0c-6a2f4f6d9f11", symbol: "AAPL", side: "buy", type: "market", state: "working", quantity: "10.00000000", filledQty: "0.00000000", openQty: "10.00000000", cancelledQty: "0.00000000",
@@ -121,8 +121,27 @@ describe("the order timeline, from events", () => {
 describe("recent fills and the active order", () => {
   it("a fill is a line of time, side, quantity, symbol and price", () => {
     const line = fillLine({ fillId: "f", symbol: "AAPL", side: "buy", quantity: "20.00000000", price: "236.10000000", executedAt: "2026-10-20T10:00:00.000Z" });
-    expect(line).toMatchObject({ side: "Buy", quantity: "20", symbol: "AAPL", price: "$236.10" });
+    expect(line).toMatchObject({ side: "Buy", quantity: "20", symbol: "AAPL", price: "236.10" });
     expect(line.time).toMatch(/^\d\d:\d\d:\d\d$/);
+  });
+  it("a crypto fill drops the quote currency and keeps its decimals, with a grouped price, as the design writes it", () => {
+    const line = fillLine({ fillId: "f", symbol: "BTC-USD", side: "buy", quantity: "0.25000000", price: "108900.00000000", executedAt: "2026-10-20T10:00:00.000Z" });
+    expect(line).toMatchObject({ quantity: "0.25", symbol: "BTC", price: "108,900.00" });
+  });
+  it("quantities: whole numbers for a stock, at most 8 decimals with no trailing zeros for crypto", () => {
+    expect(fillQuantityLabel("AAPL", "200.00000000")).toBe("200");
+    expect(fillQuantityLabel("AAPL", "3")).toBe("3");
+    expect(fillQuantityLabel("BTC-USD", "0.25000000")).toBe("0.25");
+    expect(fillQuantityLabel("BTC-USD", "0.12345678")).toBe("0.12345678");
+    expect(fillQuantityLabel("BTC-USD", "2.00000000")).toBe("2");
+    expect(fillQuantityLabel("ETH-USD", "0.00000001")).toBe("0.00000001");
+  });
+  it("a stock fill booked before whole-share fills is drawn as the nearest whole share, and its exact figure is kept for the tooltip", () => {
+    expect(fillQuantityLabel("GOOGL", "116.83359884")).toBe("117");
+    expect(fillQuantityLabel("GOOGL", "83.16640116")).toBe("83");
+    expect(fillQuantityLabel("GOOGL", "0.50000000")).toBe("0.5");
+    expect(fillExactQuantity("116.83359884")).toBe("116.83359884");
+    expect(fillExactQuantity("200.00000000")).toBe("200");
   });
   it("the active order is the latest order with its own events, and nothing before the first order", () => {
     const o = order();

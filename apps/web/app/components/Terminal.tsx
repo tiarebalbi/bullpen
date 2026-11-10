@@ -10,7 +10,7 @@ import { useAccount } from "../lib/trading/useAccount.js";
 import { useTerminalShortcuts } from "../lib/trading/useTerminalShortcuts.js";
 import { usePolled, type Polled } from "../lib/usePolled.js";
 import { useWide } from "../lib/useWide.js";
-import { AccountPanels } from "./AccountPanels.js";
+import { AccountPanels, OrdersAndLeaderboard, Orders } from "./AccountPanels.js";
 import { ActiveOrderPanel } from "./ActiveOrder.js";
 import { Leaderboard } from "./Leaderboard.js";
 import { OrderTicket, TradeBar } from "./OrderTicket.js";
@@ -98,7 +98,10 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
   const rank = rankLabel(leaderboard.status === "ok" ? leaderboard.data : null, view ? view.label : null);
   const approvedHandle = approvedHandleOf(leaderboard.status === "ok" ? leaderboard.data : null);
 
+  const leaderboardPanel = <Leaderboard polled={leaderboard} youLabel={view ? view.label : null} />;
+  const ordersPanel = view ? <Orders view={view} refresh={refresh} /> : null;
   const orderPanels = view ? <OrderPanels view={view} refresh={refresh} confirming={confirming} onConfirming={setConfirming} /> : null;
+  const board = { wide, orders: ordersPanel, orderPanels, leaderboard: leaderboardPanel };
 
   return (
     <>
@@ -115,9 +118,8 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
         main={
           <>
             <SymbolDetail selected={selected} crypto={crypto} stocks={stocks} />
-            <AccountPanels account={account} refresh={refresh} />
-            {wide ? null : orderPanels}
-            <Leaderboard polled={leaderboard} youLabel={view ? view.label : null} />
+            <AccountPanels account={account} refresh={refresh} withOrders={false} />
+            <OrdersAndLeaderboard {...board} />
           </>
         }
         rail={
