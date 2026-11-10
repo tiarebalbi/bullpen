@@ -1006,7 +1006,7 @@ function ChangeRequest({ request }: { request: NonNullable<ArchPartData["changeR
     { title: "Out of scope", html: request.outOfScopeHtml },
   ];
   return (
-    <section aria-labelledby="bp-arch-change-request" className="bp-arch-change-request" style={{ marginTop: 12, paddingBottom: 12, borderBottom: "1px dashed var(--ember)" }}>
+    <div role="group" aria-labelledby="bp-arch-change-request" className="bp-arch-change-request" style={{ marginTop: 12, paddingBottom: 12, borderBottom: "1px dashed var(--ember)" }}>
       <h3 id="bp-arch-change-request" style={{ margin: 0, font: "500 18px/1.2 var(--font-display)", letterSpacing: "-0.02em" }}>
         Change request
       </h3>
@@ -1023,7 +1023,7 @@ function ChangeRequest({ request }: { request: NonNullable<ArchPartData["changeR
         </a>
         .
       </p>
-    </section>
+    </div>
   );
 }
 

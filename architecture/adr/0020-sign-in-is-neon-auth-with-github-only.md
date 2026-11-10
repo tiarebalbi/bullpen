@@ -67,3 +67,9 @@ Sign-in uses Neon's managed auth with GitHub as the only provider, and a player 
 - ADR-0017 (the order lifecycle) — what the account is for.
 - ADR-0027 (player handles, moderated) — the handles this ADR left for later.
 - Neon's quickstart for Next.js (read 2026-10-21) and its page on verifying a token against the project's JWKS.
+
+## Correction, 2026-11-10
+
+Sign-in through Neon Auth stores the GitHub account's name and email, and the session record includes the IP address and browser, in the `neon_auth` schema. None of it is shown on the site. The statement above that they are not stored was wrong.
+
+The same schema also holds the account's profile picture, the GitHub account's id and the tokens GitHub issues for the sign-in (read from the production database's columns on 2026-11-10). What the trading app's own schemas hold is unchanged: the user's id, the neutral label and, with ADR-0027, a handle.

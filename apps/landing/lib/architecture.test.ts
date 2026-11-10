@@ -378,10 +378,10 @@ describe("loadBonusPart", () => {
   const source = { adr: adr.id, adrHref: "#adr-0027", changeRequest: adr.changeRequest! };
   const bonus = loadBonusPart(architectureDir, calmDir, source)!;
 
-  it("is the bonus, labelled and ordered after Part 4, and planned until the owner publishes it", () => {
+  it("is the bonus, labelled and ordered after Part 4, and built now that it is published", () => {
     expect(bonus.label).toBe("the bonus");
     expect(bonus.part).toBe(4);
-    expect(bonus.status).toBe("planned");
+    expect(bonus.status).toBe("built");
     expect(bonus.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(["vercel-ai-gateway", "schema-handles", "approved-handles-v1", "trading-app"]));
     expect(bonus.edges.map((e) => e.id)).toEqual(expect.arrayContaining(["trading-app-to-ai-gateway", "trading-app-to-approved-handles-v1"]));
   });

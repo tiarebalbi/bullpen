@@ -1630,6 +1630,11 @@ code {
   border-left-style: dashed;
   border-left-color: var(--foreground-muted);
 }
+/* Reached: the branch takes the main line's accent once the bonus is selected or past. */
+.bp-ap-scrub__bonus[data-reached] .bp-ap-scrub__stub {
+  border-left-color: var(--ember);
+  transition: border-color 560ms;
+}
 .bp-ap-scrub__diamond {
   grid-area: diamond;
   justify-self: center;

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { expectedOpeningPart } from "./builtParts.js";
+import { expectedOpening } from "./builtParts.js";
 
 // The "Live prices" strip isn't relevant to these tests but renders on the
 // same page; mock it so it never fails a request and never logs a console
@@ -33,11 +33,16 @@ test.describe("Architecture Explorer", () => {
 
   test("opens on the latest built part, read from the explorer content, and shows it as built", async ({ page }) => {
     const architecture = page.locator("#architecture");
-    const opening = expectedOpeningPart();
+    const opening = expectedOpening();
     const scrubber = architecture.getByRole("group", { name: "Series part" });
 
-    await expect(architecture.getByText(`Overview · Part ${opening}`)).toBeVisible();
-    await expect(scrubber.getByRole("button", { name: `PART ${opening}` })).toHaveAttribute("aria-current", "step");
+    if (opening.bonus) {
+      await expect(scrubber.getByRole("button", { name: /BONUS/ })).toHaveAttribute("aria-current", "step");
+      await expect(architecture.getByText("What changed in the bonus")).toBeVisible();
+    } else {
+      await expect(architecture.getByText(`Overview · Part ${opening.part}`)).toBeVisible();
+      await expect(scrubber.getByRole("button", { name: `PART ${opening.part}` })).toHaveAttribute("aria-current", "step");
+    }
     await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
   });
 
@@ -281,13 +286,21 @@ test.describe("Architecture Explorer", () => {
     }
   });
 
-  test("Play the series advances through parts on its own and can be paused", async ({ page }) => {
+  test("Play the series advances through parts on its own, stops on the bonus between Part 4 and Part 5, and can be paused", async ({ page }) => {
+    await page.clock.install();
+    await page.goto("/");
     const architecture = page.locator("#architecture");
+    const scrubber = architecture.getByRole("group", { name: "Series part" });
+    await scrubber.getByRole("button", { name: "PART 3" }).click();
     await architecture.getByRole("button", { name: "Play the series" }).click();
     await expect(architecture.getByRole("button", { name: "Pause the series" })).toBeVisible();
 
-    // The series opens on its latest built part, Part 3, so the first step on is Part 4.
-    await expect(architecture.getByText("Overview · Part 4")).toBeVisible({ timeout: 5000 });
+    await page.clock.runFor(2400);
+    await expect(architecture.getByText("Overview · Part 4")).toBeVisible();
+    await page.clock.runFor(2400);
+    await expect(scrubber.getByRole("button", { name: /BONUS/ })).toHaveAttribute("aria-current", "step");
+    await page.clock.runFor(2400);
+    await expect(scrubber.getByRole("button", { name: "PART 5" })).toHaveAttribute("aria-current", "step");
 
     await architecture.getByRole("button", { name: "Pause the series" }).click();
     await expect(architecture.getByRole("button", { name: "Play the series" })).toBeVisible();
@@ -626,11 +639,11 @@ test.describe("Architecture Explorer: the bonus stop", () => {
   const scrubberOf = (page: Page) => page.locator("#architecture").getByRole("group", { name: "Series part" });
   const bonusNode = (page: Page) => scrubberOf(page).getByRole("button", { name: /BONUS/ });
 
-  test("has a diamond BONUS node labelled 'Change request', planned, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
+  test("has a diamond BONUS node labelled 'Change request', built, after Part 4 and before Part 5, and still six part stops", async ({ page }) => {
     await expect(bonusNode(page)).toHaveCount(1);
-    await expect(bonusNode(page)).toContainText("BONUS · PLANNED");
+    await expect(bonusNode(page)).toContainText("BONUS · BUILT");
     await expect(bonusNode(page)).toContainText("Change request");
-    await expect(bonusNode(page)).toHaveAttribute("data-status", "planned");
+    await expect(bonusNode(page)).toHaveAttribute("data-status", "built");
     await expect(scrubberOf(page).locator(".bp-ap-scrub__stop")).toHaveCount(6);
     const order = await scrubberOf(page).getByRole("button").evaluateAll((buttons) => buttons.map((b) => (b.textContent ?? "").slice(0, 12)));
     expect(order.findIndex((t) => t.startsWith("BONUS"))).toBe(order.findIndex((t) => t.startsWith("PART 4")) + 1);
@@ -646,7 +659,7 @@ test.describe("Architecture Explorer: the bonus stop", () => {
     await expect(scrubberOf(page).getByRole("button", { name: "PART 4" })).not.toHaveAttribute("aria-current", "step");
     await expect(architecture.getByText("Overview · The bonus")).toBeVisible();
     await expect(architecture.getByText("What changed in the bonus")).toBeVisible();
-    const request = architecture.getByRole("region", { name: "Change request" });
+    const request = architecture.getByRole("group", { name: "Change request" });
     for (const heading of ["Why now", "In scope", "Out of scope"]) await expect(request.getByRole("heading", { name: heading })).toBeVisible();
     await expect(request).toContainText("Part 4 left handles out on purpose");
   });

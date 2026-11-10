@@ -292,12 +292,47 @@ for (const viewport of [
       // Sign-in exists since Part 4, so the page no longer says there are no accounts.
       await expect(page.locator(".bp-privacy")).not.toContainText("no accounts or sign-in");
       await expect(page.locator(".bp-privacy")).toContainText("sign in to the trading app with GitHub");
-      await expect(page.getByText("Last updated 26 October 2026")).toBeVisible();
+      // The bonus (ADR-0027): the page says a handle is stored, and that its text alone goes to the decision model.
+      // The opening says what the trading app's own data holds and what sign-in (Neon Auth) keeps, and that none of it is shown; it no longer claims no name or email is stored.
+      await expect(page.locator(".bp-privacy")).not.toContainText("stores no name, email address");
+      await expect(page.locator(".bp-privacy")).toContainText("holds only a neutral player label and, if you choose one, your handle");
+      // What Neon Auth keeps, from the neon_auth schema of the production database: user (name, email, image), account (the GitHub account id and tokens) and session (whose ipAddress and userAgent are filled in on every session, 12 of 12 when the owner counted them on 2026-11-10).
+      await expect(page.locator(".bp-privacy")).toContainText("Neon Auth, which keeps, in its own tables, your account\u2019s name, email address and profile picture");
+      await expect(page.locator(".bp-privacy")).toContainText("the GitHub account\u2019s id and the tokens GitHub issues for the sign-in");
+      await expect(page.locator(".bp-privacy")).toContainText("a record of each session, which includes the IP address and browser it was started from");
+      await expect(page.locator(".bp-privacy")).toContainText("It keeps them so you can sign in. Bullpen never shows any of that");
+      await expect(page.getByRole("heading", { name: "Your handle" })).toBeVisible();
+      const handleSection = page.locator('section[aria-labelledby="privacy-handle"]');
+      await expect(handleSection).toContainText("the text of the handle, and nothing else about you");
+      await expect(handleSection.getByRole("link", { name: /TypeSafe.s privacy policy/ })).toHaveAttribute("href", "https://typesafe.ai/privacy");
+      await expect(page.getByText("Last updated 10 November 2026")).toBeVisible();
       await expect(page.getByRole("link", { name: "my site" })).toHaveAttribute("href", "https://tiarebalbi.com");
       await expect(page.getByRole("button", { name: "Cookie settings" })).toBeVisible();
       for (const cookie of ["bullpen_consent", "_ga", "_clck", "_clsk"]) {
         await expect(page.locator("td code", { hasText: new RegExp(`^${cookie}$`) })).toBeVisible();
       }
+      // The sign-in cookies, named as the Neon Auth SDK sets them in the trading app (@neondatabase/auth: NEON_AUTH_SESSION_COOKIE_NAME, ..._SESSION_DATA_COOKIE_NAME, ..._SESSION_CHALLENGE_COOKIE_NAME).
+      // session_data's 5 minutes is the SDK's default. session_token's lifetime is from the owner's read-only query of neon_auth.session in the production database on 2026-11-10: 12 sessions,
+      // each lasting (expiresAt minus createdAt) from 6 days 23:59:59.999 to 12 days 04:38:07, which is 7 days, extended while the session is used. The challenge's lifetime is not read from a live response.
+      const signIn = page.locator('section[aria-labelledby="privacy-signin-cookies"]');
+      await expect(signIn.getByRole("heading", { name: "Cookies for signing in" })).toBeVisible();
+      await expect(signIn).toContainText("essential for signing in");
+      await expect(signIn).toContainText("set only when you sign in");
+      const rows: Array<[string, RegExp, string]> = [
+        ["__Secure-neon-auth.session_token", /keeps you signed in/, "7 days, extended while you keep using it"],
+        ["__Secure-neon-auth.local.session_data", /signed copy of your session, which includes your name, email address and profile picture/, "Up to 5 minutes at a time, renewed while you stay signed in; removed when you sign out"],
+        ["__Secure-neon-auth.session_challenge", /round trip to GitHub/, "round trip to GitHub"],
+      ];
+      for (const [name, purpose, lasts] of rows) {
+        const row = signIn.locator("tr", { has: page.locator("td code", { hasText: new RegExp(`^${name.replace(/[.]/g, "\\.")}$`) }) });
+        await expect(row).toHaveCount(1);
+        await expect(row).toContainText("Essential, and set only when you sign in");
+        await expect(row).toContainText(purpose);
+        await expect(row.locator("td").last()).toContainText(lasts);
+      }
+      // The analytics table does not carry them, and the page is not wider than the screen with the long names in it.
+      await expect(page.locator("td code", { hasText: /neon-auth/ })).toHaveCount(3);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
       // How long each lasts is on screen too, not clipped off the side of a phone.
       for (const lasts of ["6 months", "2 years", "1 year", "1 day"]) {
         const cell = page.locator("td", { hasText: lasts }).first();

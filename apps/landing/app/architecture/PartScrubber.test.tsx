@@ -58,6 +58,18 @@ describe("the scrubber's bonus node", () => {
   });
 });
 
+describe("the bonus's branch", () => {
+  const built = { ...bonus, status: "built" as const };
+  it("is not reached before the bonus", () => {
+    expect(html({ part: 4, bonus: built })).not.toMatch(/bp-ap-scrub__bonus"[^>]*data-reached/);
+    expect(html({ part: 3, bonus: built })).not.toMatch(/bp-ap-scrub__bonus"[^>]*data-reached/);
+  });
+  it("is reached when the bonus is selected, and stays reached past it", () => {
+    expect(html({ part: 4, bonus: built, bonusSelected: true })).toMatch(/bp-ap-scrub__bonus"[^>]*data-reached="true"/);
+    expect(html({ part: 5, bonus: built })).toMatch(/bp-ap-scrub__bonus"[^>]*data-reached="true"/);
+  });
+});
+
 describe("the positions on the line", () => {
   it("compares a stop with the selection", () => {
     expect(stateAt(4, 4)).toBe("current");

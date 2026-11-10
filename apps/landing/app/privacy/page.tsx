@@ -45,6 +45,33 @@ const COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: stri
   { name: "_clsk", setBy: "Microsoft Clarity", purpose: "Joins your page views into one session recording.", lasts: "1 day" },
 ];
 
+// The sign-in cookies, named as the Neon Auth SDK (@neondatabase/auth) sets them in the trading app (its constants NEON_AUTH_SESSION_COOKIE_NAME, NEON_AUTH_SESSION_DATA_COOKIE_NAME
+// and NEON_AUTH_SESSION_CHALLENGE_COOKIE_NAME). All three are HttpOnly, Secure and SameSite=Lax. session_data is made by the SDK with its default lifetime of 300 seconds (the app sets none);
+// session_token and session_challenge come from Neon Auth's server, so their lifetimes are not in the SDK. session_token: the owner read neon_auth.session in the production database with a
+// read-only query on 2026-11-10: 12 sessions, and each lasted (expiresAt minus createdAt) from 6 days 23:59:59.999 to 12 days 04:38:07, so 7 days, extended while the session is used.
+// The challenge's lifetime has not been read from a live response.
+const SIGN_IN_COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: string }> = [
+  {
+    name: "__Secure-neon-auth.session_token",
+    setBy: "Neon Auth, through the trading app",
+    purpose: "Essential, and set only when you sign in. It is what keeps you signed in: the token of your sign-in session.",
+    lasts: "7 days, extended while you keep using it",
+  },
+  {
+    name: "__Secure-neon-auth.local.session_data",
+    setBy: "The trading app, with the Neon Auth SDK",
+    purpose:
+      "Essential, and set only when you sign in. A short-lived, signed copy of your session, which includes your name, email address and profile picture, so the trading app doesn\u2019t ask Neon Auth on every request. Scripts on the page can\u2019t read it.",
+    lasts: "Up to 5 minutes at a time, renewed while you stay signed in; removed when you sign out",
+  },
+  {
+    name: "__Secure-neon-auth.session_challenge",
+    setBy: "Neon Auth, through the trading app",
+    purpose: "Essential, and set only when you sign in. Used for the round trip to GitHub: it lets the trading app check that you are the one coming back from GitHub.",
+    lasts: "Set by Neon Auth\u2019s server for the round trip to GitHub",
+  },
+];
+
 export default function PrivacyPage(): ReactNode {
   return (
     <>
@@ -69,8 +96,12 @@ export default function PrivacyPage(): ReactNode {
           <div className="bp-eyebrow">Privacy</div>
           <h1 className="bp-privacy__title">What I collect, and why</h1>
           <p className="bp-section__lede">
-            Bullpen is a project I build in public. You can sign in to the trading app with GitHub, and
-            Bullpen stores no name, email address or GitHub login for you, only a neutral player label. If
+            Bullpen is a project I build in public. You can sign in to the trading app with GitHub. The
+            trading app&rsquo;s own data holds only a neutral player label and, if you choose one, your handle,
+            tied to your account by an id. Sign-in is handled by Neon Auth, which keeps, in its own tables, your
+            account&rsquo;s name, email address and profile picture, the GitHub account&rsquo;s id and the tokens
+            GitHub issues for the sign-in, and a record of each session, which includes the IP address and
+            browser it was started from. It keeps them so you can sign in. Bullpen never shows any of that. If
             you accept, two analytics tools measure how the site is used. If you don&rsquo;t, they never
             load.
           </p>
@@ -152,6 +183,39 @@ export default function PrivacyPage(): ReactNode {
             </p>
           </section>
 
+          <section aria-labelledby="privacy-signin-cookies">
+            <h2 id="privacy-signin-cookies">Cookies for signing in</h2>
+            <p>
+              Signing in to the trading app sets the three cookies below, on the trading app only. They are
+              essential for signing in, so they don&rsquo;t depend on your analytics choice, and they are set
+              only when you sign in. Sign out and they are removed.
+            </p>
+            <div className="bp-privacy__table">
+              <table className="bp-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Cookie</th>
+                    <th scope="col">Set by</th>
+                    <th scope="col">What for</th>
+                    <th scope="col">Lasts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SIGN_IN_COOKIES.map((cookie) => (
+                    <tr key={cookie.name}>
+                      <td>
+                        <code style={{ overflowWrap: "anywhere" }}>{cookie.name}</code>
+                      </td>
+                      <td data-label="Set by">{cookie.setBy}</td>
+                      <td data-label="What for">{cookie.purpose}</td>
+                      <td data-label="Lasts">{cookie.lasts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <section aria-labelledby="privacy-ads">
             <h2 id="privacy-ads">Advertising is off</h2>
             <p>
@@ -178,6 +242,20 @@ export default function PrivacyPage(): ReactNode {
               Google and Microsoft handle the data they receive under their own terms:{" "}
               <a href="https://policies.google.com/privacy">Google&rsquo;s privacy policy</a> and{" "}
               <a href="https://privacy.microsoft.com/privacystatement">Microsoft&rsquo;s privacy statement</a>.
+            </p>
+          </section>
+
+          <section aria-labelledby="privacy-handle">
+            <h2 id="privacy-handle">Your handle</h2>
+            <p>
+              If you choose a handle in the trading app, Bullpen stores it, and it shows on the leaderboard only
+              once it is approved. To check it, the text of the handle, and nothing else about you, is sent to a
+              decision model (TypeSafe&rsquo;s Jev) through Vercel AI Gateway. A person looks at any handle the
+              model is unsure of.
+            </p>
+            <p>
+              TypeSafe handles what it receives under its own terms:{" "}
+              <a href="https://typesafe.ai/privacy">TypeSafe&rsquo;s privacy policy</a>.
             </p>
           </section>
 

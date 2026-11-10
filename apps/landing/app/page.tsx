@@ -4,6 +4,7 @@ import { loadAdl } from "../lib/adl.js";
 import { loadAdrs } from "../lib/adr.js";
 import { loadArchitectureParts } from "../lib/architecture.js";
 import { loadBonusFor } from "../lib/bonusLoad.js";
+import { loadCurrentMoment, opensOnBonus } from "../lib/currentMoment.js";
 import { loadAllowances, loadLatestUsage } from "../lib/cost.js";
 import { loadCurrentPart } from "../lib/currentPart.js";
 import { loadLatestRulesSnapshot } from "../lib/rulesSnapshot.js";
@@ -40,6 +41,8 @@ export default function LandingPage(): ReactNode {
   const usage = loadLatestUsage(join(repoRoot, "cost", "usage"));
   const snapshot = loadLatestRulesSnapshot(join(repoRoot, "architecture", "reports"));
 
+  const bonus = loadBonusFor(repoRoot, adrs);
+
   return (
     <>
       <link rel="canonical" href={HOME_URL} />
@@ -50,7 +53,7 @@ export default function LandingPage(): ReactNode {
         <Hero />
         <MarketStripSection />
         <SeriesRail parts={series} />
-        <Architecture parts={architectureParts} adrs={adrs} bonus={loadBonusFor(repoRoot, adrs)} scrubber={architectureParts.map((p) => ({ part: p.part, title: partsOf(series).find((s) => s.part === p.part)?.title ?? `Part ${p.part}`, status: p.status }))} />
+        <Architecture parts={architectureParts} adrs={adrs} bonus={bonus} opensOnBonus={opensOnBonus(loadCurrentMoment(repoRoot), bonus)} scrubber={architectureParts.map((p) => ({ part: p.part, title: partsOf(series).find((s) => s.part === p.part)?.title ?? `Part ${p.part}`, status: p.status }))} />
         <StatusBento adrs={adrs} adl={adl} snapshot={snapshot} allowances={allowances} usage={usage} builtPart={loadCurrentPart(repoRoot) ?? 1} />
       </main>
       <Footer />

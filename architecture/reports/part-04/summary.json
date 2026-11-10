@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "part": 4,
-  "generatedAt": "2026-11-01T13:26:41.637Z",
-  "commit": "67edc3027568893fcaf28dac8e909806e0d4cded",
+  "generatedAt": "2026-11-10T12:11:16.277Z",
+  "commit": "cc968fbd68f6614084fb21db4c174f430a5f90e6",
   "dirty": false,
-  "ref": "bonus-handle-moderation",
+  "ref": "publish-bonus",
   "source": "local",
   "passed": true,
   "checks": [

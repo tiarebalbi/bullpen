@@ -16,6 +16,13 @@ describe("sitemap", () => {
     expect(byPath).toEqual({ "/": latest, "/architecture": latest, "/privacy": PRIVACY_UPDATED });
   });
 
+  it("dates / and /architecture by the published bonus, 2026-11-11, now that it is the latest published post", () => {
+    expect(latest).toBe("2026-11-11");
+    const byPath = Object.fromEntries(sitemap().map((entry) => [new URL(entry.url).pathname, entry.lastModified]));
+    expect(byPath["/"]).toBe("2026-11-11");
+    expect(byPath["/architecture"]).toBe("2026-11-11");
+  });
+
   it("never uses a planned date: the latest planned date is later than every lastmod", () => {
     const planned = series.flatMap((entry) => (entry.plannedDate ? [entry.plannedDate] : []));
     expect(planned.length).toBeGreaterThan(0);
