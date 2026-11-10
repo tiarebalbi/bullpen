@@ -45,6 +45,32 @@ const COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: stri
   { name: "_clsk", setBy: "Microsoft Clarity", purpose: "Joins your page views into one session recording.", lasts: "1 day" },
 ];
 
+// The sign-in cookies, named as the Neon Auth SDK (@neondatabase/auth) sets them in the trading app (its constants NEON_AUTH_SESSION_COOKIE_NAME, NEON_AUTH_SESSION_DATA_COOKIE_NAME
+// and NEON_AUTH_SESSION_CHALLENGE_COOKIE_NAME). All three are HttpOnly, Secure and SameSite=Lax. session_data is made by the SDK with its default lifetime of 300 seconds (the app sets none);
+// session_token and session_challenge come from Neon Auth's server, so their lifetimes are not in the SDK: session_token is set for 7 days (Max-Age=604800, the Better Auth default Neon
+// Auth is built on, and what a public bug report of the SDK shows), and the challenge's lifetime has not been read from a live response.
+const SIGN_IN_COOKIES: Array<{ name: string; setBy: string; purpose: string; lasts: string }> = [
+  {
+    name: "__Secure-neon-auth.session_token",
+    setBy: "Neon Auth, through the trading app",
+    purpose: "Essential, and set only when you sign in. It is what keeps you signed in: the token of your sign-in session.",
+    lasts: "Up to 7 days at a time; removed when you sign out",
+  },
+  {
+    name: "__Secure-neon-auth.local.session_data",
+    setBy: "The trading app, with the Neon Auth SDK",
+    purpose:
+      "Essential, and set only when you sign in. A short-lived, signed copy of your session, which includes your name, email address and profile picture, so the trading app doesn\u2019t ask Neon Auth on every request. Scripts on the page can\u2019t read it.",
+    lasts: "Up to 5 minutes at a time, renewed while you stay signed in; removed when you sign out",
+  },
+  {
+    name: "__Secure-neon-auth.session_challenge",
+    setBy: "Neon Auth, through the trading app",
+    purpose: "Essential, and set only when you sign in. Used for the round trip to GitHub: it lets the trading app check that you are the one coming back from GitHub.",
+    lasts: "Set by Neon Auth\u2019s server for the round trip to GitHub",
+  },
+];
+
 export default function PrivacyPage(): ReactNode {
   return (
     <>
@@ -154,6 +180,39 @@ export default function PrivacyPage(): ReactNode {
               <code>MUID</code> as a cookie used across its sites for advertising, among other things. I tell
               Clarity that advertising storage is denied, and I don&rsquo;t use Clarity for advertising.
             </p>
+          </section>
+
+          <section aria-labelledby="privacy-signin-cookies">
+            <h2 id="privacy-signin-cookies">Cookies for signing in</h2>
+            <p>
+              Signing in to the trading app sets the three cookies below, on the trading app only. They are
+              essential for signing in, so they don&rsquo;t depend on your analytics choice, and they are set
+              only when you sign in. Sign out and they are removed.
+            </p>
+            <div className="bp-privacy__table">
+              <table className="bp-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Cookie</th>
+                    <th scope="col">Set by</th>
+                    <th scope="col">What for</th>
+                    <th scope="col">Lasts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SIGN_IN_COOKIES.map((cookie) => (
+                    <tr key={cookie.name}>
+                      <td>
+                        <code style={{ overflowWrap: "anywhere" }}>{cookie.name}</code>
+                      </td>
+                      <td data-label="Set by">{cookie.setBy}</td>
+                      <td data-label="What for">{cookie.purpose}</td>
+                      <td data-label="Lasts">{cookie.lasts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section aria-labelledby="privacy-ads">

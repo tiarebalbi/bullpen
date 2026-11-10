@@ -311,6 +311,26 @@ for (const viewport of [
       for (const cookie of ["bullpen_consent", "_ga", "_clck", "_clsk"]) {
         await expect(page.locator("td code", { hasText: new RegExp(`^${cookie}$`) })).toBeVisible();
       }
+      // The sign-in cookies, named as the Neon Auth SDK sets them in the trading app (@neondatabase/auth: NEON_AUTH_SESSION_COOKIE_NAME, ..._SESSION_DATA_COOKIE_NAME, ..._SESSION_CHALLENGE_COOKIE_NAME).
+      const signIn = page.locator('section[aria-labelledby="privacy-signin-cookies"]');
+      await expect(signIn.getByRole("heading", { name: "Cookies for signing in" })).toBeVisible();
+      await expect(signIn).toContainText("essential for signing in");
+      await expect(signIn).toContainText("set only when you sign in");
+      const rows: Array<[string, RegExp, string]> = [
+        ["__Secure-neon-auth.session_token", /keeps you signed in/, "Up to 7 days at a time; removed when you sign out"],
+        ["__Secure-neon-auth.local.session_data", /signed copy of your session, which includes your name, email address and profile picture/, "Up to 5 minutes at a time, renewed while you stay signed in; removed when you sign out"],
+        ["__Secure-neon-auth.session_challenge", /round trip to GitHub/, "round trip to GitHub"],
+      ];
+      for (const [name, purpose, lasts] of rows) {
+        const row = signIn.locator("tr", { has: page.locator("td code", { hasText: new RegExp(`^${name.replace(/[.]/g, "\\.")}$`) }) });
+        await expect(row).toHaveCount(1);
+        await expect(row).toContainText("Essential, and set only when you sign in");
+        await expect(row).toContainText(purpose);
+        await expect(row.locator("td").last()).toContainText(lasts);
+      }
+      // The analytics table does not carry them, and the page is not wider than the screen with the long names in it.
+      await expect(page.locator("td code", { hasText: /neon-auth/ })).toHaveCount(3);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
       // How long each lasts is on screen too, not clipped off the side of a phone.
       for (const lasts of ["6 months", "2 years", "1 year", "1 day"]) {
         const cell = page.locator("td", { hasText: lasts }).first();
