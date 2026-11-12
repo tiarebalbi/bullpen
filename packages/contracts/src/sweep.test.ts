@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validateSweepTick, type SweepTick } from "./sweep.js";
 
-const tick: SweepTick = { at: "2026-10-20T12:00:00.000Z", open: 2, flagged: 0, fills: 1, cancels: 0, placed: 0, cancelRequested: 0, released: 1, releaseFailed: 0, errors: 0 };
+const tick: SweepTick = { at: "2026-10-20T12:00:00.000Z", open: 2, flagged: 0, fills: 1, cancels: 0, placed: 0, cancelRequested: 0, released: 1, releaseFailed: 0, queued: 0, admitted: 0, toppedUp: 0, admissionRejected: 0, nextOpen: "2026-10-21T13:30:00.000Z", errors: 0 };
 
 describe("the sweep reply contract", () => {
   it("accepts what the route sends", () => {
@@ -15,5 +15,11 @@ describe("the sweep reply contract", () => {
     expect(validateSweepTick({ ...tick, fills: 1.5 }).valid).toBe(false);
     expect(validateSweepTick({ ...tick, secret: "x" }).valid).toBe(false);
     expect(validateSweepTick({ ...tick, at: "yesterday" }).valid).toBe(false);
+  });
+  it("requires the next open, as a date", () => {
+    const missing: Partial<SweepTick> = { ...tick };
+    delete missing.nextOpen;
+    expect(validateSweepTick(missing).valid).toBe(false);
+    expect(validateSweepTick({ ...tick, nextOpen: "monday" }).valid).toBe(false);
   });
 });

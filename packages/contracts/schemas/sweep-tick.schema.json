@@ -4,7 +4,7 @@
   "title": "SweepTick",
   "description": "What POST /api/internal/sweep answers: what one pass of the order lifecycle's background work did, and how many orders are still open.",
   "type": "object",
-  "required": ["at", "open", "flagged", "fills", "cancels", "placed", "cancelRequested", "released", "releaseFailed", "errors"],
+  "required": ["at", "open", "flagged", "fills", "cancels", "placed", "cancelRequested", "released", "releaseFailed", "queued", "admitted", "toppedUp", "admissionRejected", "nextOpen", "errors"],
   "additionalProperties": false,
   "properties": {
     "at": { "type": "string", "format": "date-time" },
@@ -16,6 +16,11 @@
     "cancelRequested": { "type": "integer", "minimum": 0 },
     "released": { "type": "integer", "minimum": 0 },
     "releaseFailed": { "type": "integer", "minimum": 0 },
+    "queued": { "type": "integer", "minimum": 0, "description": "Orders still queued for an open that has not come. They never hold the fast cadence." },
+    "admitted": { "type": "integer", "minimum": 0 },
+    "toppedUp": { "type": "integer", "minimum": 0 },
+    "admissionRejected": { "type": "integer", "minimum": 0 },
+    "nextOpen": { "type": "string", "format": "date-time", "description": "The next 9:30 ET on a trading day after `at`. The sweeper sleeps no longer than until it." },
     "errors": { "type": "integer", "minimum": 0 }
   }
 }
