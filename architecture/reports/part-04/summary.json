@@ -1,8 +1,8 @@
 {
   "schema": 2,
   "part": 4,
-  "generatedAt": "2026-11-12T19:45:32.621Z",
-  "commit": "4f39ba55d6365cd206eac2a0c0ff3ab4c23ef56c",
+  "generatedAt": "2026-11-12T19:55:52.863Z",
+  "commit": "30081bef206a1abdbbab6443aed2e9a97a3deb20",
   "dirty": true,
   "ref": "part-05-live-and-load",
   "source": "local",
@@ -13,7 +13,7 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 12 checks held, 62 rules enforced",
+      "summary": "check:arch passed: 12 checks held, 63 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
@@ -253,6 +253,12 @@
         {
           "id": "only-apps-web-app-lib-trading-reads-sweep-secret",
           "rule": "ONLY apps/web/app/lib/trading READS SWEEP_SECRET",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-degradation-reads-bullpen-off",
+          "rule": "ONLY apps/web/app/lib/degradation READS BULLPEN_OFF",
           "check": "secret containment",
           "passed": true
         },

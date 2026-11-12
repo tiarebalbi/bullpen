@@ -6,6 +6,8 @@ import type { ConnectionStatus } from "@bullpen/ui";
 import type { PositionView, PriceSnapshot, StockPriceSnapshot } from "@bullpen/contracts";
 import { changeVsPreviousClose, heldLabel } from "../lib/trading/terminalView.js";
 import type { Polled } from "../lib/usePolled.js";
+import { LiveBadge } from "./LiveBadge.js";
+import type { LinkState } from "../lib/trading/priceLink.js";
 import { CoinGeckoCredit } from "./CoinGeckoCredit.js";
 import { Unavailable } from "./Unavailable.js";
 
@@ -34,7 +36,7 @@ interface SelectProps {
   onSelect: (symbol: string) => void;
 }
 
-export function StocksSection({ polled, selected, onSelect, positions = [] }: { polled: Polled<StockPriceSnapshot>; positions?: PositionView[] } & SelectProps): ReactNode {
+export function StocksSection({ polled, selected, onSelect, positions = [], link }: { polled: Polled<StockPriceSnapshot>; positions?: PositionView[]; link?: LinkState } & SelectProps): ReactNode {
   const now = useNow();
   const closed = isUsMarketClosed(now);
   let body: ReactNode;
@@ -64,7 +66,7 @@ export function StocksSection({ polled, selected, onSelect, positions = [] }: { 
     });
   }
   return (
-    <WatchlistSection title="Stocks" note="end of day">
+    <WatchlistSection title="Stocks" note={link ? <LiveBadge link={link} /> : "end of day"}>
       {body}
       {polled.status === "ok" && polled.data.rows.length > 0 ? (
         <p className="bp-credit">

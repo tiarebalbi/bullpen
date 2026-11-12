@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Decision, Submitted } from "@bullpen/db-handles";
 import type { GatewayResult } from "./gateway.js";
+import { setSwitches } from "../degradation/testing.js";
 import { moderateSaved, saveAndModerate, type ModerationStore } from "./moderate.js";
 
 function setup(over: { submitted?: Submitted; ask?: () => Promise<GatewayResult>; record?: () => Promise<boolean> } = {}) {
@@ -116,5 +117,44 @@ describe("moderating a handle that is already saved (a retry)", () => {
     const t = setup({ record: async () => false });
     expect(await moderateSaved("h-9", "StuckOne", t.deps)).toBe("pending");
     expect(t.lines).toEqual([]);
+  });
+});
+
+describe("the handle-moderation kill switch (ADR-0031)", () => {
+  const withSwitch = async (value: string | undefined, run: () => Promise<void>): Promise<void> => {
+    const restore = setSwitches(value);
+    try {
+      await run();
+    } finally {
+      restore();
+    }
+  };
+
+  it("off: asks no model, sends the handle to review, and still saves and answers", async () => {
+    await withSwitch("handle-moderation", async () => {
+      const t = setup();
+      expect(await saveAndModerate("user-1", "BullRun", t.deps)).toEqual({ ok: true, status: "review" });
+      expect(t.ask).not.toHaveBeenCalled();
+      expect(t.store.submit).toHaveBeenCalledTimes(1);
+      expect(t.recorded).toMatchObject([{ handleId: "h-1", outcome: "review", reason: "unavailable" }]);
+    });
+  });
+
+  it("off: the rules, the name check and the change limit still run first, as they cost nothing", async () => {
+    await withSwitch("handle-moderation", async () => {
+      const t = setup({ submitted: { ok: false, reason: "taken" } });
+      expect(await saveAndModerate("user-1", "BullRun", t.deps)).toEqual({ ok: false, kind: "taken" });
+      expect(await saveAndModerate("user-1", "no good!", t.deps)).toMatchObject({ ok: false, kind: "invalid" });
+    });
+  });
+
+  it("on (unset, or another switch off): the model is asked as before", async () => {
+    for (const value of [undefined, "price-stream,leaderboard-refresh"]) {
+      await withSwitch(value, async () => {
+        const t = setup();
+        expect(await saveAndModerate("user-1", "BullRun", t.deps)).toEqual({ ok: true, status: "approved" });
+        expect(t.ask).toHaveBeenCalledTimes(1);
+      });
+    }
   });
 });

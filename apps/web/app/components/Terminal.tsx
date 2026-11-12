@@ -7,6 +7,8 @@ import { signInWithProvider } from "../lib/auth/actions.js";
 import { approvedHandleOf, cancellableOrderId, rankLabel } from "../lib/trading/terminalView.js";
 import { useAccount } from "../lib/trading/useAccount.js";
 import { useTerminalShortcuts } from "../lib/trading/useTerminalShortcuts.js";
+import type { LinkState } from "../lib/trading/priceLink.js";
+import { useLivePrices } from "../lib/trading/useLivePrices.js";
 import { usePolled, type Polled } from "../lib/usePolled.js";
 import { useWide } from "../lib/useWide.js";
 import { AccountPanels, OrdersAndLeaderboard, Orders } from "./AccountPanels.js";
@@ -28,10 +30,12 @@ function storedPrice(stocks: Polled<StockPriceSnapshot>, symbol: string): string
 }
 
 /** The three feeds the page reads: the live price, the stored closes and the ranking. */
-function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceSnapshot>; leaderboard: Polled<LeaderboardSnapshot> } {
+function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceSnapshot>; stocksLink: LinkState; leaderboard: Polled<LeaderboardSnapshot> } {
+  const { stocks, link } = useLivePrices();
   return {
     crypto: usePolled<PriceSnapshot>(`/api/price/${BTC_SYMBOL}`, 60_000, "Price unavailable."),
-    stocks: usePolled<StockPriceSnapshot>("/api/stock-prices", 5 * 60_000, "Stock prices unavailable."),
+    stocks,
+    stocksLink: link,
     leaderboard: usePolled<LeaderboardSnapshot>("/api/leaderboard", 60_000, "Leaderboard unavailable."),
   };
 }
@@ -47,7 +51,7 @@ function OrderPanels({ view, refresh, confirming, onConfirming }: { view: Accoun
 }
 
 export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the depth is the shell's JSX: four regions composed in one place, with the data and the keys already moved into hooks.
-  const { crypto, stocks, leaderboard } = useFeeds();
+  const { crypto, stocks, stocksLink, leaderboard } = useFeeds();
   const { state: account, apply, refresh } = useAccount();
   const [selected, setSelected] = useState(BTC_SYMBOL);
   const wide = useWide();
@@ -71,7 +75,7 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
         }
         watchlist={
           <>
-            <StocksSection polled={stocks} selected={selected} onSelect={setSelected} positions={view?.positions ?? []} />
+            <StocksSection polled={stocks} link={stocksLink} selected={selected} onSelect={setSelected} positions={view?.positions ?? []} />
             <CryptoSection polled={crypto} selected={selected} onSelect={setSelected} />
           </>
         }
