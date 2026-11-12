@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { ORDER_STATES, canTransition, fillBucket, stateAfterFill, type OrderState } from "./states.js";
+import { ORDER_STATES, canTransition, fillBucket, isOpen, stateAfterFill, type OrderState } from "./states.js";
 
 describe("order state transitions", () => {
   it("allows exactly the listed moves", () => {
     const allowed = new Set([
+      "queued_for_open>accepted", "queued_for_open>rejected", "queued_for_open>cancelled",
       "accepted>working", "accepted>rejected", "accepted>cancel_requested", "accepted>partially_filled", "accepted>filled",
       "working>partially_filled", "working>filled", "working>cancel_requested",
       "partially_filled>partially_filled", "partially_filled>filled", "partially_filled>cancel_requested",
@@ -40,5 +41,14 @@ describe("order state transitions", () => {
     expect(fillBucket("filled")).toBeNull();
     expect(fillBucket("rejected")).toBeNull();
     expect(() => stateAfterFill("rejected" as OrderState, { open: 0, cancelled: 0 })).toThrow();
+  });
+
+  it("a queued order is open, takes no fill, and cannot be cancelled through the venue's cancel path", () => {
+    expect(isOpen("queued_for_open")).toBe(true);
+    expect(fillBucket("queued_for_open")).toBeNull();
+    expect(() => stateAfterFill("queued_for_open", { open: 0, cancelled: 0 })).toThrow();
+    expect(canTransition("queued_for_open", "cancel_requested")).toBe(false);
+    expect(canTransition("queued_for_open", "working")).toBe(false);
+    expect(canTransition("queued_for_open", "filled")).toBe(false);
   });
 });

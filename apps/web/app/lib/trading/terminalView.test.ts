@@ -88,6 +88,18 @@ describe("the order timeline, from events", () => {
   it("an accepted order has reserved and has not been sent", () => {
     expect(status(timelineSteps(order({ state: "accepted" }), [accepted]))).toBe("reserve:done sent:active fills:pending end:pending");
   });
+  it("a queued order has reserved, has not been sent, and says when it will be", () => {
+    const queuedAt = ev("queued_for_open", "2026-11-14T15:00:00.000Z", "queued_for_open", { quantity: "10.00000000" });
+    const steps = timelineSteps(order({ state: "queued_for_open", createdAt: "2026-11-14T15:00:00.000Z" }), [queuedAt]);
+    expect(status(steps)).toBe("reserve:done sent:pending fills:pending end:pending");
+    expect(steps[0]!.at).toBe("2026-11-14T15:00:00.000Z");
+    expect(steps[1]!.sub).toBe("Queued for the open (Mon 9:30 ET)");
+  });
+  it("once admitted, the same order has been sent like any other", () => {
+    const queuedAt = ev("queued_for_open", "2026-11-14T15:00:00.000Z", "queued_for_open");
+    const admitted = ev("accepted", "2026-11-16T14:30:01.000Z", "accepted");
+    expect(status(timelineSteps(order({ state: "working" }), [queuedAt, admitted, working]))).toBe("reserve:done sent:done fills:active end:pending");
+  });
   it("a working order has been sent and is waiting for fills", () => {
     expect(status(timelineSteps(order(), [accepted, working]))).toBe("reserve:done sent:done fills:active end:pending");
   });
@@ -159,6 +171,7 @@ describe("what Esc may cancel", () => {
     const o = order();
     const view = (state: OrderView["state"]) => ({ orders: [{ ...o, state }], latestOrder: { orderId: o.orderId, events: [] } }) as unknown as AccountView;
     expect(cancellableOrderId(view("working"))).toBe(o.orderId);
+    expect(cancellableOrderId(view("queued_for_open"))).toBe(o.orderId);
     for (const state of ["cancel_requested", "cancelled", "filled", "rejected"] as const) expect(cancellableOrderId(view(state))).toBeNull();
     expect(cancellableOrderId(null)).toBeNull();
   });

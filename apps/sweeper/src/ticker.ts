@@ -1,6 +1,8 @@
 /** What the sweeper reads from the sweep route's reply. The full shape is the SweepTick contract; a test holds the two together. */
 export interface TickReply {
   open: number;
+  /** The next 9:30 ET on a trading day, as the Trading App's calendar says (ADR-0028). The sweeper has no calendar of its own: one calendar, in one place. */
+  nextOpen: Date | null;
 }
 
 export interface TickerOptions {
@@ -14,6 +16,8 @@ export interface TickerOptions {
   /** A call that takes longer than this is abandoned and counted as a failure. */
   timeoutMs?: number;
   fetch?: typeof fetch;
+  /** The clock the open is read against; a test passes its own. */
+  now?: () => Date;
   /** Resolves after `ms`, or as soon as the signal aborts. */
   sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
   log?: (line: Record<string, unknown>) => void;
@@ -38,6 +42,21 @@ export const realSleep = (ms: number, signal: AbortSignal): Promise<void> =>
     signal.addEventListener("abort", done);
   });
 
+/** Sleeping this long past the open's instant keeps a timer that fires a few milliseconds early from calling before the market has opened. */
+export const OPEN_MARGIN_MS = 500;
+
+/**
+ * The sleep before the next call: the backoff's wait, cut short to arrive just after the next open (ADR-0028). Queued orders are released only after the open,
+ * and ADR-0021 lets the idle wait reach 60 minutes, so without this the open could pass in the middle of a sleep and the backlog would wait for it.
+ * The backoff itself is not shortened: after the open call it carries on from where it was. One extra call a trading day. With no open known (the first call
+ * has not been answered yet, or the reply carried none) or one already past, the wait is the backoff's.
+ */
+export function sleepFor(wait: number, now: Date, nextOpen: Date | null): number {
+  if (!nextOpen) return wait;
+  const untilOpen = nextOpen.getTime() - now.getTime() + OPEN_MARGIN_MS;
+  return untilOpen > 0 && untilOpen < wait ? untilOpen : wait;
+}
+
 /** The wait before the next call: 5 s while orders are open, then doubling to the maximum while none are; failures double too, to a lower maximum. */
 export function nextWait(previous: number, outcome: "open" | "idle" | "failed", activeMs = ACTIVE_MS, maxMs = MAX_MS, failedMaxMs = FAILED_MAX_MS): number {
   if (outcome === "open") return activeMs;
@@ -45,8 +64,10 @@ export function nextWait(previous: number, outcome: "open" | "idle" | "failed", 
 }
 
 const parse = (body: unknown): TickReply | null => {
-  const open = (body as { open?: unknown } | null)?.open;
-  return typeof open === "number" && Number.isInteger(open) && open >= 0 ? { open } : null;
+  const { open, nextOpen } = (body ?? {}) as { open?: unknown; nextOpen?: unknown };
+  if (!(typeof open === "number" && Number.isInteger(open) && open >= 0)) return null;
+  const at = typeof nextOpen === "string" ? new Date(nextOpen) : null;
+  return { open, nextOpen: at && !Number.isNaN(at.getTime()) ? at : null };
 };
 
 /**
@@ -61,9 +82,12 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
   const maxMs = options.maxMs ?? MAX_MS;
   const doFetch = options.fetch ?? fetch;
   const sleep = options.sleep ?? realSleep;
+  const clock = options.now ?? (() => new Date());
   const log = options.log ?? ((line) => console.log(JSON.stringify(line)));
   let wait = activeMs;
   let mode: "open" | "idle" | "failed" | "" = "";
+  /** The last open the route told us about; kept through failures, so a failed call does not forget it. */
+  let nextOpen: Date | null = null;
   let calls = 0;
 
   while (!signal.aborted) {
@@ -82,6 +106,7 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
         const reply = parse(await response.json().catch(() => null));
         if (reply) {
           outcome = reply.open > 0 ? "open" : "idle";
+          if (reply.nextOpen) nextOpen = reply.nextOpen;
           detail = { open: reply.open };
         } else detail = { status: 200, problem: "the reply is not a sweep reply" };
       }
@@ -93,6 +118,6 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
     wait = nextWait(wait, outcome, activeMs, maxMs);
     if (outcome === "failed" || outcome !== mode || calls % 60 === 0) log({ at: new Date().toISOString(), outcome, ms: Date.now() - started, nextMs: wait, calls, ...detail });
     mode = outcome;
-    await sleep(wait, signal);
+    await sleep(sleepFor(wait, clock(), nextOpen), signal);
   }
 }

@@ -14,6 +14,16 @@ export interface SweepTick {
   cancelRequested: number;
   released: number;
   releaseFailed: number;
+  /** Orders still queued for an open that has not come (ADR-0028). They never hold the fast cadence. */
+  queued: number;
+  /** Queued orders admitted to the venue by this pass (a batch, not the whole backlog). */
+  admitted: number;
+  /** Admitted orders whose reservation was topped up because the price passed the ceiling. */
+  toppedUp: number;
+  /** Queued orders refused at the open: no fresh price, or not enough buying power for the top-up. */
+  admissionRejected: number;
+  /** The next 9:30 ET on a trading day after `at`: the sweeper sleeps no longer than until it, so it is awake for the open (ADR-0028). */
+  nextOpen: string;
   errors: number;
 }
 

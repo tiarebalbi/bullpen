@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { isMarketOpen } from "@bullpen/contracts";
 import { BuyRefused } from "../buy.js";
 import { fillBucket, stateAfterFill, type OrderState } from "./states.js";
 
@@ -12,7 +13,8 @@ export type Boundary =
   | "submit:after-reserve" | "submit:after-order" | "submit:after-commit"
   | "fill:after-fill-row" | "fill:after-ledger" | "fill:before-commit" | "fill:after-commit"
   | "cancel:before-commit" | "cancel:after-commit"
-  | "release:before-update" | "release:after-commit";
+  | "release:before-update" | "release:after-commit"
+  | "admit:before-commit" | "admit:after-commit" | "queue-cancel:before-commit";
 export interface Hooks {
   at?: (boundary: Boundary) => void | Promise<void>;
 }
@@ -86,6 +88,14 @@ export interface SubmitOrder {
   /** The caller's key for this order: a retry with the same key returns the same order. */
   clientOrderId: string;
 }
+export interface SubmitOptions {
+  /**
+   * The instant to read the market's hours at. When given, a stock order (an end-of-day price, ADR-0024) placed while the market is closed is queued for the
+   * open instead of accepted (ADR-0028). When absent, nothing is queued: the lifecycle's own tests and measurements place orders at any hour.
+   * The player-facing path always passes it.
+   */
+  marketHoursAt?: Date;
+}
 export interface Submitted {
   orderId: string;
   state: OrderState;
@@ -95,7 +105,7 @@ export interface Submitted {
 }
 
 /** Accept: reserve buying power at the price ceiling and insert the order and its reservation, one transaction. */
-export async function submitOrder(pool: Pool, order: SubmitOrder, hooks: Hooks = {}): Promise<Submitted> {
+export async function submitOrder(pool: Pool, order: SubmitOrder, hooks: Hooks = {}, options: SubmitOptions = {}): Promise<Submitted> {
   const run = () =>
     inTx(pool, async (client): Promise<Submitted> => {
       const existing = await client.query<{ order_id: string; status: OrderState; cap_price: string; reserved: string }>(
@@ -109,7 +119,7 @@ export async function submitOrder(pool: Pool, order: SubmitOrder, hooks: Hooks =
         return { orderId: row.order_id, state: row.status, reserved: row.reserved, capPrice: row.cap_price, duplicate: true };
       }
 
-      const priced = await client.query<{ price: string; as_of: Date; stale: boolean }>("SELECT price::text, as_of, stale FROM market_data.prices_v1 WHERE symbol = $1", [order.symbol]);
+      const priced = await client.query<{ price: string; as_of: Date; stale: boolean; kind: string }>("SELECT price::text, as_of, stale, kind FROM market_data.prices_v1 WHERE symbol = $1", [order.symbol]);
       const quote = priced.rows[0];
       if (!quote) throw new BuyRefused("no-price", `Refused: there is no price for ${order.symbol} yet.`);
       if (quote.stale) throw new BuyRefused("stale-price", `Refused: the latest price for ${order.symbol} is stale (as of ${quote.as_of.toISOString()}).`);
@@ -130,16 +140,18 @@ export async function submitOrder(pool: Pool, order: SubmitOrder, hooks: Hooks =
       }
       await hooks.at?.("submit:after-reserve");
 
+      // A stock trades only in regular hours: outside them the order waits for the open, holding its reservation, unseen by the venue.
+      const state: OrderState = options.marketHoursAt !== undefined && quote.kind === "end-of-day" && !isMarketOpen(options.marketHoursAt) ? "queued_for_open" : "accepted";
       const inserted = await client.query<{ order_id: string }>(
         `INSERT INTO trading.orders (account_id, symbol, side, quantity, status, open_qty, cap_price, client_order_id)
-         VALUES ($1, $2, 'buy', $3, 'accepted', $3, $4, $5) RETURNING order_id`,
-        [order.accountId, order.symbol, order.quantity, held.cap, order.clientOrderId],
+         VALUES ($1, $2, 'buy', $3, $6, $3, $4, $5) RETURNING order_id`,
+        [order.accountId, order.symbol, order.quantity, held.cap, order.clientOrderId, state],
       );
       const orderId = inserted.rows[0]!.order_id;
       await client.query("INSERT INTO trading.reservations (order_id, account_id, reserved) VALUES ($1, $2, $3)", [orderId, order.accountId, held.cost]);
-      await event(client, orderId, "accepted", null, "accepted", { quantity: order.quantity, capPrice: held.cap, reserved: held.cost });
+      await event(client, orderId, state, null, state, { quantity: order.quantity, capPrice: held.cap, reserved: held.cost });
       await hooks.at?.("submit:after-order");
-      return { orderId, state: "accepted", reserved: held.cost, capPrice: held.cap, duplicate: false };
+      return { orderId, state, reserved: held.cost, capPrice: held.cap, duplicate: false };
     });
 
   let result: Submitted;
@@ -290,9 +302,23 @@ export async function bookFill(pool: Pool, fill: FillEvent, hooks: Hooks = {}): 
 // ---- cancel -------------------------------------------------------------------------------------------------------
 
 /** The player asks to cancel. Not a cancel: the order stays open for fills until the venue confirms with an effective time. */
-export async function requestCancel(pool: Pool, orderId: string, at: Date, hooks: Hooks = {}): Promise<"requested" | "already" | "too-late"> {
+export async function requestCancel(pool: Pool, orderId: string, at: Date, hooks: Hooks = {}): Promise<"requested" | "cancelled" | "already" | "too-late"> {
   const outcome = await inTx(pool, async (client) => {
     const order = await readOrder(client, orderId);
+    if (order.status === "queued_for_open") {
+      // The venue never saw this order, so there is nothing to confirm and no late fill to wait for: it is cancelled now and the whole reservation comes back.
+      const moved = await client.query(
+        `UPDATE trading.orders SET status = 'cancelled', open_qty = 0, cancelled_qty = quantity, cancel_requested_at = $2, cancel_effective_at = $2, version = version + 1, updated_at = now()
+          WHERE order_id = $1 AND version = $3 AND status = 'queued_for_open'`,
+        [orderId, at, order.version],
+      );
+      if (!moved.rowCount) throw new VersionConflict(); // it was admitted under us: start again, and the cancel goes the venue's way
+      await event(client, orderId, "cancelled", "queued_for_open", "cancelled", { effectiveAt: at.toISOString(), cancelledQty: order.open_qty, queued: true });
+      const amount = await releaseReservationInTx(client, orderId, at);
+      if (amount !== null) await event(client, orderId, "released", "cancelled", "cancelled", { amount });
+      await hooks.at?.("queue-cancel:before-commit");
+      return "cancelled" as const;
+    }
     if (order.status === "cancel_requested" || order.status === "cancelled") return "already" as const;
     if (order.status === "filled" || order.status === "rejected") return "too-late" as const;
     const moved = await client.query(
@@ -332,6 +358,22 @@ export async function confirmCancel(pool: Pool, orderId: string, effectiveAt: Da
 
 // ---- release (the compensation) -----------------------------------------------------------------------------------
 
+/**
+ * Give back what a reservation did not spend, inside the caller's transaction: one statement moves the money and marks the reservation, conditional on it not
+ * having been released, so a repeat adds nothing. Returns the amount, or null if it was already released. It also clears a "release-failing" flag.
+ */
+async function releaseReservationInTx(client: PoolClient, orderId: string, now: Date): Promise<string | null> {
+  const released = await client.query<{ delta: string }>(
+    `WITH r AS (UPDATE trading.reservations SET released = reserved - spent, released_at = $2
+                 WHERE order_id = $1 AND released_at IS NULL RETURNING account_id, reserved - spent AS delta)
+     UPDATE trading.accounts a SET buying_power = a.buying_power + r.delta FROM r WHERE a.account_id = r.account_id RETURNING r.delta::text`,
+    [orderId, now],
+  );
+  if (!released.rows[0]) return null;
+  await client.query("UPDATE trading.orders SET needs_attention = NULL, updated_at = now() WHERE order_id = $1 AND needs_attention = 'release-failing'", [orderId]);
+  return released.rows[0].delta;
+}
+
 export type ReleaseOutcome = { outcome: "released"; amount: string } | { outcome: "already" | "not-yet" };
 
 /**
@@ -347,16 +389,10 @@ export async function releaseReservation(pool: Pool, orderId: string, now: Date,
       (order.status === "cancelled" && order.cancel_effective_at !== null && now.getTime() >= order.cancel_effective_at.getTime() + LATE_FILL_WINDOW_MS);
     if (!settled) return { outcome: "not-yet" };
     await hooks.at?.("release:before-update");
-    const released = await client.query<{ delta: string }>(
-      `WITH r AS (UPDATE trading.reservations SET released = reserved - spent, released_at = $2
-                   WHERE order_id = $1 AND released_at IS NULL RETURNING account_id, reserved - spent AS delta)
-       UPDATE trading.accounts a SET buying_power = a.buying_power + r.delta FROM r WHERE a.account_id = r.account_id RETURNING r.delta::text`,
-      [orderId, now],
-    );
-    if (!released.rows[0]) return { outcome: "already" };
-    await client.query("UPDATE trading.orders SET needs_attention = NULL, updated_at = now() WHERE order_id = $1 AND needs_attention = 'release-failing'", [orderId]);
-    await event(client, orderId, "released", order.status, order.status, { amount: released.rows[0].delta });
-    return { outcome: "released", amount: released.rows[0].delta };
+    const amount = await releaseReservationInTx(client, orderId, now);
+    if (amount === null) return { outcome: "already" };
+    await event(client, orderId, "released", order.status, order.status, { amount });
+    return { outcome: "released", amount };
   });
   await hooks.at?.("release:after-commit");
   return outcome;
@@ -376,4 +412,81 @@ export async function recordReleaseFailure(pool: Pool, orderId: string, error: u
     await event(client, orderId, "release_failed", null, null, { failures, flagged, error: message.slice(0, 200) });
     return { failures, flagged };
   });
+}
+
+// ---- admission at the open (ADR-0028) -------------------------------------------------------------------------------------
+
+/** What admitting one queued order did. */
+export type AdmitOutcome =
+  | { outcome: "admitted"; capPrice: string; toppedUp: string | null }
+  | { outcome: "rejected"; reason: "no-price" | "stale-price" | "insufficient-buying-power-at-open"; released: string | null }
+  | { outcome: "already" | "not-open" };
+
+/**
+ * Admit one queued order at the open: queued_for_open -> accepted, or -> rejected with the whole reservation released. One transaction, conditional on the
+ * order still being queued, so a repeat, a retry after a crash and two sweeps at once admit it once.
+ *
+ * The price rule: the order reserved qty x ceiling at the price the player saw. Bullpen's stock prices are end-of-day, so normally the price at the open is the
+ * same close and nothing changes. If the price in the contract now is above the reserved ceiling (a new close landed overnight, or an opening price was
+ * injected), the ceiling is re-taken at that price and the difference is moved from buying power to the reservation; if buying power cannot cover it the order
+ * is rejected and the full reservation returns. A price that is missing or stale at the open rejects the order the same way. Cash is only ever moved between
+ * available and reserved, so Part 4's invariants hold on every path.
+ */
+export async function admitQueuedOrder(pool: Pool, orderId: string, now: Date, hooks: Hooks = {}, isOpen: (at: Date) => boolean = isMarketOpen): Promise<AdmitOutcome> {
+  const outcome = await inTx(pool, async (client): Promise<AdmitOutcome> => {
+    const { rows } = await client.query<{
+      status: OrderState; version: number; quantity: string; cap_price: string; price: string | null; stale: boolean | null; gapped: boolean | null; new_cap: string | null; top_up: string | null;
+    }>(
+      `SELECT o.status, o.version, o.quantity::text, o.cap_price::text, p.price::text, p.stale,
+              (p.price > o.cap_price) AS gapped,
+              round(p.price * $2::numeric, 8)::text AS new_cap,
+              ((round(p.price * $2::numeric, 8) - o.cap_price) * o.quantity)::text AS top_up
+         FROM trading.orders o LEFT JOIN market_data.prices_v1 p ON p.symbol = o.symbol
+        WHERE o.order_id = $1 FOR UPDATE OF o`,
+      [orderId, CAP_MARGIN],
+    );
+    const row = rows[0];
+    if (!row) throw new Error(`unknown order ${orderId}`);
+    if (row.status !== "queued_for_open") return { outcome: "already" };
+    if (!isOpen(now)) return { outcome: "not-open" };
+
+    const refuse = async (reason: "no-price" | "stale-price" | "insufficient-buying-power-at-open"): Promise<AdmitOutcome> => {
+      const moved = await client.query(
+        "UPDATE trading.orders SET status = 'rejected', open_qty = 0, cancelled_qty = quantity, version = version + 1, updated_at = now() WHERE order_id = $1 AND version = $2 AND status = 'queued_for_open'",
+        [orderId, row.version],
+      );
+      if (!moved.rowCount) throw new VersionConflict();
+      await event(client, orderId, "rejected", "queued_for_open", "rejected", { reason, atOpen: true });
+      const released = await releaseReservationInTx(client, orderId, now);
+      if (released !== null) await event(client, orderId, "released", "rejected", "rejected", { amount: released });
+      await hooks.at?.("admit:before-commit");
+      return { outcome: "rejected", reason, released };
+    };
+
+    if (row.price === null) return refuse("no-price");
+    if (row.stale) return refuse("stale-price");
+
+    let capPrice = row.cap_price;
+    let toppedUp: string | null = null;
+    if (row.gapped) {
+      const taken = await client.query(
+        "UPDATE trading.accounts a SET buying_power = a.buying_power - $2::numeric FROM trading.orders o WHERE o.order_id = $1 AND a.account_id = o.account_id AND a.buying_power >= $2::numeric RETURNING 1",
+        [orderId, row.top_up],
+      );
+      if (!taken.rowCount) return refuse("insufficient-buying-power-at-open");
+      await client.query("UPDATE trading.reservations SET reserved = reserved + $2::numeric WHERE order_id = $1 AND released_at IS NULL", [orderId, row.top_up]);
+      await client.query("UPDATE trading.orders SET cap_price = $2 WHERE order_id = $1", [orderId, row.new_cap]);
+      capPrice = row.new_cap!;
+      toppedUp = row.top_up;
+      await event(client, orderId, "topped_up", "queued_for_open", "queued_for_open", { from: row.cap_price, to: row.new_cap, amount: row.top_up, price: row.price });
+    }
+
+    const moved = await client.query("UPDATE trading.orders SET status = 'accepted', version = version + 1, updated_at = now() WHERE order_id = $1 AND version = $2 AND status = 'queued_for_open'", [orderId, row.version]);
+    if (!moved.rowCount) throw new VersionConflict();
+    await event(client, orderId, "accepted", "queued_for_open", "accepted", { atOpen: true, price: row.price, capPrice });
+    await hooks.at?.("admit:before-commit");
+    return { outcome: "admitted", capPrice, toppedUp };
+  });
+  await hooks.at?.("admit:after-commit");
+  return outcome;
 }

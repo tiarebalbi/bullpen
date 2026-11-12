@@ -1,4 +1,4 @@
-import type { AccountView, FillView, LeaderboardSnapshot, OrderEventView, OrderView, PositionView, StockPriceEntry } from "@bullpen/contracts";
+import { queuedLabel, type AccountView, type FillView, type LeaderboardSnapshot, type OrderEventView, type OrderView, type PositionView, type StockPriceEntry } from "@bullpen/contracts";
 import { canCancel, formatMoney, quantityLabel } from "./orderView.js";
 
 /** A position as the table draws it. Every figure comes from the account view; a figure it cannot compute is null, never a guess. */
@@ -78,11 +78,13 @@ const firstAt = (events: OrderEventView[], kind: OrderEventView["kind"]): string
  * confirmed; a request is not a cancel.
  */
 export function timelineSteps(order: OrderView, events: OrderEventView[]): TimelineStep[] {
-  const reserved = firstAt(events, "accepted");
+  const queued = order.state === "queued_for_open";
+  const reserved = firstAt(events, "queued_for_open") ?? firstAt(events, "accepted");
   const sent = firstAt(events, "working");
   return [
     { key: "reserve", label: "Reserve", sub: `${formatMoney(order.reserved)} set aside`, status: reserved ? "done" : "active", at: reserved },
-    { key: "sent", label: "Sent", sub: "At the venue", status: sent ? "done" : reserved ? "active" : "pending", at: sent },
+    // A queued order has not reached the venue and will not until the open: the step says when, and is waiting rather than under way.
+    { key: "sent", label: "Sent", sub: queued ? queuedLabel(new Date(order.createdAt)) : "At the venue", status: sent ? "done" : reserved && !queued ? "active" : "pending", at: sent },
     fillsStep(order, events, sent !== null),
     endStep(order, events),
   ];
