@@ -1,0 +1,60 @@
+{
+ "at": "2026-11-12T23:00:05.387Z",
+ "connections": 3,
+ "firstConnections": [
+  {
+   "seconds": 252.516,
+   "bye": true,
+   "events": {
+    "prices": 1,
+    "tick": 50,
+    "bye": 1
+   },
+   "endedBy": "closed by the server"
+  },
+  {
+   "seconds": 246.145,
+   "bye": true,
+   "events": {
+    "prices": 1,
+    "tick": 49,
+    "bye": 1
+   },
+   "endedBy": "closed by the server"
+  },
+  {
+   "seconds": 269.915,
+   "bye": true,
+   "events": {
+    "prices": 1,
+    "tick": 53,
+    "bye": 1
+   },
+   "endedBy": "closed by the server"
+  }
+ ],
+ "allEndedBeforeHobbyCut": true,
+ "longestSeconds": 269.915,
+ "shortestSeconds": 246.145,
+ "reconnectsWithLastEventId": [
+  {
+   "seconds": 12.005,
+   "firstEventsOnReconnect": {
+    "tick": 3
+   }
+  },
+  {
+   "seconds": 12.004,
+   "firstEventsOnReconnect": {
+    "tick": 3
+   }
+  },
+  {
+   "seconds": 12.004,
+   "firstEventsOnReconnect": {
+    "tick": 3
+   }
+  }
+ ],
+ "reconnectSentPricesAgain": false
+}

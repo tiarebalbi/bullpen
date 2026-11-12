@@ -5,7 +5,9 @@
 //
 // Abort thresholds (every one stops the run, k6 exits non-zero, and the summary says which fired). k6 can see latency and errors; it cannot see Vercel's function usage,
 // concurrency or the database's connections: those are watched on the dashboards, and the run is stopped by hand (Ctrl-C) at the first of the limits in README.md.
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import http from "k6/http";
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import { check } from "k6";
 import { BASE, headers, pick, who, symbols } from "./lib.js";
 

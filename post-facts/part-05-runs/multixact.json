@@ -1,0 +1,13 @@
+{
+ "at": "2026-11-12T22:55:13.364Z",
+ "note": "Local Postgres, not the Postgres 17 CI used when the error was seen once. Not reproducing here does not show the error cannot happen there.",
+ "seconds": 150,
+ "concurrency": 60,
+ "contendedAccounts": 20,
+ "lives": 33111,
+ "operations": 264888,
+ "multixactErrors": 0,
+ "errorsByKind": {},
+ "quantityViolations": 0,
+ "negativeBuyingPower": 0
+}

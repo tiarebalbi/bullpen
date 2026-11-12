@@ -30,7 +30,7 @@ for (const name of [...names("before-polling"), ...names("polling-")]) {
 }
 console.log("\n## sse");
 console.log("| run | connections target | peak clients | opened | hub DB reads (total) | DB reads/s at peak | DB txns/s at peak | viewers per DB read | peak fds | peak RSS | provider calls first→last | dropped |");
-for (const name of names("sse-")) {
+for (const name of names("sse-").filter((n) => /^sse-\d+$/.test(n))) {
   const d = runs[name].derived;
   console.log(`| ${name} | ${d.connectionsTarget} | ${d.peakClients} | ${d.totalOpened} | ${d.hubReadsTotal} | ${num(d.dbReadsPerSecondAtPeak, 2)} | ${num(d.dbTransactionsPerSecondAtPeak)} | ${num(d.viewersPerDbRead, 1)} | ${d.peakFileDescriptors} | ${d.peakRssMb} MB | ${d.providerCalls.first?.calls}→${d.providerCalls.last?.calls} | ${d.droppedIterations} |`);
 }

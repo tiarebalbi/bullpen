@@ -6,8 +6,7 @@
       "vitest"
     ],
     "noEmit": true,
-    "allowImportingTsExtensions": false,
-    "rootDir": "../.."
+    "allowImportingTsExtensions": false
   },
   "include": [
     "src/load"

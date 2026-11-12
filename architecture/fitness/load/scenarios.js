@@ -3,8 +3,11 @@
 // k6 had no VU for: the load the test could not even offer), the error rate and p95. Goodput (answers in time, not 5xx) is a counter reported beside them.
 //
 //   k6 run -e STACK=<stack.json> -e SCENARIO=<name> [-e SUMMARY=<out.json>] scenarios.js
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import http from "k6/http";
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import { check } from "k6";
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import exec from "k6/execution";
 import { BASE, SLO_MS, accounts, control, headers, pick, placeOrder, pollAccount, pollLeaderboard, pollPrices, saveHandle, symbols } from "./lib.js";
 
@@ -144,7 +147,10 @@ export function isoReads() {
 export function stampedeBoard() { pollLeaderboard("leaderboard-stampede"); }
 export function queueOne() {
   const account = accounts[exec.scenario.iterationInTest % accounts.length];
-  const res = http.post(`${BASE}/api/orders`, JSON.stringify({ symbol: pick(symbols), quantity: "1", clientOrderId: `queued-${exec.scenario.iterationInTest}` }), { headers: headers(account), tags: { kind: "order", phase: "queue" } });
+  const index = exec.scenario.iterationInTest % accounts.length;
+  // The first 100 players are the low-cash ones of the price-gap case (zero of them without it): all on the first symbol, which is the one that gaps.
+  const symbol = __ENV.POOR === "1" && index < 100 ? symbols[0] : pick(symbols);
+  const res = http.post(`${BASE}/api/orders`, JSON.stringify({ symbol, quantity: "1", clientOrderId: `queued-${exec.scenario.iterationInTest}` }), { headers: headers(account), tags: { kind: "order", phase: "queue" } });
   check(res, { "queued": (r) => r.status === 201 });
 }
 export function sseOpen() {
