@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { serveLeaderboard } from "@bullpen/db-trading";
 import type { LeaderboardSnapshot } from "@bullpen/contracts";
+import { isOff } from "../../lib/degradation/switches.js";
 import { readViewer } from "../../lib/handles/viewer.js";
 import { readPool } from "../../lib/trading/reads/pool.js";
 
@@ -13,6 +14,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * for a refresh. If the ranking is older than 5 minutes, the refresh starts
  * after the response is sent, under a lock that lets only one run. A failed
  * refresh leaves the last good ranking, and `lastFailure` says so.
+ * With the leaderboard-refresh switch off (ADR-0031) no refresh is ever scheduled: the last good ranking is served, as old as it is, and says so by its age.
  */
 export async function GET(request: Request): Promise<NextResponse> {
   try {
@@ -21,7 +23,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const named = account !== null && UUID.test(account) ? account : undefined;
     // The signed-in caller, from their session and not from the request: their own row is added when it is not in the top, and the page marks it.
     const viewer = await readViewer();
-    const read = await serveLeaderboard(readPool(), { schedule: (work) => after(work), read: { accountId: viewer?.accountId ?? named } });
+    const read = await serveLeaderboard(readPool(), { schedule: isOff("leaderboard-refresh") ? () => undefined : (work) => after(work), read: { accountId: viewer?.accountId ?? named } });
     const body: LeaderboardSnapshot = {
       rows: read.rows,
       total: read.total,

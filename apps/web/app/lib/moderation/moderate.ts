@@ -1,4 +1,5 @@
 import type { Decision, Submitted } from "@bullpen/db-handles";
+import { isOff } from "../degradation/switches.js";
 import { decide } from "./decide.js";
 import { askGateway, type GatewayResult } from "./gateway.js";
 import { checkHandle } from "./rules.js";
@@ -49,7 +50,10 @@ export async function saveAndModerate(userId: string, input: unknown, deps: Mode
  */
 export async function moderateSaved(handleId: string, handle: string, deps: ModerationDeps): Promise<"approved" | "review" | "pending"> {
   const log = deps.log ?? ((line: string) => console.info(line));
-  const answer = await (deps.ask ?? askGateway)(handle).catch((): GatewayResult => ({ ok: false, reason: "unavailable", latencyMs: 0 }));
+  // The handle-moderation switch (ADR-0031): off, no question is asked and every handle goes to review. Saving a handle still works and nothing else changes.
+  const answer = isOff("handle-moderation")
+    ? ({ ok: false, reason: "unavailable", latencyMs: 0 } satisfies GatewayResult)
+    : await (deps.ask ?? askGateway)(handle).catch((): GatewayResult => ({ ok: false, reason: "unavailable", latencyMs: 0 }));
   const verdict = decide(answer);
   try {
     const recorded = await deps.store.record({ handleId, handle, outcome: verdict.outcome, probability: verdict.probability, ...(verdict.outcome === "review" ? { reason: verdict.reason } : {}) });
