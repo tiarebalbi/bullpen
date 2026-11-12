@@ -43,6 +43,7 @@ ASSERT(market-data HAS NO DEPENDENCY ON handles)
 ASSERT(Market Data Service HAS NO DEPENDENCY ON handles)
 ASSERT(Landing HAS NO DEPENDENCY ON handles)
 ASSERT(Sweeper HAS NO DEPENDENCY ON handles)
+ASSERT(NO apps/web/app/api/leaderboard, apps/web/app/api/stock-prices, apps/web/app/api/prices, apps/web/app/lib/trading/reads IMPORTS apps/web/app/lib/trading/orders)
 ASSERT(Landing HAS NO DEPENDENCY ON Sweeper)
 ASSERT(Trading App HAS NO DEPENDENCY ON Sweeper)
 ASSERT(Market Data Service HAS NO DEPENDENCY ON Sweeper)
@@ -72,6 +73,7 @@ ASSERT(NO packages/db-trading, packages/db-market-data, apps/market-data, apps/w
 ASSERT(ONLY trading WRITES trading)
 ASSERT(ONLY handles WRITES handles)
 ASSERT(trading READS handles ONLY THROUGH handles.approved_v1)
+
 
 # Model currency
 ASSERT(every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment)

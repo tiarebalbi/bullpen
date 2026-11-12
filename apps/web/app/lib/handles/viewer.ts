@@ -3,7 +3,7 @@ import { findPlayerAccount } from "@bullpen/db-trading";
 import type { LeaderboardViewer } from "@bullpen/contracts";
 import { currentPlayer, type Player } from "../auth/player.js";
 import { signInAvailable } from "../auth/server.js";
-import { tradingPool } from "../trading/pool.js";
+import { readPool } from "../trading/reads/pool.js";
 import { handlesPool } from "./pool.js";
 import { logHandleFailure } from "./respond.js";
 
@@ -17,7 +17,7 @@ export interface ViewerDeps {
 const live: ViewerDeps = {
   signInAvailable,
   currentPlayer: () => currentPlayer(),
-  findAccount: (userId) => findPlayerAccount(tradingPool(), userId),
+  findAccount: (userId) => findPlayerAccount(readPool(), userId),
   readHandle: (userId) => readOwnHandle(handlesPool(), userId),
 };
 

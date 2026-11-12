@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const readPrices = vi.fn();
 vi.mock("@bullpen/db-trading", () => ({ readPrices }));
-vi.mock("../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("../../lib/trading/reads/pool.js", () => ({ readPool: () => ({}) }));
 
 const { GET } = await import("./route.js");
 

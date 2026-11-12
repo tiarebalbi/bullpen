@@ -122,7 +122,8 @@
         "required-pattern": "bullpen.pattern.json"
       },
       "adrs": [
-        "architecture/adr/0028-queued-orders-are-admitted-in-batches-at-the-open.md"
+        "architecture/adr/0028-queued-orders-are-admitted-in-batches-at-the-open.md",
+        "architecture/adr/0030-reads-and-orders-get-separate-pools.md"
       ]
     },
     {
