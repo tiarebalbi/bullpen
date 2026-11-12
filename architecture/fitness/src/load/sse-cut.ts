@@ -16,9 +16,9 @@ if (!["127.0.0.1", "localhost"].includes(host)) {
 }
 
 interface Seen { openedAt: number; closedAt: number; seconds: number; bye: boolean; events: Record<string, number>; lastId?: string; endedBy: string }
-async function listen(lastEventId?: string): Promise<Seen> {
+async function listen(lastEventId?: string, limitMs = 320_000): Promise<Seen> {
   const openedAt = Date.now();
-  const response = await fetch(`${base}/api/prices/stream${lastEventId ? `?lastEventId=${encodeURIComponent(lastEventId)}` : ""}`, { signal: AbortSignal.timeout(320_000) });
+  const response = await fetch(`${base}/api/prices/stream${lastEventId ? `?lastEventId=${encodeURIComponent(lastEventId)}` : ""}`, { signal: AbortSignal.timeout(limitMs) });
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   const events: Record<string, number> = {};
@@ -48,7 +48,8 @@ async function listen(lastEventId?: string): Promise<Seen> {
 
 const count = Number(countText);
 const first = await Promise.all(Array.from({ length: count }, () => listen()));
-const resumed = await Promise.all(first.map((seen) => listen(seen.lastId)));
+// A reconnect is checked for 12 s: long enough to see its first events, not another 4 minutes.
+const resumed = await Promise.all(first.map((seen) => listen(seen.lastId, 12_000)));
 const result = {
   at: new Date().toISOString(),
   connections: count,

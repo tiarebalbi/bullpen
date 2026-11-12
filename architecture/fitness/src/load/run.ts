@@ -46,13 +46,23 @@ const control = (body: unknown): Promise<any> => get("/__control", { method: "PO
 
 const children: ChildProcess[] = [];
 const spawnLogged = (cmd: string, args: string[], env: Record<string, string>, cwd = fitnessRoot): ChildProcess => {
-  const child = spawn(cmd, args, { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+  // Its own process group, so that ending it ends everything it started: pnpm starts tsx starts node, and killing only the first leaves the last running (a throttle left
+  // behind this way kept throttling the database through every later run, until the runs were found to be contaminated).
+  const child = spawn(cmd, args, { cwd, env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"], detached: true });
   child.stderr?.on("data", (d) => process.stderr.write(`[${cmd}] ${d}`));
   children.push(child);
   return child;
 };
+/** Ends a child and everything it started. */
+const killGroup = (child: ChildProcess, signal: NodeJS.Signals = "SIGTERM"): void => {
+  try {
+    if (child.pid) process.kill(-child.pid, signal);
+  } catch {
+    // already gone
+  }
+};
 const cleanup = (): void => {
-  for (const child of children) child.kill("SIGTERM");
+  for (const child of children) killGroup(child);
   try {
     execSync("pkill -CONT -f 'postgres.*16/load' || true");
   } catch {
@@ -132,7 +142,7 @@ async function main(): Promise<void> {
   mkdirSync(join(repoRoot, "post-facts", "part-05-runs"), { recursive: true });
   // A server or sweeper left behind by an earlier, interrupted run would hold the port.
   // (The bracket keeps pkill from matching the shell that runs it.)
-  execSync("pkill -f '[s]rc/load/server.ts' || true; pkill -f '[a]pps/sweeper/src/main.ts' || true", { stdio: "ignore" });
+  execSync("pkill -f '[s]rc/load/server.ts' || true; pkill -f '[a]pps/sweeper/src/main.ts' || true; pkill -f '[s]rc/load/throttle.ts' || true; for p in $(pgrep -u postgres); do kill -CONT $p 2>/dev/null; done; true", { stdio: "ignore", shell: "/bin/bash" });
   console.log(`building stack for ${label}…`);
   const players = 1000;
   execSync(`pg_ctlcluster 16 load status || pg_ctlcluster 16 load start`, { stdio: "ignore" });
@@ -156,13 +166,14 @@ async function main(): Promise<void> {
     if (caseName === "sse") await runSse(result);
     if (caseName === "leaderboard") await runLeaderboard(result);
     if (caseName === "isolation") await runIsolation(result);
-    if (caseName === "stress") await runStress(result, stack, { restartThrottle: () => { throttle?.kill("SIGTERM"); startThrottle(); } });
+    if (caseName === "stress") await runStress(result, stack, { restartThrottle: () => { if (throttle) killGroup(throttle); startThrottle(); } });
   } finally {
     if (sampler) clearInterval(sampler);
     result.timelineSeconds = timeline.length;
     writeFileSync(join(repoRoot, "post-facts", "part-05-runs", `${label}.json`), JSON.stringify(result, null, 1));
     await trading.end();
-    server.kill("SIGTERM");
+    killGroup(server);
+    if (throttle) killGroup(throttle);
   }
   console.log(JSON.stringify(result.derived, null, 1));
 }
