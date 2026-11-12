@@ -10,7 +10,7 @@ beforeAll(() => {
 });
 
 const snapshot: StockPriceSnapshot = { rows: [{ symbol: "AAPL", price: "100", asOf: "2026-11-12T21:00:00.000Z", stale: false, previousClose: null }] };
-const link = (over: Partial<LinkState>): LinkState => ({ snapshot, status: "live", via: "stream", failed: false, ...over });
+const link = (over: Partial<LinkState>): LinkState => ({ snapshot, status: "live", via: "stream", failed: null, ...over });
 
 describe("the price feed's badge", () => {
   it.each([

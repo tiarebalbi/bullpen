@@ -60,8 +60,9 @@ stops starting admissions after **`ADMIT_BUDGET_MS` = 8 s**, so a slow database 
 is admitted in about 50 s**. Each admitted order is handed to the venue in the same pass (`dispatchOrder`, idempotent; if the pass dies between the two, the existing `accepted` step finds it after 30 s).
 A player's own poll never admits a queued order (it would turn the batch into a stampede of 1,000 simultaneous admissions at 9:30:00); it shows it as queued until the batch reaches it.
 
-These numbers are a starting point chosen from the cost of one admission (one short transaction and one dispatch), not a measurement. `post-facts/part-05.md` reports the measured cost and drain time, and this ADR is changed
-before publication if the measurement says the numbers are wrong.
+Measured on a local stack, not on Vercel or Neon (`post-facts/part-05.md`): 1,000 queued orders were admitted in 55.9 s with 400 requests a second of other traffic, the real sweeper waking 506 ms after the open, and 100 admissions
+finished inside one second of each pass on a full core. On a database held to a quarter of a core (an approximation) the same step took 148 s and was overloaded, so the batch is not what limits it there. The batch stays at 100; the
+number that decides whether it is right is the compute's, and that needs the Neon branch run.
 
 ### The price rule at release
 

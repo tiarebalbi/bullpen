@@ -8,9 +8,12 @@ export interface LinkState {
   status: LinkStatus;
   /** How the snapshot arrived: the event stream, or the polling fallback. */
   via: "stream" | "polling" | "none";
-  /** True when the polling fallback's last attempt failed and there is nothing to show. */
-  failed: boolean;
+  /** Set when the polling fallback's last attempt failed and there is nothing to show: the HTTP status it got (503 for a database that is down), or null for no answer at all. */
+  failed: { httpStatus: number | null } | null;
 }
+
+/** One poll of the fallback route: the prices, or why there are none. */
+export type PollResult = { snapshot: StockPriceSnapshot } | { httpStatus: number | null };
 
 export const STREAM_URL = "/api/prices/stream";
 export const POLL_URL = "/api/stock-prices";
@@ -34,7 +37,7 @@ export interface StreamLike {
 export interface LinkDeps {
   /** Null where the browser has no event streams: the screen then polls from the start. */
   openStream: ((url: string) => StreamLike) | null;
-  fetchSnapshot(): Promise<StockPriceSnapshot | null>;
+  fetchSnapshot(): Promise<PollResult>;
   now(): number;
   random(): number;
   setTimeout(fn: () => void, ms: number): unknown;
@@ -53,7 +56,7 @@ export const backoffMs = (failures: number, random: () => number): number => Mat
  * React; the hook below wraps it, and a test drives it with a fake stream and a fake clock.
  */
 export class PriceLink {
-  private state: LinkState = { snapshot: null, status: "reconnecting", via: "none", failed: false };
+  private state: LinkState = { snapshot: null, status: "reconnecting", via: "none", failed: null };
   private source: StreamLike | null = null;
   private lastEventId: string | undefined;
   private lastFrameAt: number | null = null;
@@ -102,7 +105,7 @@ export class PriceLink {
   }
 
   private take(snapshot: StockPriceSnapshot): void {
-    this.state = { ...this.state, snapshot, failed: false };
+    this.state = { ...this.state, snapshot, failed: null };
     this.lastFrameAt = this.deps.now();
   }
 
@@ -140,7 +143,8 @@ export class PriceLink {
       this.scheduleReconnect(Math.floor(this.deps.random() * PLANNED_RECONNECT_JITTER_MS));
       this.publish();
     });
-    source.addEventListener("error", () => {
+    // An "error" the browser raises itself, or an "unavailable" the server sends when it holds no prices: the same to the screen, which polls and retries.
+    const failed = (): void => {
       source.close();
       this.connected = false;
       this.failures += 1;
@@ -148,7 +152,9 @@ export class PriceLink {
       if (this.failures >= POLL_AFTER_FAILURES || this.state.snapshot === null) this.startPolling();
       this.scheduleReconnect(this.failures >= POLL_AFTER_FAILURES ? RETRY_WHILE_POLLING_MS : backoffMs(this.failures, this.deps.random));
       this.publish();
-    });
+    };
+    source.addEventListener("error", failed);
+    source.addEventListener("unavailable", failed);
   }
 
   private scheduleReconnect(ms: number): void {
@@ -164,10 +170,10 @@ export class PriceLink {
     if (this.polling) return;
     this.polling = true;
     const poll = (): void => {
-      void this.deps.fetchSnapshot().then((snapshot) => {
+      void this.deps.fetchSnapshot().then((result) => {
         if (this.stopped || !this.polling) return;
-        if (snapshot) this.take(snapshot);
-        else if (this.state.snapshot === null) this.state = { ...this.state, failed: true };
+        if ("snapshot" in result) this.take(result.snapshot);
+        else if (this.state.snapshot === null) this.state = { ...this.state, failed: { httpStatus: result.httpStatus } };
         this.publish();
       });
       this.pollTimer = this.deps.setTimeout(poll, POLL_MS);

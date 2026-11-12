@@ -37,6 +37,10 @@ The order path and the read paths each get their own bounded pool, and one build
 
 ## Consequences
 
+Measured on a local stack (`post-facts/part-05.md`): with the compute not saturated, a 4x read overload (1,800 requests a second) left orders served on separate pools (2,998 of 3,001, p95 19 ms to 144 ms) and starved them on one
+shared pool (2 of 3,001, p95 9.1 s). With the compute held to a quarter of a core, both paths failed together whichever way the pools were drawn. The same measurement found the first thing to break was not a pool: the account poll
+scanned three tables sequentially, which migration `0009` fixes.
+
 - A stampede of reads can hold at most the read pool's 4 connections per instance; the order pool's 6 stay free for orders. How much isolation that buys under load is measured in `post-facts/part-05.md`, which says where it stops.
 - Postgres connections now scale as 10 per instance (not 3) before the pooler multiplexes them: with the Neon pooler's 0.9 x 112 = about 100 server connections at 0.25 CU, ten instances would use them all. This is a trade, and the measurement reports it.
 - One compute still serves both pools. When the compute's CPU is the limit, reads and orders slow down together, whatever the pools say. The report states the coupling it measured instead of claiming more.

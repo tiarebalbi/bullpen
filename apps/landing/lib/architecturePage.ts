@@ -10,6 +10,7 @@ export const CHECK_NAME_BY_FILE: Record<string, string> = {
   "architecture/fitness/src/boundaries-check.ts": "turbo boundaries",
   "architecture/fitness/src/imports-check.ts": "entry-point imports",
   "architecture/fitness/src/secret-check.ts": "secret containment",
+  "architecture/fitness/src/import-boundary-check.ts": "import boundaries",
   "architecture/fitness/src/model-currency-check.ts": "model currency",
   "architecture/fitness/src/data-ownership-check.ts": "data ownership",
   "architecture/fitness/src/budget-check.ts": "budget",

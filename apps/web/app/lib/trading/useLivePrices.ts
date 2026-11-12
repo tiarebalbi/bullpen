@@ -10,9 +10,9 @@ const browserDeps = (): LinkDeps => ({
   fetchSnapshot: async () => {
     try {
       const response = await fetch(POLL_URL);
-      return response.ok ? ((await response.json()) as StockPriceSnapshot) : null;
+      return response.ok ? { snapshot: (await response.json()) as StockPriceSnapshot } : { httpStatus: response.status };
     } catch {
-      return null;
+      return { httpStatus: null };
     }
   },
   now: () => Date.now(),
@@ -22,7 +22,7 @@ const browserDeps = (): LinkDeps => ({
 });
 
 /** What a screen draws before the first frame: nothing, and reconnecting. */
-const NONE: LinkState = { snapshot: null, status: "reconnecting", via: "none", failed: false };
+const NONE: LinkState = { snapshot: null, status: "reconnecting", via: "none", failed: null };
 
 /**
  * The stock prices, live. They arrive by the event stream, with polling as the fallback (priceLink.ts). The first value is `Polled`-shaped, so the existing watchlist
@@ -36,6 +36,6 @@ export function useLivePrices(deps?: LinkDeps): { stocks: Polled<StockPriceSnaps
     return () => live.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the dependencies are the browser's, made once
   }, []);
-  const stocks: Polled<StockPriceSnapshot> = link.snapshot ? { status: "ok", data: link.snapshot } : link.failed ? { status: "error", httpStatus: null, message: "Stock prices unavailable." } : { status: "loading" };
+  const stocks: Polled<StockPriceSnapshot> = link.snapshot ? { status: "ok", data: link.snapshot } : link.failed ? { status: "error", httpStatus: link.failed.httpStatus, message: "Stock prices unavailable." } : { status: "loading" };
   return { stocks, link };
 }

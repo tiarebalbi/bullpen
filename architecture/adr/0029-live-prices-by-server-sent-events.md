@@ -41,6 +41,10 @@ A server-sent event route, `/api/prices/stream`, in the Trading App, and a clien
 
 ## Consequences
 
+Measured on a local stack (`post-facts/part-05.md`; not on Vercel):
+one instance held 990 viewers and read the stored prices once per 5 s (0.33 reads a second; the polling fallback at the same viewers is 100), made no provider call, and held 1,131 file descriptors, so about 880 viewers fit in
+Vercel's 1,024. Three real streams closed themselves after 246, 253 and 270 s, each with a `bye`, and a reconnect with the last event id repeated no prices.
+
 - Database reads for prices are one per instance per 5 s, plus one per polling client every 10 s only while the stream is failing. The report measures reads per second against the number of viewers and against the polling path.
 - A viewer holds one open connection (one file descriptor) on an instance for up to 270 s. The limit of 1,024 per instance, minus the database sockets and the runtime's own, is what bounds viewers per instance; the report measures connections per instance.
 - A stream is Active CPU only while it writes. Idle connections hold memory but, on Fluid compute, not CPU, so the Hobby allowance of 4 Active CPU-hours is spent by the reads and the writes, not by the waiting; the report measures it rather than assuming it.

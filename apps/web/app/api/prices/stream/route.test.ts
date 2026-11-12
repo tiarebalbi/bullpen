@@ -5,6 +5,7 @@ const subscribe = vi.fn();
 vi.mock("../../../lib/trading/reads/hub.js", () => ({ priceHub: () => ({ subscribe }) }));
 
 const { GET, maxDuration } = await import("./route.js");
+const { HOBBY_MAX_DURATION_MS } = await import("../../../lib/trading/reads/priceStream.js");
 
 const get = (url = "http://x/api/prices/stream", headers: Record<string, string> = {}) => GET(new Request(url, { headers }));
 
@@ -45,6 +46,8 @@ describe("GET /api/prices/stream", () => {
 
   it("is declared to run for no longer than Hobby allows", () => {
     expect(maxDuration).toBe(300);
+    expect(maxDuration * 1000).toBe(HOBBY_MAX_DURATION_MS); // Next needs the literal; this keeps it equal to the constant the stream's lifetime is checked against
+
   });
 
   it("with the price-stream switch off answers 503 'stream-off' at once, subscribes nobody, and says to retry later", async () => {
