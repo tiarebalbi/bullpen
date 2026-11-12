@@ -1,8 +1,11 @@
 /** The order states and the only moves between them (ADR-0017). Pure: the database enforces the same table with conditional updates. */
-export const ORDER_STATES = ["accepted", "working", "partially_filled", "cancel_requested", "cancelled", "filled", "rejected"] as const;
+export const ORDER_STATES = ["queued_for_open", "accepted", "working", "partially_filled", "cancel_requested", "cancelled", "filled", "rejected"] as const;
 export type OrderState = (typeof ORDER_STATES)[number];
 
 export const TRANSITIONS: Readonly<Record<OrderState, readonly OrderState[]>> = {
+  // ADR-0028: a stock order placed while the market is closed waits here, never seen by the venue. It leaves by admission at the open
+  // (accepted), by a refusal at the open (rejected: no fresh price, or not enough buying power to top up), or by the player's cancel (cancelled).
+  queued_for_open: ["accepted", "rejected", "cancelled"],
   accepted: ["working", "rejected", "cancel_requested", "partially_filled", "filled"],
   working: ["partially_filled", "filled", "cancel_requested"],
   partially_filled: ["partially_filled", "filled", "cancel_requested"],
@@ -15,11 +18,12 @@ export const TRANSITIONS: Readonly<Record<OrderState, readonly OrderState[]>> = 
 export const canTransition = (from: OrderState, to: OrderState): boolean => TRANSITIONS[from].includes(to);
 
 /** States in which the order still has work for the venue or the sweep. */
-export const OPEN_STATES: readonly OrderState[] = ["accepted", "working", "partially_filled", "cancel_requested"];
+export const OPEN_STATES: readonly OrderState[] = ["queued_for_open", "accepted", "working", "partially_filled", "cancel_requested"];
 export const isOpen = (state: OrderState): boolean => OPEN_STATES.includes(state);
 
 /** Which bucket of the quantity a fill consumes: a cancelled order's late fill comes out of what the cancel gave up. */
-export const fillBucket = (state: OrderState): "open" | "cancelled" | null => (state === "cancelled" ? "cancelled" : state === "filled" || state === "rejected" ? null : "open");
+export const fillBucket = (state: OrderState): "open" | "cancelled" | null =>
+  state === "cancelled" ? "cancelled" : state === "filled" || state === "rejected" || state === "queued_for_open" ? null : "open";
 
 /**
  * The state after a fill is booked, given the buckets after it. A cancel that has not taken effect stays
