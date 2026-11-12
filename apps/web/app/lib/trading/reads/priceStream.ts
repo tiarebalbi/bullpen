@@ -10,6 +10,8 @@ export interface StreamOptions {
   /** The request's signal: the client going away closes the stream and frees its place. */
   signal?: AbortSignal;
   random?: () => number;
+  /** How long this connection lives. Absent, the cut-before-300 s lifetime above; a measurement may pass a shorter one. */
+  lifetimeMs?: number;
 }
 
 /** How long one connection lives: the base plus a jitter, so connections opened together do not all end, and reconnect, together. */
@@ -46,7 +48,7 @@ export function openPriceStream(hub: PriceHub, options: StreamOptions = {}): Rea
       held.timer = setTimeout(() => {
         write(formatEvent({ event: "bye", data: JSON.stringify({ reconnect: true }) }));
         finish();
-      }, lifetimeMs(options.random));
+      }, options.lifetimeMs ?? lifetimeMs(options.random));
       options.signal?.addEventListener("abort", finish, { once: true });
     },
     cancel() {
