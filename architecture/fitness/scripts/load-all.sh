@@ -4,7 +4,8 @@
 # The database is held to a quarter of a core for the "-db0.25" runs by src/load/throttle.ts (an approximation of Neon's 0.25 CU, see its header).
 set -uo pipefail
 cd "$(dirname "$0")/.."
-run() { echo "=== $* ($(date +%T))"; pnpm exec tsx src/load/run.ts "$@" > /dev/null 2>"${LOAD_SCRATCH:-/tmp}/last-error.log" || { echo "FAILED: $*"; tail -5 "${LOAD_SCRATCH:-/tmp}/last-error.log"; }; }
+# SKIP="label label" leaves out runs already made and kept (a rerun after a harness fix).
+run() { for l in ${SKIP:-}; do [[ " $* " == *" --label $l "* ]] && { echo "=== skipped $l"; return; }; done; echo "=== $* ($(date +%T))"; pnpm exec tsx src/load/run.ts "$@" > /dev/null 2>"${LOAD_SCRATCH:-/tmp}/last-error.log" || { echo "FAILED: $*"; tail -5 "${LOAD_SCRATCH:-/tmp}/last-error.log"; }; }
 
 # The nominal 9:30 step: 1,000 queued orders released, 50 new orders/s, 1,000 screens polling (333/s). Then heavier steps to find where it gives.
 run step --orders 50 --label step-50-db1
