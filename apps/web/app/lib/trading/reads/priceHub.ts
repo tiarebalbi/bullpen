@@ -120,7 +120,7 @@ export class PriceHub {
     if (this.timer === null) this.timer = this.setTimer(() => void this.pulse(), this.intervalMs);
     void this.refresh().then((frame) => {
       if (!this.sinks.has(sink)) return;
-      if (!frame) sink(sse({ event: "tick", data: JSON.stringify({ at: this.now(), empty: true }) }));
+      if (!frame) sink(this.unavailable());
       else if (frame.id === lastEventId) sink(sse({ event: "tick", data: JSON.stringify({ at: frame.at, id: frame.id }) }));
       else sink(this.prices(frame));
     });
@@ -133,6 +133,11 @@ export class PriceHub {
     };
   }
 
+  /** Sent while the hub holds no prices at all (the first read failed): the stream is open but has nothing to say, and the client should poll, whose route answers 503 in words. */
+  private unavailable(): string {
+    return sse({ event: "unavailable", data: JSON.stringify({ at: this.now() }) });
+  }
+
   private prices(frame: Frame): string {
     return sse({ event: "prices", id: frame.id, data: JSON.stringify({ ...frame.snapshot, servedAt: frame.at }) });
   }
@@ -142,7 +147,7 @@ export class PriceHub {
     const before = this.frame?.id ?? null;
     // The interval's own read, unless a client that connected a moment ago already made one: half an interval is "a moment".
     const frame = await this.refresh(this.intervalMs / 2);
-    const message = frame && frame.id !== before ? this.prices(frame) : sse({ event: "tick", data: JSON.stringify({ at: this.now(), id: frame?.id ?? null }) });
+    const message = !frame ? this.unavailable() : frame.id !== before ? this.prices(frame) : sse({ event: "tick", data: JSON.stringify({ at: this.now(), id: frame.id }) });
     for (const sink of [...this.sinks]) {
       try {
         sink(message);

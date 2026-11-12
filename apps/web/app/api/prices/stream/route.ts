@@ -1,10 +1,10 @@
 import { isOff } from "../../../lib/degradation/switches.js";
 import { priceHub } from "../../../lib/trading/reads/hub.js";
-import { HOBBY_MAX_DURATION_MS, openPriceStream } from "../../../lib/trading/reads/priceStream.js";
+import { openPriceStream } from "../../../lib/trading/reads/priceStream.js";
 
 export const dynamic = "force-dynamic";
-/** The most a Hobby function may run; the stream ends itself well before it (priceStream.ts). */
-export const maxDuration = HOBBY_MAX_DURATION_MS / 1000;
+/** The most a Hobby function may run, in seconds (Next reads this literally, so it cannot be computed); the stream ends itself well before it (priceStream.ts, HOBBY_MAX_DURATION_MS). */
+export const maxDuration = 300;
 
 /**
  * Live prices as server-sent events (ADR-0029). Every connection on this instance shares the instance's one read of the stored prices per interval; a viewer

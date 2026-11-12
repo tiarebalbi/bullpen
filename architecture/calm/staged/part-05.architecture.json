@@ -134,15 +134,14 @@
           ]
         },
         "order-latency-budget": {
-          "description": "p95 of placing an order at the 9:30 step, with the backlog being admitted and every screen polling, stays under 1,000 ms; the k6 threshold fails the run if it does not. Measured on a local stack, which says nothing about Vercel's own limits.",
+          "description": "p95 of placing an order at the 9:30 step, with the backlog being admitted and every screen polling, stays under 1,000 ms; the k6 threshold fails the run if it does not. Measured on a local stack, which says nothing about Vercel's own limits. Held by architecture/fitness/load/scenarios.js.",
           "requirements": [
             {
               "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
               "config": {
                 "control-id": "CR-LATENCY-ORDER",
                 "name": "Order placement stays inside its latency budget",
-                "description": "p95 of placing an order at the 9:30 step, with the backlog being admitted and every screen polling, stays under 1,000 ms; the k6 threshold fails the run if it does not. Measured on a local stack, which says nothing about Vercel's own limits.",
-                "enforced-by": "architecture/fitness/load/scenarios.js",
+                "description": "p95 of placing an order at the 9:30 step, with the backlog being admitted and every screen polling, stays under 1,000 ms; the k6 threshold fails the run if it does not. Measured on a local stack, which says nothing about Vercel's own limits. Held by architecture/fitness/load/scenarios.js.",
                 "budget": {
                   "metric": "p95",
                   "value": 1000,
@@ -154,15 +153,14 @@
           ]
         },
         "read-wait-budget": {
-          "description": "The read pool refuses a request that cannot get a connection in 2 s; the order pool waits at most 5 s. A bounded wait is where work waits inside an instance, and then it is refused.",
+          "description": "The read pool refuses a request that cannot get a connection in 2 s; the order pool waits at most 5 s. A bounded wait is where work waits inside an instance, and then it is refused. Held by apps/web/app/lib/trading/makePool.test.ts.",
           "requirements": [
             {
               "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
               "config": {
                 "control-id": "CR-WAIT-READ",
                 "name": "A read waits at most 2 s for a connection",
-                "description": "The read pool refuses a request that cannot get a connection in 2 s; the order pool waits at most 5 s. A bounded wait is where work waits inside an instance, and then it is refused.",
-                "enforced-by": "apps/web/app/lib/trading/makePool.test.ts",
+                "description": "The read pool refuses a request that cannot get a connection in 2 s; the order pool waits at most 5 s. A bounded wait is where work waits inside an instance, and then it is refused. Held by apps/web/app/lib/trading/makePool.test.ts.",
                 "budget": {
                   "metric": "connection wait",
                   "value": 2000,
@@ -174,15 +172,14 @@
           ]
         },
         "stream-lifetime-budget": {
-          "description": "Every stream closes itself between 240 s and 270 s with a bye event, so the platform's cut never lands mid-message.",
+          "description": "Every stream closes itself between 240 s and 270 s with a bye event, so the platform's cut never lands mid-message. Held by apps/web/app/lib/trading/reads/priceHub.test.ts.",
           "requirements": [
             {
               "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
               "config": {
                 "control-id": "CR-STREAM-LIFETIME",
                 "name": "A price stream ends before Hobby's 300 s cut",
-                "description": "Every stream closes itself between 240 s and 270 s with a bye event, so the platform's cut never lands mid-message.",
-                "enforced-by": "apps/web/app/lib/trading/reads/priceHub.test.ts",
+                "description": "Every stream closes itself between 240 s and 270 s with a bye event, so the platform's cut never lands mid-message. Held by apps/web/app/lib/trading/reads/priceHub.test.ts.",
                 "budget": {
                   "metric": "connection lifetime",
                   "value": 270000,
@@ -194,15 +191,14 @@
           ]
         },
         "admission-budget": {
-          "description": "At most 100 queued orders are admitted per sweep pass, oldest first, and a pass stops starting admissions after 8 s.",
+          "description": "At most 100 queued orders are admitted per sweep pass, oldest first, and a pass stops starting admissions after 8 s. Held by architecture/fitness/src/db-integration/orders-queued.int.test.ts.",
           "requirements": [
             {
               "requirement-url": "https://calm.finos.org/release/1.2/meta/control-requirement.json",
               "config": {
                 "control-id": "CR-ADMISSION",
                 "name": "The backlog is admitted in batches, not at 9:30:00",
-                "description": "At most 100 queued orders are admitted per sweep pass, oldest first, and a pass stops starting admissions after 8 s.",
-                "enforced-by": "architecture/fitness/src/db-integration/orders-queued.int.test.ts",
+                "description": "At most 100 queued orders are admitted per sweep pass, oldest first, and a pass stops starting admissions after 8 s. Held by architecture/fitness/src/db-integration/orders-queued.int.test.ts.",
                 "budget": {
                   "metric": "orders per pass",
                   "value": 100,

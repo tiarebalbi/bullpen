@@ -45,6 +45,10 @@ The switches are for a peak you can see coming and a few minutes to react; the p
 
 ## Consequences
 
+Measured on a local stack (`post-facts/part-05.md`): with the moderation provider hanging to its timeout, the order path's p95 was 21 ms before, 22 ms during and 22 ms after. A stale feed and an exhausted provider budget both
+ended in safe refusals of the orders on stale symbols and no 5xx, recovering within 0.4 s. A cold database cost about 3 s of 503s. It also showed that a pool without an `error` listener ends the process when the database drops
+an idle connection, which is fixed in the three `createPool` functions.
+
 - A kill switch is tested for what it does when off and for what it does not touch when off (`switches.test.ts`, the moderation, leaderboard and stream tests).
 - Moderation is a bulkhead that already worked; this part measures it: with the moderation provider slow or down, trading latency before and after (`post-facts/part-05.md`).
 - Turning a switch on or off is an owner's action in the Vercel project; the code never writes it.

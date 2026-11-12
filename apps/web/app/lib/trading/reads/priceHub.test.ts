@@ -133,6 +133,16 @@ describe("reconnect and resume", () => {
     expect(frameId(snap({ ...A.rows[0]!, stale: true }, A.rows[1]!))).not.toBe(base);
   });
 
+  it("tells a client the stream has no prices when the first read fails, instead of ticking as if all were well", async () => {
+    const hub = new PriceHub({ read: async () => { throw new Error("db down"); }, now: () => Date.now() });
+    const s = sink();
+    hub.subscribe(s.write);
+    await vi.advanceTimersByTimeAsync(HUB_INTERVAL_MS * 2);
+    expect(events(s.text(), "unavailable").length).toBeGreaterThanOrEqual(2);
+    expect(events(s.text(), "prices")).toHaveLength(0);
+    expect(events(s.text(), "tick")).toHaveLength(0);
+  });
+
   it("ticks when nothing changed, so a client can tell a quiet stream from a dead one", async () => {
     const { hub } = hubOf(async () => A);
     const s = sink();

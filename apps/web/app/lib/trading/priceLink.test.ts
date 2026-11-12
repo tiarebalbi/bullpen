@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StockPriceSnapshot } from "@bullpen/contracts";
-import { BACKOFF_MAX_MS, POLL_AFTER_FAILURES, POLL_MS, PLANNED_RECONNECT_JITTER_MS, PriceLink, RETRY_WHILE_POLLING_MS, STALE_AFTER_MS, STREAM_URL, backoffMs, type LinkDeps, type LinkState, type StreamLike } from "./priceLink.js";
+import { BACKOFF_MAX_MS, POLL_AFTER_FAILURES, POLL_MS, PLANNED_RECONNECT_JITTER_MS, PriceLink, RETRY_WHILE_POLLING_MS, STALE_AFTER_MS, STREAM_URL, backoffMs, type LinkDeps, type LinkState, type PollResult, type StreamLike } from "./priceLink.js";
 
 const row = (price: string, stale = false): StockPriceSnapshot["rows"][number] => ({ symbol: "AAPL", price, asOf: "2026-11-12T21:00:00.000Z", stale, previousClose: null });
 const snap = (price = "100.00000000", stale = false): StockPriceSnapshot => ({ rows: [row(price, stale)] });
@@ -23,10 +23,10 @@ class FakeStream implements StreamLike {
   }
 }
 
-function setup(options: { random?: number; stream?: boolean; poll?: () => Promise<StockPriceSnapshot | null> } = {}) {
+function setup(options: { random?: number; stream?: boolean; poll?: () => Promise<PollResult> } = {}) {
   const streams: FakeStream[] = [];
   const states: LinkState[] = [];
-  const poll = vi.fn(options.poll ?? (async () => snap("101.00000000")));
+  const poll = vi.fn(options.poll ?? (async (): Promise<PollResult> => ({ snapshot: snap("101.00000000") })));
   const deps: LinkDeps = {
     openStream: options.stream === false ? null : (url) => { const s = new FakeStream(url); streams.push(s); return s; },
     fetchSnapshot: poll,
@@ -131,6 +131,18 @@ describe("reconnect and resume", () => {
 });
 
 describe("polling is the fallback", () => {
+  it("treats the server's 'unavailable' (an open stream with no prices) as a failure: closes it, polls at once, retries later", async () => {
+    const { link, streams, poll, last } = setup({ random: 0.9 });
+    link.start();
+    streams[0]!.emit("unavailable");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(streams[0]!.closed).toBe(true);
+    expect(poll).toHaveBeenCalledTimes(1);
+    expect(last()).toMatchObject({ via: "polling", snapshot: snap("101.00000000") });
+    await vi.advanceTimersByTimeAsync(RETRY_WHILE_POLLING_MS);
+    expect(streams.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("with nothing on screen, polls at the first failure instead of making the player wait through the backoff", async () => {
     const { link, streams, poll, last } = setup({ random: 0.9 });
     link.start();
@@ -197,13 +209,13 @@ describe("polling is the fallback", () => {
 
   it("says 'failed' when the poll fails and there is nothing to show, and keeps old prices when it fails later", async () => {
     let fail = true;
-    const { link, last } = setup({ stream: false, poll: async () => (fail ? null : snap("103.00000000")) });
+    const { link, last } = setup({ stream: false, poll: async (): Promise<PollResult> => (fail ? { httpStatus: 503 } : { snapshot: snap("103.00000000") }) });
     link.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(last()).toMatchObject({ failed: true, snapshot: null });
+    expect(last()).toMatchObject({ failed: { httpStatus: 503 }, snapshot: null });
     fail = false;
     await vi.advanceTimersByTimeAsync(POLL_MS);
-    expect(last()).toMatchObject({ failed: false, snapshot: snap("103.00000000") });
+    expect(last()).toMatchObject({ failed: null, snapshot: snap("103.00000000") });
     fail = true;
     await vi.advanceTimersByTimeAsync(POLL_MS);
     expect(last().snapshot).toEqual(snap("103.00000000"));

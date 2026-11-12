@@ -115,10 +115,10 @@
     {
       "unique-id": "part-05",
       "node-type": "moment",
-      "name": "Part 5 — The market open: where the work waits",
-      "description": "What runs at the end of Part 5's build: orders wait in Postgres for the open and are admitted in batches, reads and orders use separate bounded pools, live prices arrive by server-sent events, and what switches off first is decided in advance. Week one predicted a Market Open Queue and an Order Saga workflow engine; neither was built, because the order is already durable in Postgres before anything else happens.",
+      "name": "Part 5 (planned) — Market open and the bill",
+      "description": "Prediction: a queue absorbs the market-open order burst, and cost/usage metadata makes the bill visible on the architecture itself.",
       "details": {
-        "detailed-architecture": "moments/part-05.architecture.json",
+        "detailed-architecture": "planned/part-05.architecture.json",
         "required-pattern": "bullpen.pattern.json"
       },
       "adrs": [
@@ -126,8 +126,7 @@
         "architecture/adr/0029-live-prices-by-server-sent-events.md",
         "architecture/adr/0030-reads-and-orders-get-separate-pools.md",
         "architecture/adr/0031-degradation-is-decided-in-advance.md"
-      ],
-      "metadata": {}
+      ]
     },
     {
       "unique-id": "part-06",
