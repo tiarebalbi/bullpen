@@ -1,0 +1,433 @@
+{
+ "case": "stress",
+ "label": "stress-db1",
+ "at": "2026-11-12T23:16:55.542Z",
+ "historyOrdersPerPlayer": 20,
+ "environment": {
+  "cores": 4,
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "os": "linux 6.18.44-fc-v378",
+  "node": "v22.23.4",
+  "postgres": "16 (local cluster, not Neon)",
+  "dbCpuFraction": 1,
+  "note": "k6, the stand-in app, the sweeper and Postgres share this machine"
+ },
+ "derived": {
+  "phaseSeconds": 40,
+  "events": [
+   {
+    "atSeconds": 45,
+    "what": "feed down: every stored price goes stale"
+   },
+   {
+    "atSeconds": 70,
+    "what": "feed restored"
+   },
+   {
+    "atSeconds": 85,
+    "what": "provider quota exhausted; no new prices can be fetched"
+   },
+   {
+    "atSeconds": 85,
+    "what": "quota: {\"granted\":5,\"refused\":15}"
+   },
+   {
+    "atSeconds": 110,
+    "what": "quota window renewed, prices fresh"
+   },
+   {
+    "atSeconds": 125,
+    "what": "moderation provider down"
+   },
+   {
+    "atSeconds": 150,
+    "what": "moderation provider back"
+   },
+   {
+    "atSeconds": 165,
+    "what": "leaderboard stampede (k6 adds the extra arrivals)"
+   },
+   {
+    "atSeconds": 205,
+    "what": "database stopped (scale-to-zero)"
+   },
+   {
+    "atSeconds": 208,
+    "what": "database resumed (cold)"
+   }
+  ],
+  "byPhase": {
+   "baseline": {
+    "probes": {
+     "order": {
+      "n": 323,
+      "statuses": {
+       "201": 323
+      },
+      "p50": 16,
+      "p95": 21,
+      "max": 59
+     },
+     "account": {
+      "n": 323,
+      "statuses": {
+       "200": 323
+      },
+      "p50": 6,
+      "p95": 8,
+      "max": 13
+     },
+     "prices": {
+      "n": 323,
+      "statuses": {
+       "200": 323
+      },
+      "p50": 2,
+      "p95": 3,
+      "max": 6,
+      "sawStalePrices": false
+     }
+    },
+    "k6": {
+     "orderP95Ms": 20.37336039999999,
+     "orderErrorRate": 0,
+     "accountP95Ms": 6.95775735,
+     "goodput": 12000
+    }
+   },
+   "feed-down": {
+    "probes": {
+     "order": {
+      "n": 349,
+      "statuses": {
+       "201": 122,
+       "422:stale-price": 227
+      },
+      "p50": 3,
+      "p95": 18,
+      "max": 36
+     },
+     "account": {
+      "n": 349,
+      "statuses": {
+       "200": 349
+      },
+      "p50": 5,
+      "p95": 7,
+      "max": 12
+     },
+     "prices": {
+      "n": 349,
+      "statuses": {
+       "200": 349
+      },
+      "p50": 1,
+      "p95": 2,
+      "max": 5,
+      "sawStalePrices": true
+     }
+    },
+    "k6": {
+     "orderP95Ms": 16.785612,
+     "orderErrorRate": 0,
+     "accountP95Ms": 6.713654999999999,
+     "goodput": 12001
+    }
+   },
+   "quota-exhausted": {
+    "probes": {
+     "order": {
+      "n": 349,
+      "statuses": {
+       "201": 122,
+       "422:stale-price": 227
+      },
+      "p50": 3,
+      "p95": 18,
+      "max": 59
+     },
+     "account": {
+      "n": 349,
+      "statuses": {
+       "200": 349
+      },
+      "p50": 6,
+      "p95": 8,
+      "max": 17
+     },
+     "prices": {
+      "n": 348,
+      "statuses": {
+       "200": 348
+      },
+      "p50": 1,
+      "p95": 2,
+      "max": 13,
+      "sawStalePrices": true
+     }
+    },
+    "k6": {
+     "orderP95Ms": 17.319055800000005,
+     "orderErrorRate": 0,
+     "accountP95Ms": 6.929251,
+     "goodput": 12000
+    }
+   },
+   "moderation-down": {
+    "probes": {
+     "order": {
+      "n": 326,
+      "statuses": {
+       "201": 326
+      },
+      "p50": 15,
+      "p95": 22,
+      "max": 44
+     },
+     "account": {
+      "n": 325,
+      "statuses": {
+       "200": 325
+      },
+      "p50": 5,
+      "p95": 8,
+      "max": 12
+     },
+     "prices": {
+      "n": 326,
+      "statuses": {
+       "200": 326
+      },
+      "p50": 1,
+      "p95": 2,
+      "max": 4,
+      "sawStalePrices": false
+     }
+    },
+    "k6": {
+     "orderP95Ms": 19.94746485,
+     "orderErrorRate": 0,
+     "accountP95Ms": 7.2048186,
+     "goodput": 11480
+    }
+   },
+   "leaderboard-stampede": {
+    "probes": {
+     "order": {
+      "n": 296,
+      "statuses": {
+       "201": 296
+      },
+      "p50": 20,
+      "p95": 35,
+      "max": 52
+     },
+     "account": {
+      "n": 297,
+      "statuses": {
+       "200": 297
+      },
+      "p50": 7,
+      "p95": 23,
+      "max": 113
+     },
+     "prices": {
+      "n": 297,
+      "statuses": {
+       "200": 297
+      },
+      "p50": 2,
+      "p95": 5,
+      "max": 13,
+      "sawStalePrices": false
+     }
+    },
+    "k6": {
+     "orderP95Ms": 32.947176500000005,
+     "orderErrorRate": 0,
+     "accountP95Ms": 22.701719399999938,
+     "goodput": 72002
+    }
+   },
+   "cold-database": {
+    "probes": {
+     "order": {
+      "n": 312,
+      "statuses": {
+       "201": 285,
+       "503:unavailable": 27
+      },
+      "p50": 15,
+      "p95": 21,
+      "max": 32
+     },
+     "account": {
+      "n": 312,
+      "statuses": {
+       "200": 285,
+       "503:unavailable": 27
+      },
+      "p50": 5,
+      "p95": 7,
+      "max": 17
+     },
+     "prices": {
+      "n": 312,
+      "statuses": {
+       "200": 285,
+       "503:Stock prices unavailable.": 27
+      },
+      "p50": 1,
+      "p95": 2,
+      "max": 6,
+      "sawStalePrices": false
+     }
+    },
+    "k6": {
+     "orderP95Ms": 20.19615915,
+     "orderErrorRate": 0.07885304659498207,
+     "accountP95Ms": 6.996442,
+     "goodput": 11138
+    }
+   },
+   "recovery": {
+    "probes": {
+     "order": {
+      "n": 324,
+      "statuses": {
+       "201": 324
+      },
+      "p50": 16,
+      "p95": 22,
+      "max": 39
+     },
+     "account": {
+      "n": 324,
+      "statuses": {
+       "200": 324
+      },
+      "p50": 5,
+      "p95": 8,
+      "max": 12
+     },
+     "prices": {
+      "n": 324,
+      "statuses": {
+       "200": 324
+      },
+      "p50": 1,
+      "p95": 2,
+      "max": 6,
+      "sawStalePrices": false
+     }
+    },
+    "k6": {
+     "orderP95Ms": 19.771237400000004,
+     "orderErrorRate": 0,
+     "accountP95Ms": 6.998191499999999,
+     "goodput": 12001
+    }
+   }
+  },
+  "recoveryMsAfterRestore": {
+   "feed-down": 309,
+   "quota-exhausted": 321,
+   "moderation-down": 261,
+   "cold-database": 2474
+  },
+  "invariantProblems": [],
+  "k6Thresholds": {
+   "http_req_duration{kind:prices,phase:moderation-down}: p(95)>=0": true,
+   "http_req_duration{kind:order,phase:baseline}: p(95)>=0": true,
+   "http_req_duration{kind:leaderboard,phase:quota-exhausted}: p(95)>=0": true,
+   "http_req_duration{kind:order,phase:cold-database}: p(95)>=0": true,
+   "http_req_failed{kind:prices,phase:cold-database}: rate>=0": true,
+   "http_req_failed{kind:prices,phase:feed-down}: rate>=0": true,
+   "http_req_failed{kind:order,phase:cold-database}: rate>=0": true,
+   "http_req_duration{kind:order}: p(95)<1000": true,
+   "http_req_duration{kind:order,phase:moderation-down}: p(95)>=0": true,
+   "http_req_duration{kind:order,phase:recovery}: p(95)>=0": true,
+   "http_req_failed{kind:order,phase:moderation-down}: rate>=0": true,
+   "http_req_failed{kind:leaderboard,phase:feed-down}: rate>=0": true,
+   "goodput{phase:moderation-down}: count>=0": true,
+   "http_req_duration{kind:account,phase:cold-database}: p(95)>=0": true,
+   "http_req_failed{kind:order,phase:quota-exhausted}: rate>=0": true,
+   "http_req_failed{kind:prices,phase:quota-exhausted}: rate>=0": true,
+   "http_req_failed{kind:prices,phase:moderation-down}: rate>=0": true,
+   "http_req_duration{kind:prices,phase:quota-exhausted}: p(95)>=0": true,
+   "http_req_duration{kind:leaderboard,phase:leaderboard-stampede}: p(95)>=0": true,
+   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "http_req_failed{kind:leaderboard,phase:moderation-down}: rate>=0": true,
+   "http_req_duration{kind:account,phase:moderation-down}: p(95)>=0": true,
+   "http_req_duration{kind:account}: p(95)<1000": true,
+   "http_req_failed{kind:account,phase:feed-down}: rate>=0": true,
+   "http_req_duration{kind:leaderboard,phase:cold-database}: p(95)>=0": true,
+   "http_req_duration{kind:prices,phase:feed-down}: p(95)>=0": true,
+   "http_req_failed{kind:sse}: rate>=0": true,
+   "http_req_failed{kind:leaderboard,phase:recovery}: rate>=0": true,
+   "http_req_duration{kind:leaderboard,phase:recovery}: p(95)>=0": true,
+   "http_req_failed{kind:prices}: rate>=0": true,
+   "http_req_duration{kind:order,phase:quota-exhausted}: p(95)>=0": true,
+   "http_req_duration{kind:prices,phase:recovery}: p(95)>=0": true,
+   "http_req_duration{kind:account,phase:leaderboard-stampede}: p(95)>=0": true,
+   "http_req_duration{kind:order,phase:leaderboard-stampede}: p(95)>=0": true,
+   "http_req_failed{kind:leaderboard,phase:baseline}: rate>=0": true,
+   "http_req_failed{kind:leaderboard}: rate>=0": true,
+   "http_req_failed{kind:order,phase:feed-down}: rate>=0": true,
+   "http_req_duration{kind:account,phase:recovery}: p(95)>=0": true,
+   "http_req_failed{kind:leaderboard,phase:cold-database}: rate>=0": true,
+   "goodput{phase:cold-database}: count>=0": true,
+   "http_req_duration{kind:leaderboard,phase:feed-down}: p(95)>=0": true,
+   "http_req_duration{kind:leaderboard}: p(95)>=0": true,
+   "http_req_failed{kind:account}: rate<0.01": false,
+   "http_req_failed{kind:account,phase:moderation-down}: rate>=0": true,
+   "http_req_duration{kind:prices}: p(95)>=0": true,
+   "http_req_duration{kind:account,phase:feed-down}: p(95)>=0": true,
+   "http_req_duration{kind:account,phase:quota-exhausted}: p(95)>=0": true,
+   "goodput{phase:quota-exhausted}: count>=0": true,
+   "goodput{phase:baseline}: count>=0": true,
+   "dropped_iterations: count<10": true,
+   "http_req_failed{kind:prices,phase:baseline}: rate>=0": true,
+   "http_req_duration{kind:account,phase:baseline}: p(95)>=0": true,
+   "http_req_duration{kind:prices,phase:cold-database}: p(95)>=0": true,
+   "goodput{phase:feed-down}: count>=0": true,
+   "http_req_failed{kind:handle}: rate>=0": true,
+   "http_req_failed{kind:order}: rate<0.01": false,
+   "http_req_duration{kind:prices,phase:leaderboard-stampede}: p(95)>=0": true,
+   "http_req_failed{kind:account,phase:quota-exhausted}: rate>=0": true,
+   "http_req_failed{kind:order,phase:recovery}: rate>=0": true,
+   "http_req_failed{kind:leaderboard,phase:leaderboard-stampede}: rate>=0": true,
+   "http_req_failed{kind:prices,phase:recovery}: rate>=0": true,
+   "http_req_failed{kind:order,phase:leaderboard-stampede}: rate>=0": true,
+   "http_req_duration{kind:prices,phase:baseline}: p(95)>=0": true,
+   "http_req_duration{kind:handle}: p(95)>=0": true,
+   "http_req_failed{kind:account,phase:leaderboard-stampede}: rate>=0": true,
+   "http_req_duration{kind:order,phase:feed-down}: p(95)>=0": true,
+   "http_req_failed{kind:account,phase:baseline}: rate>=0": true,
+   "http_req_duration{kind:leaderboard,phase:baseline}: p(95)>=0": true,
+   "goodput{phase:leaderboard-stampede}: count>=0": true,
+   "http_req_failed{kind:account,phase:recovery}: rate>=0": true,
+   "http_req_duration{kind:leaderboard,phase:moderation-down}: p(95)>=0": true,
+   "http_req_failed{kind:leaderboard,phase:quota-exhausted}: rate>=0": true,
+   "goodput{phase:recovery}: count>=0": true,
+   "http_req_failed{kind:account,phase:cold-database}: rate>=0": true,
+   "http_req_failed{kind:order,phase:baseline}: rate>=0": true,
+   "http_req_failed{kind:prices,phase:leaderboard-stampede}: rate>=0": true
+  },
+  "droppedIterations": 0,
+  "providerCalls": {
+   "first": {
+    "calls": 0,
+    "refused": 0
+   },
+   "last": {
+    "calls": 5,
+    "refused": 15
+   }
+  }
+ },
+ "k6": {
+  "tail": "1s/40s  300.00 iters/s\n\nrunning (4m40.0s), 0000/0525 VUs, 144006 complete and 0 interrupted iterations\nmixed_baseline             ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_feed_down            ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_quota_exhausted      ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_moderation_down      ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_leaderboard_stampede ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nstampede                   ✓ [ 100% ] 0000/0375 VUs  40s  1500.00 iters/s\nmixed_cold_database        ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_recovery             ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\n\nrunning (4m40.0s), 0000/0525 VUs, 144006 complete and 0 interrupted iterations\nmixed_baseline             ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_feed_down            ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_quota_exhausted      ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_moderation_down      ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_leaderboard_stampede ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nstampede                   ✓ [ 100% ] 0000/0375 VUs  40s  1500.00 iters/s\nmixed_cold_database        ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\nmixed_recovery             ✓ [ 100% ] 000/075 VUs    40s  300.00 iters/s\ntime=\"2026-11-12T23:21:38Z\" level=error msg=\"thresholds on metrics 'http_req_failed{kind:account}, http_req_failed{kind:order}' have been crossed\"\n"
+ },
+ "timelineSeconds": 283
+}

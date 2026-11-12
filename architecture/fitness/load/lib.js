@@ -1,6 +1,9 @@
 // Shared by every k6 scenario. Open-model only: scenarios are constant-arrival-rate or ramping-arrival-rate (see scenarios.js), never a fixed number of looping VUs.
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import http from "k6/http";
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import { Counter, Trend } from "k6/metrics";
+// @boundaries-ignore k6 runtime built-in module (provided by the k6 binary), not an npm package
 import { SharedArray } from "k6/data";
 
 export const BASE = __ENV.BASE || "http://127.0.0.1:3100";

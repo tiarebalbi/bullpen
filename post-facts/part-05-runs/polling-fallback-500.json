@@ -1,7 +1,7 @@
 {
  "case": "polling",
  "label": "polling-fallback-500",
- "at": "2026-11-12T21:13:14.803Z",
+ "at": "2026-11-12T22:05:33.859Z",
  "historyOrdersPerPlayer": 20,
  "environment": {
   "cores": 4,
@@ -16,37 +16,37 @@
   "screens": 500,
   "variant": "fallback",
   "windowFrom": 25,
-  "steadyWindowSeconds": 56.504,
-  "dbTransactionsPerSecond": 1394.432252583888,
-  "dbTuplesReturnedPerSecond": 50701.861815092736,
-  "requestsPerSecond": 180.19717974489802,
+  "steadyWindowSeconds": 53.024,
+  "dbTransactionsPerSecond": 1571.8919734459867,
+  "dbTuplesReturnedPerSecond": 55509.86345805673,
+  "requestsPerSecond": 196.80960032530754,
   "goodputPerSecond": null,
-  "goodputTotal": 6065,
-  "droppedIterations": 726,
+  "goodputTotal": 15746,
+  "droppedIterations": 0,
   "latencyMsByKind": {
    "account": {
-    "p50": 3187.181541,
-    "p90": 5536.8973048,
-    "p95": 5671.485252650001,
-    "p99": 5770.82020516,
-    "max": 5812.04597,
-    "avg": 3023.021808390896
+    "p50": 5.19745,
+    "p90": 6.560063800000001,
+    "p95": 7.06368535,
+    "p99": 8.693923469999996,
+    "max": 29.606454,
+    "avg": 5.354290882529102
    },
    "leaderboard": {
-    "p50": 342.75647,
-    "p90": 625.0654784000001,
-    "p95": 651.5129005,
-    "p99": 686.41575696,
-    "max": 709.846438,
-    "avg": 343.6617884633274
+    "p50": 1.516535,
+    "p90": 2.0227288,
+    "p95": 2.2202694000000003,
+    "p99": 3.1021778799999873,
+    "max": 7.489016,
+    "avg": 1.5882393273703062
    },
    "prices": {
-    "p50": 337.028403,
-    "p90": 619.5590930000001,
-    "p95": 647.4598701,
-    "p99": 680.06584772,
-    "max": 713.682745,
-    "avg": 339.02080354615634
+    "p50": 0.917586,
+    "p90": 1.1639794000000003,
+    "p95": 1.282706,
+    "p99": 1.8953557599999997,
+    "max": 15.778265,
+    "avg": 0.9637560274364116
    },
    "sse": {
     "p50": 0,
@@ -63,19 +63,19 @@
    "prices": 0
   },
   "thresholds": {
-   "http_req_duration{kind:handle}: p(95)>=0": true,
-   "http_req_failed{kind:sse}: rate>=0": true,
-   "http_req_duration{kind:prices}: p(95)>=0": true,
    "http_req_failed{kind:prices}: rate>=0": true,
-   "http_req_failed{kind:leaderboard}: rate>=0": true,
+   "http_req_duration{kind:handle}: p(95)>=0": true,
+   "http_req_duration{kind:prices}: p(95)>=0": true,
+   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "dropped_iterations: count<10": true,
+   "http_req_duration{kind:order}: p(95)<1000": true,
    "http_req_failed{kind:account}: rate<0.01": true,
    "http_req_failed{kind:order}: rate<0.01": true,
-   "http_req_duration{kind:order}: p(95)<1000": true,
-   "http_req_duration{kind:account}: p(95)<1000": false,
    "http_req_duration{kind:leaderboard}: p(95)>=0": true,
-   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "http_req_failed{kind:sse}: rate>=0": true,
+   "http_req_failed{kind:leaderboard}: rate>=0": true,
    "http_req_failed{kind:handle}: rate>=0": true,
-   "dropped_iterations: count<10": false
+   "http_req_duration{kind:account}: p(95)<1000": true
   },
   "hub": {
    "reads": 0,
@@ -91,12 +91,12 @@
     "refused": 0
    }
   },
-  "peakFileDescriptors": 1325,
+  "peakFileDescriptors": 631,
   "peaks": {
    "ordersPoolWaiting": 0,
-   "readsPoolWaiting": 916,
-   "eventLoopP99Ms": 11.550719,
-   "rssMb": 186
+   "readsPoolWaiting": 0,
+   "eventLoopP99Ms": 11.804671,
+   "rssMb": 126
   },
   "connectionsByApp": {
    "(none)": 1,
@@ -104,7 +104,7 @@
   }
  },
  "k6": {
-  "exit": 99
+  "exit": 0
  },
- "timelineSeconds": 87
+ "timelineSeconds": 84
 }

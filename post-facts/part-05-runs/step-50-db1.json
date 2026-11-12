@@ -1,7 +1,7 @@
 {
  "case": "step",
  "label": "step-50-db1",
- "at": "2026-11-12T20:59:24.764Z",
+ "at": "2026-11-12T23:14:02.388Z",
  "historyOrdersPerPlayer": 20,
  "environment": {
   "cores": 4,
@@ -14,206 +14,209 @@
  },
  "derived": {
   "queuedAtOpen": 1000,
-  "admittedAtOpen": 1007,
-  "openedAt": "2026-11-12T20:59:41.322Z",
-  "sweeperWokeForTheOpenAfterMs": 505,
-  "drainMs": 55914,
+  "admittedAtOpen": 1008,
+  "openedAt": "2026-11-12T23:14:19.150Z",
+  "sweeperWokeForTheOpenAfterMs": 506,
+  "drainMs": 55943,
   "maxAdmittedInOneSecond": 100,
   "admissionsPerSecond": [
-   42,
-   58,
+   89,
+   11,
    100,
-   67,
-   33,
+   66,
+   34,
    100,
-   27,
-   73,
+   13,
+   87,
    100,
+   44,
+   56,
    100,
+   2,
+   98,
    100,
-   100,
-   100,
-   7
+   8
   ],
   "orderLatencyMs": {
-   "p50": 14.528623,
-   "p90": 22.283529400000006,
-   "p95": 27.758736749999986,
-   "p99": 51.45936406999998,
-   "max": 90.975284,
-   "avg": 16.412884917989395
+   "p50": 14.3333655,
+   "p90": 22.1880556,
+   "p95": 28.62611599999999,
+   "p99": 45.78616531,
+   "max": 97.284412,
+   "avg": 16.19481785813492
   },
   "accountPollLatencyMs": {
-   "p50": 4.8716745,
-   "p90": 8.463095000000004,
-   "p95": 11.617298499999992,
-   "p99": 29.348660579999695,
-   "max": 108.333052,
-   "avg": 6.113513090690669
+   "p50": 4.755597,
+   "p90": 8.377296,
+   "p95": 11.066295,
+   "p99": 23.723773600000033,
+   "max": 95.770311,
+   "avg": 5.852613284169959
   },
   "orderErrorRate": 0,
   "accountErrorRate": 0,
   "offeredRequestsPerSecond": 400,
-  "goodputPerSecond": 363.97487628882357,
-  "goodputCount": 24025,
-  "requestsPerSecond": 363.97487628882357,
+  "goodputPerSecond": 364.0015708475821,
+  "goodputCount": 24026,
+  "requestsPerSecond": 364.0015708475821,
   "droppedIterations": 0,
   "thresholds": {
-   "http_req_failed{kind:leaderboard}: rate>=0": true,
+   "http_req_failed{kind:prices}: rate>=0": true,
    "http_req_duration{kind:account}: p(95)<1000": true,
+   "http_req_failed{kind:sse}: rate>=0": true,
+   "http_req_duration{kind:handle}: p(95)>=0": true,
+   "http_req_failed{kind:handle}: rate>=0": true,
+   "dropped_iterations: count<10": true,
+   "http_req_failed{kind:leaderboard}: rate>=0": true,
+   "http_req_duration{kind:prices}: p(95)>=0": true,
+   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "http_req_duration{kind:order}: p(95)<1000": true,
    "http_req_failed{kind:account}: rate<0.01": true,
    "http_req_failed{kind:order}: rate<0.01": true,
-   "http_req_duration{kind:handle}: p(95)>=0": true,
-   "http_req_duration{kind:order}: p(95)<1000": true,
-   "http_req_failed{kind:handle}: rate>=0": true,
-   "http_req_failed{kind:prices}: rate>=0": true,
-   "dropped_iterations: count<10": true,
-   "http_req_duration{kind:sse}: p(95)>=0": true,
-   "http_req_duration{kind:leaderboard}: p(95)>=0": true,
-   "http_req_failed{kind:sse}: rate>=0": true,
-   "http_req_duration{kind:prices}: p(95)>=0": true
+   "http_req_duration{kind:leaderboard}: p(95)>=0": true
   },
   "finalStates": {
    "filled": 24024
   },
+  "priceGapAtOpen": null,
   "invariantProblems": [],
   "firstSecondsAfterOpen": [
    {
     "s": 0,
-    "queued": 1007,
+    "queued": 1008,
     "ordersWaiting": 0,
     "readsWaiting": 0,
-    "loopP99": 11
+    "loopP99": 12
    },
    {
     "s": 1,
-    "queued": 907,
+    "queued": 908,
     "ordersWaiting": 0,
     "readsWaiting": 0,
-    "loopP99": 11
+    "loopP99": 12
    },
    {
     "s": 2,
-    "queued": 907,
+    "queued": 908,
     "ordersWaiting": 0,
     "readsWaiting": 0,
-    "loopP99": 11
+    "loopP99": 12
    },
    {
     "s": 3,
-    "queued": 907,
+    "queued": 908,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 4,
-    "queued": 907,
+    "queued": 908,
     "ordersWaiting": 0,
-    "readsWaiting": 0,
+    "readsWaiting": 2,
     "loopP99": 11
    },
    {
     "s": 5,
-    "queued": 907,
+    "queued": 908,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 6,
-    "queued": 893,
+    "queued": 905,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 7,
-    "queued": 807,
+    "queued": 808,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 8,
-    "queued": 807,
+    "queued": 808,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 9,
-    "queued": 807,
+    "queued": 808,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 10,
-    "queued": 807,
+    "queued": 808,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 11,
-    "queued": 807,
+    "queued": 808,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 12,
-    "queued": 707,
+    "queued": 718,
     "ordersWaiting": 0,
-    "readsWaiting": 25,
+    "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 13,
-    "queued": 707,
+    "queued": 708,
     "ordersWaiting": 0,
-    "readsWaiting": 1,
+    "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 14,
-    "queued": 707,
+    "queued": 708,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 15,
-    "queued": 707,
+    "queued": 708,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 16,
-    "queued": 707,
+    "queued": 708,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 17,
-    "queued": 703,
+    "queued": 708,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 18,
-    "queued": 607,
+    "queued": 608,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
    },
    {
     "s": 19,
-    "queued": 607,
+    "queued": 608,
     "ordersWaiting": 0,
     "readsWaiting": 0,
     "loopP99": 11
@@ -221,8 +224,8 @@
   ],
   "peaks": {
    "ordersPoolWaiting": 0,
-   "readsPoolWaiting": 25,
-   "eventLoopP99Ms": 12.034047,
+   "readsPoolWaiting": 2,
+   "eventLoopP99Ms": 13.123583,
    "connections": 11
   },
   "sweeperCadenceSeconds": 5,
@@ -234,7 +237,7 @@
   },
   "step": {
    "exit": 0,
-   "tail": "\norders_step   [  93% ] 0001/0200 VUs  0m56.6s/1m1s  50.00 iters/s\nscreens       [  94% ] 002/084 VUs    0m56.6s/1m0s  333.00 iters/s\n\nrunning (1m02.6s), 0004/0304 VUs, 23010 complete and 0 interrupted iterations\nboard         [  96% ] 000/020 VUs    0m57.6s/1m0s  17.00 iters/s\norders_step   [  94% ] 0001/0200 VUs  0m57.6s/1m1s  50.00 iters/s\nscreens       [  96% ] 003/084 VUs    0m57.6s/1m0s  333.00 iters/s\n\nrunning (1m03.6s), 0002/0304 VUs, 23412 complete and 0 interrupted iterations\nboard         [  98% ] 000/020 VUs    0m58.6s/1m0s  17.00 iters/s\norders_step   [  96% ] 0000/0200 VUs  0m58.6s/1m1s  50.00 iters/s\nscreens       [  98% ] 002/084 VUs    0m58.6s/1m0s  333.00 iters/s\n\nrunning (1m04.6s), 0003/0304 VUs, 23811 complete and 0 interrupted iterations\nboard         [  99% ] 000/020 VUs    0m59.6s/1m0s  17.00 iters/s\norders_step   [  98% ] 0001/0200 VUs  0m59.6s/1m1s  50.00 iters/s\nscreens       [  99% ] 002/084 VUs    0m59.6s/1m0s  333.00 iters/s\n\nrunning (1m05.6s), 0001/0304 VUs, 24004 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s          17.00 iters/s\norders_step   [  99% ] 0001/0200 VUs  1m00.6s/1m1s  50.00 iters/s\nscreens     ✓ [ 100% ] 000/084 VUs    1m0s          333.00 iters/s\n\nrunning (1m06.0s), 0000/0304 VUs, 24025 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ✓ [ 100% ] 0000/0200 VUs  1m1s  50.00 iters/s\nscreens     ✓ [ 100% ] 000/084 VUs    1m0s  333.00 iters/s\n"
+   "tail": "\norders_step   [  93% ] 0001/0200 VUs  0m56.6s/1m1s  50.00 iters/s\nscreens       [  94% ] 002/084 VUs    0m56.6s/1m0s  333.00 iters/s\n\nrunning (1m02.6s), 0002/0304 VUs, 23023 complete and 0 interrupted iterations\nboard         [  96% ] 000/020 VUs    0m57.6s/1m0s  17.00 iters/s\norders_step   [  94% ] 0001/0200 VUs  0m57.6s/1m1s  50.00 iters/s\nscreens       [  96% ] 001/084 VUs    0m57.6s/1m0s  333.00 iters/s\n\nrunning (1m03.6s), 0002/0304 VUs, 23422 complete and 0 interrupted iterations\nboard         [  98% ] 000/020 VUs    0m58.6s/1m0s  17.00 iters/s\norders_step   [  96% ] 0000/0200 VUs  0m58.6s/1m1s  50.00 iters/s\nscreens       [  98% ] 002/084 VUs    0m58.6s/1m0s  333.00 iters/s\n\nrunning (1m04.6s), 0002/0304 VUs, 23823 complete and 0 interrupted iterations\nboard         [  99% ] 000/020 VUs    0m59.6s/1m0s  17.00 iters/s\norders_step   [  98% ] 0001/0200 VUs  0m59.6s/1m1s  50.00 iters/s\nscreens       [  99% ] 001/084 VUs    0m59.6s/1m0s  333.00 iters/s\n\nrunning (1m05.6s), 0001/0304 VUs, 24006 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s          17.00 iters/s\norders_step   [  99% ] 0001/0200 VUs  1m00.6s/1m1s  50.00 iters/s\nscreens     ✓ [ 100% ] 000/084 VUs    1m0s          333.00 iters/s\n\nrunning (1m06.0s), 0000/0304 VUs, 24026 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ✓ [ 100% ] 0000/0200 VUs  1m1s  50.00 iters/s\nscreens     ✓ [ 100% ] 000/084 VUs    1m0s  333.00 iters/s\n"
   }
  },
  "timelineSeconds": 78

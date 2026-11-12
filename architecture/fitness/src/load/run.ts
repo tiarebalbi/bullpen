@@ -5,7 +5,7 @@
  *   TEST_DATABASE_URL=<admin url of a LOCAL throwaway cluster> K6=<k6 binary> tsx src/load/run.ts <case> [--db-cpu 0.25] [--screens 1000] [--variant old|fallback]
  *     [--connections 1000] [--refresh on|off] [--label name] [--cluster 16/load]
  *
- * Cases: step, polling, sse, leaderboard, stress. Each builds its own database (stack.ts), starts the stand-in Trading App (server.ts) and, for the
+ * Cases: step, polling, sse, leaderboard, stress. Each builds its own database (stack.ts), starts the stand-in Trading App (apps/web/scripts/load-server.ts) and, for the
  * step, the real sweeper (apps/sweeper) pointed at it. Local only; there is no option to point it anywhere else, and the database URL must be this machine's.
  */
 import { execSync, spawn, type ChildProcess } from "node:child_process";
@@ -14,6 +14,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { reserveProviderCall } from "@bullpen/db-market-data";
 import { assertLocal, buildStack, type Stack } from "./stack.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -43,6 +44,29 @@ const stackFile = join(scratch, `stack-${label}.json`);
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const get = async (path: string, init?: RequestInit): Promise<any> => (await fetch(`${BASE}${path}`, init)).json();
 const control = (body: unknown): Promise<any> => get("/__control", { method: "POST", body: JSON.stringify(body) });
+
+/** The market-data side of a run: the quotes and the provider budget. The stand-in Trading App cannot reach them (it may not depend on market-data), so the run does. */
+let marketPool: pg.Pool | undefined;
+const market = (stack: Stack): pg.Pool => {
+  if (!marketPool) {
+    marketPool = new pg.Pool({ connectionString: stack.urls.marketDataOwner, max: 2 });
+    marketPool.on("error", () => undefined);
+  }
+  return marketPool;
+};
+const providerCalls = async (stack: Stack): Promise<{ calls: number; refused: number }> => {
+  const { rows } = await market(stack).query<{ calls: string; refused: string }>("SELECT COALESCE(sum(calls), 0)::text AS calls, COALESCE(sum(refused), 0)::text AS refused FROM market_data.provider_calls");
+  return { calls: Number(rows[0]!.calls), refused: Number(rows[0]!.refused) };
+};
+const setQuotes = (stack: Stack, state: "stale" | "fresh"): Promise<unknown> =>
+  market(stack).query(state === "stale" ? "UPDATE market_data.quotes SET valid_until = now() - interval '1 second' WHERE source = 'load'" : "UPDATE market_data.quotes SET valid_until = now() + interval '48 hours' WHERE source = 'load'");
+/** The provider budget is spent: every further reservation is refused before a call could leave. Players never make these calls; this is the market-data service's own gate. */
+async function exhaustQuota(stack: Stack): Promise<{ granted: number; refused: number }> {
+  const window = `load-${Date.now()}`;
+  const results: boolean[] = [];
+  for (let i = 0; i < 20; i += 1) results.push((await reserveProviderCall(market(stack), "alphavantage", window, 5)).granted);
+  return { granted: results.filter(Boolean).length, refused: results.filter((g) => !g).length };
+}
 
 const children: ChildProcess[] = [];
 const spawnLogged = (cmd: string, args: string[], env: Record<string, string>, cwd = fitnessRoot): ChildProcess => {
@@ -84,8 +108,10 @@ async function waitFor(check: () => Promise<boolean>, what: string, ms = 60_000)
 interface Sample { t: number; stats: any }
 const timeline: Sample[] = [];
 let sampler: NodeJS.Timeout | undefined;
+let samplerStack: Stack | undefined;
+const stackOf = (): Stack => samplerStack!;
 const startSampler = (): void => {
-  sampler = setInterval(() => void get("/__stats").then((stats) => timeline.push({ t: Date.now(), stats })).catch(() => undefined), 1000);
+  sampler = setInterval(() => void get("/__stats").then(async (stats) => { if (samplerStack) stats.providerCalls = await providerCalls(samplerStack).catch(() => null); timeline.push({ t: Date.now(), stats }); }).catch(() => undefined), 1000);
 };
 
 interface K6Result { exit: number; summary: any; out: string }
@@ -142,15 +168,17 @@ async function main(): Promise<void> {
   mkdirSync(join(repoRoot, "post-facts", "part-05-runs"), { recursive: true });
   // A server or sweeper left behind by an earlier, interrupted run would hold the port.
   // (The bracket keeps pkill from matching the shell that runs it.)
-  execSync("pkill -f '[s]rc/load/server.ts' || true; pkill -f '[a]pps/sweeper/src/main.ts' || true; pkill -f '[s]rc/load/throttle.ts' || true; for p in $(pgrep -u postgres); do kill -CONT $p 2>/dev/null; done; true", { stdio: "ignore", shell: "/bin/bash" });
+  execSync("pkill -f '[s]cripts/load-server.ts' || true; pkill -f '[a]pps/sweeper/src/main.ts' || true; pkill -f '[s]rc/load/throttle.ts' || true; for p in $(pgrep -u postgres); do kill -CONT $p 2>/dev/null; done; true", { stdio: "ignore", shell: "/bin/bash" });
   console.log(`building stack for ${label}…`);
   const players = 1000;
   execSync(`pg_ctlcluster 16 load status || pg_ctlcluster 16 load start`, { stdio: "ignore" });
   const history = Number(flag("history", "20"));
-  const stack: Stack = await buildStack(adminUrl, players, 8, history);
+  const gap = rest.includes("--gap");
+  const stack: Stack = await buildStack(adminUrl, players, 8, history, gap ? 100 : 0);
   writeFileSync(stackFile, JSON.stringify(stack));
+  samplerStack = stack;
 
-  const server = spawnLogged("pnpm", ["exec", "tsx", "src/load/server.ts", String(PORT)], { LOAD_STACK: stackFile, POOLS: flag("pools", "separate") });
+  const server = spawnLogged("pnpm", ["exec", "tsx", "scripts/load-server.ts", String(PORT)], { DATABASE_URL_TRADING: stack.urls.tradingOwner, LOAD_DB_URL: stack.urls.tradingOwner, POOLS: flag("pools", "separate") }, join(repoRoot, "apps", "web"));
   await waitFor(async () => (await fetch(`${BASE}/__health`)).ok, "the stand-in app");
   let throttle: ChildProcess | undefined;
   const startThrottle = (): void => {
@@ -159,6 +187,7 @@ async function main(): Promise<void> {
   startThrottle();
 
   const trading = new pg.Pool({ connectionString: stack.urls.tradingOwner, max: 2 });
+  trading.on("error", () => undefined);
   const result: Record<string, unknown> = { case: caseName, label, at: new Date().toISOString(), historyOrdersPerPlayer: history, environment: environment() };
   try {
     if (caseName === "step") await runStep(result, trading);
@@ -172,6 +201,7 @@ async function main(): Promise<void> {
     result.timelineSeconds = timeline.length;
     writeFileSync(join(repoRoot, "post-facts", "part-05-runs", `${label}.json`), JSON.stringify(result, null, 1));
     await trading.end();
+    await marketPool?.end();
     killGroup(server);
     if (throttle) killGroup(throttle);
   }
@@ -181,9 +211,15 @@ async function main(): Promise<void> {
 // ---- the 9:30 step --------------------------------------------------------------------------------------------------------------------------------------------
 async function runStep(result: Record<string, unknown>, trading: pg.Pool): Promise<void> {
   console.log("queueing the backlog while the market is closed…");
-  const queued = await runK6("queue", {}, "queue");
+  const queued = await runK6("queue", rest.includes("--gap") ? { POOR: "1" } : {}, "queue");
   const before = await get("/__stats");
   if (before.queued !== 1000) throw new Error(`expected 1000 queued orders, found ${before.queued}`);
+  if (rest.includes("--gap")) {
+    // A new close lands overnight, 20 % above the old one on the first four symbols: past the 5 % ceiling every queued order on them reserved for.
+    for (let i = 0; i < 4; i += 1) {
+      await market(stackOf()).query("INSERT INTO market_data.quotes (symbol, as_of, price, source, valid_until, kind) VALUES ($1, now() - interval '1 second', $2, 'load', now() + interval '48 hours', 'end-of-day')", [`LD0${i}`, String((50 + i * 10) * 1.2)]);
+    }
+  }
   // The open is scheduled, and the real sweeper is started after that, so its first call learns when the market opens and it sleeps until then, as it does at 9:30 ET.
   const LEAD_MS = 14_000;
   const opensAt = Date.now() + LEAD_MS;
@@ -204,6 +240,9 @@ async function runStep(result: Record<string, unknown>, trading: pg.Pool): Promi
   const perSecondAdmitted = await trading.query<{ s: Date; n: string }>("SELECT date_trunc('second', at) AS s, count(*)::text AS n FROM trading.order_events WHERE kind = 'accepted' AND detail->>'atOpen' = 'true' GROUP BY 1 ORDER BY 1");
   const states = await trading.query<{ status: string; n: string }>("SELECT status, count(*)::text AS n FROM trading.orders GROUP BY 1 ORDER BY 1");
   const inv = await invariantProblems(trading);
+  const gapEvents = await trading.query<{ kind: string; reason: string | null; n: string }>(
+    "SELECT kind, detail->>'reason' AS reason, count(*)::text AS n FROM trading.order_events WHERE (kind = 'topped_up') OR (kind = 'rejected' AND detail->>'atOpen' = 'true') GROUP BY 1, 2 ORDER BY 1, 2",
+  );
   const s = run.summary;
   const dur = Number(s?.state?.testRunDurationMs ?? 60_000) / 1000;
   const tail = timeline.filter((x) => x.t >= openedAt);
@@ -226,6 +265,7 @@ async function runStep(result: Record<string, unknown>, trading: pg.Pool): Promi
     droppedIterations: metric(s, "dropped_iterations")?.count ?? 0,
     thresholds: thresholdsOf(s),
     finalStates: Object.fromEntries(states.rows.map((r) => [r.status, Number(r.n)])),
+    priceGapAtOpen: rest.includes("--gap") ? Object.fromEntries(gapEvents.rows.map((r) => [r.kind === "topped_up" ? "toppedUp" : `rejected:${r.reason}`, Number(r.n)])) : null,
     invariantProblems: inv,
     firstSecondsAfterOpen: tail.slice(0, 20).map((x) => ({ s: Math.round((x.t - openedAt) / 1000), queued: x.stats.queued, ordersWaiting: x.stats.pools?.orders?.waiting, readsWaiting: x.stats.pools?.reads?.waiting, loopP99: Math.round(x.stats.eventLoopP99Ms) })),
     peaks: { ordersPoolWaiting: max(timeline.map((x) => x.stats.pools?.orders?.waiting ?? x.stats.pools?.shared?.waiting ?? 0)), readsPoolWaiting: max(timeline.map((x) => x.stats.pools?.reads?.waiting ?? 0)), eventLoopP99Ms: max(timeline.map((x) => x.stats.eventLoopP99Ms ?? 0)), connections: max(timeline.map((x) => Object.values<number>(x.stats.connectionsByApp ?? {}).reduce((a, b) => a + b, 0))) },
@@ -244,7 +284,7 @@ async function invariantProblems(trading: pg.Pool): Promise<string[]> {
   if (qty.rows[0].n) out.push(`${qty.rows[0].n} orders whose quantities do not add up`);
   const cash = await trading.query(
     `SELECT count(*)::int AS n FROM trading.accounts a WHERE a.buying_power + COALESCE((SELECT sum(reserved - spent - released) FROM trading.reservations x WHERE x.account_id = a.account_id), 0)
-        - COALESCE((SELECT sum(delta) FROM trading.ledger l WHERE l.account_id = a.account_id AND l.asset = 'USD'), 0) <> 1000000 AND a.handle LIKE 'zz-load-%'`,
+        - COALESCE((SELECT sum(delta) FROM trading.ledger l WHERE l.account_id = a.account_id AND l.asset = 'USD'), 0) <> CASE WHEN a.handle LIKE 'zz-load-p-%' THEN split_part(a.handle, '-', 5)::numeric ELSE 1000000 END AND a.handle LIKE 'zz-load-%'`,
   );
   if (cash.rows[0].n) out.push(`${cash.rows[0].n} accounts whose cash does not add up`);
   return out;
@@ -409,12 +449,13 @@ async function runStress(result: Record<string, unknown>, stack: Stack, hooks: {
   });
   k6.stderr.on("data", (d) => (out += d));
   const schedule = (): void => {
-    at("feed-down", 5, "feed down: every stored price goes stale", () => control({ quotes: "stale" }));
-    at("feed-down", 30, "feed restored", () => control({ quotes: "fresh" }));
+    at("feed-down", 5, "feed down: every stored price goes stale", () => setQuotes(stack, "stale"));
+    at("feed-down", 30, "feed restored", () => setQuotes(stack, "fresh"));
     at("quota-exhausted", 5, "provider quota exhausted; no new prices can be fetched", async () => {
-      events.push({ at: Date.now(), what: `quota: ${JSON.stringify((await control({ quota: "exhausted", quotes: "stale" })).quota)}` });
+      await setQuotes(stack, "stale");
+      events.push({ at: Date.now(), what: `quota: ${JSON.stringify(await exhaustQuota(stack))}` });
     });
-    at("quota-exhausted", 30, "quota window renewed, prices fresh", () => control({ quotes: "fresh" }));
+    at("quota-exhausted", 30, "quota window renewed, prices fresh", () => setQuotes(stack, "fresh"));
     at("moderation-down", 5, "moderation provider down", () => control({ moderation: "down" }));
     at("moderation-down", 30, "moderation provider back", () => control({ moderation: "ok" }));
     at("leaderboard-stampede", 5, "leaderboard stampede (k6 adds the extra arrivals)", () => undefined);

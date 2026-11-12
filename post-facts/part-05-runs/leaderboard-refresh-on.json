@@ -1,7 +1,7 @@
 {
  "case": "leaderboard",
  "label": "leaderboard-refresh-on",
- "at": "2026-11-12T21:26:26.263Z",
+ "at": "2026-11-12T22:17:04.422Z",
  "historyOrdersPerPlayer": 20,
  "environment": {
   "cores": 4,
@@ -15,13 +15,13 @@
  "derived": {
   "refresh": "on",
   "windowFrom": 32,
-  "steadyWindowSeconds": 37.116,
-  "dbTransactionsPerSecond": null,
-  "dbTuplesReturnedPerSecond": null,
-  "requestsPerSecond": 946.5862943246881,
+  "steadyWindowSeconds": 35.021,
+  "dbTransactionsPerSecond": 2006.8244767425258,
+  "dbTuplesReturnedPerSecond": 22042.203249478884,
+  "requestsPerSecond": 1499.7223869716152,
   "goodputPerSecond": null,
-  "goodputTotal": 15792,
-  "droppedIterations": 36826,
+  "goodputTotal": 104989,
+  "droppedIterations": 0,
   "latencyMsByKind": {
    "account": {
     "p50": 0,
@@ -32,12 +32,12 @@
     "avg": 0
    },
    "leaderboard": {
-    "p50": 1994.066535,
-    "p90": 2001.86944,
-    "p95": 2006.6543838,
-    "p99": 2012.86143532,
-    "max": 2040.398608,
-    "avg": 1532.1567187525552
+    "p50": 0.981881,
+    "p90": 1.6445158,
+    "p95": 2.347311799999998,
+    "p99": 7.057241919999997,
+    "max": 26.923465,
+    "avg": 1.23631785027956
    },
    "prices": {
     "p50": 0,
@@ -58,23 +58,23 @@
   },
   "errorRateByKind": {
    "account": 0,
-   "leaderboard": 0.18680028758822062,
+   "leaderboard": 0,
    "prices": 0
   },
   "thresholds": {
-   "http_req_duration{kind:sse}: p(95)>=0": true,
-   "http_req_failed{kind:account}: rate<0.01": true,
-   "http_req_duration{kind:leaderboard}: p(95)>=0": true,
-   "http_req_failed{kind:sse}: rate>=0": true,
-   "http_req_failed{kind:leaderboard}: rate>=0": true,
-   "http_req_failed{kind:order}: rate<0.01": true,
-   "http_req_duration{kind:order}: p(95)<1000": true,
-   "http_req_duration{kind:handle}: p(95)>=0": true,
-   "dropped_iterations: count<10": false,
-   "http_req_failed{kind:prices}: rate>=0": true,
    "http_req_duration{kind:prices}: p(95)>=0": true,
+   "http_req_duration{kind:account}: p(95)<1000": true,
+   "dropped_iterations: count<10": true,
+   "http_req_failed{kind:order}: rate<0.01": true,
+   "http_req_duration{kind:leaderboard}: p(95)>=0": true,
    "http_req_failed{kind:handle}: rate>=0": true,
-   "http_req_duration{kind:account}: p(95)<1000": true
+   "http_req_duration{kind:handle}: p(95)>=0": true,
+   "http_req_failed{kind:prices}: rate>=0": true,
+   "http_req_failed{kind:account}: rate<0.01": true,
+   "http_req_duration{kind:order}: p(95)<1000": true,
+   "http_req_failed{kind:sse}: rate>=0": true,
+   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "http_req_failed{kind:leaderboard}: rate>=0": true
   },
   "hub": {
    "reads": 0,
@@ -90,12 +90,12 @@
     "refused": 0
    }
   },
-  "peakFileDescriptors": 2533,
+  "peakFileDescriptors": 331,
   "peaks": {
    "ordersPoolWaiting": 0,
-   "readsPoolWaiting": 2507,
-   "eventLoopP99Ms": 11.730943,
-   "rssMb": 247
+   "readsPoolWaiting": 7,
+   "eventLoopP99Ms": 11.878399,
+   "rssMb": 146
   },
   "connectionsByApp": {
    "(none)": 1,
@@ -103,7 +103,7 @@
   }
  },
  "k6": {
-  "exit": 99
+  "exit": 0
  },
- "timelineSeconds": 75
+ "timelineSeconds": 73
 }
