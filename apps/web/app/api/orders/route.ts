@@ -1,7 +1,8 @@
 import { BuyRefused, advanceAccount, placePlayerOrder, readAccountView } from "@bullpen/db-trading";
 import { validateOrderRequest, type AccountView, type OrderRequest } from "@bullpen/contracts";
 import { apiError, logFailure, noStore, resolvePlayer } from "../../lib/trading/playerAccount.js";
-import { tradingPool } from "../../lib/trading/pool.js";
+import { orderPool } from "../../lib/trading/orders/pool.js";
+import { readPool } from "../../lib/trading/reads/pool.js";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,10 @@ export const dynamic = "force-dynamic";
  * move a healthy order, the sweeper finds what they did not finish), then reads the account as it stands.
  */
 export async function GET(): Promise<Response> {
-  const who = await resolvePlayer();
+  const who = await resolvePlayer("read");
   if (!who.ok) return who.response;
   try {
-    const pool = tradingPool();
+    const pool = readPool();
     await advanceAccount(pool, who.accountId);
     const view = await readAccountView(pool, who.accountId);
     if (!view) return apiError(404, { error: "not-found", message: "I cannot find your account." });
@@ -35,7 +36,7 @@ export async function POST(request: Request): Promise<Response> {
   const order = body as OrderRequest;
 
   try {
-    const pool = tradingPool();
+    const pool = orderPool();
     const placed = await placePlayerOrder(pool, who.accountId, order);
     const account = await readAccountView(pool, who.accountId);
     return Response.json({ orderId: placed.orderId, duplicate: placed.duplicate, account }, { status: placed.duplicate ? 200 : 201, headers: noStore });

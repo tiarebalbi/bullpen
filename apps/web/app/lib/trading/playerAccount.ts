@@ -2,7 +2,8 @@ import { ensurePlayerAccount } from "@bullpen/db-trading";
 import type { ApiError } from "@bullpen/contracts";
 import { currentPlayer, type Player } from "../auth/player.js";
 import { signInAvailable } from "../auth/server.js";
-import { tradingPool } from "./pool.js";
+import { orderPool } from "./orders/pool.js";
+import { readPool } from "./reads/pool.js";
 
 export const noStore = { "cache-control": "no-store" };
 
@@ -22,26 +23,29 @@ export function logFailure(at: string, error: unknown): void {
   console.error(JSON.stringify({ at, name: failure.name, ...(typeof code === "string" ? { code } : {}), message: failure.message.slice(0, MAX_LOGGED_MESSAGE) }));
 }
 
+export type PoolKind = "order" | "read";
+
 export type Resolved = { ok: true; accountId: string; player: Player } | { ok: false; response: Response };
 
 export interface ResolveDeps {
   signInAvailable(): boolean;
   currentPlayer(): Promise<Player | null>;
-  ensureAccount(userId: string): Promise<{ accountId: string }>;
+  /** `kind` says which pool: an order placement or cancel uses the order pool, a poll the read pool (ADR-0030). */
+  ensureAccount(userId: string, kind: PoolKind): Promise<{ accountId: string }>;
 }
 
-const live: ResolveDeps = { signInAvailable, currentPlayer: () => currentPlayer(), ensureAccount: (userId) => ensurePlayerAccount(tradingPool(), userId) };
+const live: ResolveDeps = { signInAvailable, currentPlayer: () => currentPlayer(), ensureAccount: (userId, kind) => ensurePlayerAccount(kind === "read" ? readPool() : orderPool(), userId) };
 
 /**
  * Who is asking, and which account is theirs. A visitor who is not signed in gets a 401 that says to sign in; where sign-in is not available (a
  * preview, or unconfigured) the 503 says that instead, so the ticket can explain rather than show a form that cannot work.
  */
-export async function resolvePlayer(deps: ResolveDeps = live): Promise<Resolved> {
+export async function resolvePlayer(kind: PoolKind = "order", deps: ResolveDeps = live): Promise<Resolved> {
   if (!deps.signInAvailable()) return { ok: false, response: apiError(503, { error: "sign-in-unavailable", message: "Sign-in is not available here, so orders cannot be placed." }) };
   const player = await deps.currentPlayer();
   if (!player) return { ok: false, response: apiError(401, { error: "sign-in-required", message: "Sign in with GitHub to place an order." }) };
   try {
-    return { ok: true, accountId: (await deps.ensureAccount(player.userId)).accountId, player };
+    return { ok: true, accountId: (await deps.ensureAccount(player.userId, kind)).accountId, player };
   } catch (error) {
     logFailure("resolvePlayer", error);
     return { ok: false, response: apiError(503, { error: "unavailable", message: "I cannot reach the account right now. Try again in a moment." }) };

@@ -1,0 +1,1 @@
+export const readPool = () => "reads";

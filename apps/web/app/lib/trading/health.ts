@@ -1,5 +1,5 @@
 import { OWNER_ROLE, checkSchema } from "@bullpen/db-trading";
-import { tradingPool } from "./pool.js";
+import { readPool } from "./reads/pool.js";
 
 /** The sweep secret is random and long; a short one is a typed word, not a generated value. */
 const MIN_SWEEP_SECRET = 16;
@@ -39,7 +39,7 @@ const reason = (error: unknown): string => {
  * Whether the trading database answers and has every table and column the app uses. A failure says which object is missing, or the error's
  * code (never its message, which can carry a host name). Reaching a database that is not configured is not tried.
  */
-export async function tradingDatabaseIssues(pool: () => Parameters<typeof checkSchema>[0] = tradingPool): Promise<string[]> {
+export async function tradingDatabaseIssues(pool: () => Parameters<typeof checkSchema>[0] = readPool): Promise<string[]> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("timeout")), DATABASE_TIMEOUT_MS); });

@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("../../lib/auth/server.js", () => ({ signInAvailable: mocks.signInAvailable }));
 vi.mock("../../lib/auth/player.js", () => ({ currentPlayer: mocks.currentPlayer }));
-vi.mock("../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("../../lib/trading/orders/pool.js", () => ({ orderPool: () => ({ pool: "order" }) }));
+vi.mock("../../lib/trading/reads/pool.js", () => ({ readPool: () => ({ pool: "read" }) }));
 vi.mock("@bullpen/db-trading", async (importOriginal) => ({ ...(await importOriginal<typeof import("@bullpen/db-trading")>()), ensurePlayerAccount: mocks.ensurePlayerAccount, advanceAccount: mocks.advanceAccount, placePlayerOrder: mocks.placePlayerOrder, readAccountView: mocks.readAccountView, cancelPlayerOrder: mocks.cancelPlayerOrder }));
 
 const { GET, POST } = await import("./route.js");
@@ -90,7 +91,7 @@ describe("POST /api/orders", () => {
   it("places a market buy for the player's own account with the client's key, and answers 201 with the account", async () => {
     const response = await post({ symbol: "AAPL", quantity: "10", clientOrderId: KEY });
     expect(response.status).toBe(201);
-    expect(mocks.placePlayerOrder).toHaveBeenCalledWith({}, "acc-1", { symbol: "AAPL", quantity: "10", clientOrderId: KEY });
+    expect(mocks.placePlayerOrder).toHaveBeenCalledWith({ pool: "order" }, "acc-1", { symbol: "AAPL", quantity: "10", clientOrderId: KEY });
     const body = await response.json();
     expect(body).toMatchObject({ orderId: KEY, duplicate: false });
     expect(validateAccountView(body.account).valid).toBe(true);
@@ -153,7 +154,7 @@ describe("POST /api/orders/[id]/cancel", () => {
     const response = await cancel(KEY);
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ outcome: "requested" });
-    expect(mocks.cancelPlayerOrder).toHaveBeenCalledWith({}, "acc-1", KEY);
+    expect(mocks.cancelPlayerOrder).toHaveBeenCalledWith({ pool: "order" }, "acc-1", KEY);
   });
 
   it("answers 404 for an order that is not the player's and for an id that is not a uuid, in the same words", async () => {
@@ -169,5 +170,25 @@ describe("POST /api/orders/[id]/cancel", () => {
       mocks.cancelPlayerOrder.mockResolvedValue(outcome);
       expect(await (await cancel(KEY)).json()).toEqual({ outcome });
     }
+  });
+});
+
+describe("which pool each route uses (ADR-0030)", () => {
+  it("the account poll reads on the read pool, so a stampede of polls cannot take the order pool's connections", async () => {
+    await GET();
+    expect(mocks.advanceAccount.mock.calls[0]![0]).toEqual({ pool: "read" });
+    expect(mocks.readAccountView.mock.calls[0]![0]).toEqual({ pool: "read" });
+    expect(mocks.ensurePlayerAccount.mock.calls[0]![0]).toEqual({ pool: "read" });
+  });
+
+  it("placing an order uses the order pool for the account, the order and the view it answers with", async () => {
+    await post({ symbol: "AAPL", quantity: "1", clientOrderId: KEY });
+    expect(mocks.ensurePlayerAccount.mock.calls[0]![0]).toEqual({ pool: "order" });
+    expect(mocks.placePlayerOrder.mock.calls[0]![0]).toEqual({ pool: "order" });
+  });
+
+  it("cancelling uses the order pool", async () => {
+    await cancel(KEY);
+    expect(mocks.cancelPlayerOrder.mock.calls[0]![0]).toEqual({ pool: "order" });
   });
 });

@@ -7,7 +7,7 @@ const findAccount = vi.fn();
 const readOwn = vi.fn();
 vi.mock("@bullpen/db-trading", () => ({ serveLeaderboard: (...args: unknown[]) => serve(...args), findPlayerAccount: (...args: unknown[]) => findAccount(...args) }));
 vi.mock("@bullpen/db-handles", () => ({ readOwnHandle: (...args: unknown[]) => readOwn(...args) }));
-vi.mock("../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("../../lib/trading/reads/pool.js", () => ({ readPool: () => ({}) }));
 vi.mock("../../lib/handles/pool.js", () => ({ handlesPool: () => ({}) }));
 vi.mock("../../lib/auth/server.js", () => ({ signInAvailable: () => signedIn() }));
 vi.mock("../../lib/auth/player.js", () => ({ currentPlayer: () => player() }));

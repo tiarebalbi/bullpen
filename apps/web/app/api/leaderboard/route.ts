@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { serveLeaderboard } from "@bullpen/db-trading";
 import type { LeaderboardSnapshot } from "@bullpen/contracts";
 import { readViewer } from "../../lib/handles/viewer.js";
-import { tradingPool } from "../../lib/trading/pool.js";
+import { readPool } from "../../lib/trading/reads/pool.js";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const named = account !== null && UUID.test(account) ? account : undefined;
     // The signed-in caller, from their session and not from the request: their own row is added when it is not in the top, and the page marks it.
     const viewer = await readViewer();
-    const read = await serveLeaderboard(tradingPool(), { schedule: (work) => after(work), read: { accountId: viewer?.accountId ?? named } });
+    const read = await serveLeaderboard(readPool(), { schedule: (work) => after(work), read: { accountId: viewer?.accountId ?? named } });
     const body: LeaderboardSnapshot = {
       rows: read.rows,
       total: read.total,
