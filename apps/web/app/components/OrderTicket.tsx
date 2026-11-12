@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
-import type { AccountView, ApiError } from "@bullpen/contracts";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type RefObject } from "react";
+import { isMarketOpen, queuedLabel, type AccountView, type ApiError } from "@bullpen/contracts";
 import { BTC_SYMBOL } from "./Watchlist.js";
 import { buyLabel, estimate, formatMoney, newAttemptKey, parseQuantity, stepQuantity } from "../lib/trading/orderView.js";
 import { FOCUS_TICKET_EVENT } from "../lib/trading/shortcuts.js";
@@ -18,6 +18,20 @@ export interface OrderTicketProps {
   /** An account a request already returned, so the screen shows the order at once. */
   onAccount: (account: AccountView) => void;
   refresh: () => void;
+  /** The time the ticket reads the market's hours at. Absent, the ticket reads the browser's clock once mounted (a test passes a fixed one). */
+  now?: Date;
+}
+
+const everyThirtySeconds = (notify: () => void): (() => void) => {
+  const timer = setInterval(notify, 30_000);
+  return () => clearInterval(timer);
+};
+const thisMinute = (): number => Math.floor(Date.now() / 60_000);
+
+/** The browser's time, to the minute, read from the outside world so the server's markup and the first client render agree (the server's snapshot is "unknown"). A fixed `now` is used as given. */
+function useClock(fixed?: Date): Date | null {
+  const minute = useSyncExternalStore(everyThirtySeconds, thisMinute, () => null);
+  return fixed ?? (minute === null ? null : new Date(minute * 60_000));
 }
 
 /**
@@ -55,7 +69,7 @@ export function OrderTicket(props: OrderTicketProps): ReactNode {
   return <TicketForm {...props} view={account.account} />;
 }
 
-function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { view: AccountView }): ReactNode {
+function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & { view: AccountView }): ReactNode {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
@@ -71,6 +85,9 @@ function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { vie
   }, []);
 
   const orderable = symbol !== BTC_SYMBOL && price !== null;
+  // Every orderable symbol is a stock, and a stock order placed while the market is closed waits for the open (ADR-0028).
+  const clock = useClock(now);
+  const queuedFor = orderable && clock !== null && !isMarketOpen(clock) ? queuedLabel(clock) : null;
   const parsed = parseQuantity(text);
   const sums = parsed.ok && price !== null ? estimate(parsed.quantity, price) : null;
   const short = sums !== null && sums.reserve > Number(view.buyingPower);
@@ -96,7 +113,11 @@ function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { vie
     } else if (outcome.kind === "refused") {
       key.current = null; // refused: not the same attempt on a retry
     }
-    setMessage(outcome.kind === "placed" ? { tone: "ok", text: "Order accepted. It appears under Orders and moves as the venue answers." } : { tone: "error", text: outcome.message });
+    setMessage(
+      outcome.kind === "placed"
+        ? { tone: "ok", text: queuedFor ? `Order accepted. ${queuedFor}. It is held with its reserve, and you can cancel it until then.` : "Order accepted. It appears under Orders and moves as the venue answers." }
+        : { tone: "error", text: outcome.message },
+    );
     setBusy(false);
   }
 
@@ -115,6 +136,11 @@ function TicketForm({ symbol, price, view, onAccount }: OrderTicketProps & { vie
           {busy ? "Placing…" : buyLabel(symbol, parsed.ok ? parsed.quantity : null, sums ? sums.cost : null)}
         </button>
       </fieldset>
+      {queuedFor ? (
+        <p className="bp-ticket__why" role="status" data-testid="ticket-queued">
+          {queuedFor}. The market is closed, so a buy is held with its reserve and sent to the venue after the open.
+        </p>
+      ) : null}
       {why ? <p className="bp-ticket__why" role="status">{why}</p> : null}
       {message ? (
         <p className="bp-ticket__why" role={message.tone === "error" ? "alert" : "status"} data-tone={message.tone}>

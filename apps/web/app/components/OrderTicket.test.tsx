@@ -14,7 +14,11 @@ const view = (orders: OrderView[] = [], over: Partial<AccountView> = {}): Accoun
   label: "Player 4F2A", buyingPower: "5000.00000000", reserved: "0.00000000", cash: "5000.00000000", positionsValue: "0.00000000", equity: "5000.00000000", positions: [], orders, latestOrder: null, fills: [], asOf: "2026-10-20T10:00:00.000Z", ...over,
 });
 const ok = (account: AccountView): AccountState => ({ status: "ok", account });
-const props = (account: AccountState, over = {}) => ({ symbol: "AAPL", price: "100.00000000", account, signIn: vi.fn(async () => undefined), onAccount: vi.fn(), refresh: vi.fn(), ...over });
+/** Thursday 2026-11-12, 11:00 ET: the market is open. Every ticket test reads the hours at a fixed instant, never at the clock of the machine running it. */
+const OPEN_NOW = new Date("2026-11-12T16:00:00Z");
+/** Saturday 2026-11-14, 10:00 ET: closed until Monday 9:30 ET. */
+const CLOSED_NOW = new Date("2026-11-14T15:00:00Z");
+const props = (account: AccountState, over = {}) => ({ symbol: "AAPL", price: "100.00000000", account, signIn: vi.fn(async () => undefined), onAccount: vi.fn(), refresh: vi.fn(), now: OPEN_NOW, ...over });
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -134,5 +138,41 @@ describe("the portfolio and the orders", () => {
     render(<AccountPanels account={ok(account)} refresh={() => undefined} />);
     expect(screen.getByText("$1,000.00")).toBeInTheDocument();
     expect(screen.getByText("No price")).toBeInTheDocument();
+  });
+});
+
+describe("the ticket while the market is closed (ADR-0028)", () => {
+  it("says the order will be queued for the open, and when", () => {
+    render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW })} />);
+    expect(screen.getByTestId("ticket-queued")).toHaveTextContent("Queued for the open (Mon 9:30 ET)");
+  });
+
+  it("says nothing of a queue while the market is open", () => {
+    render(<OrderTicket {...props(ok(view()))} />);
+    expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+  });
+
+  it("says nothing of a queue for a symbol that cannot be ordered", () => {
+    render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW, price: null })} />);
+    expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+  });
+
+  it("after a buy, says it is queued with its reserve and can be cancelled until the open", async () => {
+    const account = view([order("queued_for_open")]);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ orderId: "o-queued_for_open", duplicate: false, account }), { status: 201 })));
+    render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW })} />);
+    fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Buy 10 AAPL/ }));
+    await waitFor(() => expect(screen.getByText(/Order accepted\. Queued for the open \(Mon 9:30 ET\)/)).toBeInTheDocument());
+    expect(screen.getByText(/cancel it until then/)).toBeInTheDocument();
+  });
+});
+
+describe("a queued order's row", () => {
+  it("shows when it will be released and offers Cancel", () => {
+    const queued = order("queued_for_open", { createdAt: "2026-11-14T15:00:00.000Z" });
+    render(<AccountPanels account={ok(view([queued]))} refresh={() => undefined} />);
+    expect(screen.getByText(/Queued for the open \(Mon 9:30 ET\)/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancel/ })).toBeEnabled();
   });
 });

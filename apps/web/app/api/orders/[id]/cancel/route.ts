@@ -8,7 +8,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Asks to cancel one of the player's own orders. A request is not a cancel: the order stays open for fills until the venue confirms
- * it (ADR-0017), so the answer says "requested", not "cancelled". Someone else's order is "not found", the same as one that does not exist.
+ * it (ADR-0017), so the answer says "requested", not "cancelled". An order queued for the open never reached the venue, so it is cancelled at once, its
+ * whole reservation returned, and the answer says "cancelled" (ADR-0028). Someone else's order is "not found", the same as one that does not exist.
  */
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }): Promise<Response> {
   const who = await resolvePlayer();
@@ -18,7 +19,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   try {
     const outcome = await cancelPlayerOrder(tradingPool(), who.accountId, id);
     if (outcome === "not-found") return apiError(404, { error: "not-found", message: "I cannot find that order." });
-    return Response.json({ outcome }, { status: 202, headers: noStore });
+    return Response.json({ outcome }, { status: outcome === "cancelled" ? 200 : 202, headers: noStore });
   } catch (error) {
     logFailure("orders.cancel", error);
     return apiError(503, { error: "unavailable", message: "I could not ask for that cancel. Try again in a moment." });
