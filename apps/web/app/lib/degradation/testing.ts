@@ -13,3 +13,6 @@ export function setSwitches(value: string | undefined): () => void {
     else process.env[VARIABLE] = before;
   };
 }
+
+/** What is switched off right now, as the list the environment holds, for a harness to print. */
+export const currentSwitches = (): string => process.env[VARIABLE] ?? "";
