@@ -8,6 +8,8 @@ export interface LinkState {
   status: LinkStatus;
   /** How the snapshot arrived: the event stream, or the polling fallback. */
   via: "stream" | "polling" | "none";
+  /** When the last frame, tick or poll answer arrived (ms since the epoch), or null before the first: the indicator says how fresh the feed is from it. */
+  lastFrameAt: number | null;
   /** Set when the polling fallback's last attempt failed and there is nothing to show: the HTTP status it got (503 for a database that is down), or null for no answer at all. */
   failed: { httpStatus: number | null } | null;
 }
@@ -56,7 +58,7 @@ export const backoffMs = (failures: number, random: () => number): number => Mat
  * React; the hook below wraps it, and a test drives it with a fake stream and a fake clock.
  */
 export class PriceLink {
-  private state: LinkState = { snapshot: null, status: "reconnecting", via: "none", failed: null };
+  private state: LinkState = { snapshot: null, status: "reconnecting", via: "none", lastFrameAt: null, failed: null };
   private source: StreamLike | null = null;
   private lastEventId: string | undefined;
   private lastFrameAt: number | null = null;
@@ -100,7 +102,7 @@ export class PriceLink {
     else if (this.polling) status = age > POLL_MS * 3 ? "stale" : "live";
     else if (!this.connected) status = "reconnecting";
     else status = age > STALE_AFTER_MS ? "stale" : "live";
-    this.state = { ...this.state, status, via: this.polling ? "polling" : this.state.snapshot ? "stream" : "none" };
+    this.state = { ...this.state, status, via: this.polling ? "polling" : this.state.snapshot ? "stream" : "none", lastFrameAt: this.lastFrameAt };
     this.onChange(this.state);
   }
 

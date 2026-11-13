@@ -18,6 +18,13 @@ async function interceptAnalytics(page: Page): Promise<string[]> {
     hits.push(route.request().url());
     return route.fulfill({ status: 200, contentType: "application/javascript", body: "" });
   });
+  // These specs wait for the network to go idle. A live price stream is, by design, a request that never ends, and what they check (no request to an analytics tool
+  // before consent) has nothing to do with how prices arrive. So the page runs as in a browser without event streams, which polls from the start.
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "EventSource", { value: undefined, configurable: true });
+  });
+  // The prices come from the database, which this server does not have; answer at once instead of letting the request wait on a connection that cannot be made.
+  await page.route("**/api/stock-prices", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ rows: [] }) }));
   await page.route("**/api/price/BTC-USD", (route) =>
     route.fulfill({
       status: 200,

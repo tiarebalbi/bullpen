@@ -53,6 +53,8 @@ function makeServer(options: { fillOnNextPoll?: boolean } = {}) {
 }
 
 async function mock(page: Page, state: ReturnType<typeof makeServer>): Promise<void> {
+  // The ticket words a stock order by whether the market is open (Queue buy for the open, when it is not): pin the browser's clock to Thursday 11:00 ET so this spec means the same at any hour.
+  await page.clock.setFixedTime(new Date("2026-11-12T16:00:00Z"));
   const { server, account } = state;
   await page.route("**/api/leaderboard", (r) => r.fulfill(json({ rows: [{ accountId: "a", handle: "Player 4F2A", cash: "100000", positionsValue: "0", equity: "100000", rank: 1 }], total: 1, asOf: new Date().toISOString(), ageMs: 0, stale: false, lastFailure: null })));
   await page.route("**/api/stock-prices", (r) => r.fulfill(json({ rows: [{ symbol: "AAPL", price: "190.12000000", asOf: "2026-10-16T20:00:00.000Z", stale: false, previousClose: { price: "187.00000000", asOf: "2026-10-15T20:00:00.000Z" } }, { symbol: "MSFT", price: "410.50000000", asOf: "2026-10-16T20:00:00.000Z", stale: false, previousClose: null }] })));

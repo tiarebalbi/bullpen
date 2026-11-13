@@ -22,7 +22,7 @@ const browserDeps = (): LinkDeps => ({
 });
 
 /** What a screen draws before the first frame: nothing, and reconnecting. */
-const NONE: LinkState = { snapshot: null, status: "reconnecting", via: "none", failed: null };
+const NONE: LinkState = { snapshot: null, status: "reconnecting", via: "none", lastFrameAt: null, failed: null };
 
 /**
  * The stock prices, live. They arrive by the event stream, with polling as the fallback (priceLink.ts). The first value is `Polled`-shaped, so the existing watchlist
