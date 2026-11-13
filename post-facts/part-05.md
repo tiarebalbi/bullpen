@@ -5,12 +5,12 @@ prints the tables below from them. The predictions I committed before any run ar
 
 ## Read this first: what these numbers are, and are not
 
-- **Every load number here comes from one machine.** k6, the stand-in Trading App, the real sweeper and Postgres 16 all ran on a 4-core, 16 GB container (`environment` in each run file). The load generator takes
+- **Every load number here comes from one machine.** k6, the stand-in Trading App, the real sweeper and Postgres 18.7 all ran on a 4-core, 16 GB container (`environment` in each run file). The load generator takes
   CPU from the thing it measures. These are **application capacity under simulated constraints** (the brief's words for the local rows), not Vercel's and not Neon's.
 - **The stand-in is not Next.js.** `apps/web/scripts/load-server.ts` has no sign-in; a request names its account in a header. It shares with the deployed app everything below the route handlers: the two pools exactly as
   `lib/trading/orders/pool.ts` and `reads/pool.ts` make them, the lifecycle, the sweep and admission, the price hub and stream, the leaderboard read and the moderation path. Next.js, Neon Auth and Vercel's limits
   (1,000 concurrent executions per 10 s, the 503) are **not** in any number below.
-- **The database is a local Postgres 16 cluster, not Neon, and not Postgres 17.** "db 0.25" means the cluster's processes are stopped and continued on a 20 ms duty cycle so they get a quarter of one core
+- **The database is a local Postgres 18.7 cluster (Neon's major version), not Neon itself.** Every number below is from Postgres 18.7 (`environment.postgres` in each run file). A first pass on Postgres 16 is kept in `post-facts/part-05-runs/pg16/`; section 'Postgres 16 and 18' says how the two compare. CI runs 17 (below). "db 0.25" means the cluster's processes are stopped and continued on a 20 ms duty cycle so they get a quarter of one core
   (`src/load/throttle.ts`). That approximates 0.25 CU's CPU and is harsher than it in one way: a stopped backend that holds a lock holds it for the stopped part of the cycle.
 - **Nothing was run in the cloud.** No Hobby preview run, no Neon branch run (you create that branch; I did not). `architecture/fitness/load/cloud.js` is written and not run. So **no number here is a statement about 1,000
   hosted users**, and none is presented as one.
@@ -40,12 +40,12 @@ prints the tables below from them. The predictions I committed before any run ar
 
 | Prediction (`part-05-predictions.md`) | Measured | Verdict |
 |---|---|---|
-| Market Open Queue not needed | 1,000 queued orders admitted from Postgres in 55.9 s, the sweeper waking 506 ms after the open; no queue service involved | **Right** |
+| Market Open Queue not needed | 1,000 queued orders admitted from Postgres in 56.1 s, the sweeper waking 503 ms after the open; no queue service involved | **Right** |
 | Order Saga workflow not needed | The state machine took one new state; no workflow engine; Part 4's invariants held in every run | **Right** |
-| Drain 1,000 in about 50 s at 100 per 5 s; new-order p95 not worse than 2x | Drain 55.9 s (admissions: 100 in the busy second of each pass); new-order p95 29 ms against 18-19 ms alone (1.5-1.6x) | **Right** |
-| Leaderboard view survives a stampede; the refresh is what hurts | 1,500 req/s, p95 2.3 ms, 0 errors, 0 dropped, with the refresh on and off (item 4). The refresh cost did not show: it runs at most once per 5 minutes, under a lock | **Right; the second half untested** |
-| Pools isolate connections, not CPU: partial isolation | Item 5: with the compute not saturated, orders survive a 4x read overload on separate pools (p95 19 ms to 144 ms) and are starved on a shared one (goodput 3001 to 2). With the compute saturated, both fail together | **Right** |
-| About 900 SSE viewers per instance at 1,024 descriptors | 990 viewers held 1,131 descriptors, so 141 are not viewers; at 1,024 that is **about 880 viewers** | **Right (within 2%)** |
+| Drain 1,000 in about 50 s at 100 per 5 s; new-order p95 not worse than 2x | Drain 56.1 s (admissions: 100 in the busy second of each pass); new-order p95 29 ms against 20-23 ms alone (1.3-1.5x) | **Right** |
+| Leaderboard view survives a stampede; the refresh is what hurts | 1,500 req/s, p95 1.9 ms, 0 errors, 0 dropped, with the refresh on and off (item 4). The refresh cost did not show: it runs at most once per 5 minutes, under a lock | **Right; the second half untested** |
+| Pools isolate connections, not CPU: partial isolation | Item 5: with the compute not saturated, orders survive a 4x read overload on separate pools (p95 20 ms to 155 ms) and are starved on a shared one (goodput 3001 to 2). With the compute saturated, both fail together | **Right** |
+| About 900 SSE viewers per instance at 1,024 descriptors | 990 viewers held 1,130 descriptors, so 140 are not viewers; at 1,024 that is **about 880 viewers** | **Right (within 2%)** |
 | What breaks first: the shared compute's CPU, at 200-300 mixed req/s | **Wrong about the cause, right about the resource.** The database CPU did go first, but at ~400 req/s and because of three sequential scans per account poll (found above), not because the compute is small. After the indexes the knee moved to ~500 req/s on this machine. At a quarter core it is **far lower** than my guess: the 9:30 step fails at 400 req/s (item 3) | **Partly wrong** |
 | A cold database at the open causes the first errors | Cold database: ~3 s of 503s, recovery 2.5 s after the database returned. The first errors in the other runs were pool waits, not a cold start | **Right, and it exposed bug 2** |
 | 1,000 players within the free tiers | Item 2 | see item 2 |
@@ -57,11 +57,11 @@ prints the tables below from them. The predictions I committed before any run ar
 
 **"One deployment can serve 1,000 players within the free tiers": not answered for the hosted deployment.** What the local numbers say: with the account-view indexes, 1,000 queued orders released plus 50 new orders/s plus 1,000
 screens polling every 3 s ran with order p95 29 ms and nothing dropped on a full core (`step-50-db1`). As the build stood before the indexes it did not (8.2 s account polls, 13,958 dropped iterations, `before-step-50`).
-With the database held to a quarter of a core it did not either (order p95 15.2 s, 14,888 dropped, `step-50-db0.25`). The free-tier part (Active CPU 4 h/month, Neon CU-hours, Vercel's concurrency) needs the Hobby run,
+With the database held to a quarter of a core it did not either (order p95 11.8 s, 14,199 dropped, `step-50-db0.25`). The free-tier part (Active CPU 4 h/month, Neon CU-hours, Vercel's concurrency) needs the Hobby run,
 which I did not make. The prediction (yes for a burst, no for a day of constant polling) is neither confirmed nor refuted for the hosted case.
 
-**"A dead market-data feed cannot stop order entry": yes.** Stress run `stress-db1`, feed-down phase: every stored price made stale; 349 account polls and 349 price polls all answered 200 (prices flagged `stale`); 227 order
-attempts on the stale symbol refused with `422 stale-price` (a safe refusal, nothing reserved), and the 122 attempted before the prices went stale were accepted; 0 5xx. Recovery 309 ms after the feed returned. Provider
+**"A dead market-data feed cannot stop order entry": yes.** Stress run `stress-db1`, feed-down phase: every stored price made stale; 341 account polls and 340 price polls all answered 200 (prices flagged `stale`); 223 order
+attempts on the stale symbol refused with `422 stale-price` (a safe refusal, nothing reserved), and the 118 attempted before the prices went stale were accepted; 0 5xx. Recovery 317 ms after the feed returned. Provider
 calls over the whole run: 5 granted, 15 refused by the budget gate, none by a player.
 
 ## 3. The 9:30 step
@@ -72,8 +72,8 @@ sweep reply and sleeps until it; k6 starts its arrivals at the open: 50 new orde
 | | value |
 |---|---|
 | Release batch size and cadence | **100 orders per sweep pass, oldest first; one pass per 5 s while the queue is not empty** (20 a second). The pass admits and dispatches each; 100 were admitted inside one second in every full pass |
-| Time to drain the backlog | **55.9 s** from the open (1,000 of 1,000 admitted); the sweeper woke 506 ms after the open |
-| New-order latency p50 / p95 / p99 | **14 / 29 / 46 ms** (orders alone, in the isolation run: 13 / 18 / 32 ms) |
+| Time to drain the backlog | **56.1 s** from the open (1,000 of 1,000 admitted); the sweeper woke 503 ms after the open |
+| New-order latency p50 / p95 / p99 | **14 / 29 / 53 ms** (orders alone, in the isolation run: 16 / 23 / 32 ms) |
 | Account poll p95 | 11 ms |
 | Goodput | **400 requests/s answered in time (1 s) and not 5xx, over the 60 active seconds, against 400 offered**; 0 dropped iterations, 0 errors |
 | Part 4's invariants after the run | hold (no negative buying power, quantities add up, cash adds up, every finished reservation released) |
@@ -83,12 +83,12 @@ sweep reply and sleeps until it; k6 starts its arrivals at the open: 50 new orde
 
 | Run | Offered | What happened |
 |---|---|---|
-| `before-step-50` (as built, no indexes) | 400/s | Account polls p95 **8.2 s**; reads pool queue 679; 13,958 dropped. **First to break: the account poll**, a sequential scan of orders, fills and reservations per poll |
+| `before-step-50` (as built, no indexes; made on Postgres 16 and not repeated, because it needs the code as it was) | 400/s | Account polls p95 **8.2 s**; reads pool queue 679; 13,958 dropped. **First to break: the account poll**, a sequential scan of orders, fills and reservations per poll |
 | `step-50-db1` (indexes) | 400/s | holds: order p95 29 ms |
-| `step-100-db1` | 450/s | holds: order p95 56 ms, account p95 75 ms; 12 dropped (threshold 10) |
-| `step-150-db1` | 500/s | gives: order p95 **6.3 s**, order pool waiting 36 then 81, 4,638 dropped. The knee is between 450 and 500 req/s **on this machine** |
-| `step-50-db0.25` | 400/s | gives: order p95 15.2 s, drain 148 s, 14,888 dropped. At a quarter core 400 req/s is not served |
-| `step-50-gap-db1` | 400/s | the price-gap case (item 7): holds, same latencies |
+| `step-100-db1` | 450/s | holds: order p95 46 ms, account p95 28 ms; 0 dropped (on Postgres 16 the same run dropped 12 against a threshold of 10, so 450/s is near the edge) |
+| `step-150-db1` | 500/s | gives: order p95 **3.9 s**, 2,076 dropped. The knee is between 450 and 500 req/s **on this machine** |
+| `step-50-db0.25` | 400/s | gives: order p95 11.8 s, drain 142 s, 14,199 dropped. At a quarter core 400 req/s is not served |
+| `step-50-gap-db1` | 400/s | the price-gap case (item 7): holds, order p95 35 ms, 9 dropped (threshold 10) |
 
 The brief says to report what broke first, not to hide it: with the build as it stood, the 1,000-screen step did not hold on a full core. After the index migration it does, with about 10% to spare in req/s on this box.
 
@@ -103,16 +103,16 @@ The brief says to report what broke first, not to hide it: with the build as it 
 | 1,000 | 3.3 | 100 | **0.33** (990 viewers held) |
 
 (The polling figures are the offered rate, screens divided by the interval; the SSE figures are the hub's own read counter over the run: 26 reads in each of the three runs, one per 5 s while any client is connected.
-Whole-screen load, which is mostly the account poll: 782, 1,572 and 3,119 transactions/s at 250, 500 and 1,000 screens, `polling-fallback-*`; account p95 7 ms at 1,000 screens.)
+Whole-screen load, which is mostly the account poll: 794, 1,574 and 3,137 transactions/s at 250, 500 and 1,000 screens, `polling-fallback-*`; account p95 6.7 ms at 1,000 screens.)
 
 - **Provider calls: flat.** 0 before and 0 after every SSE run, at 250, 500 and 990 viewers (`providerCalls` in `sse-*.json`). The code is also checked statically (`noProvider.test.ts`: the stream's source mentions no provider,
   budget or market-data service) and by the database (the trading role cannot write `provider_calls`).
-- **SSE connections per instance:** 240, 510 and 990 held at once on one instance; **1,131 file descriptors at 990 viewers**, RSS 131 MB, event-loop p99 11 ms, 0 dropped iterations, every stream carried prices.
+- **SSE connections per instance:** 240, 510 and 990 held at once on one instance; **1,130 file descriptors at 990 viewers**, RSS 134 MB, event-loop p99 11 ms, 0 dropped iterations, every stream carried prices.
   With Vercel's 1,024 descriptors that is about 880 viewers per instance.
-- **Reconnect behaviour at the cut** (`sse-300s-cut.json`, real lifetime, a real connection): three streams closed themselves after **246.1 s, 252.5 s and 269.9 s**, each with a `bye` event, all before Hobby's 300 s.
+- **Reconnect behaviour at the cut** (`sse-300s-cut.json`, real lifetime, a real connection): three streams closed themselves after **251.3 s, 257.4 s and 269.7 s**, each with a `bye` event, all before Hobby's 300 s.
   A reconnect with `Last-Event-ID` received `tick` events and **no repeated prices**. (A unit test holds the same: `priceHub.test.ts`.)
-- **Leaderboard stampede** (`leaderboard-*.json`): offered up to 2,000 req/s, served ~1,500 req/s on a full core, p50/p95/p99 **1.0 / 2.0-2.3 / 4.1-7.1 ms**, 0 errors, 0 dropped; DB 2,006 transactions/s. The refresh switch made no
-  measurable difference (on: p99 7.1 ms; off: 4.1 ms). At the quarter-core approximation, 600 req/s: p95 19 ms. **The materialized view survives a stampede; I did not need to propose anything else (ADR-0014 stands).**
+- **Leaderboard stampede** (`leaderboard-*.json`): offered up to 2,000 req/s, served ~1,500 req/s on a full core, p50/p95/p99 **1.0 / 1.9 / 4.6-5.7 ms**, 0 errors, 0 dropped; DB about 2,000 transactions/s. The refresh switch made no
+  measurable difference (on: p99 5.7 ms; off: 4.6 ms). At the quarter-core approximation, 600 req/s: p95 24 ms. **The materialized view survives a stampede; I did not need to propose anything else (ADR-0014 stands).**
 
 ## 5. Isolation between reads and orders
 
@@ -121,19 +121,19 @@ Setup: orders at 100/s alone for 30 s, then the same orders with a read stampede
 
 | Compute | Reads/s | Pools | Orders alone p95 | Orders with reads p95 | Orders served (alone, with reads) | Reads |
 |---|---|---|---|---|---|---|
-| full core | 450 | separate | 18 ms | 27 ms | 3001, 3001 | account p95 9.6 ms |
-| full core | 450 | shared | 18 ms | 24 ms | 3001, 3001 | account p95 9.0 ms |
-| full core | **1,800** | **separate** | 19 ms | **144 ms** | **3001, 2998** | account p95 9.7 s; 29,642 dropped |
-| full core | **1,800** | **shared** | 18 ms | **9.1 s** | **3001, 2** | account p95 5.7 s; 21,781 dropped |
-| quarter core, scaled (15 orders/s, 120 reads/s) | 120 | separate | 99 ms | 101 ms | 451, 451 | account p95 38 ms |
-| quarter core, scaled | 120 | shared | 101 ms | 104 ms | 450, 451 | account p95 39 ms |
-| quarter core | 450 | separate | 3.3 s | 6.0 s | 66, 10 | account p95 10.9 s |
-| quarter core | 450 | shared | 2.7 s | 10.7 s | 158, 1 | account p95 7.1 s |
-| quarter core | 1,800 | separate | 3.2 s | 6.1 s | 65, 8 | account p95 10.0 s |
-| quarter core | 1,800 | shared | 2.7 s | 26.9 s | 203, 0 | account p95 19.5 s |
+| full core | 450 | separate | 23 ms | 48 ms | 3001, 3001 | account p95 15 ms |
+| full core | 450 | shared | 20 ms | 27 ms | 3001, 3001 | account p95 9.6 ms |
+| full core | **1,800** | **separate** | 20 ms | **155 ms** | **3001, 3001** | account p95 10.2 s; 31,236 dropped |
+| full core | **1,800** | **shared** | 22 ms | **9.7 s** | **3001, 2** | account p95 6.2 s; 25,015 dropped |
+| quarter core, scaled (15 orders/s, 120 reads/s) | 120 | separate | 106 ms | 111 ms | 450, 451 | account p95 40 ms |
+| quarter core, scaled | 120 | shared | 102 ms | 112 ms | 451, 450 | account p95 40 ms |
+| quarter core | 450 | separate | 3.4 s | 6.0 s | 48, 1 | account p95 10.6 s |
+| quarter core | 450 | shared | 2.9 s | 11.5 s | 79, 0 | account p95 7.5 s |
+| quarter core | 1,800 | separate | 3.5 s | 7.0 s | 75, 3 | account p95 10.2 s |
+| quarter core | 1,800 | shared | 3.1 s | 28.5 s | 102, 0 | account p95 20.2 s |
 
-**Isolation achieved, in numbers:** when the compute has room, separate pools keep the order path alive under a 4x read overload: **goodput 2,998 of 3,001 against 2 of 3,001** on one shared pool, and p95 144 ms
-against 9.1 s. That is the part of the coupling a pool can remove: the connections. **Where the shared compute still couples them:** orders still slowed 7.6x (19 ms to 144 ms) while the reads were being refused, because
+**Isolation achieved, in numbers:** when the compute has room, separate pools keep the order path alive under a 4x read overload: **goodput 3,001 of 3,001 against 2 of 3,001** on one shared pool, and p95 155 ms
+against 9.7 s. That is the part of the coupling a pool can remove: the connections. **Where the shared compute still couples them:** orders still slowed 7.8x (20 ms to 155 ms) while the reads were being refused, because
 reads and orders spend the same CPU. And once the compute is the limit (a quarter core at 450 reads/s, or orders alone at 100/s on a quarter core), **both fail together whichever way the pools are drawn**; the separate and shared
 rows are the same collapse. At a load the quarter core can carry (the scaled rows) the pools make no measurable difference either way. In the quarter-core rows above, orders alone are already past what that compute carries at 100/s, so those rows
 show the collapse, not a clean comparison of the pools. So: pools protect orders from a connection stampede; they do not protect them
@@ -146,15 +146,15 @@ throughout and is what "the player saw" is read from. Full-core run `stress-db1`
 
 | Case | What the player saw | Order entry | Recovery |
 |---|---|---|---|
-| **Stock feed down** (every price stale for 25 s) | prices shown flagged stale; polls 200; orders on a stale symbol: `422 stale-price` (227 of 349), nothing reserved | **survived**: 0 5xx, p95 18 ms | **309 ms** after the feed returned |
-| **Provider quota exhausted** (budget gate: 5 granted, 15 refused; prices stale) | same as above; the market-data service's gate refused 15 calls before any could leave; no player triggered one | **survived**: 0 5xx, p95 18 ms | **321 ms** |
-| **Moderation down** (provider hangs to its 2 s timeout) | handle saves took 2 s and ended in review; everything else unchanged | **survived**: p95 22 ms (baseline 21 ms) | **261 ms** |
-| **Leaderboard stampede** (+1,500 req/s) | leaderboard and polls answered, slower: account p95 23 ms | **survived**: order p95 35 ms (baseline 21 ms), 0 errors | none needed |
-| **Cold database** (stopped, restarted 3 s later) | **27 of 312 probes answered 503** ("I could not place that order. Nothing was reserved" / "unavailable"), then normal | the order route refused safely (503, nothing reserved) for ~3 s, then **survived** | **2.5 s** after the database was back |
+| **Stock feed down** (every price stale for 25 s) | prices shown flagged stale; polls 200; orders on a stale symbol: `422 stale-price` (223 of 341), nothing reserved | **survived**: 0 5xx, p95 23 ms | **317 ms** after the feed returned |
+| **Provider quota exhausted** (budget gate: 5 granted, 15 refused; prices stale) | same as above; the market-data service's gate refused 15 calls before any could leave; no player triggered one | **survived**: 0 5xx, p95 26 ms | **359 ms** |
+| **Moderation down** (provider hangs to its 2 s timeout) | handle saves took 2 s and ended in review; everything else unchanged | **survived**: p95 30 ms (baseline 26 ms) | **293 ms** |
+| **Leaderboard stampede** (+1,500 req/s) | leaderboard and polls answered, slower: account p95 45 ms | **survived**: order p95 40 ms (baseline 26 ms), 0 errors | none needed |
+| **Cold database** (stopped, restarted 3 s later) | **27 of 306 probes answered 503** ("I could not place that order. Nothing was reserved" / "unavailable"), then normal | the order route refused safely (503, nothing reserved) for ~3 s, then **survived** | **2.5 s** after the database was back |
 
 Invariants after the run: hold. Dropped iterations 0.
 At the quarter-core approximation (`stress-db0.25`) the system is already saturated at the baseline (account p95 4 s at 300 req/s), so the phases there show degradation stacked on overload; the cold database
-answered 20 of 30 order probes with 503 and recovered 6.7 s after the restart. I do not draw per-case conclusions from that run.
+answered 20 of 28 order probes with 503 and recovered 11.9 s after the restart. I do not draw per-case conclusions from that run.
 **Before the pool-error fix, the cold-database case ended the process (item "found" 2).** That was a failure of the stress case I had set up to pass.
 
 ## 7. Price-gap cases
@@ -164,7 +164,7 @@ an order on the first of them.
 
 | | count |
 |---|---|
-| Topped up from buying power at the open | **495** |
+| Topped up from buying power at the open | **485** |
 | Rejected at the open, `insufficient-buying-power-at-open`, full reservation released | **50** (the 60-dollar players; the 70-dollar ones could pay the 10.50 top-up) |
 | Admitted without change | the rest of the 1,000 |
 | Invariants after the run (Part 4's, plus the leaderboard reconciliation in the integration tests) | **hold**: none negative, quantities add up, cash adds up for every account (the low-cash ones against their own starting cash) |
@@ -174,10 +174,11 @@ a top-up that is the exact buying power is admitted and one cent short is reject
 
 ## 8. The multixact error
 
-**Not reproduced.** `multixact.json`: 150 s, 60 concurrent order lifetimes on 20 contended accounts, each running the steps that raced in CI's failure at once on the same order (two admissions, a fill and its duplicate,
-a second fill, a cancel request, a cancel confirmation, a release): **33,111 lifetimes, 264,888 operations, 0 multixact errors, 0 errors of any kind**, quantities and buying power clean afterwards. A first run, made
-while a stray throttle was running (and so with more interleaving): 13,114 lifetimes, 104,912 operations, also 0.
-What this does not show: the error was seen once on **Postgres 17** (`postgres:17-alpine`, a floating tag); this machine has Postgres 16.15 and I could not install 17. Not reproducing here says nothing about 17.
+**Not reproduced, on Postgres 18.7.** `multixact.json` (`postgres: 18.7 (Ubuntu 18.7-1.pgdg24.04+2)`, the major version Neon runs): 180 s, 60 concurrent order lifetimes on 20 contended accounts, each running the steps that raced in CI's failure at once on the same order (two admissions,
+a fill and its duplicate, a second fill, a cancel request, a cancel confirmation, a release): **37,673 lifetimes, 301,384 operations, 0 multixact errors, 0 errors of any kind**, quantities and buying power clean afterwards.
+An earlier pass on **Postgres 16** (`pg16/multixact.json`, 150 s): 33,111 lifetimes, 264,888 operations, also 0; a still earlier one made while a stray throttle was running (more interleaving): 13,114 lifetimes, 104,912 operations, also 0.
+Two honest notes on versions: the 16 run's file did not record the server version (the query read the wrong column; I fixed it, and the 18 file does), so "16" for that pass comes from what the machine was running, not from the file; and the 16 and 18 runs lasted 150 s and 180 s, so their counts are not directly comparable.
+What this does not show: the error was seen once in CI on **Postgres 17** (`postgres:17-alpine`, a floating tag); I have run 16 and 18 here, not 17. Not reproducing on 18 says nothing about 17.
 The new admission step takes `FOR UPDATE` on the order row; the race above includes it, and it did not provoke the error.
 
 ## 9. Bulkhead: moderation down
@@ -186,9 +187,9 @@ The new admission step takes `FOR UPDATE` on the order row; the race above inclu
 
 | Before (baseline phase) | During (moderation down) | After (recovery phase) |
 |---|---|---|
-| **21 ms** | **22 ms** | 22 ms |
+| **26 ms** | **30 ms** | 21 ms |
 
-k6's own order p95: 20 ms, 20 ms, 20 ms. Account poll p95: 8 ms, 8 ms, 8 ms. The handle saves themselves took their 2 s timeout and ended in review. Held in code by `bulkhead.test.ts` (moderation opens no trading pool, a hung
+k6's own order p95: 27 ms, 27 ms, 21 ms. Account poll p95: 8.0 ms, 8.6 ms, 7.1 ms. The handle saves themselves took their 2 s timeout and ended in review. Held in code by `bulkhead.test.ts` (moderation opens no trading pool, a hung
 provider costs its own request at most 2 s, and with the switch off no request is made at all) and by the rule that trading never imports moderation (ADR-0027).
 
 ## 10. Cost of each cloud run
@@ -227,6 +228,20 @@ The passing fixture (`isolation-imports-ok`) and the shape test are in `isolatio
 **Two things in `check:arch` I want you to look at:** (1) turbo's boundary check treated k6's built-in modules (`import http from "k6/http"`) as missing npm packages; I put turbo's per-import comment `@boundaries-ignore` (with the reason) on those 8 import lines in `architecture/fitness/load/`
 and did not change the check. (2) My first harness imported `apps/web` source from `architecture/fitness`; the same check refused it (ADR-0003), correctly, so the stand-in server now lives in `apps/web/scripts/` and everything
 that touches market-data stays in the run.
+
+## Postgres 16 and 18
+
+The first full pass ran on a local Postgres 16 cluster; Neon production runs Postgres 18 (18.6 in Part 3's reports), so the whole local set was rerun on Postgres 18.7 (`18/load`, same settings, same machine, same code). The 16 files are in `post-facts/part-05-runs/pg16/`. The conclusions did not change:
+
+- **The 9:30 step:** `step-50-db1` order p95 29 ms on both, 0 dropped on both, drain 55.9 s (16) and 56.1 s (18). `step-150-db1` gives on both (order p95 6.3 s on 16, 3.9 s on 18). A quarter core fails on both (14,888 and 14,199 dropped).
+- **Isolation:** separate pools keep orders alive under a 4x read overload on both (2,998 and 3,001 of 3,001 served); a shared pool starves them on both (2 of 3,001); a saturated quarter core fails both ways on both.
+- **SSE and the 300 s cut:** the same read rate (0.33 a second at 990 viewers), 0 provider calls, the same 140 descriptors beyond viewers, every stream closed itself before 300 s.
+- **Stress:** the same outcomes in every case; the cold database answers 503 for about 3 s and recovers 2.5 s after the restart on both.
+- **Where they differ,** the differences are the size of run-to-run variation (`step-100-db1` dropped 12 iterations on 16 and 0 on 18; `step-50-gap-db1` dropped 0 on 16 and 9 on 18, against a threshold of 10). I did not repeat any configuration enough times to give a spread, so I do not read a difference between versions into any of them.
+
+The first pass's `before-*` runs (the build as it stood before the account-view indexes) were made on Postgres 16 and are kept as they are: repeating them means rebuilding the old code.
+
+**CI runs Postgres 17** (`postgres:17-alpine`, `.github/workflows/ci.yml`; locally `scripts/test-db.sh` uses the same image), so `test:db` has not run on the version production runs. A plan to move it is in the PR conversation; nothing is changed yet.
 
 ## Records, and what the publish PR has to do
 

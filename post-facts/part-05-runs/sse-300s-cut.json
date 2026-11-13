@@ -1,29 +1,9 @@
 {
- "at": "2026-11-12T23:00:05.387Z",
+ "at": "2026-11-13T03:39:58.344Z",
  "connections": 3,
  "firstConnections": [
   {
-   "seconds": 252.516,
-   "bye": true,
-   "events": {
-    "prices": 1,
-    "tick": 50,
-    "bye": 1
-   },
-   "endedBy": "closed by the server"
-  },
-  {
-   "seconds": 246.145,
-   "bye": true,
-   "events": {
-    "prices": 1,
-    "tick": 49,
-    "bye": 1
-   },
-   "endedBy": "closed by the server"
-  },
-  {
-   "seconds": 269.915,
+   "seconds": 269.683,
    "bye": true,
    "events": {
     "prices": 1,
@@ -31,11 +11,31 @@
     "bye": 1
    },
    "endedBy": "closed by the server"
+  },
+  {
+   "seconds": 257.449,
+   "bye": true,
+   "events": {
+    "prices": 1,
+    "tick": 51,
+    "bye": 1
+   },
+   "endedBy": "closed by the server"
+  },
+  {
+   "seconds": 251.323,
+   "bye": true,
+   "events": {
+    "prices": 1,
+    "tick": 50,
+    "bye": 1
+   },
+   "endedBy": "closed by the server"
   }
  ],
  "allEndedBeforeHobbyCut": true,
- "longestSeconds": 269.915,
- "shortestSeconds": 246.145,
+ "longestSeconds": 269.683,
+ "shortestSeconds": 251.323,
  "reconnectsWithLastEventId": [
   {
    "seconds": 12.005,
@@ -50,7 +50,7 @@
    }
   },
   {
-   "seconds": 12.004,
+   "seconds": 12.005,
    "firstEventsOnReconnect": {
     "tick": 3
    }

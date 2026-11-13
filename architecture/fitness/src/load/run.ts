@@ -3,7 +3,7 @@
  * Runs one load case locally and writes what it measured to post-facts/part-05-runs/<case>.json.
  *
  *   TEST_DATABASE_URL=<admin url of a LOCAL throwaway cluster> K6=<k6 binary> tsx src/load/run.ts <case> [--db-cpu 0.25] [--screens 1000] [--variant old|fallback]
- *     [--connections 1000] [--refresh on|off] [--label name] [--cluster 16/load]
+ *     [--connections 1000] [--refresh on|off] [--label name] [--cluster 18/load]
  *
  * Cases: step, polling, sse, leaderboard, stress. Each builds its own database (stack.ts), starts the stand-in Trading App (apps/web/scripts/load-server.ts) and, for the
  * step, the real sweeper (apps/sweeper) pointed at it. Local only; there is no option to point it anywhere else, and the database URL must be this machine's.
@@ -35,7 +35,9 @@ if (!adminUrl || !["step", "polling", "sse", "leaderboard", "stress", "isolation
 }
 assertLocal(adminUrl);
 const dbCpu = Number(flag("db-cpu", "1"));
-const cluster = flag("cluster", "16/load");
+// The local cluster the case runs against, as "<major>/<name>" (pg_lsclusters). Postgres 18 is what Neon runs in production; 16 was the first pass.
+const cluster = flag("cluster", process.env.LOAD_CLUSTER ?? "18/load");
+const [pgMajor = "18", pgName = "load"] = cluster.split("/");
 const label = flag("label", `${caseName}${dbCpu < 1 ? `-db${dbCpu}` : ""}`);
 const K6 = process.env.K6 ?? "k6";
 const scratch = process.env.LOAD_SCRATCH ?? "/tmp";
@@ -88,7 +90,7 @@ const killGroup = (child: ChildProcess, signal: NodeJS.Signals = "SIGTERM"): voi
 const cleanup = (): void => {
   for (const child of children) killGroup(child);
   try {
-    execSync("pkill -CONT -f 'postgres.*16/load' || true");
+    execSync(`pkill -CONT -f 'postgres.*${cluster}' || true`);
   } catch {
     // nothing to continue
   }
@@ -162,7 +164,8 @@ function perSecond(from: Sample | undefined, to: Sample | undefined, pick: (s: a
   return a === undefined || b === undefined ? null : (b - a) / ((to.t - from.t) / 1000);
 }
 const max = (list: number[]): number => list.reduce((m, v) => Math.max(m, v), 0);
-const environment = () => ({ cores: cpus().length, cpu: cpus()[0]?.model, os: `${platform()} ${release()}`, node: process.version, postgres: "16 (local cluster, not Neon)", dbCpuFraction: dbCpu, note: "k6, the stand-in app, the sweeper and Postgres share this machine" });
+let serverVersion = "unknown";
+const environment = () => ({ cores: cpus().length, cpu: cpus()[0]?.model, os: `${platform()} ${release()}`, node: process.version, postgres: `${serverVersion} (local cluster, not Neon)`, dbCpuFraction: dbCpu, note: "k6, the stand-in app, the sweeper and Postgres share this machine" });
 
 async function main(): Promise<void> {
   mkdirSync(join(repoRoot, "post-facts", "part-05-runs"), { recursive: true });
@@ -171,7 +174,9 @@ async function main(): Promise<void> {
   execSync("pkill -f '[s]cripts/load-server.ts' || true; pkill -f '[a]pps/sweeper/src/main.ts' || true; pkill -f '[s]rc/load/throttle.ts' || true; for p in $(pgrep -u postgres); do kill -CONT $p 2>/dev/null; done; true", { stdio: "ignore", shell: "/bin/bash" });
   console.log(`building stack for ${label}…`);
   const players = 1000;
-  execSync(`pg_ctlcluster 16 load status || pg_ctlcluster 16 load start`, { stdio: "ignore" });
+  execSync(`pg_ctlcluster ${pgMajor} ${pgName} status || pg_ctlcluster ${pgMajor} ${pgName} start`, { stdio: "ignore" });
+  serverVersion = execSync(`psql "${adminUrl}" -Atc "show server_version"`).toString().trim().split(" ")[0] ?? "unknown";
+  console.log(`postgres ${serverVersion} on cluster ${cluster}`);
   const history = Number(flag("history", "20"));
   const gap = rest.includes("--gap");
   const stack: Stack = await buildStack(adminUrl, players, 8, history, gap ? 100 : 0);
@@ -459,8 +464,8 @@ async function runStress(result: Record<string, unknown>, stack: Stack, hooks: {
     at("moderation-down", 5, "moderation provider down", () => control({ moderation: "down" }));
     at("moderation-down", 30, "moderation provider back", () => control({ moderation: "ok" }));
     at("leaderboard-stampede", 5, "leaderboard stampede (k6 adds the extra arrivals)", () => undefined);
-    at("cold-database", 5, "database stopped (scale-to-zero)", () => void execSync("pg_ctlcluster 16 load stop -m fast"));
-    at("cold-database", 8, "database resumed (cold)", () => { execSync("pg_ctlcluster 16 load start"); hooks.restartThrottle(); });
+    at("cold-database", 5, "database stopped (scale-to-zero)", () => void execSync(`pg_ctlcluster ${pgMajor} ${pgName} stop -m fast`));
+    at("cold-database", 8, "database resumed (cold)", () => { execSync(`pg_ctlcluster ${pgMajor} ${pgName} start`); hooks.restartThrottle(); });
   };
   await new Promise<void>((resolve) => k6.on("close", () => resolve()));
   probing = false;

@@ -7,7 +7,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "post-facts", "part-05-runs");
+// `tsx src/load/summarize.ts pg16` prints the tables for the Postgres 16 first pass kept under post-facts/part-05-runs/pg16/.
+const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "post-facts", "part-05-runs", process.argv[2] ?? "");
 const runs: Record<string, any> = {};
 for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) runs[file.replace(/\.json$/, "")] = JSON.parse(readFileSync(join(dir, file), "utf8"));
 const ms = (n: number | null | undefined): string => (n === null || n === undefined ? "–" : n >= 1000 ? `${(n / 1000).toFixed(2)} s` : `${n.toFixed(n < 10 ? 1 : 0)} ms`);

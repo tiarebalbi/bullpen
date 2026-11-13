@@ -1,14 +1,14 @@
 {
  "case": "isolation",
  "label": "iso-separate-r1800-db0.25",
- "at": "2026-11-12T22:28:45.182Z",
+ "at": "2026-11-13T03:15:29.942Z",
  "historyOrdersPerPlayer": 20,
  "environment": {
   "cores": 4,
   "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
-  "os": "linux 6.18.44-fc-v378",
+  "os": "linux 6.18.44-fc-v445",
   "node": "v22.23.4",
-  "postgres": "16 (local cluster, not Neon)",
+  "postgres": "18.7 (local cluster, not Neon)",
   "dbCpuFraction": 0.25,
   "note": "k6, the stand-in app, the sweeper and Postgres share this machine"
  },
@@ -16,64 +16,64 @@
   "pools": "separate",
   "ordersAlone": {
    "orderLatencyMs": {
-    "p50": 2968.9525734999997,
-    "p90": 3115.7236898,
-    "p95": 3149.09936335,
-    "p99": 4004.934027139999,
-    "max": 4263.367094,
-    "avg": 2753.412688147522
+    "p50": 3242.006519,
+    "p90": 3414.5247414,
+    "p95": 3458.8441900000003,
+    "p99": 4312.391084299999,
+    "max": 4742.612566,
+    "avg": 3012.185181879296
    },
    "orderErrorRate": 0,
-   "goodput": 65
+   "goodput": 75
   },
   "ordersWithReadStampede": {
    "orderLatencyMs": {
-    "p50": 5814.9322219999995,
-    "p90": 6056.8716355,
-    "p95": 6140.5658468,
-    "p99": 8004.18455477,
-    "max": 9589.074273,
-    "avg": 5348.6396331324795
+    "p50": 6546.231816,
+    "p90": 6885.0685498,
+    "p95": 6984.0800641,
+    "p99": 8848.712314119997,
+    "max": 11195.214102,
+    "avg": 6061.323176128178
    },
    "orderErrorRate": 0,
-   "goodput": 8
+   "goodput": 3
   },
   "readsDuringStampede": {
    "account": {
-    "p50": 2002.309135,
-    "p90": 8011.259203,
-    "p95": 10010.447342,
-    "p99": 14005.8143034,
-    "max": 20019.980024,
-    "avg": 3926.8902468389906
+    "p50": 2002.135066,
+    "p90": 7948.912063200004,
+    "p95": 10235.9735608,
+    "p99": 13556.322106799998,
+    "max": 18977.908156,
+    "avg": 3754.8958778183332
    },
    "leaderboard": {
-    "p50": 2001.003074,
-    "p90": 2017.250183,
-    "p95": 2019.5569444,
-    "p99": 2025.05187512,
-    "max": 2066.563353,
-    "avg": 1926.6739828137308
+    "p50": 2001.2045315,
+    "p90": 2018.2546801,
+    "p95": 2020.81467155,
+    "p99": 2031.7781571599999,
+    "max": 2066.015299,
+    "avg": 1939.735429377877
    },
    "prices": {
-    "p50": 2000.595885,
-    "p90": 2003.599447,
-    "p95": 2011.128411,
-    "p99": 2017.207464,
-    "max": 2037.570476,
-    "avg": 1928.960174793633
+    "p50": 2000.7808300000002,
+    "p90": 2004.6594369000002,
+    "p95": 2012.2914062999998,
+    "p99": 2018.13680987,
+    "max": 2037.30221,
+    "avg": 1942.2453249995033
    },
    "errorRate": {
-    "account": 0.9372011992545175,
-    "leaderboard": 0.551789077212806
+    "account": 0.9373801384140749,
+    "leaderboard": 0.5916321458160729
    }
   },
-  "droppedIterations": 26225,
+  "droppedIterations": 27071,
   "peaks": {
    "ordersPoolWaiting": 194,
-   "readsPoolWaiting": 3602,
+   "readsPoolWaiting": 3606,
    "sharedPoolWaiting": 0,
-   "eventLoopP99Ms": 12.689407
+   "eventLoopP99Ms": 13.811711
   },
   "connectionsByApp": {
    "(none)": 1,
@@ -84,5 +84,5 @@
  "k6": {
   "exit": 99
  },
- "timelineSeconds": 74
+ "timelineSeconds": 75
 }

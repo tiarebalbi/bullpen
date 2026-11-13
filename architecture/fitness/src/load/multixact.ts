@@ -2,7 +2,7 @@
  * An attempt to reproduce, under load, the Postgres error Part 4 saw once in CI: "new multixact has more than one updating member" (post-facts of Part 4, section 15).
  * It runs the lifecycle's steps against the same orders from many connections at once: duplicate fills, a cancel and its confirmation, a release, an admission and a
  * second admission, all racing, on a small set of contended accounts, for a fixed time. It counts every error by its code and message and says whether the multixact
- * one appeared. It is a local run on the Postgres this machine has, which is not the Postgres 17 that CI used when it saw the error, and it says so in its result.
+ * one appeared. It is a local run on the Postgres this machine has (its version is in the result), which is not the Postgres 17 that CI used when it saw the error, and it says so in its result.
  *
  *   TEST_DATABASE_URL=<local admin url> tsx src/load/multixact.ts [seconds=180] [concurrency=60] [accounts=20]
  */
@@ -22,7 +22,7 @@ process.env.TEST_DATABASE_NAME = "bullpen_multixact";
 
 const stack = await buildStack(adminUrl, Number(accountsText), 4);
 const pool = createPool(stack.urls.tradingOwner, { max: Math.min(100, concurrency + 10) });
-const version = (await pool.query<{ v: string }>("SHOW server_version")).rows[0]!.v;
+const version = (await pool.query<{ server_version: string }>("SHOW server_version")).rows[0]!.server_version;
 
 const SATURDAY = new Date("2026-11-14T15:00:00Z");
 const errors = new Map<string, number>();
@@ -82,7 +82,7 @@ const negative = await pool.query("SELECT count(*)::int AS n FROM trading.accoun
 const result = {
   at: new Date().toISOString(),
   postgres: version,
-  note: "Local Postgres, not the Postgres 17 CI used when the error was seen once. Not reproducing here does not show the error cannot happen there.",
+  note: `Local Postgres ${version}, not the Postgres 17 CI used when the error was seen once. Not reproducing here does not show the error cannot happen there.`,
   seconds,
   concurrency,
   contendedAccounts: stack.accounts.length,

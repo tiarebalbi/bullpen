@@ -37,8 +37,8 @@ The order path and the read paths each get their own bounded pool, and one build
 
 ## Consequences
 
-Measured on a local stack (`post-facts/part-05.md`): with the compute not saturated, a 4x read overload (1,800 requests a second) left orders served on separate pools (2,998 of 3,001, p95 19 ms to 144 ms) and starved them on one
-shared pool (2 of 3,001, p95 9.1 s). With the compute held to a quarter of a core, both paths failed together whichever way the pools were drawn. The same measurement found the first thing to break was not a pool: the account poll
+Measured on a local stack on Postgres 18.7 (`post-facts/part-05.md`): with the compute not saturated, a 4x read overload (1,800 requests a second) left orders served on separate pools (3,001 of 3,001, p95 20 ms to 155 ms) and starved them on one
+shared pool (2 of 3,001, p95 9.7 s). With the compute held to a quarter of a core, both paths failed together whichever way the pools were drawn. The same measurement found the first thing to break was not a pool: the account poll
 scanned three tables sequentially, which migration `0009` fixes.
 
 - A stampede of reads can hold at most the read pool's 4 connections per instance; the order pool's 6 stay free for orders. How much isolation that buys under load is measured in `post-facts/part-05.md`, which says where it stops.

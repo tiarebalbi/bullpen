@@ -3,7 +3,7 @@
  * has a quarter of a vCPU. It is an approximation, and says so: a stopped backend that holds a lock holds it for the stopped part of the cycle, which a real
  * quarter-core would not do. Use it to make the database the bottleneck on purpose, not to claim Neon's numbers.
  *
- *   tsx src/load/throttle.ts <cluster, e.g. 16/load> <fraction, e.g. 0.25>
+ *   tsx src/load/throttle.ts <cluster, e.g. 18/load> <fraction, e.g. 0.25>
  */
 import { readdirSync, readFileSync } from "node:fs";
 
