@@ -14,7 +14,7 @@ arrivals (a closed loop would, and would hide the overload). Thresholds sit on `
 ## Local
 
 ```bash
-pg_createcluster 16 load -p 5433 --start      # a throwaway cluster; never the shared test one
+pg_createcluster 18 load -p 5433 --start      # a throwaway cluster, Postgres 18 to match Neon; never the shared test one (LOAD_CLUSTER=16/load for another version)
 export K6=/path/to/k6 TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/postgres
 cd architecture/fitness && bash scripts/load-all.sh
 ```
@@ -24,15 +24,22 @@ Every run writes `post-facts/part-05-runs/<label>.json`. `src/load/multixact.ts`
 
 ## Cloud runs: abort thresholds
 
-Never production. On Hobby, going over a limit pauses the live app. A cloud run stops on the first of these:
+Never production. On Hobby, going over a limit pauses the live app. A cloud run needs, in this order:
+
+1. **The `load-test` Neon branch**, created by the owner. Nothing runs before it exists, and the run uses only that branch's URL.
+2. **The month's Active CPU already used**, which the owner pastes from the Vercel usage page before *each* run. It is reported back before the run starts; without a fresh reading, no run.
+3. **At most two runs, in total**, each **at most 30 minutes of Active CPU**.
+
+A cloud run stops on the first of these:
 
 | Limit | Stop at | Who watches |
 |---|---|---|
 | p95 latency | over 2 s (after 15 s) | k6 (`abortOnFail`) |
 | 5xx or unanswered rate | over 2 % (after 15 s) | k6 (`abortOnFail`) |
 | Arrivals k6 had no VU for | 20 | k6 (`abortOnFail`) |
-| Function usage | 25 % of any Hobby monthly allowance spent by one run (Active CPU 1 h of 4 h; provisioned memory 90 GB-h of 360) | the Vercel usage page, read before and during; stop by hand |
+| Active CPU | **30 minutes for one run** (the most a run may spend), and two runs at most | the Vercel usage page, read before and during; stop by hand |
+| Provisioned memory | 25 % of the monthly allowance spent by one run (90 GB-h of 360) | the Vercel usage page, read before and during; stop by hand |
 | Concurrent executions | 400 (40 % of 1,000 per 10 s) | the Vercel observability page; stop by hand |
 | Database connections | 80 (about 80 % of the pooler's 0.9 x 112 at 0.25 CU) | the Neon console's monitoring; stop by hand |
 
-k6 cannot see the last three. `cloud.js` offers 5 requests/s of reads, 1 order/s and at most 5 new streams/s for 60 s; raise those only after the first run stayed far from every limit.
+k6 cannot see the last four. `cloud.js` offers 5 requests/s of reads, 1 order/s and at most 5 new streams/s for 60 s; raise those only after the first run stayed far from every limit.
