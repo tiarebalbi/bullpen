@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 // The terminal in every state it can be in, at both widths. All routes are mocked at the browser network layer, so no database or provider
@@ -122,6 +123,21 @@ for (const viewport of [
       await expect(watchlist(page).getByText("Stale", { exact: true }).first()).toBeVisible();
       await expect(page.getByRole("banner").getByText("Stale")).toBeVisible();
       await shot(page, "watchlist-crypto-stale", viewport.width);
+    });
+
+    test("watchlist: stale prices (a stale close and a stale crypto price) pass axe's colour contrast in light and dark", async ({ page }) => {
+      await mock(page, { stocks: { rows }, btc: btcAt(0.5, 20 * 60_000) });
+      await page.goto("/");
+      await expect(watchlist(page).getByText(/^Stale · Oct 8$/)).toHaveCount(1);
+      await expect(watchlist(page).getByText("Stale", { exact: true }).first()).toBeVisible();
+      for (const theme of ["light", "dark"]) {
+        if (!(await page.locator("html").evaluate((el, t) => el.classList.contains("dark") === (t === "dark"), theme))) await page.getByRole("button", { name: /Switch to (light|dark) theme/ }).click();
+        await expect(page.locator("html")).toHaveClass(theme === "dark" ? /dark/ : /^((?!dark).)*$/);
+        // A theme switch fades the colours; axe must measure the settled page, not a frame halfway through the fade.
+        await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
+        const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+        expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => `${n.html} ${JSON.stringify(n.any[0]?.data)}`).join(" | ")}`), `contrast in ${theme} at ${viewport.width}px`).toEqual([]);
+      }
     });
 
     test("watchlist: empty before the first close, loading, and failed, each in words", async ({ page }) => {
