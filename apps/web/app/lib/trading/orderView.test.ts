@@ -48,6 +48,10 @@ describe("what an order says about itself", () => {
 describe("an order queued for the open", () => {
   // Created Saturday 2026-11-14 10:00 ET; the open is Monday 9:30 ET.
   const queued = order({ state: "queued_for_open", createdAt: "2026-11-14T15:00:00.000Z" });
+  it("wears the closed-market glyph and a still tone: a wait over a weekend does not pulse", () => {
+    expect(stateLook("queued_for_open")).toMatchObject({ glyph: "☾", tone: "neutral" });
+    expect(stateLook("queued_for_open").tone).not.toBe("pending"); // pending is the badge that pulses
+  });
   it("says it is queued, when it will be released, that the money is set aside and that it can be cancelled", () => {
     expect(stateLook("queued_for_open").label).toBe("Queued for the open");
     expect(orderDetail(queued)).toBe("Queued for the open (Mon 9:30 ET). $1,050.00 set aside; nothing goes to the venue until then, and you can cancel before.");

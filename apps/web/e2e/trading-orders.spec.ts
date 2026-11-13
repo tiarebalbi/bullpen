@@ -35,6 +35,8 @@ const allEight = [
 ];
 
 async function mock(page: Page, orders: { status: number; body: unknown } | ((req: { method: string }) => { status: number; body: unknown })): Promise<void> {
+  // The ticket words a stock order by whether the market is open (Queue buy for the open, when it is not): pin the browser's clock to Thursday 11:00 ET so this spec means the same at any hour.
+  await page.clock.setFixedTime(new Date("2026-11-12T16:00:00Z"));
   await page.route("**/api/leaderboard", (r) => r.fulfill(json({ rows: [{ accountId: "a", handle: "Player 4F2A", cash: "100000", positionsValue: "0", equity: "100000", rank: 1 }], total: 1, asOf: new Date().toISOString(), ageMs: 0, stale: false, lastFailure: null })));
   await page.route("**/api/stock-prices", (r) => r.fulfill(json({ rows: [{ symbol: "AAPL", price: "190.12000000", asOf: "2026-10-16T20:00:00.000Z", stale: false }] })));
   await page.route("**/api/price/BTC-USD", (r) => r.fulfill(json({ symbol: "BTC-USD", price: 65432.1, changePercent: 1.25, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString() })));
@@ -63,6 +65,31 @@ for (const viewport of [
       await expect(dialog.getByRole("textbox", { name: "Quantity" })).toHaveCount(0);
       await expect(page.getByRole("region", { name: "Orders" })).toHaveCount(0);
       await shot(page, "ticket-signed-out", viewport.width);
+    });
+
+    test("while stocks are closed the ticket shows the design's guard and the confirm label says it queues; open, it does not", async ({ page }) => {
+      await mock(page, signedIn());
+      const saturday = new Date("2026-11-14T15:00:00Z"); // 10:00 ET
+      await page.clock.setFixedTime(saturday);
+      // The mocks stamp their prices with the machine's now; stamp BTC with the pinned time, or it reads as old and the page (rightly) draws it stale.
+      await page.route("**/api/price/BTC-USD", (r) => r.fulfill(json({ symbol: "BTC-USD", price: 65432.1, changePercent: 1.25, time: saturday.toISOString(), source: "coingecko", fetchedAt: saturday.toISOString() })));
+      await page.goto("/");
+      await page.getByRole("button", { name: /^AAPL/ }).click();
+      if (!wide) await page.getByRole("button", { name: "Trade" }).click();
+      const guard = page.getByTestId("ticket-queued").locator("visible=true");
+      await expect(guard).toContainText("Stocks are closed");
+      await expect(guard).toContainText("A market order queues for the open, Mon 9:30 ET.");
+      await expect(guard).toHaveAttribute("role", "alert");
+      await page.getByRole("textbox", { name: "Quantity" }).locator("visible=true").fill("3");
+      await expect(page.getByRole("button", { name: /^Queue buy for the open · \$/ }).locator("visible=true")).toBeVisible();
+      // On a phone the open sheet covers the theme toggle, so there only the current theme is checked.
+      const current = (await page.locator("html").evaluate((el) => el.classList.contains("dark"))) ? "dark" : "light";
+      for (const theme of wide ? ["dark", "light"] : [current]) {
+        if (!(await page.locator("html").evaluate((el, t) => el.classList.contains("dark") === (t === "dark"), theme))) await page.getByRole("button", { name: /Switch to (light|dark) theme/ }).click();
+        await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished)));
+        expect((await new AxeBuilder({ page }).analyze()).violations.map((v) => v.id), `axe, ${theme}, with the closed-market guard showing`).toEqual([]);
+      }
+      await shot(page, "ticket-stocks-closed", viewport.width);
     });
 
     test("shows all eight order states, and 'cancel requested' does not look like 'cancelled'", async ({ page }) => {

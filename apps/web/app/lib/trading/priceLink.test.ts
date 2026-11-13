@@ -51,6 +51,18 @@ describe("Live, Reconnecting and Stale", () => {
     expect(last()).toMatchObject({ status: "live", via: "stream", snapshot: snap() });
   });
 
+  it("records when the feed last spoke, so the indicator can say how fresh it is", async () => {
+    const { link, streams, last } = setup();
+    link.start();
+    expect(last()?.lastFrameAt ?? null).toBeNull();
+    streams[0]!.prices(snap(), "1.1.0");
+    const first = last().lastFrameAt;
+    expect(first).toBe(Date.now());
+    await vi.advanceTimersByTimeAsync(3000);
+    streams[0]!.emit("tick");
+    expect(last().lastFrameAt).toBe(first! + 3000);
+  });
+
   it("is Stale when a price is older than its kind allows: the price contract's flag, not the client's clock", () => {
     const { link, streams, last } = setup();
     link.start();
