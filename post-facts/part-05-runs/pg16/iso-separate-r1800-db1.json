@@ -1,0 +1,88 @@
+{
+ "case": "isolation",
+ "label": "iso-separate-r1800-db1",
+ "at": "2026-11-12T22:23:32.458Z",
+ "historyOrdersPerPlayer": 20,
+ "environment": {
+  "cores": 4,
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "os": "linux 6.18.44-fc-v378",
+  "node": "v22.23.4",
+  "postgres": "16 (local cluster, not Neon)",
+  "dbCpuFraction": 1,
+  "note": "k6, the stand-in app, the sweeper and Postgres share this machine"
+ },
+ "derived": {
+  "pools": "separate",
+  "ordersAlone": {
+   "orderLatencyMs": {
+    "p50": 13.366109,
+    "p90": 17.129965,
+    "p95": 18.656654,
+    "p99": 28.399179,
+    "max": 92.1002,
+    "avg": 14.098357177274217
+   },
+   "orderErrorRate": 0,
+   "goodput": 3001
+  },
+  "ordersWithReadStampede": {
+   "orderLatencyMs": {
+    "p50": 50.6549275,
+    "p90": 101.49305130000002,
+    "p95": 144.26951805000004,
+    "p99": 233.11347557000013,
+    "max": 290.913525,
+    "avg": 61.01308271614406
+   },
+   "orderErrorRate": 0,
+   "goodput": 2998
+  },
+  "readsDuringStampede": {
+   "account": {
+    "p50": 5989.1103445,
+    "p90": 9495.0456681,
+    "p95": 9683.287168300001,
+    "p99": 9827.2050218,
+    "max": 11505.109573,
+    "avg": 6092.507238657345
+   },
+   "leaderboard": {
+    "p50": 692.1748130000001,
+    "p90": 1124.4962467,
+    "p95": 1143.7704435,
+    "p99": 1215.4485116,
+    "max": 1232.471326,
+    "avg": 715.2860957453387
+   },
+   "prices": {
+    "p50": 691.1879235,
+    "p90": 1122.1927515,
+    "p95": 1144.56020475,
+    "p99": 1214.53323355,
+    "max": 1231.549803,
+    "avg": 719.1225774224288
+   },
+   "errorRate": {
+    "account": 0,
+    "leaderboard": 0
+   }
+  },
+  "droppedIterations": 29642,
+  "peaks": {
+   "ordersPoolWaiting": 12,
+   "readsPoolWaiting": 3600,
+   "sharedPoolWaiting": 0,
+   "eventLoopP99Ms": 13.311999
+  },
+  "connectionsByApp": {
+   "(none)": 1,
+   "bullpen-orders": 6,
+   "bullpen-reads": 4
+  }
+ },
+ "k6": {
+  "exit": 99
+ },
+ "timelineSeconds": 71
+}

@@ -1,242 +1,252 @@
 {
  "case": "step",
  "label": "step-150-db1",
- "at": "2026-11-12T21:02:18.951Z",
+ "at": "2026-11-13T02:42:48.452Z",
  "historyOrdersPerPlayer": 20,
  "environment": {
   "cores": 4,
   "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
-  "os": "linux 6.18.44-fc-v378",
+  "os": "linux 6.18.44-fc-v445",
   "node": "v22.23.4",
-  "postgres": "16 (local cluster, not Neon)",
+  "postgres": "18.7 (local cluster, not Neon)",
   "dbCpuFraction": 1,
   "note": "k6, the stand-in app, the sweeper and Postgres share this machine"
  },
  "derived": {
   "queuedAtOpen": 1000,
   "admittedAtOpen": 1025,
-  "openedAt": "2026-11-12T21:02:35.692Z",
-  "sweeperWokeForTheOpenAfterMs": 695,
-  "drainMs": 116529,
+  "openedAt": "2026-11-13T02:43:05.069Z",
+  "sweeperWokeForTheOpenAfterMs": 598,
+  "drainMs": 101865,
   "maxAdmittedInOneSecond": 100,
   "admissionsPerSecond": [
-   11,
-   18,
+   7,
+   12,
    8,
+   7,
+   6,
+   6,
+   8,
+   9,
    6,
    5,
+   14,
+   14,
+   27,
+   40,
+   25,
+   74,
+   1,
+   21,
+   13,
    4,
    3,
-   2,
+   3,
    2,
    1,
-   42,
-   85,
-   87,
-   13,
-   100,
-   84,
-   16,
-   78,
-   22,
-   69,
-   31,
-   57,
-   43,
+   2,
+   1,
    100,
    100,
-   38
+   100,
+   68,
+   32,
+   100,
+   100,
+   100,
+   6
   ],
   "orderLatencyMs": {
-   "p50": 3902.8158940000003,
-   "p90": 5966.547494700001,
-   "p95": 6299.546287249999,
-   "p99": 7378.2668996000075,
-   "max": 9948.833706,
-   "avg": 3808.658863534854
+   "p50": 745.79069,
+   "p90": 3736.522525,
+   "p95": 3888.694223,
+   "p99": 4773.659367200001,
+   "max": 6620.553228,
+   "avg": 1646.7284055696698
   },
   "accountPollLatencyMs": {
-   "p50": 2139.598301,
-   "p90": 3081.915229,
-   "p95": 3701.6764977999997,
-   "p99": 4421.85807756,
-   "max": 6468.137632,
-   "avg": 1907.3953273918926
+   "p50": 50.6968135,
+   "p90": 2187.4275871,
+   "p95": 2300.1103627999983,
+   "p99": 3301.8464034800036,
+   "max": 4647.967858,
+   "avg": 810.8700138772045
   },
   "orderErrorRate": 0,
   "accountErrorRate": 0,
   "offeredRequestsPerSecond": 500,
-  "goodputPerSecond": 82.75163999018777,
-  "goodputCount": 5690,
-  "requestsPerSecond": 369.9390977909326,
-  "droppedIterations": 4638,
+  "goodputPerSecond": 260.2873285182758,
+  "goodputCount": 17466,
+  "requestsPerSecond": 417.27042245000126,
+  "droppedIterations": 2076,
   "thresholds": {
-   "http_req_failed{kind:leaderboard}: rate>=0": true,
-   "http_req_duration{kind:handle}: p(95)>=0": true,
-   "http_req_duration{kind:order}: p(95)<1000": false,
-   "http_req_failed{kind:account}: rate<0.01": true,
-   "http_req_failed{kind:handle}: rate>=0": true,
-   "http_req_duration{kind:sse}: p(95)>=0": true,
-   "http_req_failed{kind:order}: rate<0.01": true,
-   "http_req_failed{kind:prices}: rate>=0": true,
-   "http_req_duration{kind:account}: p(95)<1000": false,
-   "dropped_iterations: count<10": false,
    "http_req_duration{kind:leaderboard}: p(95)>=0": true,
+   "http_req_duration{kind:handle}: p(95)>=0": true,
+   "http_req_duration{kind:account}: p(95)<1000": false,
+   "http_req_failed{kind:prices}: rate>=0": true,
+   "dropped_iterations: count<10": false,
+   "http_req_failed{kind:account}: rate<0.01": true,
    "http_req_duration{kind:prices}: p(95)>=0": true,
-   "http_req_failed{kind:sse}: rate>=0": true
+   "http_req_failed{kind:handle}: rate>=0": true,
+   "http_req_failed{kind:leaderboard}: rate>=0": true,
+   "http_req_failed{kind:sse}: rate>=0": true,
+   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "http_req_duration{kind:order}: p(95)<1000": false,
+   "http_req_failed{kind:order}: rate<0.01": true
   },
   "finalStates": {
-   "filled": 29196,
-   "working": 66
+   "filled": 29585,
+   "working": 6
   },
+  "priceGapAtOpen": null,
   "invariantProblems": [],
   "firstSecondsAfterOpen": [
    {
     "s": 0,
     "queued": 1025,
     "ordersWaiting": 0,
-    "readsWaiting": 1,
-    "loopP99": 12
+    "readsWaiting": 0,
+    "loopP99": 11
    },
    {
     "s": 1,
-    "queued": 1019,
-    "ordersWaiting": 36,
-    "readsWaiting": 30,
+    "queued": 1016,
+    "ordersWaiting": 33,
+    "readsWaiting": 9,
     "loopP99": 12
    },
    {
     "s": 2,
-    "queued": 1001,
-    "ordersWaiting": 28,
-    "readsWaiting": 13,
+    "queued": 1005,
+    "ordersWaiting": 66,
+    "readsWaiting": 6,
     "loopP99": 12
    },
    {
     "s": 3,
-    "queued": 990,
-    "ordersWaiting": 81,
-    "readsWaiting": 51,
+    "queued": 997,
+    "ordersWaiting": 84,
+    "readsWaiting": 7,
     "loopP99": 12
    },
    {
     "s": 4,
-    "queued": 984,
-    "ordersWaiting": 110,
-    "readsWaiting": 77,
+    "queued": 990,
+    "ordersWaiting": 112,
+    "readsWaiting": 46,
     "loopP99": 12
    },
    {
     "s": 5,
-    "queued": 978,
-    "ordersWaiting": 137,
-    "readsWaiting": 88,
+    "queued": 984,
+    "ordersWaiting": 123,
+    "readsWaiting": 15,
     "loopP99": 12
    },
    {
     "s": 6,
-    "queued": 974,
-    "ordersWaiting": 175,
-    "readsWaiting": 98,
+    "queued": 978,
+    "ordersWaiting": 106,
+    "readsWaiting": 14,
     "loopP99": 12
    },
    {
     "s": 7,
-    "queued": 971,
-    "ordersWaiting": 204,
-    "readsWaiting": 141,
+    "queued": 970,
+    "ordersWaiting": 80,
+    "readsWaiting": 1,
     "loopP99": 12
    },
    {
     "s": 8,
-    "queued": 968,
-    "ordersWaiting": 220,
-    "readsWaiting": 171,
+    "queued": 961,
+    "ordersWaiting": 79,
+    "readsWaiting": 6,
     "loopP99": 12
    },
    {
     "s": 9,
-    "queued": 966,
-    "ordersWaiting": 228,
-    "readsWaiting": 191,
+    "queued": 956,
+    "ordersWaiting": 95,
+    "readsWaiting": 0,
     "loopP99": 12
    },
    {
     "s": 10,
-    "queued": 966,
-    "ordersWaiting": 245,
-    "readsWaiting": 221,
+    "queued": 956,
+    "ordersWaiting": 95,
+    "readsWaiting": 2,
     "loopP99": 12
    },
    {
     "s": 11,
-    "queued": 966,
-    "ordersWaiting": 257,
-    "readsWaiting": 240,
+    "queued": 956,
+    "ordersWaiting": 115,
+    "readsWaiting": 0,
     "loopP99": 12
    },
    {
     "s": 12,
-    "queued": 966,
-    "ordersWaiting": 263,
-    "readsWaiting": 258,
+    "queued": 956,
+    "ordersWaiting": 51,
+    "readsWaiting": 13,
     "loopP99": 12
    },
    {
     "s": 13,
-    "queued": 966,
-    "ordersWaiting": 271,
-    "readsWaiting": 268,
+    "queued": 956,
+    "ordersWaiting": 42,
+    "readsWaiting": 0,
     "loopP99": 12
    },
    {
     "s": 14,
-    "queued": 966,
-    "ordersWaiting": 292,
-    "readsWaiting": 311,
-    "loopP99": 13
+    "queued": 956,
+    "ordersWaiting": 18,
+    "readsWaiting": 0,
+    "loopP99": 12
    },
    {
     "s": 15,
-    "queued": 966,
-    "ordersWaiting": 305,
-    "readsWaiting": 334,
-    "loopP99": 13
+    "queued": 950,
+    "ordersWaiting": 30,
+    "readsWaiting": 3,
+    "loopP99": 12
    },
    {
     "s": 16,
-    "queued": 966,
-    "ordersWaiting": 320,
-    "readsWaiting": 369,
-    "loopP99": 13
+    "queued": 936,
+    "ordersWaiting": 49,
+    "readsWaiting": 5,
+    "loopP99": 12
    },
    {
     "s": 17,
-    "queued": 966,
-    "ordersWaiting": 334,
-    "readsWaiting": 391,
-    "loopP99": 13
+    "queued": 921,
+    "ordersWaiting": 42,
+    "readsWaiting": 3,
+    "loopP99": 12
    },
    {
     "s": 18,
-    "queued": 966,
-    "ordersWaiting": 349,
-    "readsWaiting": 418,
-    "loopP99": 13
+    "queued": 891,
+    "ordersWaiting": 7,
+    "readsWaiting": 0,
+    "loopP99": 12
    },
    {
     "s": 19,
-    "queued": 966,
-    "ordersWaiting": 357,
-    "readsWaiting": 434,
-    "loopP99": 13
+    "queued": 856,
+    "ordersWaiting": 4,
+    "readsWaiting": 8,
+    "loopP99": 12
    }
   ],
   "peaks": {
-   "ordersPoolWaiting": 853,
-   "readsPoolWaiting": 668,
-   "eventLoopP99Ms": 13.926399,
-   "connections": 11
+   "ordersPoolWaiting": 566,
+   "readsPoolWaiting": 667,
+   "eventLoopP99Ms": 13.107199,
+   "connections": 12
   },
   "sweeperCadenceSeconds": 5,
   "batchSize": 100
@@ -247,8 +257,8 @@
   },
   "step": {
    "exit": 99,
-   "tail": " 0m59.6s/1m0s  333.00 iters/s\n\nrunning (1m05.6s), 1411/1536 VUs, 23987 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s          17.00 iters/s\norders_step   [  99% ] 0849/0850 VUs  1m00.6s/1m1s  150.00 iters/s\nscreens     ↓ [ 100% ] 666/666 VUs    1m0s          333.00 iters/s\n\nrunning (1m06.6s), 1109/1548 VUs, 24328 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ↓ [ 100% ] 0859/0862 VUs  1m1s  150.00 iters/s\nscreens     ↓ [ 100% ] 666/666 VUs    1m0s  333.00 iters/s\n\nrunning (1m07.6s), 0587/1548 VUs, 24850 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ↓ [ 100% ] 0859/0862 VUs  1m1s  150.00 iters/s\nscreens     ✓ [ 100% ] 000/666 VUs    1m0s  333.00 iters/s\n\nrunning (1m08.6s), 0161/1548 VUs, 25276 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ↓ [ 100% ] 0859/0862 VUs  1m1s  150.00 iters/s\nscreens     ✓ [ 100% ] 000/666 VUs    1m0s  333.00 iters/s\n\nrunning (1m08.8s), 0000/1548 VUs, 25437 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ✓ [ 100% ] 0000/0862 VUs  1m1s  150.00 iters/s\nscreens     ✓ [ 100% ] 000/666 VUs    1m0s  333.00 iters/s\ntime=\"2026-11-12T21:03:39Z\" level=error msg=\"thresholds on metrics 'dropped_iterations, http_req_duration{kind:account}, http_req_duration{kind:order}' have been crossed\"\n"
+   "tail": ", 1233/1255 VUs, 26001 complete and 0 interrupted iterations\nboard         [  98% ] 004/020 VUs    0m58.6s/1m0s  17.00 iters/s\norders_step   [  96% ] 0567/0569 VUs  0m58.6s/1m1s  150.00 iters/s\nscreens       [  98% ] 662/666 VUs    0m58.6s/1m0s  333.00 iters/s\n\nrunning (1m04.6s), 1242/1260 VUs, 26442 complete and 0 interrupted iterations\nboard         [  99% ] 005/020 VUs    0m59.6s/1m0s  17.00 iters/s\norders_step   [  98% ] 0572/0574 VUs  0m59.6s/1m1s  150.00 iters/s\nscreens       [  99% ] 665/666 VUs    0m59.6s/1m0s  333.00 iters/s\n\nrunning (1m05.6s), 1052/1261 VUs, 26892 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s          17.00 iters/s\norders_step   [  99% ] 0568/0575 VUs  1m00.6s/1m1s  150.00 iters/s\nscreens     ↓ [ 100% ] 666/666 VUs    1m0s          333.00 iters/s\n\nrunning (1m06.6s), 0404/1261 VUs, 27596 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ↓ [ 100% ] 0574/0575 VUs  1m1s  150.00 iters/s\nscreens     ✓ [ 100% ] 000/666 VUs    1m0s  333.00 iters/s\n\nrunning (1m07.1s), 0000/1261 VUs, 28000 complete and 0 interrupted iterations\nboard       ✓ [ 100% ] 000/020 VUs    1m0s  17.00 iters/s\norders_step ✓ [ 100% ] 0000/0575 VUs  1m1s  150.00 iters/s\nscreens     ✓ [ 100% ] 000/666 VUs    1m0s  333.00 iters/s\ntime=\"2026-11-13T02:44:06Z\" level=error msg=\"thresholds on metrics 'dropped_iterations, http_req_duration{kind:account}, http_req_duration{kind:order}' have been crossed\"\n"
   }
  },
- "timelineSeconds": 134
+ "timelineSeconds": 120
 }
