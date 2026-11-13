@@ -146,7 +146,7 @@
      by TickerBadge, PriceCell, ConnectionIndicator and friends. */
   --bp-gain: oklch(50% 0.12 166);
   --bp-loss: oklch(52% 0.2 27);
-  --bp-stale: oklch(58% 0.012 238);
+  --bp-stale: oklch(51% 0.012 238);
   --bp-accent-text: oklch(54% 0.16 50);
   --bp-hair: color-mix(in oklch, var(--foreground) 11%, transparent);
   --bp-panel: oklch(100% 0 0);
@@ -212,7 +212,7 @@
      colored inside .dark, the same trap --card/--input avoid above. */
   --bp-gain: #02c39a;
   --bp-loss: oklch(68% 0.19 25);
-  --bp-stale: oklch(55% 0.015 238);
+  --bp-stale: oklch(64% 0.015 238);
   --bp-accent-text: var(--ember);
   --bp-hair: color-mix(in oklch, var(--foreground) 11%, transparent);
   --bp-panel: oklch(18% 0.042 238);
