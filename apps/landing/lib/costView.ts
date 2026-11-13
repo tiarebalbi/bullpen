@@ -15,7 +15,7 @@ export const OFF_LANDING_SERVICES: ReadonlySet<string> = new Set(["upstash-redis
  */
 export const NOT_BUILT_SERVICES: ReadonlySet<string> = new Set(["vercel-workflows"]);
 
-/** The part in which the per-player cost estimate arrives: Part 5's moment is "Market open and the bill". No number is shown before it. */
+/** The part in which the per-player cost estimate arrives: Part 5's moment is "The market open: where the work waits". No number is shown before it. */
 export const PER_PLAYER_ESTIMATE_PART = 5;
 
 /** The allowances the landing shows: the ledger without the services nothing uses. */

@@ -1,10 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src"],
-  "exclude": ["src/__fixtures__/**"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/__fixtures__/**",
+    "src/load/**"
+  ]
 }

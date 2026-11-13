@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import type { Player } from "../auth/player.js";
 
 vi.mock("@bullpen/db-trading", () => ({ ensurePlayerAccount: vi.fn() }));
-vi.mock("./pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("./orders/pool.js", () => ({ orderPool: () => ({ name: "order" }) }));
+vi.mock("./reads/pool.js", () => ({ readPool: () => ({ name: "read" }) }));
 vi.mock("../auth/server.js", () => ({ signInAvailable: () => true }));
 vi.mock("../auth/player.js", () => ({ currentPlayer: async () => null }));
 
@@ -39,7 +40,7 @@ describe("logFailure", () => {
 
 describe("resolvePlayer when the account cannot be made", () => {
   it("answers 503 'unavailable', logs why, and does not put the user's id in the log or the answer", async () => {
-    const response = await resolvePlayer(deps(async () => { throw Object.assign(new Error('relation "trading.accounts" does not exist'), { code: "42P01" }); }));
+    const response = await resolvePlayer("order", deps(async () => { throw Object.assign(new Error('relation "trading.accounts" does not exist'), { code: "42P01" }); }));
     expect(response.ok).toBe(false);
     if (response.ok) return;
     expect(response.response.status).toBe(503);
@@ -49,7 +50,7 @@ describe("resolvePlayer when the account cannot be made", () => {
   });
 
   it("logs nothing when the account is found", async () => {
-    const response = await resolvePlayer(deps(async () => ({ accountId: "acc-1" })));
+    const response = await resolvePlayer("order", deps(async () => ({ accountId: "acc-1" })));
     expect(response).toMatchObject({ ok: true, accountId: "acc-1" });
     expect(errorLog).not.toHaveBeenCalled();
   });

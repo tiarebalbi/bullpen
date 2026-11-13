@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSimulatedVenue, tick } from "@bullpen/db-trading";
 import type { SweepTick } from "@bullpen/contracts";
 import { authorizeSweep } from "../../../lib/trading/sweepAuth.js";
-import { tradingPool } from "../../../lib/trading/pool.js";
+import { orderPool } from "../../../lib/trading/orders/pool.js";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (auth === "not-configured") return NextResponse.json({ error: "The sweep is not configured." }, { status: 503, headers: { "cache-control": "no-store" } });
   if (auth !== "ok") return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers: { "cache-control": "no-store" } });
   try {
-    const pool = tradingPool();
+    const pool = orderPool();
     const result: SweepTick = await tick(pool, createSimulatedVenue(pool), new Date());
     return NextResponse.json(result, { headers: { "cache-control": "no-store" } });
   } catch {

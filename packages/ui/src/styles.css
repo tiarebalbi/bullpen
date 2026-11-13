@@ -593,6 +593,31 @@ html[data-consent-open] body {
   color: var(--foreground);
 }
 
+/* TicketGuard (Bullpen Design System, v0.3): the order ticket's pre-confirm warning. One at a time; appears without motion; announced as an alert.
+   The market-closed guard is muted on --surface-sunken, with its glyph and title carrying the meaning, not the colour. */
+.bp-ticket__guard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+  color: var(--foreground);
+  font: 500 13px/1.5 var(--font-body);
+}
+.bp-ticket__guard-glyph {
+  grid-row: 1 / span 2;
+  color: var(--foreground-muted);
+  font-size: 16px;
+}
+.bp-ticket__guard-title {
+  font-weight: 700;
+}
+.bp-ticket__guard-text {
+  color: var(--foreground-muted);
+}
+
 /* Trade bar (phone) */
 .bp-tradebar {
   display: grid;

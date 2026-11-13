@@ -1,10 +1,10 @@
 {
   "schema": 2,
   "part": 4,
-  "generatedAt": "2026-11-10T12:11:16.277Z",
-  "commit": "cc968fbd68f6614084fb21db4c174f430a5f90e6",
+  "generatedAt": "2026-11-12T23:45:18.989Z",
+  "commit": "b4b1f5e8a34720a59a387dabc4ec31976c4c27a0",
   "dirty": false,
-  "ref": "publish-bonus",
+  "ref": "part-05-live-and-load",
   "source": "local",
   "passed": true,
   "checks": [
@@ -13,7 +13,7 @@
       "name": "check:arch",
       "command": "pnpm check:arch",
       "passed": true,
-      "summary": "check:arch passed: 12 checks held, 61 rules enforced",
+      "summary": "check:arch passed: 12 checks held, 63 rules enforced",
       "raw": "check-arch.txt",
       "rules": [
         {
@@ -203,6 +203,12 @@
           "passed": true
         },
         {
+          "id": "no-apps-web-app-api-leaderboard-apps-web-app-api-stock-prices-apps-web-app-api-prices-apps-web-app-lib-trading-reads-imports-apps-web-app-lib-trading-orders",
+          "rule": "NO apps/web/app/api/leaderboard, apps/web/app/api/stock-prices, apps/web/app/api/prices, apps/web/app/lib/trading/reads IMPORTS apps/web/app/lib/trading/orders",
+          "check": "import boundaries",
+          "passed": true
+        },
+        {
           "id": "no-packages-db-trading-packages-db-market-data-apps-market-data-apps-web-app-lib-trading-imports-apps-web-app-lib-moderation",
           "rule": "NO packages/db-trading, packages/db-market-data, apps/market-data, apps/web/app/lib/trading IMPORTS apps/web/app/lib/moderation",
           "check": "import boundaries",
@@ -247,6 +253,12 @@
         {
           "id": "only-apps-web-app-lib-trading-reads-sweep-secret",
           "rule": "ONLY apps/web/app/lib/trading READS SWEEP_SECRET",
+          "check": "secret containment",
+          "passed": true
+        },
+        {
+          "id": "only-apps-web-app-lib-degradation-reads-bullpen-off",
+          "rule": "ONLY apps/web/app/lib/degradation READS BULLPEN_OFF",
           "check": "secret containment",
           "passed": true
         },

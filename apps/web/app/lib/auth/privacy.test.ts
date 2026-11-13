@@ -7,7 +7,7 @@ import type { AccountView } from "@bullpen/contracts";
 const request = vi.hoisted(() => ({ cookie: "" }));
 const db = vi.hoisted(() => ({ ensurePlayerAccount: vi.fn(), advanceAccount: vi.fn(), readAccountView: vi.fn() }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ set: () => undefined }), headers: async () => new Headers({ cookie: request.cookie }) }));
-vi.mock("../trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("../trading/reads/pool.js", () => ({ readPool: () => ({}) }));
 vi.mock("@bullpen/db-trading", async (importOriginal) => ({ ...(await importOriginal<typeof import("@bullpen/db-trading")>()), ...db }));
 
 const BASE_URL = "https://auth.example.test/db/auth";

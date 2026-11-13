@@ -20,7 +20,30 @@ export { LEADERBOARD_ON_READ_SQL, LEADERBOARD_TOP, MAX_AGE_MS, computeLeaderboar
 export const OWNER_ROLE = "trading_owner";
 export const SCHEMA = "trading";
 
-/** A pool that connects with the trading owner's own URL. */
-export function createPool(connectionString: string, max = 3): pg.Pool {
-  return new pg.Pool({ connectionString, max });
+export interface PoolOptions {
+  /** The most connections this pool opens. Work beyond it waits for a free one: a pool is also a concurrency limit. */
+  max?: number;
+  /** Shown in pg_stat_activity, so a measurement can count one pool's connections apart from another's. */
+  applicationName?: string;
+  /** How long a request waits for a free connection before it fails (a safe refusal), instead of waiting without end. */
+  connectionTimeoutMillis?: number;
+  /** An idle connection is closed after this long. */
+  idleTimeoutMillis?: number;
 }
+
+/** A pool that connects with the trading owner's own URL. A number is the maximum, as before. */
+export function createPool(connectionString: string, options: number | PoolOptions = 3): pg.Pool {
+  const { max = 3, applicationName, connectionTimeoutMillis, idleTimeoutMillis } = typeof options === "number" ? { max: options } : options;
+  return logIdleError(new pg.Pool({ connectionString, max, application_name: applicationName, connectionTimeoutMillis, idleTimeoutMillis }), "trading");
+}
+/**
+ * An idle connection the database closes (a restart, a failover, Neon suspending a compute) makes the pool emit "error". With no listener, Node ends the process on it,
+ * which is what a cold database did to the whole instance in the Part 5 stress run. The pool drops that connection by itself; this says so in the log and carries on.
+ */
+export function logIdleError(pool: pg.Pool, name: string): pg.Pool {
+  pool.on("error", (error: Error & { code?: string }) => {
+    console.error(JSON.stringify({ at: `${name}.pool.idle-error`, code: error.code, message: String(error.message).slice(0, 200) }));
+  });
+  return pool;
+}
+
