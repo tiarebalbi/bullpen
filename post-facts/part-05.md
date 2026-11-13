@@ -241,7 +241,7 @@ The first full pass ran on a local Postgres 16 cluster; Neon production runs Pos
 
 The first pass's `before-*` runs (the build as it stood before the account-view indexes) were made on Postgres 16 and are kept as they are: repeating them means rebuilding the old code.
 
-**CI runs Postgres 17** (`postgres:17-alpine`, `.github/workflows/ci.yml`; locally `scripts/test-db.sh` uses the same image), so `test:db` has not run on the version production runs. A plan to move it is in the PR conversation; nothing is changed yet.
+**CI runs Postgres 17** (`postgres:17-alpine`, `.github/workflows/ci.yml`; locally `scripts/test-db.sh` uses the same image), so `test:db` was not run on the version production runs in CI. I ran it once locally on Postgres 18.7 for this report: 17 files, 187 tests, all passing. CI itself is unchanged.
 
 ## Records, and what the publish PR has to do
 
