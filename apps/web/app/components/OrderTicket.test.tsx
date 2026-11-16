@@ -168,6 +168,16 @@ describe("the ticket while the market is closed (ADR-0028; the design system's T
     expect(screen.getByRole("button", { name: "Not enough buying power" })).toBeInTheDocument();
   });
 
+  it("on a Friday evening it says Mon 9:30 ET, though UTC has already turned to Saturday (20:00 ET Friday is 01:00 UTC Saturday)", async () => {
+    const FRIDAY_EVENING = new Date("2026-11-14T01:00:00Z");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ account: view([order("queued_for_open")]) }), { status: 201 })));
+    render(<OrderTicket {...props(ok(view()), { now: FRIDAY_EVENING })} />);
+    expect(screen.getByTestId("ticket-guard")).toHaveTextContent("A market order queues for the open, Mon 9:30 ET.");
+    fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "1" } });
+    fireEvent.submit(screen.getByRole("form", { name: "Order ticket" }));
+    await waitFor(() => expect(screen.getByText(/Queued for the open \(Mon 9:30 ET\)/)).toBeInTheDocument());
+  });
+
   it("says nothing of a queue, and keeps the ordinary label, while the market is open", () => {
     render(<OrderTicket {...props(ok(view()))} />);
     fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });

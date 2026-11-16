@@ -179,3 +179,10 @@ describe("the ticket's one guard, in the design's priority", () => {
     expect(confirmLabel({ kind: "stale", asOf: "2026-11-13T21:00:00.000Z" }, "AAPL", "10", 1000)).toBe("Price is stale");
   });
 });
+
+describe("the moon (queued for the open) never pulses", () => {
+  it("is the only state with ☾, and its tone is the neutral one, which carries no animation", () => {
+    expect(Object.entries(STATE_LOOK).filter(([, look]) => look.glyph === "☾").map(([state]) => state)).toEqual(["queued_for_open"]);
+    expect(STATE_LOOK.queued_for_open.tone).toBe("neutral");
+  });
+});
