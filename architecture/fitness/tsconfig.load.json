@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": [
+      "node",
+      "vitest"
+    ],
+    "noEmit": true,
+    "allowImportingTsExtensions": false
+  },
+  "include": [
+    "src/load"
+  ]
+}

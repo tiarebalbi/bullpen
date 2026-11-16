@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type RefObject } from "react";
-import { isMarketOpen, queuedLabel, type AccountView, type ApiError } from "@bullpen/contracts";
+import { formatOpen, isMarketOpen, nextMarketOpen, queuedLabel, type AccountView, type ApiError } from "@bullpen/contracts";
 import { BTC_SYMBOL } from "./Watchlist.js";
-import { buyLabel, estimate, formatMoney, newAttemptKey, parseQuantity, stepQuantity } from "../lib/trading/orderView.js";
+import { buyLabel, estimate, formatMoney, newAttemptKey, parseQuantity, queueLabel, stepQuantity } from "../lib/trading/orderView.js";
 import { FOCUS_TICKET_EVENT } from "../lib/trading/shortcuts.js";
 import type { AccountState } from "../lib/trading/useAccount.js";
 
@@ -127,20 +127,23 @@ function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & 
     <form className="bp-ticket" onSubmit={(e) => void submit(e)} aria-label="Order ticket" noValidate>
       <h3 className="bp-ticket__title">Market buy · {symbol}</h3>
       <fieldset disabled={!orderable} className="bp-ticket__fields">
+        {/* TicketGuard, one at a time and in the design's priority order: the shortfall (shown in the note below) comes before this one. */}
+        {queuedFor && !short ? (
+          <p className="bp-ticket__guard" role="alert" data-testid="ticket-queued">
+            <span className="bp-ticket__guard-glyph" aria-hidden="true">☾</span>
+            <span className="bp-ticket__guard-title">Stocks are closed</span>
+            <span className="bp-ticket__guard-text">A market order queues for the open, {formatOpen(nextMarketOpen(clock!))}.</span>
+          </p>
+        ) : null}
         <QuantityField id={id} inputRef={input} value={{ text, invalid: text !== "" && !parsed.ok }} onStep={step} onText={edit} />
         <TicketSums sums={sums} buyingPower={view.buyingPower} />
         <p id={`${id}-help`} className="bp-ticket__note">
           {text !== "" && !parsed.ok ? parsed.why : short ? "That is more than your buying power, with the 5% reserve." : "A market buy fills at the latest stored price. 5% above it is held until it fills, and what is unused comes back."}
         </p>
         <button type="submit" className="bp-ticket__cta" data-ready={orderable && parsed.ok && !short ? "" : undefined} aria-disabled={!orderable || !parsed.ok || short || busy ? true : undefined}>
-          {busy ? "Placing…" : buyLabel(symbol, parsed.ok ? parsed.quantity : null, sums ? sums.cost : null)}
+          {busy ? "Placing…" : queuedFor && parsed.ok && sums ? queueLabel(sums.cost) : buyLabel(symbol, parsed.ok ? parsed.quantity : null, sums ? sums.cost : null)}
         </button>
       </fieldset>
-      {queuedFor ? (
-        <p className="bp-ticket__why" role="status" data-testid="ticket-queued">
-          {queuedFor}. The market is closed, so a buy is held with its reserve and sent to the venue after the open.
-        </p>
-      ) : null}
       {why ? <p className="bp-ticket__why" role="status">{why}</p> : null}
       {message ? (
         <p className="bp-ticket__why" role={message.tone === "error" ? "alert" : "status"} data-tone={message.tone}>

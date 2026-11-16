@@ -24,7 +24,8 @@ declare module "vitest" {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..", "..", "..");
-const DATABASE = "bullpen_test";
+/** A load run uses its own database, so it never meets a test run (TEST_DATABASE_NAME). */
+const DATABASE = process.env.TEST_DATABASE_NAME ?? "bullpen_test";
 
 const url = (base: URL, user: string, password: string): string => {
   const next = new URL(base.toString());

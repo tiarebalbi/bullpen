@@ -19,7 +19,7 @@ for how the system's shape changes over time.
 - Bonus — Changing the plan mid-flight — published 2026-11-11. Player handles, moderated: a signed-in
   player can choose a handle, which shows on the leaderboard once a decision model or a person approves it
   (ADR-0027).
-- Part 5 — The market open and the bill — next, planned for 2026-11-23.
+- Part 5 — The market open: where the work waits — next, planned for 2026-11-23.
 - Part 6 — What held, what broke — planned for 2026-11-30.
 
 `architecture/calm/planned/` is the current plan; the week-one predictions are

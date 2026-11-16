@@ -43,6 +43,7 @@ ASSERT(market-data HAS NO DEPENDENCY ON handles)
 ASSERT(Market Data Service HAS NO DEPENDENCY ON handles)
 ASSERT(Landing HAS NO DEPENDENCY ON handles)
 ASSERT(Sweeper HAS NO DEPENDENCY ON handles)
+ASSERT(NO apps/web/app/api/leaderboard, apps/web/app/api/stock-prices, apps/web/app/api/prices, apps/web/app/lib/trading/reads IMPORTS apps/web/app/lib/trading/orders)
 ASSERT(Landing HAS NO DEPENDENCY ON Sweeper)
 ASSERT(Trading App HAS NO DEPENDENCY ON Sweeper)
 ASSERT(Market Data Service HAS NO DEPENDENCY ON Sweeper)
@@ -56,6 +57,7 @@ ASSERT(ONLY apps/market-data/src/db READS DATABASE_URL_MARKET_DATA)
 ASSERT(ONLY apps/web/app/lib/trading READS DATABASE_URL_TRADING)
 ASSERT(ONLY apps/web/app/lib/handles READS DATABASE_URL_HANDLES)
 ASSERT(ONLY apps/web/app/lib/trading READS SWEEP_SECRET)
+ASSERT(ONLY apps/web/app/lib/degradation READS BULLPEN_OFF)
 ASSERT(ONLY apps/sweeper/src READS SWEEPER_TOKEN)
 ASSERT(ONLY apps/web/app/lib/auth READS NEON_AUTH_BASE_URL)
 ASSERT(ONLY apps/web/app/lib/auth READS NEON_AUTH_COOKIE_SECRET)
@@ -72,6 +74,7 @@ ASSERT(NO packages/db-trading, packages/db-market-data, apps/market-data, apps/w
 ASSERT(ONLY trading WRITES trading)
 ASSERT(ONLY handles WRITES handles)
 ASSERT(trading READS handles ONLY THROUGH handles.approved_v1)
+
 
 # Model currency
 ASSERT(every DEFINED COMPONENT and LIBRARY maps to a node in the current CALM moment)

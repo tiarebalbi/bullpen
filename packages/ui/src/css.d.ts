@@ -3,3 +3,9 @@
 // bundler a consumer uses (Next's webpack in apps/landing); this just lets
 // this package's own standalone `tsc --noEmit` typecheck the import statement.
 declare module "*.css";
+
+// `?raw` hands a file's text to a test (tokens.test.ts reads tokens.css to compute contrast).
+declare module "*.css?raw" {
+  const text: string;
+  export default text;
+}

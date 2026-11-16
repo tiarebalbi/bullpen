@@ -11,7 +11,7 @@ import { TickerBadge } from "./TickerBadge.js";
 export interface WatchlistSectionProps {
   title: string;
   /** Right of the title: how fresh the section is, e.g. "end of day". */
-  note?: string;
+  note?: ReactNode;
   children: ReactNode;
 }
 

@@ -1,0 +1,7 @@
+DESCRIPTION Read and order pool isolation fixture
+CATEGORY Structural
+DEFINE SYSTEM Fixture AS fixture
+  DEFINE COMPONENT Web AS apps/web
+
+# Reads do not take the order path's connections (ADR-0030)
+ASSERT(NO apps/web/app/api/leaderboard, apps/web/app/api/stock-prices, apps/web/app/api/prices, apps/web/app/lib/trading/reads IMPORTS apps/web/app/lib/trading/orders)

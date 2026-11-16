@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setSwitches } from "../../lib/degradation/testing.js";
 
 const serve = vi.fn();
 const signedIn = vi.fn();
 const player = vi.fn();
 const findAccount = vi.fn();
 const readOwn = vi.fn();
+const afterSpy = vi.fn();
 vi.mock("@bullpen/db-trading", () => ({ serveLeaderboard: (...args: unknown[]) => serve(...args), findPlayerAccount: (...args: unknown[]) => findAccount(...args) }));
 vi.mock("@bullpen/db-handles", () => ({ readOwnHandle: (...args: unknown[]) => readOwn(...args) }));
-vi.mock("../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("../../lib/trading/reads/pool.js", () => ({ readPool: () => ({}) }));
 vi.mock("../../lib/handles/pool.js", () => ({ handlesPool: () => ({}) }));
 vi.mock("../../lib/auth/server.js", () => ({ signInAvailable: () => signedIn() }));
 vi.mock("../../lib/auth/player.js", () => ({ currentPlayer: () => player() }));
-vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), after: (work: () => unknown) => void work }));
+vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), after: (work: () => unknown) => afterSpy(work) }));
 
 const { GET } = await import("./route.js");
 
@@ -135,5 +137,46 @@ describe("GET /api/leaderboard", () => {
       expect(response.status).toBe(200);
       expect((await response.json()).viewer).toBeUndefined();
     });
+  });
+});
+
+describe("the leaderboard-refresh kill switch (ADR-0031)", () => {
+  beforeEach(() => {
+    serve.mockReset().mockResolvedValue(read);
+    signedIn.mockReset().mockReturnValue(false);
+    player.mockReset().mockResolvedValue(null);
+    findAccount.mockReset().mockResolvedValue(null);
+    readOwn.mockReset().mockResolvedValue(null);
+  });
+
+  const scheduled = async (): Promise<boolean> => {
+    afterSpy.mockReset();
+    serve.mockImplementation(async (_pool: unknown, options: { schedule: (work: () => unknown) => void }) => {
+      options.schedule(() => undefined);
+      return read;
+    });
+    await GET(new Request("http://x/api/leaderboard"));
+    return afterSpy.mock.calls.length > 0;
+  };
+
+  it("on: a refresh the read asks for is scheduled", async () => {
+    const restore = setSwitches(undefined);
+    try {
+      expect(await scheduled()).toBe(true);
+    } finally {
+      restore();
+    }
+  });
+
+  it("off: the read is still served, from the last good ranking, and no refresh is ever scheduled", async () => {
+    const restore = setSwitches("leaderboard-refresh");
+    try {
+      expect(await scheduled()).toBe(false);
+      const response = await GET(new Request("http://x/api/leaderboard"));
+      expect(response.status).toBe(200);
+      expect((await response.json()).total).toBe(812);
+    } finally {
+      restore();
+    }
   });
 });

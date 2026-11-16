@@ -15,7 +15,8 @@ export interface StateLook {
 
 /** How each of the eight states reads. "Cancel requested" and "Cancelled" differ in words, glyph and tone: a request is not a cancel. */
 export const STATE_LOOK: Record<OrderState, StateLook> = {
-  queued_for_open: { label: "Queued for the open", glyph: "◷", tone: "pending" },
+  // ☾ is the design system's glyph for a closed market (TicketGuard, "Close · 16:00 ET"); neutral, not pending: a wait over a weekend must not pulse (motion explains a change, then stops).
+  queued_for_open: { label: "Queued for the open", glyph: "☾", tone: "neutral" },
   accepted: { label: "Accepted", glyph: "○", tone: "neutral" },
   working: { label: "Working", glyph: "◐", tone: "working" },
   partially_filled: { label: "Partially filled", glyph: "◑", tone: "working" },
@@ -95,6 +96,11 @@ export function stepQuantity(text: string, direction: 1 | -1): string {
   const base = Number.isFinite(current) && current > 0 ? current : 0;
   const next = Math.max(0, Math.round((base + direction) * 1e8) / 1e8);
   return next === 0 ? "" : String(next);
+}
+
+/** The ticket's confirm label while the market is closed (the design's TicketGuard: "Queue buy for the open · $1,825.80"). */
+export function queueLabel(cost: number): string {
+  return `Queue buy for the open · ${formatMoney(String(cost))}`;
 }
 
 /** The primary button's words: "Buy 10 NVDA · $1,825.80" once the quantity is valid, "Buy NVDA" before. */

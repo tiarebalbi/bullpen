@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => ({ checkSchema: vi.fn() }));
 vi.mock("@bullpen/db-trading", () => ({ OWNER_ROLE: "trading_owner", checkSchema: db.checkSchema }));
-vi.mock("./pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("./reads/pool.js", () => ({ readPool: () => ({}) }));
 
 const { tradingChecks, tradingConfigIssues, tradingDatabaseIssues } = await import("./health.js");
 

@@ -141,15 +141,36 @@ describe("the portfolio and the orders", () => {
   });
 });
 
-describe("the ticket while the market is closed (ADR-0028)", () => {
-  it("says the order will be queued for the open, and when", () => {
+describe("the ticket while the market is closed (ADR-0028; the design system's TicketGuard)", () => {
+  it("shows the design's guard: the closed glyph, 'Stocks are closed', and when the order will go, announced as an alert", () => {
     render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW })} />);
-    expect(screen.getByTestId("ticket-queued")).toHaveTextContent("Queued for the open (Mon 9:30 ET)");
+    const guard = screen.getByTestId("ticket-queued");
+    expect(guard).toHaveAttribute("role", "alert");
+    expect(guard).toHaveTextContent("☾");
+    expect(guard).toHaveTextContent("Stocks are closed");
+    expect(guard).toHaveTextContent("A market order queues for the open, Mon 9:30 ET.");
+    expect(guard).not.toHaveTextContent(/opening price|crypto trades now/i); // the design's desktop copy says both; neither is true here
   });
 
-  it("says nothing of a queue while the market is open", () => {
-    render(<OrderTicket {...props(ok(view()))} />);
+  it("changes the confirm label, as the design says it does: 'Queue buy for the open · $1,000.00'", () => {
+    render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW })} />);
+    fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
+    expect(screen.getByRole("button", { name: "Queue buy for the open · $1,000.00" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Buy 10 AAPL/ })).not.toBeInTheDocument();
+  });
+
+  it("gives way to the shortfall: one guard at a time, the shortfall first", () => {
+    render(<OrderTicket {...props(ok(view([], { buyingPower: "500.00000000" })), { now: CLOSED_NOW })} />);
+    fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
     expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+    expect(screen.getByText(/more than your buying power/)).toBeInTheDocument();
+  });
+
+  it("says nothing of a queue, and keeps the ordinary label, while the market is open", () => {
+    render(<OrderTicket {...props(ok(view()))} />);
+    fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
+    expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Buy 10 AAPL/ })).toBeInTheDocument();
   });
 
   it("says nothing of a queue for a symbol that cannot be ordered", () => {
@@ -162,7 +183,7 @@ describe("the ticket while the market is closed (ADR-0028)", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ orderId: "o-queued_for_open", duplicate: false, account }), { status: 201 })));
     render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW })} />);
     fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Buy 10 AAPL/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Queue buy for the open/ }));
     await waitFor(() => expect(screen.getByText(/Order accepted\. Queued for the open \(Mon 9:30 ET\)/)).toBeInTheDocument());
     expect(screen.getByText(/cancel it until then/)).toBeInTheDocument();
   });

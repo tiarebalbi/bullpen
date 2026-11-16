@@ -10,6 +10,7 @@ export const PART_1_SERVICES = new Set(["vercel-hobby", "coingecko-demo"]);
  *  - neon: Part 3's one Neon project, with a schema and a role per transactional owner.
  *  - alpha-vantage-free: Part 3's stock data provider (ADR-0008).
  *  - vercel-services: Part 3's Market Data Service (ADR-0004).
+ *  - vercel-daemons: Part 4's sweeper (ADR-0018); the quota is ADR-0032's.
  *  - vercel-workflows: Part 4's order-saga-workflow.
  *  - vercel-queues: Part 5's market-open-queue.
  *  - grafana-cloud: Part 5, by the owner's decision of 2026-10-20 (no committed CALM node names it yet).
@@ -21,6 +22,7 @@ export const SERVICE_ARRIVES_IN_PART: Record<string, number | undefined> = {
   "neon-launch": 3,
   "alpha-vantage-free": 3,
   "vercel-services": 3,
+  "vercel-daemons": 4,
   "vercel-workflows": 4,
   "vercel-queues": 5,
   "grafana-cloud": 5,
@@ -40,6 +42,7 @@ const SERVICE_LABELS: Record<string, string> = {
   "aws-lambda": "AWS Lambda",
   "vercel-queues": "Vercel Queues",
   "vercel-services": "Vercel Services",
+  "vercel-daemons": "Vercel Daemons",
   "vercel-workflows": "Vercel Workflows",
   "vercel-ai-gateway": "Vercel AI Gateway",
 };

@@ -1,0 +1,88 @@
+{
+ "case": "isolation",
+ "label": "iso-separate-r1800-db0.25",
+ "at": "2026-11-13T03:15:29.942Z",
+ "historyOrdersPerPlayer": 20,
+ "environment": {
+  "cores": 4,
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "os": "linux 6.18.44-fc-v445",
+  "node": "v22.23.4",
+  "postgres": "18.7 (local cluster, not Neon)",
+  "dbCpuFraction": 0.25,
+  "note": "k6, the stand-in app, the sweeper and Postgres share this machine"
+ },
+ "derived": {
+  "pools": "separate",
+  "ordersAlone": {
+   "orderLatencyMs": {
+    "p50": 3242.006519,
+    "p90": 3414.5247414,
+    "p95": 3458.8441900000003,
+    "p99": 4312.391084299999,
+    "max": 4742.612566,
+    "avg": 3012.185181879296
+   },
+   "orderErrorRate": 0,
+   "goodput": 75
+  },
+  "ordersWithReadStampede": {
+   "orderLatencyMs": {
+    "p50": 6546.231816,
+    "p90": 6885.0685498,
+    "p95": 6984.0800641,
+    "p99": 8848.712314119997,
+    "max": 11195.214102,
+    "avg": 6061.323176128178
+   },
+   "orderErrorRate": 0,
+   "goodput": 3
+  },
+  "readsDuringStampede": {
+   "account": {
+    "p50": 2002.135066,
+    "p90": 7948.912063200004,
+    "p95": 10235.9735608,
+    "p99": 13556.322106799998,
+    "max": 18977.908156,
+    "avg": 3754.8958778183332
+   },
+   "leaderboard": {
+    "p50": 2001.2045315,
+    "p90": 2018.2546801,
+    "p95": 2020.81467155,
+    "p99": 2031.7781571599999,
+    "max": 2066.015299,
+    "avg": 1939.735429377877
+   },
+   "prices": {
+    "p50": 2000.7808300000002,
+    "p90": 2004.6594369000002,
+    "p95": 2012.2914062999998,
+    "p99": 2018.13680987,
+    "max": 2037.30221,
+    "avg": 1942.2453249995033
+   },
+   "errorRate": {
+    "account": 0.9373801384140749,
+    "leaderboard": 0.5916321458160729
+   }
+  },
+  "droppedIterations": 27071,
+  "peaks": {
+   "ordersPoolWaiting": 194,
+   "readsPoolWaiting": 3606,
+   "sharedPoolWaiting": 0,
+   "eventLoopP99Ms": 13.811711
+  },
+  "connectionsByApp": {
+   "(none)": 1,
+   "bullpen-orders": 6,
+   "bullpen-reads": 4
+  }
+ },
+ "k6": {
+  "exit": 99
+ },
+ "timelineSeconds": 75
+}

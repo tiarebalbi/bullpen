@@ -1,0 +1,14 @@
+{
+ "at": "2026-11-13T03:43:23.721Z",
+ "postgres": "18.7 (Ubuntu 18.7-1.pgdg24.04+2)",
+ "note": "Local Postgres 18.7 (Ubuntu 18.7-1.pgdg24.04+2), not the Postgres 17 CI used when the error was seen once. Not reproducing here does not show the error cannot happen there.",
+ "seconds": 180,
+ "concurrency": 60,
+ "contendedAccounts": 20,
+ "lives": 37673,
+ "operations": 301384,
+ "multixactErrors": 0,
+ "errorsByKind": {},
+ "quantityViolations": 0,
+ "negativeBuyingPower": 0
+}

@@ -7,7 +7,7 @@ vi.mock("@bullpen/db-trading", () => ({
   tick: (...args: unknown[]) => tickMock(...args),
   createSimulatedVenue: () => ({}),
 }));
-vi.mock("../../../lib/trading/pool.js", () => ({ tradingPool: () => ({}) }));
+vi.mock("../../../lib/trading/orders/pool.js", () => ({ orderPool: () => ({}) }));
 vi.mock("../../../lib/trading/sweepAuth.js", () => ({ authorizeSweep: (...args: unknown[]) => authMock(...args) }));
 
 const { POST, GET } = (await import("./route.js")) as { POST: (r: Request) => Promise<Response>; GET?: unknown };

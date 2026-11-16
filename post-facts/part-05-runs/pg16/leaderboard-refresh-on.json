@@ -1,0 +1,109 @@
+{
+ "case": "leaderboard",
+ "label": "leaderboard-refresh-on",
+ "at": "2026-11-12T22:17:04.422Z",
+ "historyOrdersPerPlayer": 20,
+ "environment": {
+  "cores": 4,
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "os": "linux 6.18.44-fc-v378",
+  "node": "v22.23.4",
+  "postgres": "16 (local cluster, not Neon)",
+  "dbCpuFraction": 1,
+  "note": "k6, the stand-in app, the sweeper and Postgres share this machine"
+ },
+ "derived": {
+  "refresh": "on",
+  "windowFrom": 32,
+  "steadyWindowSeconds": 35.021,
+  "dbTransactionsPerSecond": 2006.8244767425258,
+  "dbTuplesReturnedPerSecond": 22042.203249478884,
+  "requestsPerSecond": 1499.7223869716152,
+  "goodputPerSecond": null,
+  "goodputTotal": 104989,
+  "droppedIterations": 0,
+  "latencyMsByKind": {
+   "account": {
+    "p50": 0,
+    "p90": 0,
+    "p95": 0,
+    "p99": 0,
+    "max": 0,
+    "avg": 0
+   },
+   "leaderboard": {
+    "p50": 0.981881,
+    "p90": 1.6445158,
+    "p95": 2.347311799999998,
+    "p99": 7.057241919999997,
+    "max": 26.923465,
+    "avg": 1.23631785027956
+   },
+   "prices": {
+    "p50": 0,
+    "p90": 0,
+    "p95": 0,
+    "p99": 0,
+    "max": 0,
+    "avg": 0
+   },
+   "sse": {
+    "p50": 0,
+    "p90": 0,
+    "p95": 0,
+    "p99": 0,
+    "max": 0,
+    "avg": 0
+   }
+  },
+  "errorRateByKind": {
+   "account": 0,
+   "leaderboard": 0,
+   "prices": 0
+  },
+  "thresholds": {
+   "http_req_duration{kind:prices}: p(95)>=0": true,
+   "http_req_duration{kind:account}: p(95)<1000": true,
+   "dropped_iterations: count<10": true,
+   "http_req_failed{kind:order}: rate<0.01": true,
+   "http_req_duration{kind:leaderboard}: p(95)>=0": true,
+   "http_req_failed{kind:handle}: rate>=0": true,
+   "http_req_duration{kind:handle}: p(95)>=0": true,
+   "http_req_failed{kind:prices}: rate>=0": true,
+   "http_req_failed{kind:account}: rate<0.01": true,
+   "http_req_duration{kind:order}: p(95)<1000": true,
+   "http_req_failed{kind:sse}: rate>=0": true,
+   "http_req_duration{kind:sse}: p(95)>=0": true,
+   "http_req_failed{kind:leaderboard}: rate>=0": true
+  },
+  "hub": {
+   "reads": 0,
+   "peakClients": 0
+  },
+  "providerCalls": {
+   "first": {
+    "calls": 0,
+    "refused": 0
+   },
+   "last": {
+    "calls": 0,
+    "refused": 0
+   }
+  },
+  "peakFileDescriptors": 331,
+  "peaks": {
+   "ordersPoolWaiting": 0,
+   "readsPoolWaiting": 7,
+   "eventLoopP99Ms": 11.878399,
+   "rssMb": 146
+  },
+  "connectionsByApp": {
+   "(none)": 1,
+   "bullpen-reads": 4
+  }
+ },
+ "k6": {
+  "exit": 0
+ },
+ "timelineSeconds": 73
+}
