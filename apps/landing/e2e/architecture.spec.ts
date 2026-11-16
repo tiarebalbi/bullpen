@@ -73,8 +73,14 @@ test.describe("Architecture Explorer", () => {
 
     await scrubber.getByRole("button", { name: "PART 5" }).click();
 
-    // Part 5 is the plan: the status chip says so (the scrubber is the shared one, which says it in its own labels).
+    // Part 5 is built (published 2026-11-16): the chip says Built.
     await expect(architecture.getByText("Overview · Part 5")).toBeVisible();
+    await expect(architecture.getByText("Built", { exact: true }).first()).toBeVisible();
+
+    await scrubber.getByRole("button", { name: "PART 6" }).click();
+
+    // Part 6 is the plan: the status chip says so (the scrubber is the shared one, which says it in its own labels).
+    await expect(architecture.getByText("Overview · Part 6")).toBeVisible();
     await expect(architecture.getByText("Planned", { exact: true }).first()).toBeVisible();
   });
 
@@ -90,16 +96,6 @@ test.describe("Architecture Explorer", () => {
 
     await panel.getByRole("button", { name: "Close details" }).click();
     await expect(panel.getByText("Select a node for its purpose")).toBeVisible();
-  });
-
-  test("a node with no recorded ADR yet shows the pending copy", async ({ page }) => {
-    const architecture = page.locator("#architecture");
-    const scrubber = architecture.getByRole("group", { name: "Series part" });
-    await scrubber.getByRole("button", { name: "PART 5" }).click();
-
-    await architecture.getByRole("button", { name: "Order Saga, Infra" }).click();
-    const panel = architecture.getByLabel("Details");
-    await expect(panel.getByText("ADR pending: written before this part ships.")).toBeVisible();
   });
 
   test("the sync/async toggle hides the legend's edge-type entries", async ({ page }) => {
@@ -139,12 +135,13 @@ test.describe("Architecture Explorer", () => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
 
-    // The opening part (a built one, with only its few real nodes) mounts
-    // and fits the viewport first. Part 6 has far more nodes spread
-    // further out; without a refit on part change, React Flow's `fitView`
-    // only ever fires once on mount, so Part 6's outer nodes render
-    // outside that stale, smaller viewport -- present in the DOM, but not
-    // actually visible on screen.
+    // Part 1 (a built one, with only its few real nodes) mounts and fits the viewport
+    // first. Part 6 has far more nodes spread further out; without a refit on part change,
+    // React Flow's `fitView` only ever fires once on mount, so Part 6's outer nodes render
+    // outside that stale, smaller viewport -- present in the DOM, but not actually visible
+    // on screen. (The page opens on the current part, Part 5, so the test starts from Part 1.)
+    await scrubber.getByRole("button", { name: "PART 1" }).click();
+    await page.waitForTimeout(600);
     await scrubber.getByRole("button", { name: "PART 6" }).click();
     // Let both the node-settling animation and fitView's own pan/zoom
     // transition finish before measuring -- otherwise this reads
@@ -157,7 +154,7 @@ test.describe("Architecture Explorer", () => {
     // canvas panel, which also includes the legend and its own padding).
     const canvasBox = (await architecture.locator(".react-flow").boundingBox())!;
 
-    for (const name of ["Market Open Queue, Infra", "Order Saga, Infra", "Bullpen Trading App, App"]) {
+    for (const name of ["Vercel AI Gateway, External", "Google Analytics 4, External", "Bullpen Trading App, App"]) {
       const box = await architecture.getByRole("button", { name }).boundingBox();
       expect(box, `${name} should be in the DOM`).not.toBeNull();
       expect(box!.x, `${name} left edge within canvas`).toBeGreaterThanOrEqual(canvasBox.x);
@@ -167,14 +164,15 @@ test.describe("Architecture Explorer", () => {
     }
   });
 
-  test("a planned part ghosts nodes and edges the built system doesn't have yet", async ({ page }) => {
+  test("a planned part ghosts only what the built system doesn't have: Part 6 plans no new service, so nothing in it is tagged PLANNED", async ({ page }) => {
     const architecture = page.locator("#architecture");
     const scrubber = architecture.getByRole("group", { name: "Series part" });
-    await scrubber.getByRole("button", { name: "PART 5" }).click();
+    await scrubber.getByRole("button", { name: "PART 6" }).click();
 
-    // "Order Saga" is only in the plan (Part 4 was built without it): ghosted, dashed, tagged PLANNED.
-    const orderSaga = architecture.getByRole("button", { name: "Order Saga, Infra" });
-    await expect(orderSaga.getByText("PLANNED")).toBeVisible();
+    // The Order Saga and the Market Open Queue were predicted for Part 5 and not built (ADR-0017, ADR-0028), so the plan for Part 6 does not name them.
+    await expect(architecture.getByRole("button", { name: "Order Saga, Infra" })).toHaveCount(0);
+    await expect(architecture.getByRole("button", { name: "Market Open Queue, Infra" })).toHaveCount(0);
+    await expect(architecture.getByText("PLANNED", { exact: true })).toHaveCount(0);
 
     // "Bullpen Trading App" already exists in the real, built Part 1: never ghosted.
     const tradingApp = architecture.getByRole("button", { name: "Bullpen Trading App, App" });
@@ -252,6 +250,8 @@ test.describe("Architecture Explorer", () => {
 
   test("Follow a request plays through steps and can be paused, stepped and exited", async ({ page }) => {
     const architecture = page.locator("#architecture");
+    // The page opens on the current part (Part 5), whose request is an order; the price request is Part 4's.
+    await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 4" }).click();
     await architecture.getByRole("button", { name: /Follow a price request/i }).click();
 
     await expect(architecture.getByRole("status")).toContainText("STEP 1 OF 4");
@@ -565,7 +565,7 @@ for (const viewport of [
       await page.goto("/");
     });
 
-    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 5 on", async ({ page }) => {
+    test("scrubbing Parts 1 to 6 keeps both analytics cards and their edges, labelled as built in Part 1 from Part 6 on", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
 
@@ -576,8 +576,8 @@ for (const viewport of [
         for (const name of ANALYTICS_CARDS) {
           const card = architecture.getByRole("button", { name: new RegExp(`^${name}`) });
           await expect(card, `${name} in Part ${part}`).toHaveCount(1);
-          // Parts 2 to 4 draw the cards themselves; Parts 5 and 6 carry them, first built in Part 1 (not Part 2, where they are copied from).
-          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 5 ? 1 : 0);
+          // Parts 2 to 5 draw the cards themselves; Part 6, the plan, carries them, first built in Part 1 (not Part 2, where they are copied from).
+          await expect(card.getByText("Built in Part 1")).toHaveCount(part >= 6 ? 1 : 0);
           await expect(card.getByText("Built in Part 2")).toHaveCount(0);
           // Built, not predicted: never ghosted.
           await expect(card.getByText("PLANNED")).toHaveCount(0);
@@ -588,9 +588,9 @@ for (const viewport of [
       }
     });
 
-    test("Part 5's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
+    test("Part 6's Google Analytics 4 card and panel note both read Built in Part 1", async ({ page }) => {
       const architecture = page.locator("#architecture");
-      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 5" }).click();
+      await architecture.getByRole("group", { name: "Series part" }).getByRole("button", { name: "PART 6" }).click();
 
       const card = architecture.getByRole("button", { name: /^Google Analytics 4, External/ });
       await expect(card.getByText("Built in Part 1")).toBeVisible();
@@ -615,7 +615,7 @@ for (const viewport of [
     test("selecting a carried node shows its Part 1 text and ADR-0010", async ({ page }) => {
       const architecture = page.locator("#architecture");
       const scrubber = architecture.getByRole("group", { name: "Series part" });
-      await scrubber.getByRole("button", { name: "PART 5" }).click();
+      await scrubber.getByRole("button", { name: "PART 6" }).click();
 
       await architecture.getByRole("button", { name: /^Google Analytics 4, External/ }).click();
       const panel = architecture.getByLabel("Details");

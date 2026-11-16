@@ -146,14 +146,14 @@ for (const viewport of [
       await expect(panel(page)).toContainText("Overview · Part 1");
 
       // Overview
-      await toPart(page, 5);
-      await expect(panel(page)).toContainText("Overview · Part 5");
+      await toPart(page, 6);
+      await expect(panel(page)).toContainText("Overview · Part 6");
       await expect(panel(page).getByText("Planned", { exact: true }).first()).toBeVisible();
 
-      // Services: the planned services appear beside what runs today
+      // Services: Part 6 plans no service the built system lacks (the Order Saga and the Market Open Queue were not built, ADR-0017 and ADR-0028)
       await tab(page, "Services").click();
-      await expect(panel(page).getByRole("heading", { name: "Planned for Part 5" })).toBeVisible();
-      await expect(panel(page).getByRole("heading", { name: "Order Saga" })).toBeVisible();
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 6" })).toHaveCount(0);
+      await expect(panel(page).getByRole("heading", { name: "Order Saga" })).toHaveCount(0);
 
       // Flows: the same request, marked as a prediction
       await tab(page, "Flows").click();
@@ -181,7 +181,7 @@ for (const viewport of [
       await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0008" })).toHaveCount(0);
       await expect(panel(page).locator(".bp-decisions-row", { hasText: "ADR-0009" })).toHaveCount(0);
       await tab(page, "Services").click();
-      await expect(panel(page).getByRole("heading", { name: "Planned for Part 5" })).toHaveCount(0);
+      await expect(panel(page).getByRole("heading", { name: "Planned for Part 6" })).toHaveCount(0);
     });
 
 
@@ -261,7 +261,7 @@ test.describe("Architecture page, desktop", () => {
 
     await playback.getByRole("button", { name: "Next step" }).click();
     await expect(playback).toContainText("STEP 2 OF 5");
-    await expect(panel(page).getByRole("button", { name: /Ask for a quote/ })).toHaveAttribute("aria-current", "step");
+    await expect(panel(page).getByRole("button", { name: /Queue and reserve/ })).toHaveAttribute("aria-current", "step");
 
     await playback.getByRole("button", { name: "Previous step" }).click();
     await expect(playback).toContainText("STEP 1 OF 5");

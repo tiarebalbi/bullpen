@@ -48,16 +48,12 @@ for (const where of [
       await expect(page.getByTestId("legend-new")).toHaveCount(0);
     });
 
-    test("a planned part's new nodes keep a dashed outline in the accent at full strength, and its carried nodes are ghosted", async ({ page }) => {
-      await scrubber(page).getByRole("button", { name: "PART 5" }).click();
-      const planned = newNodes(page).first();
-      await expect(planned).toBeVisible();
-      const box = planned.locator("> div:not([class*='react-flow__handle'])");
-      await expect(box).toHaveCSS("border-top-style", "dashed");
-      await expect(box).toHaveCSS("opacity", "1");
-      await expect(planned.getByText("PLANNED")).toBeVisible();
-      const ghostedCarried = page.locator('[role="button"]:not([data-new])').filter({ has: page.getByText("PLANNED") });
-      for (const el of await ghostedCarried.all()) await expect(el.locator("> div:not([class*='react-flow__handle'])")).toHaveCSS("opacity", "0.55");
+    test("a planned part marks only what it plans that the built system lacks: Part 6 plans no new service, so nothing is marked new or ghosted", async ({ page }) => {
+      // The dashed accent outline for a planned, new node is held by ArchitectureExplorerNew.test.tsx; the real plan no longer has a node to show it on
+      // (the Order Saga and the Market Open Queue were predicted and not built, ADR-0017 and ADR-0028).
+      await scrubber(page).getByRole("button", { name: "PART 6" }).click();
+      await expect(newNodes(page)).toHaveCount(0);
+      await expect(page.getByText("PLANNED", { exact: true })).toHaveCount(0);
     });
   });
 }

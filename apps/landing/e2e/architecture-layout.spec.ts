@@ -192,7 +192,8 @@ for (const part of [4, 5, 6]) {
     await page.locator("#architecture").getByRole("group", { name: "Series part" }).getByRole("button", { name: `PART ${part}` }).click();
     await page.waitForTimeout(1500);
     const read = (n: number) => JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "content", "architecture", `part-0${n}.json`), "utf8")) as { edges: Array<{ id: string; a: string; b: string }> };
-    const ends = new Map([...content.edges, ...read(4).edges, ...read(part).edges].map((e) => [e.id, e]));
+    // Every edge a part can show, its own or carried from an earlier one (Part 6 carries the bonus's lines through Part 5's).
+    const ends = new Map([...content.edges, ...read(4).edges, ...read(5).edges, ...read(part).edges].map((e) => [e.id, e]));
     const g = await geometry(page);
     const problems: string[] = [];
     for (const [id, points] of Object.entries(g.edges)) {

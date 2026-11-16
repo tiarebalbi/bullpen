@@ -80,6 +80,17 @@ describe("ArchitectureExplorer", () => {
     expect(screen.getByRole("switch", { name: "Data ownership" })).toBeInTheDocument();
   });
 
+  it("says a node with no recorded ADR is pending one, and a node with one lists it", () => {
+    installMatchMedia();
+    const { unmount } = render(<ArchitectureExplorer parts={[PART_1]} adrTitles={{ "ADR-0003": "Monorepo" }} adrHrefs={{ "ADR-0003": "#adr-0003" }} initialSelectedId="reader" />);
+    expect(screen.getByText("ADR pending: written before this part ships.")).toBeInTheDocument();
+    unmount();
+
+    render(<ArchitectureExplorer parts={[PART_1]} adrTitles={{ "ADR-0003": "Monorepo" }} adrHrefs={{ "ADR-0003": "#adr-0003" }} initialSelectedId="landing-app" />);
+    expect(screen.queryByText("ADR pending: written before this part ships.")).not.toBeInTheDocument();
+    expect(screen.getByText("ADR-0003")).toBeInTheDocument();
+  });
+
   it("moves to the next part on the scrubber's arrow-right key and updates the summary", () => {
     installMatchMedia();
     render(
