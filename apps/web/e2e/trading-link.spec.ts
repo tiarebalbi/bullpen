@@ -1,9 +1,18 @@
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 // What the player sees when the price link is not simply live: reconnecting with prices on screen, offline (with Retry now), and the polling fallback, with the stream
 // failing or switched off. Every route is answered at the browser network layer, the clock is pinned to a Thursday 11:00 ET so the market's hours cannot change a word,
 // and Math.random is pinned so the stream's backoff is the same on every run. Axe runs on each state at both widths in both themes.
+// Set SCREENSHOT_DIR to keep a picture of each state.
+const shotDir = process.env.SCREENSHOT_DIR;
+async function shot(page: Page, name: string, width: number): Promise<void> {
+  if (!shotDir) return;
+  mkdirSync(shotDir, { recursive: true });
+  await page.screenshot({ path: join(shotDir, `${name}-${width}.png`) });
+}
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) => ({ status, contentType: "application/json", body: JSON.stringify(body), headers });
 const prices = { rows: [{ symbol: "AAPL", price: "190.12000000", asOf: "2026-11-11T21:00:00.000Z", stale: false, previousClose: { price: "187.00000000", asOf: "2026-11-10T21:00:00.000Z" } }] };
 
@@ -71,6 +80,7 @@ for (const viewport of [
       await expect(indicator(page)).toContainText("Reconnecting");
       await expect(indicator(page)).toContainText("stocks · attempt 1 of 3");
       await expect(page.getByRole("button", { name: /AAPL/ })).toBeVisible(); // the last prices stay on screen
+      await shot(page, "banner-reconnecting", viewport.width);
       await axeInBothThemes(page, "reconnecting");
     });
 
@@ -90,6 +100,7 @@ for (const viewport of [
         await expect(banner(page)).not.toContainText(/frozen/i); // there are no prices to freeze
         await expect(indicator(page)).toContainText("Offline");
         await expect(indicator(page)).toContainText(/retry in \d+ s/);
+        if (poll === "network") await shot(page, "banner-offline", viewport.width);
         await axeInBothThemes(page, `offline (${name})`);
       });
     }
@@ -119,6 +130,7 @@ for (const viewport of [
       await expect(indicator(page)).toContainText("Delayed");
       await expect(indicator(page)).toContainText("refreshes every 10 s");
       await expect(banner(page)).toHaveCount(0);
+      await shot(page, "indicator-delayed", viewport.width);
       await axeInBothThemes(page, "delayed");
     });
 
@@ -129,6 +141,7 @@ for (const viewport of [
       await expect(indicator(page)).toContainText("Delayed");
       await expect(indicator(page)).toContainText("live prices paused");
       await expect(banner(page)).toHaveCount(0);
+      await shot(page, "indicator-stream-paused", viewport.width);
       await axeInBothThemes(page, "stream paused");
     });
   });

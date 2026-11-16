@@ -1,5 +1,7 @@
 # Trading app polish: design review
 
+This is the review after Part 4. The states it left out, and what became of its "Left for Part 5" list, are in [`../part-05/README.md`](../part-05/README.md).
+
 Ours is `app/terminal-{dark,light}-{1440,390}.png` (a signed-in player with one filled order, from the fixtures in `apps/web/e2e/trading-terminal.spec.ts`; produced with
 `SCREENSHOT_DIR=<dir> pnpm exec playwright test e2e/trading-terminal.spec.ts -g accessibility` in `apps/web`). The design is `design-term-live.jpg` and
 `design-mobile-01.jpg` (the committed screenshots in `design/export-2026-09-25-final/screenshots/`), and `design-terminal-1440.png` / `design-mobile-390.png`, which are
