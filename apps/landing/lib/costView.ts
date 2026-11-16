@@ -10,13 +10,13 @@ import { SERVICE_ARRIVES_IN_PART, humanAllowance, metricLabel, serviceLabel } fr
 export const OFF_LANDING_SERVICES: ReadonlySet<string> = new Set(["upstash-redis", "aws-lambda", "vercel-ai-gateway"]);
 
 /**
- * Planned for a part that has since been built without them: Part 4 did not build Workflows (decision-1-sweep-driver.md), so the usage card, which
+ * Planned for a part that has since been built without them: Part 4 did not build Workflows (decision-1-sweep-driver.md), and Part 5 built neither a queue (ADR-0028: the wait is a Postgres state) nor Grafana, so the usage card, which
  * lists only what runs today, does not list it even though its planned part is built. Its allowance stays in the list the card opens.
  */
-export const NOT_BUILT_SERVICES: ReadonlySet<string> = new Set(["vercel-workflows"]);
+export const NOT_BUILT_SERVICES: ReadonlySet<string> = new Set(["vercel-workflows", "vercel-queues", "grafana-cloud"]);
 
-/** The part in which the per-player cost estimate arrives: Part 5's moment is "The market open: where the work waits". No number is shown before it. */
-export const PER_PLAYER_ESTIMATE_PART = 5;
+/** The part in which the per-player cost estimate arrives: Part 6, "What held, what broke" (the diff and the full bill). Part 5 measured the application on one local machine and read no hosted usage, so no number is shown before it. */
+export const PER_PLAYER_ESTIMATE_PART = 6;
 
 /** The allowances the landing shows: the ledger without the services nothing uses. */
 export function landingAllowances(all: readonly AllowanceEntry[]): AllowanceEntry[] {
@@ -48,7 +48,7 @@ export interface CostView {
   rows: CostRow[];
   /** Spent this month: never a number the ledger does not hold. */
   spend: SpendView;
-  /** "Arrives in Part 5". */
+  /** "Arrives in Part 6". */
   perPlayer: string;
 }
 

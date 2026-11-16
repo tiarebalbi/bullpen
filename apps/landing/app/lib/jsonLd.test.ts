@@ -31,13 +31,13 @@ describe("buildJsonLd: home", () => {
     expect(validateJsonLd(buildJsonLd("home", real)).valid).toBe(true);
   });
 
-  it("lists the four published parts and the published bonus, each with a date", () => {
-    expect(real.filter(isPart).filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"], [4, "2026-10-26"]]);
+  it("lists the five published parts and the published bonus, each with a date", () => {
+    expect(real.filter(isPart).filter((p) => p.status === "published").map((p) => [p.part, p.date])).toEqual([[1, "2026-10-04"], [2, "2026-10-11"], [3, "2026-10-19"], [4, "2026-10-26"], [5, "2026-11-16"]]);
     expect(real.filter((e) => !isPart(e) && e.status === "published").map((e) => e.date)).toEqual(["2026-11-11"]);
-    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(5);
+    expect((seriesNode(real).hasPart as Array<{ headline: string }>).map((p) => p.headline)).toHaveLength(6);
   });
 
-  it("lists Parts 1 to 4 and the bonus with each post's real headline, URL and date, the bonus between Part 4 and Part 5", () => {
+  it("lists Parts 1 to 5 and the bonus with each post's real headline, URL and date, the bonus between Part 4 and Part 5", () => {
     expect(seriesNode(real).hasPart).toEqual([
       {
         "@type": "BlogPosting",
@@ -68,6 +68,12 @@ describe("buildJsonLd: home", () => {
         headline: "Every New Requirement Has a Cost. Make It Visible.",
         url: "https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost",
         datePublished: "2026-11-11",
+      },
+      {
+        "@type": "BlogPosting",
+        headline: "The market open: where the work waits",
+        url: "https://tiarebalbi.com/en/blog/market-open-where-the-work-waits",
+        datePublished: "2026-11-16",
       },
     ]);
   });
@@ -124,7 +130,7 @@ describe("buildJsonLd: planned dates", () => {
   const planned = real.flatMap((entry) => (entry.plannedDate ? [entry.plannedDate] : []));
 
   it("never writes a planned date, or the word, anywhere in the graph", () => {
-    expect(planned).toEqual(["2026-11-23", "2026-11-30"]);
+    expect(planned).toEqual(["2026-11-30"]);
     for (const page of ["home", "architecture", "privacy"] as const) {
       const text = JSON.stringify(buildJsonLd(page, real));
       for (const date of planned) expect(text).not.toContain(date);
