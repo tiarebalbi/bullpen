@@ -179,4 +179,19 @@ describe("the leaderboard-refresh kill switch (ADR-0031)", () => {
       restore();
     }
   });
+
+  it("off: the snapshot says the refresh is paused, so the screen can say so; on, it says nothing of it", async () => {
+    const off = setSwitches("leaderboard-refresh");
+    try {
+      expect((await (await GET(new Request("http://x/api/leaderboard"))).json()).refresh).toBe("paused");
+    } finally {
+      off();
+    }
+    const on = setSwitches(undefined);
+    try {
+      expect(await (await GET(new Request("http://x/api/leaderboard"))).json()).not.toHaveProperty("refresh");
+    } finally {
+      on();
+    }
+  });
 });

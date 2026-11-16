@@ -15,6 +15,7 @@ vi.mock("@bullpen/db-handles", () => ({ CHANGE_LIMIT: 5, CHANGE_WINDOW_HOURS: 24
 vi.mock("../../lib/moderation/gateway.js", () => ({ askGateway: mocks.askGateway }));
 
 const { GET, POST } = await import("./route.js");
+const { setSwitches } = await import("../../lib/degradation/testing.js");
 const post = (body: unknown) => POST(new Request("http://x/api/handle", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body) }));
 
 let errorLog: MockInstance<typeof console.error>;
@@ -114,6 +115,22 @@ describe("POST: saving a handle", () => {
     const line = String(infoLog.mock.calls[0]?.[0]);
     expect(JSON.parse(line)).toEqual({ at: "moderation", handleId: "h-1", status: "approved", probability: 0.99, latencyMs: 10 });
     expect(line).not.toMatch(/BullRun|user-1/);
+  });
+});
+
+describe("POST: with the handle-moderation switch off (ADR-0031)", () => {
+  it("asks no model, ends in review, and says moderation is paused so the screen does not claim a check", async () => {
+    const restore = setSwitches("handle-moderation");
+    try {
+      expect(await (await post({ handle: "BullRun" })).json()).toEqual({ status: "review", moderation: "paused" });
+      expect(mocks.askGateway).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it("on, the answer carries no moderation field", async () => {
+    expect(await (await post({ handle: "BullRun" })).json()).not.toHaveProperty("moderation");
   });
 });
 

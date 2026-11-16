@@ -31,6 +31,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       ageMs: read.ageMs,
       stale: read.stale,
       lastFailure: read.lastFailure ? { at: read.lastFailure.at.toISOString(), error: read.lastFailure.error } : null,
+      ...(isOff("leaderboard-refresh") ? { refresh: "paused" as const } : {}),
       ...(viewer ? { viewer } : {}),
     };
     return NextResponse.json(body, { headers: { "cache-control": "no-store" } });
