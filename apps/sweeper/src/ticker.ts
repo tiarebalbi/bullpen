@@ -84,6 +84,38 @@ const parse = (body: unknown): TickReply | null => {
   return { open, nextOpen: at && !Number.isNaN(at.getTime()) ? at : null };
 };
 
+/** What one call to the sweep route came to: how soon to call again, in the loop's words, what the log says about it, and what the reply said about the next open. */
+interface Call {
+  outcome: "open" | "idle" | "failed";
+  detail: Record<string, unknown>;
+  nextOpen: Date | null;
+}
+
+/** A reply that is not a sweep reply, or a status that is not 200: a failed call, with what the log says about it. */
+const failed = (detail: Record<string, unknown>): Call => ({ outcome: "failed", detail, nextOpen: null });
+
+/** One call: a status that is not 200, a body that is not a sweep reply and a thrown error are each a failed call. Returns null when the signal aborted, which is not a failure. */
+async function callSweep(options: TickerOptions, signal: AbortSignal): Promise<Call | null> {
+  try {
+    const response = await (options.fetch ?? fetch)(options.url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${options.token}` },
+      signal: AbortSignal.any([signal, AbortSignal.timeout(options.timeoutMs ?? TIMEOUT_MS)]),
+    });
+    if (response.status !== 200) return failed({ status: response.status });
+    const reply = parse(await response.json().catch(() => null));
+    if (!reply) return failed({ status: 200, problem: "the reply is not a sweep reply" });
+    return { outcome: reply.open > 0 ? "open" : "idle", detail: { open: reply.open }, nextOpen: reply.nextOpen };
+  } catch (error) {
+    return signal.aborted ? null : failed({ problem: error instanceof Error ? error.name : "error" });
+  }
+}
+
+/** Whether a run that asked to leave when idle leaves now: the reply said nothing is open, and no open is near. */
+function leavesNow(options: TickerOptions, call: Call, now: Date): boolean {
+  return options.exitWhenIdle === true && call.outcome === "idle" && !openIsNear(call.nextOpen, now, options.exitSoonMs);
+}
+
 /**
  * Calls the sweep route until the signal aborts. A call that fails (a status that is not 200, a body that is not the
  * contract, a network error, a timeout) is logged without the token and retried after a growing wait; the loop never gives up,
@@ -91,10 +123,8 @@ const parse = (body: unknown): TickReply | null => {
  * abandons a call in flight: the route is idempotent, so the next sweep completes whatever it was doing.
  */
 export async function run(options: TickerOptions, signal: AbortSignal): Promise<void> {
-  const { url, token } = options;
   const activeMs = options.activeMs ?? ACTIVE_MS;
   const maxMs = options.maxMs ?? MAX_MS;
-  const doFetch = options.fetch ?? fetch;
   const sleep = options.sleep ?? realSleep;
   const clock = options.now ?? (() => new Date());
   const log = options.log ?? ((line) => console.log(JSON.stringify(line)));
@@ -106,36 +136,15 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
 
   while (!signal.aborted) {
     const started = Date.now();
-    let outcome: "open" | "idle" | "failed" = "failed";
-    let detail: Record<string, unknown>;
-    /** What this reply said about the next open, not what an earlier one did: leaving rests on the answer just given. */
-    let replyNextOpen: Date | null = null;
-    try {
-      const response = await doFetch(url, {
-        method: "POST",
-        headers: { authorization: `Bearer ${token}` },
-        signal: AbortSignal.any([signal, AbortSignal.timeout(options.timeoutMs ?? TIMEOUT_MS)]),
-      });
-      if (response.status !== 200) {
-        detail = { status: response.status };
-      } else {
-        const reply = parse(await response.json().catch(() => null));
-        if (reply) {
-          outcome = reply.open > 0 ? "open" : "idle";
-          replyNextOpen = reply.nextOpen;
-          if (reply.nextOpen) nextOpen = reply.nextOpen;
-          detail = { open: reply.open };
-        } else detail = { status: 200, problem: "the reply is not a sweep reply" };
-      }
-    } catch (error) {
-      if (signal.aborted) return;
-      detail = { problem: error instanceof Error ? error.name : "error" };
-    }
+    const call = await callSweep(options, signal);
+    if (call === null) return;
+    const { outcome, detail } = call;
+    if (call.nextOpen) nextOpen = call.nextOpen;
     calls += 1;
     wait = nextWait(wait, outcome, activeMs, maxMs);
     if (outcome === "failed" || outcome !== mode || calls % 60 === 0) log({ at: new Date().toISOString(), outcome, ms: Date.now() - started, nextMs: wait, calls, ...detail });
     mode = outcome;
-    if (options.exitWhenIdle && outcome === "idle" && !openIsNear(replyNextOpen, clock(), options.exitSoonMs)) {
+    if (leavesNow(options, call, clock())) {
       log({ at: new Date().toISOString(), outcome: "idle-exit", calls });
       return;
     }
