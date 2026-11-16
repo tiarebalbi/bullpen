@@ -32,6 +32,8 @@ export interface LeaderboardSnapshot {
   ageMs: number;
   stale: boolean;
   lastFailure: { at: string; error: string } | null;
+  /** Present, and "paused", only while the leaderboard-refresh kill switch is off (ADR-0031): no refresh is scheduled, and this is the last good ranking, as old as it is. Absent while it refreshes. */
+  refresh?: "paused";
   /** The signed-in caller, present only for them. */
   viewer?: LeaderboardViewer;
 }

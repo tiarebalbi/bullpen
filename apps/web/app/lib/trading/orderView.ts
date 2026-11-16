@@ -85,6 +85,51 @@ export function estimate(quantity: string, price: string): { cost: number; reser
   return { cost, reserve: cost * RESERVE_MARGIN };
 }
 
+const SCALE = 8;
+const UNIT = 10n ** BigInt(SCALE);
+
+/** A decimal string of at most 8 places as a whole number of 1e-8 units, or null when it is not one. */
+function units(decimal: string): bigint | null {
+  const m = /^(\d+)(?:\.(\d{1,8}))?$/.exec(decimal.trim());
+  return m ? BigInt(m[1]!) * UNIT + BigInt((m[2] ?? "").padEnd(SCALE, "0")) : null;
+}
+
+/** The ceiling the server holds one share at: price × 1.05 rounded to 8 places, half away from zero (db-trading `round($price * $margin, 8)`). In 1e-8 units. */
+const capUnits = (price: bigint): bigint => (price * 105n + 50n) / 100n;
+
+/** The money the server holds for `quantity`: cap × quantity, exact, in 1e-16 units. The order is refused when buying power is below it. */
+function heldUnits(quantity: string, price: string): bigint | null {
+  const q = units(quantity);
+  const p = units(price);
+  return q === null || p === null ? null : capUnits(p) * q;
+}
+
+/** Whether buying power cannot cover the reserve of `quantity` at `price`: the server's own comparison, in exact decimals, so the ticket and the server never disagree at the cent. */
+export function exceedsBuyingPower(quantity: string, price: string, buyingPower: string): boolean {
+  const held = heldUnits(quantity, price);
+  const bp = units(buyingPower);
+  return held !== null && bp !== null && held > bp * UNIT;
+}
+
+/** By how many dollars the reserve is above buying power, rounded up to the cent so it never understates, as a decimal string; null when it is not above. */
+export function shortfallAmount(quantity: string, price: string, buyingPower: string): string | null {
+  const held = heldUnits(quantity, price);
+  const bp = units(buyingPower);
+  if (held === null || bp === null || held <= bp * UNIT) return null;
+  const perCent = UNIT * UNIT / 100n; // one cent in 1e-16 units
+  const cents = (held - bp * UNIT + perCent - 1n) / perCent;
+  return `${cents / 100n}.${String(cents % 100n).padStart(2, "0")}`;
+}
+
+/** The largest whole quantity whose reserve buying power covers, or null when not even one share fits. */
+export function maxAffordableQuantity(price: string, buyingPower: string): string | null {
+  const p = units(price);
+  const bp = units(buyingPower);
+  if (p === null || bp === null || p === 0n) return null;
+  const whole = bp / capUnits(p);
+  return whole >= 1n ? String(whole) : null;
+}
+
 /** The key for one attempt: a retry of the same attempt reuses it, and a new attempt gets a new one. */
 export function newAttemptKey(): string {
   return globalThis.crypto.randomUUID();
@@ -133,4 +178,41 @@ export function orderSummary(o: OrderView): string {
     default:
       return orderDetail(o);
   }
+}
+
+/** The ticket's one warning, in the design's priority (TicketGuard): waiting for prices, then a shortfall, then a stale price, then the market being closed. */
+export type TicketGuardState =
+  | { kind: "waiting" }
+  | { kind: "shortfall"; over: string; maxQuantity: string | null }
+  | { kind: "stale"; asOf: string }
+  | { kind: "closed"; opens: string };
+
+export interface GuardInput {
+  /** The price link has failed and nothing has answered. */
+  linkOffline: boolean;
+  /** Amount over buying power (see `shortfallAmount`), or null. */
+  over: string | null;
+  maxQuantity: string | null;
+  /** The ISO time of the stored close when it is stale, else null. */
+  staleAsOf: string | null;
+  /** When the queue goes at the open, or null while the market is open. */
+  opens: string | null;
+}
+
+/** The first guard that applies, or null. One at a time. */
+export function selectGuard(input: GuardInput): TicketGuardState | null {
+  if (input.linkOffline) return { kind: "waiting" };
+  if (input.over !== null) return { kind: "shortfall", over: input.over, maxQuantity: input.maxQuantity };
+  if (input.staleAsOf !== null) return { kind: "stale", asOf: input.staleAsOf };
+  if (input.opens !== null) return { kind: "closed", opens: input.opens };
+  return null;
+}
+
+/** The confirm button's words: the guard changes them (the design: "the confirm label changes with it"). */
+export function confirmLabel(guard: TicketGuardState | null, symbol: string, quantity: string | null, cost: number | null): string {
+  if (guard === null || guard.kind === "closed") {
+    if (guard !== null && quantity !== null && cost !== null) return queueLabel(cost);
+    return buyLabel(symbol, quantity, cost);
+  }
+  return guard.kind === "waiting" ? "Waiting for prices" : guard.kind === "shortfall" ? "Not enough buying power" : "Price is stale";
 }

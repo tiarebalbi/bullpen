@@ -1,7 +1,10 @@
 import type { StockPriceSnapshot } from "@bullpen/contracts";
 
-/** What the screen says about its prices: Live, Reconnecting or Stale (ADR-0029). */
-export type LinkStatus = "live" | "reconnecting" | "stale";
+/**
+ * What the screen says about its prices (ADR-0029), in the design system's indicator vocabulary: Live on the stream; Delayed on the polling fallback; Reconnecting
+ * while the stream is being re-opened; Stale when the prices are past their close or the feed has gone quiet; Offline when nothing has answered and there are no prices.
+ */
+export type LinkStatus = "live" | "delayed" | "reconnecting" | "stale" | "offline";
 
 export interface LinkState {
   snapshot: StockPriceSnapshot | null;
@@ -12,10 +15,16 @@ export interface LinkState {
   lastFrameAt: number | null;
   /** Set when the polling fallback's last attempt failed and there is nothing to show: the HTTP status it got (503 for a database that is down), or null for no answer at all. */
   failed: { httpStatus: number | null } | null;
+  /** How many times in a row the stream has failed (reset when it speaks): the indicator says "attempt N of 3" while it is under the polling threshold. */
+  attempt: number;
+  /** When the next automatic try is due (ms since the epoch): the stream's reconnect or the next poll, whichever is first. Null when nothing is scheduled. */
+  nextRetryAt: number | null;
+  /** True when the last poll said the price-stream switch is off, so "polling" is a decision and not a failure. */
+  streamPaused: boolean;
 }
 
 /** One poll of the fallback route: the prices, or why there are none. */
-export type PollResult = { snapshot: StockPriceSnapshot } | { httpStatus: number | null };
+export type PollResult = { snapshot: StockPriceSnapshot; streamPaused?: boolean } | { httpStatus: number | null };
 
 export const STREAM_URL = "/api/prices/stream";
 export const POLL_URL = "/api/stock-prices";
@@ -58,7 +67,7 @@ export const backoffMs = (failures: number, random: () => number): number => Mat
  * React; the hook below wraps it, and a test drives it with a fake stream and a fake clock.
  */
 export class PriceLink {
-  private state: LinkState = { snapshot: null, status: "reconnecting", via: "none", lastFrameAt: null, failed: null };
+  private state: LinkState = { snapshot: null, status: "reconnecting", via: "none", lastFrameAt: null, failed: null, attempt: 0, nextRetryAt: null, streamPaused: false };
   private source: StreamLike | null = null;
   private lastEventId: string | undefined;
   private lastFrameAt: number | null = null;
@@ -69,6 +78,8 @@ export class PriceLink {
   private reconnectTimer: unknown = null;
   private pollTimer: unknown = null;
   private watchdog: unknown = null;
+  private reconnectAt: number | null = null;
+  private pollAt: number | null = null;
   /** How many connections were opened, for a test and the measurement. */
   opened = 0;
 
@@ -92,17 +103,26 @@ export class PriceLink {
     this.source = null;
     for (const handle of [this.reconnectTimer, this.pollTimer, this.watchdog]) if (handle !== null) this.deps.clearTimeout(handle);
     this.reconnectTimer = this.pollTimer = this.watchdog = null;
+    this.reconnectAt = this.pollAt = null;
   }
 
   private publish(): void {
     const age = this.lastFrameAt === null ? Infinity : this.deps.now() - this.lastFrameAt;
     let status: LinkStatus;
-    if (this.state.snapshot === null) status = "reconnecting";
+    if (this.state.snapshot === null) status = this.state.failed ? "offline" : "reconnecting";
     else if (anyStale(this.state.snapshot)) status = "stale";
-    else if (this.polling) status = age > POLL_MS * 3 ? "stale" : "live";
+    else if (this.polling) status = age > POLL_MS * 3 ? "stale" : "delayed";
     else if (!this.connected) status = "reconnecting";
     else status = age > STALE_AFTER_MS ? "stale" : "live";
-    this.state = { ...this.state, status, via: this.polling ? "polling" : this.state.snapshot ? "stream" : "none", lastFrameAt: this.lastFrameAt };
+    const due = [this.reconnectAt, this.pollAt].filter((at): at is number => at !== null);
+    this.state = {
+      ...this.state,
+      status,
+      via: this.polling ? "polling" : this.state.snapshot ? "stream" : "none",
+      lastFrameAt: this.lastFrameAt,
+      attempt: this.failures,
+      nextRetryAt: due.length > 0 ? Math.min(...due) : null,
+    };
     this.onChange(this.state);
   }
 
@@ -120,6 +140,7 @@ export class PriceLink {
     const heard = (): void => {
       this.connected = true;
       this.failures = 0;
+      this.state = { ...this.state, streamPaused: false };
       this.lastFrameAt = this.deps.now();
       if (this.polling) this.stopPolling();
     };
@@ -162,8 +183,10 @@ export class PriceLink {
   private scheduleReconnect(ms: number): void {
     if (this.stopped) return;
     if (this.reconnectTimer !== null) this.deps.clearTimeout(this.reconnectTimer);
+    this.reconnectAt = this.deps.now() + ms;
     this.reconnectTimer = this.deps.setTimeout(() => {
       this.reconnectTimer = null;
+      this.reconnectAt = null;
       this.connect();
     }, ms);
   }
@@ -174,12 +197,16 @@ export class PriceLink {
     const poll = (): void => {
       void this.deps.fetchSnapshot().then((result) => {
         if (this.stopped || !this.polling) return;
-        if ("snapshot" in result) this.take(result.snapshot);
-        else if (this.state.snapshot === null) this.state = { ...this.state, failed: { httpStatus: result.httpStatus } };
+        if ("snapshot" in result) {
+          this.take(result.snapshot);
+          this.state = { ...this.state, streamPaused: result.streamPaused === true };
+        } else if (this.state.snapshot === null) this.state = { ...this.state, failed: { httpStatus: result.httpStatus } };
         this.publish();
       });
+      this.pollAt = this.deps.now() + POLL_MS;
       this.pollTimer = this.deps.setTimeout(poll, POLL_MS);
     };
+    this.pollNow = poll;
     poll();
   }
 
@@ -187,6 +214,30 @@ export class PriceLink {
     this.polling = false;
     if (this.pollTimer !== null) this.deps.clearTimeout(this.pollTimer);
     this.pollTimer = null;
+    this.pollAt = null;
+    this.pollNow = null;
+  }
+
+  private pollNow: (() => void) | null = null;
+
+  /**
+   * "Retry now": the player does not wait for the countdown. The stream is opened again at once and, if the screen is polling, the prices are asked for at once too.
+   * The failure count is kept, so a feed that is still down keeps backing off after this try.
+   */
+  retryNow(): void {
+    if (this.stopped) return;
+    if (this.reconnectTimer !== null) this.deps.clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    this.reconnectAt = null;
+    if (this.pollNow !== null) {
+      if (this.pollTimer !== null) this.deps.clearTimeout(this.pollTimer);
+      this.pollNow();
+    }
+    if (this.deps.openStream !== null) {
+      this.source?.close();
+      this.connect();
+    }
+    this.publish();
   }
 
   /** Re-reads staleness with the clock, since a stream that goes quiet raises no event of its own. */

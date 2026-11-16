@@ -24,6 +24,9 @@ const SAVED: Record<string, string> = {
   pending: "Saved, but I could not finish checking it. Save it again to retry.",
 };
 
+/** The switch is off (ADR-0031): no model checked the handle, and a person reviews it. */
+export const MODERATION_PAUSED = "Saved. Automatic checks are paused right now, so a person reviews every handle. It shows on the leaderboard once it’s approved.";
+
 export function HandleForm({ initial, label }: { initial: OwnHandleView | null; label: string }): ReactNode {
   const [own, setOwn] = useState<OwnHandleView | null>(initial);
   const [text, setText] = useState(initial?.handle ?? "");
@@ -38,12 +41,12 @@ export function HandleForm({ initial, label }: { initial: OwnHandleView | null; 
     setNotice(null);
     try {
       const response = await fetch("/api/handle", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handle: text }) });
-      const body = (await response.json().catch(() => ({}))) as { status?: OwnHandleView["status"]; message?: string };
+      const body = (await response.json().catch(() => ({}))) as { status?: OwnHandleView["status"]; message?: string; moderation?: "paused" };
       if (!response.ok) {
         setError(body.message ?? "I could not save that. Try again in a moment.");
       } else {
         setOwn({ handle: text.trim(), status: body.status ?? "pending" });
-        setNotice(SAVED[body.status ?? "pending"] ?? SAVED.pending!);
+        setNotice(body.moderation === "paused" ? MODERATION_PAUSED : (SAVED[body.status ?? "pending"] ?? SAVED.pending!));
       }
     } catch {
       setError("I could not reach the server. Try again in a moment.");

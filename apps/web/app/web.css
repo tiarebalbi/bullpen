@@ -55,6 +55,14 @@ a {
   font: 500 12px/1.4 var(--font-mono);
   color: var(--foreground-muted);
 }
+.bp-leaderboard__paused {
+  font: 600 12px/1 var(--font-body);
+  padding: 6px 10px;
+  border: 1px dashed var(--foreground-muted);
+  border-radius: 9999px;
+  color: var(--foreground);
+  white-space: nowrap;
+}
 .bp-leaderboard__aside {
   display: flex;
   flex-wrap: wrap;

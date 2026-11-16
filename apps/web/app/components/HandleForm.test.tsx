@@ -9,6 +9,22 @@ const save = (text: string) => {
   fireEvent.click(screen.getByRole("button", { name: "Save handle" }));
 };
 
+describe("saving while moderation is paused (the handle-moderation switch)", () => {
+  it("says automatic checks are paused and a person reviews, instead of claiming a check", async () => {
+    reply(200, { status: "review", moderation: "paused" });
+    render(<HandleForm initial={null} label="Player 4F2A" />);
+    save("BullRun");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Automatic checks are paused right now, so a person reviews every handle."));
+  });
+
+  it("with moderation on, the ordinary notice", async () => {
+    reply(200, { status: "review" });
+    render(<HandleForm initial={null} label="Player 4F2A" />);
+    save("BullRun");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Saved. It shows on the leaderboard once it’s approved."));
+  });
+});
+
 describe("what the player is told", () => {
   it("never calls a pending, review or rejected handle public", () => {
     expect(statusLine(null, "Player 4F2A")).toContain("Player 4F2A");

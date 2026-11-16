@@ -94,10 +94,16 @@ export function Leaderboard({ polled, youLabel = null }: { polled: Polled<Leader
       aside={
         <span className="bp-leaderboard__aside">
           {signedIn ? <HandleLink viewer={viewer} /> : null}
+          {snapshot.refresh === "paused" ? <span className="bp-leaderboard__paused" data-testid="leaderboard-paused">❚❚ Paused</span> : null}
           <ConnectionIndicator status={snapshot.stale ? "stale" : "live"} detail={`as of ${formatTime(asOf)} · ${ageLabel(age)}`} />
         </span>
       }
     >
+      {snapshot.refresh === "paused" ? (
+        <p className="bp-leaderboard__failed" data-testid="leaderboard-paused-note">
+          The ranking is not refreshing right now. This is the last good one, from {formatTime(asOf)}.
+        </p>
+      ) : null}
       {failedAt !== null ? (
         <p className="bp-leaderboard__failed" data-testid="leaderboard-refresh-failed">
           The last refresh failed at {formatTime(failedAt)}; this is the last good ranking.

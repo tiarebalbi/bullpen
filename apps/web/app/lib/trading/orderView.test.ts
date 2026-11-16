@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrderView } from "@bullpen/contracts";
-import { FINISHED_SHOWN, STATE_LOOK, canCancel, estimate, isOpenState, orderDetail, orderSummary, parseQuantity, splitOrders, stateLook } from "./orderView.js";
+import { FINISHED_SHOWN, STATE_LOOK, canCancel, estimate, isOpenState, orderDetail, orderSummary, parseQuantity, splitOrders, stateLook, confirmLabel, exceedsBuyingPower, maxAffordableQuantity, selectGuard, shortfallAmount } from "./orderView.js";
 
 const order = (over: Partial<OrderView>): OrderView => ({
   orderId: "o1", symbol: "AAPL", side: "buy", type: "market", state: "accepted", quantity: "10.00000000", filledQty: "0.00000000", openQty: "10.00000000", cancelledQty: "0.00000000",
@@ -125,5 +125,64 @@ describe("the order rows", () => {
     expect(orderSummary(order({ state: "cancelled", filledQty: "0.00000000" }))).toBe("0 of 10");
     expect(orderSummary(order({ state: "rejected" }))).toBe("refused");
     for (const state of ["filled", "cancelled", "rejected"] as const) expect(orderSummary(order({ state, avgPrice: "100", filledQty: "1" })).length).toBeLessThan(30);
+  });
+});
+
+describe("the reserve, to the cent (the server's own arithmetic)", () => {
+  it("finds the largest whole quantity whose reserve fits, and it fits exactly at the edge", () => {
+    // cap = round(100 × 1.05, 8) = 105; $1,050 holds exactly 10, $1,049.99 holds 9.
+    expect(maxAffordableQuantity("100.00000000", "1050.00000000")).toBe("10");
+    expect(maxAffordableQuantity("100.00000000", "1049.99000000")).toBe("9");
+    expect(exceedsBuyingPower("10", "100.00000000", "1050.00000000")).toBe(false);
+    expect(exceedsBuyingPower("10", "100.00000000", "1049.99000000")).toBe(true);
+    expect(exceedsBuyingPower("9", "100.00000000", "1049.99000000")).toBe(false);
+  });
+
+  it("rounds the cap to 8 places like the database, so a price with many places does not drift", () => {
+    // 0.33333333 × 1.05 = 0.3499999965 → 0.35000000 (half away from zero at the 8th place): cap 0.35, so $3.50 holds exactly 10.
+    expect(maxAffordableQuantity("0.33333333", "3.50000000")).toBe("10");
+    expect(exceedsBuyingPower("10", "0.33333333", "3.50000000")).toBe(false);
+    expect(exceedsBuyingPower("10", "0.33333333", "3.49999999")).toBe(true);
+  });
+
+  it("is null when not even one share fits, or the figures are not decimals", () => {
+    expect(maxAffordableQuantity("100.00000000", "104.99999999")).toBeNull();
+    expect(maxAffordableQuantity("abc", "100")).toBeNull();
+    expect(maxAffordableQuantity("0", "100")).toBeNull();
+    expect(exceedsBuyingPower("1", "abc", "100")).toBe(false);
+  });
+
+  it("names the amount over buying power, rounded up to the cent so it never understates", () => {
+    expect(shortfallAmount("10", "100.00000000", "1000.00000000")).toBe("50.00");
+    expect(shortfallAmount("10", "100.00000000", "1050.00000000")).toBeNull();
+    expect(shortfallAmount("1", "100.00000001", "105.00000000")).toBe("0.01"); // a hundredth of a cent over is still a cent
+  });
+});
+
+describe("the ticket's one guard, in the design's priority", () => {
+  const all = { linkOffline: true, over: "5.00", maxQuantity: "3", staleAsOf: "2026-11-13T21:00:00.000Z", opens: "Mon 9:30 ET" };
+  it("waiting beats shortfall beats stale beats closed", () => {
+    expect(selectGuard(all)?.kind).toBe("waiting");
+    expect(selectGuard({ ...all, linkOffline: false })?.kind).toBe("shortfall");
+    expect(selectGuard({ ...all, linkOffline: false, over: null })?.kind).toBe("stale");
+    expect(selectGuard({ ...all, linkOffline: false, over: null, staleAsOf: null })?.kind).toBe("closed");
+    expect(selectGuard({ ...all, linkOffline: false, over: null, staleAsOf: null, opens: null })).toBeNull();
+  });
+
+  it("the confirm label changes with the guard", () => {
+    expect(confirmLabel(null, "AAPL", "10", 1000)).toBe("Buy 10 AAPL · $1,000.00");
+    expect(confirmLabel(null, "AAPL", null, null)).toBe("Buy AAPL");
+    expect(confirmLabel({ kind: "closed", opens: "Mon 9:30 ET" }, "AAPL", "10", 1000)).toBe("Queue buy for the open · $1,000.00");
+    expect(confirmLabel({ kind: "closed", opens: "Mon 9:30 ET" }, "AAPL", null, null)).toBe("Buy AAPL");
+    expect(confirmLabel({ kind: "waiting" }, "AAPL", "10", 1000)).toBe("Waiting for prices");
+    expect(confirmLabel({ kind: "shortfall", over: "1.00", maxQuantity: null }, "AAPL", "10", 1000)).toBe("Not enough buying power");
+    expect(confirmLabel({ kind: "stale", asOf: "2026-11-13T21:00:00.000Z" }, "AAPL", "10", 1000)).toBe("Price is stale");
+  });
+});
+
+describe("the moon (queued for the open) never pulses", () => {
+  it("is the only state with ☾, and its tone is the neutral one, which carries no animation", () => {
+    expect(Object.entries(STATE_LOOK).filter(([, look]) => look.glyph === "☾").map(([state]) => state)).toEqual(["queued_for_open"]);
+    expect(STATE_LOOK.queued_for_open.tone).toBe("neutral");
   });
 });

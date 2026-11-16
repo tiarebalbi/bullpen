@@ -174,7 +174,7 @@ for (const viewport of [
       await expect(detail.getByTestId("price-cell-price")).toHaveText("190.12");
       await expect(detail.getByText("Close · Oct 13")).toBeVisible();
       await expect(detail.getByTestId("price-cell-change")).toHaveCount(0);
-      await expect(detail.getByText("A chart needs price history; it arrives in Part 5.")).toBeVisible();
+      await expect(detail.getByText("A chart needs price history, which Bullpen doesn’t store yet.")).toBeVisible();
       await shot(page, "detail-stock-close", viewport.width);
       await watchlist(page).getByRole("button", { name: /^MSFT/ }).click();
       await expect(detail.getByTestId("price-cell-stale-label")).toContainText("stale · as of Oct 8");
