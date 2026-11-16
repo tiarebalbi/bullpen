@@ -2,11 +2,11 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
-2026-11-12
+2026-11-16
 
 ## Summary
 

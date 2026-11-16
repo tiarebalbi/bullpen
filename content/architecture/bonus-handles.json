@@ -204,7 +204,7 @@
       "adrs": [
         "ADR-0018"
       ],
-      "costNote": "Hobby quota: 5 Active CPU-hours"
+      "costNote": "Hobby quota: 5 Active CPU-hours, 420 GB-hours of memory"
     },
     {
       "id": "neon-auth",
@@ -225,8 +225,8 @@
       "kind": "data",
       "meta": "handles_owner",
       "purpose": "Schema handles, owned by the role handles_owner: one row per player's handle with its status and the model's probability, the review queue as a table, and the view approved_v1.",
-      "x": 920,
-      "y": 600,
+      "x": 790,
+      "y": 1230,
       "adrs": [
         "ADR-0027"
       ]
@@ -238,7 +238,7 @@
       "meta": "Read-only view",
       "purpose": "The handle contract: owner user id and handle, for approved handles only. The only thing outside handles that trading may read, and the reason a pending, review or rejected handle cannot reach a page.",
       "x": 920,
-      "y": 710,
+      "y": 1120,
       "adrs": [
         "ADR-0027"
       ]

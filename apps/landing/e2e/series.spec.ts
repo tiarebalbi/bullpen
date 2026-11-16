@@ -1,13 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// The series section as it stands: Parts 1 to 4 published, each with its date and a link that opens its post; the bonus (ADR-0027) published too, between
-// Part 4 and Part 5, on Nov 11, 2026; Part 5 next, planned for Nov 23, and Part 6 planned for Nov 30. The facts are the ones in content/series.json.
+// The series section as it stands: Parts 1 to 5 published, each with its date and a link that opens its post; the bonus (ADR-0027) published too, between
+// Part 4 and Part 5, on Nov 11, 2026; Part 5 published on Nov 16, 2026, and Part 6 planned for Nov 30. The facts are the ones in content/series.json.
 
 const POST_1 = "https://tiarebalbi.com/en/blog/when-to-use-microservices-2026";
 const POST_2 = "https://tiarebalbi.com/en/blog/architecture-as-code-describe-govern-remember";
 const POST_3 = "https://tiarebalbi.com/en/blog/database-per-service-free-tier-data-ownership";
 const POST_4 = "https://tiarebalbi.com/en/blog/saga-pattern-time-not-services";
 const POST_BONUS = "https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost";
+const POST_5 = "https://tiarebalbi.com/en/blog/market-open-where-the-work-waits";
 
 async function mockPrice(page: Page): Promise<void> {
   await page.route("**/api/price/BTC-USD", (route) =>
@@ -96,6 +97,17 @@ for (const viewport of [
       await expect(part4).not.toContainText(/Invalid|NaN/);
     });
 
+    test("Part 5 is published, links its post and shows its publish date", async ({ page }) => {
+      const part5 = card(page, 5);
+      await expect(part5).toContainText("Part 5");
+      await expect(part5.locator(".bp-chip")).toHaveText("Published");
+      await expect(part5.getByRole("link")).toHaveAttribute("href", POST_5);
+      await expect(part5).not.toContainText("Not yet published");
+      await expect(part5).toContainText("Nov 16, 2026");
+      await expect(part5).toContainText("Queued orders, live prices and a local load test");
+      await expect(part5).not.toContainText(/Invalid|NaN/);
+    });
+
     test("the heading is 'Six parts and a bonus, one system'", async ({ page }) => {
       await expect(page.getByRole("heading", { level: 2, name: "Six parts and a bonus, one system" })).toBeVisible();
     });
@@ -143,10 +155,7 @@ for (const viewport of [
       expect(measured.bonusHeight).toBe(measured.partHeight);
     });
 
-    for (const planned of [
-      { part: 5, date: "Nov 23", chip: "Next" },
-      { part: 6, date: "Nov 30", chip: "Planned" },
-    ]) {
+    for (const planned of [{ part: 6, date: "Nov 30", chip: "Planned" }]) {
       test(`Part ${planned.part} is ${planned.chip.toLowerCase()}: the ${planned.chip} chip, a planned date set apart from a publish date, no link`, async ({ page }) => {
         const card_ = card(page, planned.part);
         await expect(card_.locator(".bp-chip")).toHaveText(planned.chip);
@@ -159,13 +168,13 @@ for (const viewport of [
     }
 
     test("a published card shows no planned date", async ({ page }) => {
-      for (const part of [1, 2, 3, 4]) await expect(card(page, part).locator("time")).toHaveCount(0);
+      for (const part of [1, 2, 3, 4, 5]) await expect(card(page, part).locator("time")).toHaveCount(0);
       await expect(bonus(page).locator("time")).toHaveCount(0);
     });
 
-    test("the four posts and the bonus's post are the only links out of the series cards, in series order", async ({ page }) => {
+    test("the five posts and the bonus's post are the only links out of the series cards, in series order", async ({ page }) => {
       const hrefs = await page.locator(".bp-series-grid a").evaluateAll((anchors) => anchors.map((a) => a.getAttribute("href")));
-      expect(hrefs).toEqual([POST_1, POST_2, POST_3, POST_4, POST_BONUS]);
+      expect(hrefs).toEqual([POST_1, POST_2, POST_3, POST_4, POST_BONUS, POST_5]);
     });
   });
 }

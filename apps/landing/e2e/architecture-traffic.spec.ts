@@ -148,10 +148,11 @@ for (const viewport of [
       await shot(page, "reduced-motion", viewport.width);
     });
 
-    test("in a planned part, only the lines carried forward from Parts 3 and 4 pulse: a planned line carries none", async ({ page }) => {
-      await open(page, 5);
+    test("in a planned part, only the lines carried forward from Parts 3 to 5 pulse: a planned line carries none", async ({ page }) => {
+      await open(page, 6);
       const moving = await pulsingEdges(page);
-      for (const id of moving) expect([...EDGES, "sweeper-to-trading-app", "trading-app-to-neon-auth"], `${id} is a built line`).toContain(id);
+      const built = [...EDGES, "sweeper-to-trading-app", "trading-app-to-neon-auth", "trading-app-to-handles-schema", "trading-app-to-approved-handles-v1", "trading-app-to-ai-gateway"];
+      for (const id of moving) expect(built, `${id} is a built line`).toContain(id);
       expect(moving).not.toContain("trading-app-to-saga");
       expect(moving).not.toContain("trading-app-to-queue");
     });

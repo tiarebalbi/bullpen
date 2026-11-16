@@ -1,6 +1,6 @@
 {
   "$schema": "https://calm.finos.org/release/1.2/meta/calm-timeline.json",
-  "current-moment": "bonus-handles",
+  "current-moment": "part-05",
   "moments": [
     {
       "unique-id": "part-01",
@@ -98,7 +98,7 @@
       "unique-id": "bonus-handles",
       "node-type": "moment",
       "name": "Bonus — Changing the plan mid-flight",
-      "description": "What runs at the end of the bonus build: player handles, moderated. One requirement that arrived between Part 4 and Part 5, costed, scoped and built: a decision model answers one Boolean question per new or changed handle, a review queue (a Postgres table) holds what it is unsure of, and a new data owner publishes the approved handles to the leaderboard view. Published on 2026-11-11, so current-moment is this moment.",
+      "description": "What runs at the end of the bonus build: player handles, moderated. One requirement that arrived between Part 4 and Part 5, costed, scoped and built: a decision model answers one Boolean question per new or changed handle, a review queue (a Postgres table) holds what it is unsure of, and a new data owner publishes the approved handles to the leaderboard view. Published on 2026-11-11.",
       "details": {
         "detailed-architecture": "moments/bonus-handles.architecture.json",
         "required-pattern": "bullpen.pattern.json"
@@ -115,10 +115,10 @@
     {
       "unique-id": "part-05",
       "node-type": "moment",
-      "name": "Part 5 (planned) — Market open and the bill",
-      "description": "Prediction: a queue absorbs the market-open order burst, and cost/usage metadata makes the bill visible on the architecture itself.",
+      "name": "Part 5 — The market open: where the work waits",
+      "description": "What runs at the end of Part 5's build. At the market open every request runs now, waits for capacity, or degrades. Orders wait in Postgres (a queued_for_open state the sweeper admits in batches at 9:30 ET), reads and orders use separate bounded pools on one compute, live prices reach every open screen by server-sent events from one read per instance, and three kill switches decide in advance what gives way first. Week one predicted a Market Open Queue and an Order Saga workflow engine; neither was built, because the order is already durable in Postgres before anything else happens. Every measurement behind this is a local run on one machine, which shows what the application can carry and says nothing about Vercel or Neon; the hosted 1,000-player run and the cost table come in Part 6.",
       "details": {
-        "detailed-architecture": "planned/part-05.architecture.json",
+        "detailed-architecture": "moments/part-05.architecture.json",
         "required-pattern": "bullpen.pattern.json"
       },
       "adrs": [
@@ -126,7 +126,8 @@
         "architecture/adr/0029-live-prices-by-server-sent-events.md",
         "architecture/adr/0030-reads-and-orders-get-separate-pools.md",
         "architecture/adr/0031-degradation-is-decided-in-advance.md",
-        "architecture/adr/0032-the-hobby-daemon-quota-is-5-active-cpu-hours.md"
+        "architecture/adr/0032-the-hobby-daemon-quota-is-5-active-cpu-hours.md",
+        "architecture/adr/0033-until-december-1-the-sweep-runs-from-github-actions.md"
       ]
     },
     {

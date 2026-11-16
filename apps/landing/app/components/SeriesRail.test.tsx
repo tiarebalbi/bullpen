@@ -34,26 +34,29 @@ describe("SeriesRail with the real series", () => {
     expect(labels).toEqual(["1", "2", "3", "4", "bonus", "5", "6"]);
   });
 
-  it("shows the bonus as published on Nov 11, 2026 with a link, Part 5 as next with its planned date and Part 6 as planned with its date", () => {
+  it("shows the bonus as published on Nov 11, 2026 with a link, Part 5 as published on Nov 16, 2026 with a link, and Part 6 as planned with its date", () => {
     expect(cards[4]).toContain("Bonus · Detour");
     expect(cards[4]).toContain("Published");
     expect(cards[4]).toContain("Nov 11, 2026");
     expect(cards[4]).toContain('href="https://tiarebalbi.com/en/blog/every-new-requirement-has-a-cost"');
     expect(cards[4]).not.toContain("Next");
     expect(cards[4]).not.toContain("Planned");
-    expect(cards[5]).toContain("Next");
-    expect(cards[5]).toContain("Planned for ");
-    expect(cards[5]).toContain(">Nov 23<");
+    expect(cards[5]).toContain("Published");
+    expect(cards[5]).toContain("Nov 16, 2026");
+    expect(cards[5]).toContain('href="https://tiarebalbi.com/en/blog/market-open-where-the-work-waits"');
+    expect(cards[5]).not.toContain("Next");
+    expect(cards[5]).not.toContain("Planned");
+    expect(cards[6]).toContain("Planned for ");
     expect(cards[6]).toContain(">Nov 30<");
     expect(cards[6]).not.toContain("Next");
   });
 
   it("shows a published date only for a published card, and no planned date on one", () => {
-    for (const card of cards.slice(0, 5)) {
+    for (const card of cards.slice(0, 6)) {
       expect(card).toContain("Published");
       expect(card).not.toContain("Planned");
     }
     expect(text).toContain("Oct 26, 2026");
-    expect(text.match(/Nov \d+, 2026/g)).toEqual(["Nov 11, 2026"]);
+    expect(text.match(/Nov \d+, 2026/g)).toEqual(["Nov 11, 2026", "Nov 16, 2026"]);
   });
 });

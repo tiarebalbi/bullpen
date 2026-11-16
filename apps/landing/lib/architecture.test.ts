@@ -16,9 +16,9 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
     expect(parts).toHaveLength(6);
     expect(parts.map((p) => p.part)).toEqual([1, 2, 3, 4, 5, 6]);
-    // Parts 1 to 4 are built; 5 and 6 are the plan.
-    expect(parts.slice(0, 4).map((p) => p.status)).toEqual(["built", "built", "built", "built"]);
-    for (const part of parts.slice(4)) {
+    // Parts 1 to 5 are built; 6 is the plan.
+    expect(parts.slice(0, 5).map((p) => p.status)).toEqual(["built", "built", "built", "built", "built"]);
+    for (const part of parts.slice(5)) {
       expect(part.status).toBe("planned");
     }
     for (const part of parts) {
@@ -120,12 +120,12 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     expect(() => parseArchitecturePart(malformed, "test.json")).toThrow(/invalid "kind"/);
   });
 
-  it("carries what Part 4 built, and what Parts 3 and 1 built and still run, into every planned part that does not name it (5 and 6), and nothing else", () => {
+  it("carries what Part 5 built, and what Parts 4, 3 and 1 built and still run, into the planned part that does not name it (6), and nothing else", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    // Parts 1 to 4 draw their own nodes, so they carry nothing.
-    for (const own of parts.slice(0, 4)) expect(own.nodes.some((n) => n.carried)).toBe(false);
-    for (const part of parts.slice(4)) {
-      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "neon-auth", "prices-v1", "schema-market-data", "schema-trading", "sweeper"]);
+    // Parts 1 to 5 draw their own nodes, so they carry nothing.
+    for (const own of parts.slice(0, 5)) expect(own.nodes.some((n) => n.carried)).toBe(false);
+    for (const part of parts.slice(5)) {
+      expect(part.nodes.filter((n) => n.carried).map((n) => n.id).sort()).toEqual(["approved-handles-v1", "bullpen-database", "daily-ingest-cron", "google-analytics", "microsoft-clarity", "neon-auth", "prices-v1", "schema-handles", "schema-market-data", "schema-trading", "sweeper", "vercel-ai-gateway"]);
       expect(part.edges.filter((e) => e.carried).map((e) => e.id).sort()).toEqual([
         "daily-cron-to-market-data",
         "landing-to-google-analytics",
@@ -133,22 +133,26 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
         "landing-to-microsoft-clarity",
         "market-data-to-market-data-schema",
         "sweeper-to-trading-app",
+        "trading-app-to-ai-gateway",
+        "trading-app-to-approved-handles-v1",
         "trading-app-to-google-analytics",
+        "trading-app-to-handles-schema",
         "trading-app-to-microsoft-clarity",
         "trading-app-to-neon-auth",
         "trading-app-to-prices-v1",
         "trading-app-to-trading-schema",
       ]);
-      // Copied from Part 4, the latest built moment; each is labelled with the moment that first built it (ADR-0010, ADR-0011).
-      for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried)) {
+      // Copied from Part 5, the latest built moment; each is labelled with the part that first built it (ADR-0010, ADR-0011). The handles and AI Gateway nodes were built in the bonus,
+      // which is not a numbered part, so the label (part-05, the first numbered part to draw them) is not asserted for them: a known limit of the label, not a claim.
+      for (const item of [...part.nodes, ...part.edges].filter((i) => i.carried && !/handles|ai-gateway/.test(i.id))) {
         expect(item.builtIn, item.id).toBe(/google-analytics|microsoft-clarity/.test(item.id) ? "part-01" : /sweeper|neon-auth/.test(item.id) ? "part-04" : "part-03");
       }
     }
   });
 
-  it("draws the Vercel box and the database box in every later part, around nodes it carries forward from Part 4", () => {
+  it("draws the Vercel box and the database box in every later part, around nodes it carries forward from Part 5", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    for (const part of parts.slice(4)) {
+    for (const part of parts.slice(5)) {
       expect(part.flow, `Part ${part.part} reads left to right like Part 3`).toBe("right");
       expect(part.groups.map((g) => g.id)).toEqual(["vercel-project", "neon-database"]);
       const database = part.groups.find((g) => g.id === "neon-database")!;
@@ -164,10 +168,10 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
     }
   });
 
-  it("keeps the carried copy of a node equal to what the latest built moment, Part 4, has, labelled as first built in Part 1", () => {
+  it("keeps the carried copy of a node equal to what the latest built moment, Part 5, has, labelled as first built in Part 1", () => {
     const parts = loadArchitectureParts(architectureDir, plannedDir);
-    const built = parts[3]!.nodes.find((n) => n.id === "google-analytics")!;
-    const carried = parts[4]!.nodes.find((n) => n.id === "google-analytics")!;
+    const built = parts[4]!.nodes.find((n) => n.id === "google-analytics")!;
+    const carried = parts[5]!.nodes.find((n) => n.id === "google-analytics")!;
     expect({ ...carried, x: 0, y: 0 }).toEqual({ ...built, x: 0, y: 0, carried: true, builtIn: "part-01" });
   });
 
@@ -210,11 +214,25 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
       expect(JSON.stringify(part2.changes)).not.toContain("analytics-consent");
     });
 
+    it("gives Part 5 its own changes and ADRs, and not the bonus's: the AI Gateway control belongs to the bonus that came before it", () => {
+      const part5 = loadArchitectureParts(architectureDir, plannedDir, calmDir)[4]!;
+      expect(part5.changes?.map((c) => (c.kind === "adr" ? c.adr : `${c.target}: ${c.controls.map((k) => k.key).join(", ")}`))).toEqual([
+        "Bullpen Trading App: order-latency-budget, read-wait-budget, stream-lifetime-budget, admission-budget, reads-never-take-the-order-pool, degradation-order",
+        "ADR-0028",
+        "ADR-0029",
+        "ADR-0030",
+        "ADR-0031",
+        "ADR-0032",
+        "ADR-0033",
+      ]);
+    });
+
     it("gives Part 1 and every planned part no changes, and nothing at all without the calm directory", () => {
       const withCalm = loadArchitectureParts(architectureDir, plannedDir, calmDir);
-      for (const part of withCalm.filter((p) => p.part !== 2 && p.part !== 3 && p.part !== 4)) expect(part.changes).toBeUndefined();
+      for (const part of withCalm.filter((p) => ![2, 3, 4, 5].includes(p.part))) expect(part.changes).toBeUndefined();
       expect(withCalm[2]!.changes?.length).toBeGreaterThan(0);
       expect(withCalm[3]!.changes?.length).toBeGreaterThan(0);
+      expect(withCalm[4]!.changes?.length).toBeGreaterThan(0);
       for (const part of loadArchitectureParts(architectureDir, plannedDir)) expect(part.changes).toBeUndefined();
     });
   });
@@ -238,7 +256,7 @@ describe("predictionOfPart: what week one predicted and the part did not build",
   it("has nothing for a part whose prediction was built as written, or that had none", () => {
     expect(predictionOfPart(2, plannedDir, calmDir)).toBeNull();
     expect(predictionOfPart(1, plannedDir, calmDir)).toBeNull();
-    expect(predictionOfPart(5, plannedDir, calmDir)).toBeNull(); // not built: there is no moment to compare with
+    expect(predictionOfPart(6, plannedDir, calmDir)).toBeNull(); // not built: there is no moment to compare with
   });
 
   it("names the Order Saga workflow engine that Part 4 planned and did not build: the lifecycle is a Postgres state machine and a sweeper", () => {
@@ -246,6 +264,19 @@ describe("predictionOfPart: what week one predicted and the part did not build",
       tag: "predictions-week-1",
       tagUrl: "https://github.com/tiarebalbi/bullpen/tree/predictions-week-1",
       notBuilt: [{ id: "order-saga-workflow", label: "Order Saga" }],
+    });
+  });
+});
+
+describe("predictionOfPart: Part 5", () => {
+  it("names the Market Open Queue and the Order Saga workflow engine that week one predicted and Part 5 did not build: the wait is a Postgres state (ADR-0028)", () => {
+    expect(predictionOfPart(5, plannedDir, calmDir)).toEqual({
+      tag: "predictions-week-1",
+      tagUrl: "https://github.com/tiarebalbi/bullpen/tree/predictions-week-1",
+      notBuilt: [
+        { id: "order-saga-workflow", label: "Order Saga" },
+        { id: "market-open-queue", label: "Market Open Queue" },
+      ],
     });
   });
 });

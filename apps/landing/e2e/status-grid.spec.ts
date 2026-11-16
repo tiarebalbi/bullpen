@@ -59,19 +59,19 @@ test.describe("Status grid (Decisions, Rules, What's defined, rule tiles, Cost, 
     await expect(defined.getByText(`${count("SYSTEM") + count("COMPONENT") + count("LIBRARY")} entries`)).toBeVisible();
   });
 
-  test("Cost is a 5/7 pair: spend is pending, the per-player slot says it arrives in Part 5, and no number stands in for either", async ({ page }) => {
+  test("Cost is a 5/7 pair: spend is pending, the per-player slot says it arrives in Part 6, and no number stands in for either", async ({ page }) => {
     const [cost, usage] = await Promise.all([page.locator("#cost").boundingBox(), page.locator("#cost-usage").boundingBox()]);
     expect(Math.abs(cost!.y - usage!.y)).toBeLessThan(2);
     expect(Math.abs(cost!.width / usage!.width - 5 / 7)).toBeLessThan(0.02);
     const card = page.locator("#cost");
     await expect(card.getByText("pending", { exact: true })).toBeVisible();
     await expect(card.getByText("Spent this month")).toBeVisible();
-    await expect(card.getByText("Arrives in Part 5", { exact: true })).toBeVisible();
+    await expect(card.getByText("Arrives in Part 6", { exact: true })).toBeVisible();
     const text = await card.innerText();
     expect(text).not.toMatch(/\$\s?\d/);
   });
 
-  test("the allowance count is the number of rows in the list, Redis and Lambda stay off, and Grafana is a Part 5 entry", async ({ page }) => {
+  test("the allowance count is the number of rows in the list, Redis and Lambda stay off, and Grafana, planned for Part 5 and not built, is listed without an arrival part", async ({ page }) => {
     const card = page.locator("#cost");
     await expect(card.getByText(`${SHOWN_ALLOWANCES} free-tier allowances tracked`)).toBeVisible();
     const details = card.locator("details.bp-cost-all");
@@ -81,7 +81,8 @@ test.describe("Status grid (Decisions, Rules, What's defined, rule tiles, Cost, 
     await expect(details.locator("summary")).toHaveText(`All ${SHOWN_ALLOWANCES} allowances and sources`);
     const text = await details.innerText();
     expect(text).not.toMatch(/Redis|Lambda/);
-    await expect(details.locator("tbody tr", { hasText: "Grafana Cloud" }).first()).toContainText("Part 5");
+    await expect(details.locator("tbody tr", { hasText: "Grafana Cloud" }).first()).not.toContainText("Part 5");
+    await expect(details.locator("tbody tr", { hasText: "Vercel Daemons" }).first()).toContainText("5 hours a month");
     for (const link of await details.locator("tbody a").all()) await expect(link).toHaveAttribute("href", /^https:\/\//);
   });
 

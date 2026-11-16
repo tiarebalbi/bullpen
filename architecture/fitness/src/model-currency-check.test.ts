@@ -292,8 +292,8 @@ describe("model currency: the ADL and the current moment describe the same compo
 
   it("names the latest built moment as the highest-numbered file in moments/", () => {
     expect(latestBuiltMoment(GOOD)).toEqual({ momentId: "part-01", file: "architecture/calm/moments/part-01.architecture.json" });
-    // the bonus after Part 4 is placed between Part 4 and Part 5 (ADR-0027)
-    expect(latestBuiltMoment(realRepoRoot)!.momentId).toBe("bonus-handles");
+    // the bonus after Part 4 is placed between Part 4 and Part 5 (ADR-0027); once Part 5 is published, Part 5 is the latest
+    expect(latestBuiltMoment(realRepoRoot)!.momentId).toBe("part-05");
   });
 
   it("fails in the shared format, citing the ADL line", () => {

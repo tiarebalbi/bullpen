@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -183,24 +183,35 @@ for (const viewport of [
   });
 }
 
-// The parts after Part 3 carry its nodes (and Part 4's, once it is built) and keep its grid, so a line in them runs through no card it is not joined to either.
-for (const part of [4, 5, 6]) {
-  test(`Part ${part} keeps Part 3's grid: no line passes through a card it is not joined to`, async ({ page }) => {
+// Every moment the explorer can show, built and planned, keeps the grid: a line runs through no card it is not joined to. (Part 3's own tests above also cover the toggles.)
+// Geometry needs the rendered diagram, so this lives here and not in the fitness package, which has no browser.
+const contentDir = join(import.meta.dirname, "..", "..", "..", "content", "architecture");
+const allEdges = (): Array<{ id: string; a: string; b: string }> =>
+  readdirSync(contentDir).filter((f) => f.endsWith(".json")).flatMap((f) => (JSON.parse(readFileSync(join(contentDir, f), "utf8")) as { edges: Array<{ id: string; a: string; b: string }> }).edges);
+
+const MOMENTS = [
+  ...[1, 2, 3, 4, 5, 6].map((part) => ({ label: `Part ${part}`, button: `PART ${part}` })),
+  { label: "the bonus", button: /BONUS/ },
+];
+for (const moment of MOMENTS) {
+  test(`${moment.label} keeps the grid: no line passes through a card it is not joined to`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.route("**/api/price/BTC-USD", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ symbol: "BTC-USD", price: 1, changePercent: 0, time: new Date().toISOString(), source: "coingecko", fetchedAt: new Date().toISOString() }) }));
     await page.goto("/");
-    await page.locator("#architecture").getByRole("group", { name: "Series part" }).getByRole("button", { name: `PART ${part}` }).click();
+    await page.locator("#architecture").getByRole("group", { name: "Series part" }).getByRole("button", { name: moment.button }).click();
     await page.waitForTimeout(1500);
-    const read = (n: number) => JSON.parse(readFileSync(join(import.meta.dirname, "..", "..", "..", "content", "architecture", `part-0${n}.json`), "utf8")) as { edges: Array<{ id: string; a: string; b: string }> };
-    const ends = new Map([...content.edges, ...read(4).edges, ...read(part).edges].map((e) => [e.id, e]));
+    // Every edge a moment can show, its own or carried from an earlier one.
+    const ends = new Map(allEdges().map((e) => [e.id, e]));
     const g = await geometry(page);
     const problems: string[] = [];
     for (const [id, points] of Object.entries(g.edges)) {
-      const edge = ends.get(id)!;
+      const edge = ends.get(id);
+      expect(edge, `${id} is a line of some moment's content`).toBeDefined();
       for (const [nodeId, r] of Object.entries(g.nodes)) {
-        if (nodeId !== edge.a && nodeId !== edge.b && points.some((p) => inside(p, r))) problems.push(`${id} runs through ${nodeId}`);
+        if (nodeId !== edge!.a && nodeId !== edge!.b && points.some((p) => inside(p, r))) problems.push(`${id} runs through ${nodeId}`);
       }
     }
+    expect(Object.keys(g.edges).length, "the diagram has lines to check").toBeGreaterThan(0);
     expect(problems).toEqual([]);
   });
 }

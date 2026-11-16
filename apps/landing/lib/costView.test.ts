@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadLatestUsage, parseAllowances, type UsageSnapshot } from "./cost.js";
-import { OFF_LANDING_SERVICES, PER_PLAYER_ESTIMATE_PART, buildCostView, buildUsageView, landingAllowances, spendView } from "./costView.js";
+import { NOT_BUILT_SERVICES, OFF_LANDING_SERVICES, PER_PLAYER_ESTIMATE_PART, buildCostView, buildUsageView, landingAllowances, spendView } from "./costView.js";
 
 const repoRoot = join(import.meta.dirname, "..", "..", "..");
 const all = parseAllowances(readFileSync(join(repoRoot, "cost", "allowances.json"), "utf8"));
@@ -44,8 +44,8 @@ describe("buildCostView", () => {
   });
 
   it("puts no number in the per-player slot: it says in which part it arrives", () => {
-    expect(PER_PLAYER_ESTIMATE_PART).toBe(5);
-    expect(view.perPlayer).toBe("Arrives in Part 5");
+    expect(PER_PLAYER_ESTIMATE_PART).toBe(6);
+    expect(view.perPlayer).toBe("Arrives in Part 6");
     expect(view.perPlayer).not.toMatch(/\$|\d+\.\d\d/);
   });
 
@@ -56,9 +56,9 @@ describe("buildCostView", () => {
     expect(view.spend.caption).not.toMatch(/\$0/);
   });
 
-  it("the timeline's Part 5 is the one about the bill, so the slot's part is not made up", () => {
-    const timeline = JSON.parse(readFileSync(join(repoRoot, "architecture", "calm", "bullpen.timeline.json"), "utf8")) as { moments: Array<{ "unique-id": string; name: string }> };
-    expect(timeline.moments.find((m) => m["unique-id"] === `part-0${PER_PLAYER_ESTIMATE_PART}`)!.name).toMatch(/bill/i);
+  it("the series says the full bill is introduced in that part, so the slot's part is not made up", () => {
+    const series = JSON.parse(readFileSync(join(repoRoot, "content", "series.json"), "utf8")) as Array<{ part?: number; introduced: string }>;
+    expect(series.find((e) => e.part === PER_PLAYER_ESTIMATE_PART)!.introduced).toMatch(/bill/i);
   });
 });
 
@@ -81,6 +81,15 @@ describe("buildUsageView", () => {
   it("once Part 4 is built, Workflows (planned for it, not built) is still not listed as in use", () => {
     const part4 = buildUsageView(all, usage, 4);
     expect(part4.rows.some((r) => r.service === "Vercel Workflows")).toBe(false);
+  });
+
+  it("once Part 5 is built, Queues and Grafana (planned for it, not built: ADR-0028 kept the wait in Postgres) are still not listed as in use, and the daemon quota is in the list the card opens", () => {
+    const part5 = buildUsageView(all, usage, 5);
+    const services = new Set(part5.rows.map((r) => r.service));
+    for (const absent of ["Vercel Queues", "Grafana Cloud", "Vercel Workflows"]) expect(services.has(absent)).toBe(false);
+    const daemons = buildCostView(all, usage, 5).rows.find((r) => r.service === "Vercel Daemons");
+    expect(daemons).toMatchObject({ metric: "Active CPU", allowance: "5 hours a month", sourceUrl: "https://vercel.com/docs/daemons/limits", arrivesInPart: null });
+    expect([...NOT_BUILT_SERVICES].sort()).toEqual(["grafana-cloud", "vercel-queues", "vercel-workflows"]);
   });
 
   it("says usage pending for a row with no reading, and never a bar or a number the snapshot does not hold", () => {
