@@ -600,7 +600,8 @@ html[data-consent-open] body {
    The market-closed guard is muted on --surface-sunken, with its glyph and title carrying the meaning, not the colour. */
 .bp-ticket__guard {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
   gap: var(--space-1) var(--space-3);
   margin: 0;
   padding: var(--space-3) var(--space-4);
@@ -621,11 +622,11 @@ html[data-consent-open] body {
   color: var(--foreground-muted);
 }
 .bp-ticket__guard[data-kind="shortfall"] {
-  background: color-mix(in oklch, var(--destructive) 12%, var(--background));
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
 }
 .bp-ticket__guard[data-kind="waiting"],
 .bp-ticket__guard[data-kind="stale"] {
-  background: color-mix(in oklch, var(--warning) 14%, var(--background));
+  background: color-mix(in oklch, var(--warning) 14%, transparent);
 }
 .bp-ticket__guard[data-kind="shortfall"] .bp-ticket__guard-glyph {
   color: var(--destructive);
@@ -721,7 +722,7 @@ html[data-consent-open] body {
   color: var(--foreground-muted);
   text-align: center;
 }
-.bp-tradebar div {
+.bp-tradebar > div {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
