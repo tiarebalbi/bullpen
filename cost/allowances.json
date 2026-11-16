@@ -63,6 +63,15 @@
     "note": "Also enforced as a rate limit: 100 per day, 100 per hour, 60 per five minutes."
   },
   {
+    "service": "vercel-daemons",
+    "metric": "active_cpu_time",
+    "allowance": 5,
+    "unit": "hours/month",
+    "source_url": "https://vercel.com/docs/daemons/limits",
+    "checked_on": "2026-11-15",
+    "note": "Hobby quota for daemons (the sweeper), per team across all its projects, production deployments only. When a Hobby team reaches it, Vercel stops the team's daemons until the first of the next month (UTC). ADR-0032 corrects the 10 hours ADR-0018 gave."
+  },
+  {
     "service": "vercel-queues",
     "metric": "api_operations",
     "allowance": 1000000,
