@@ -18,7 +18,7 @@ if (problems.length > 0 || !url || !token) {
   while (!controller.signal.aborted) await realSleep(60_000, controller.signal);
 } else {
   console.log(JSON.stringify({ at: new Date().toISOString(), outcome: "started", target: new URL(url).origin }));
-  await run({ url, token, activeMs: intOf("SWEEPER_ACTIVE_MS"), maxMs: intOf("SWEEPER_MAX_MS") }, controller.signal);
+  await run({ url, token, activeMs: intOf("SWEEPER_ACTIVE_MS"), maxMs: intOf("SWEEPER_MAX_MS"), exitWhenIdle: process.env.SWEEPER_EXIT_WHEN_IDLE === "1" }, controller.signal);
 }
 console.log(JSON.stringify({ at: new Date().toISOString(), outcome: "stopped" }));
 process.exit(0);

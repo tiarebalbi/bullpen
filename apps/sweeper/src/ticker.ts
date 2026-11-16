@@ -16,6 +16,13 @@ export interface TickerOptions {
   /** A call that takes longer than this is abandoned and counted as a failure. */
   timeoutMs?: number;
   fetch?: typeof fetch;
+  /**
+   * Leave when a reply says nothing is open and no open is near (SWEEPER_EXIT_WHEN_IDLE, ADR-0033). For a run that is paid for by the minute and not a daemon that is
+   * paid for by the hour: it exists to sweep once, or to wait for an open that is near, drain what the open admits, and stop. Off, the loop never returns.
+   */
+  exitWhenIdle?: boolean;
+  /** How near the next open must be to keep an idle run waiting for it. */
+  exitSoonMs?: number;
   /** The clock the open is read against; a test passes its own. */
   now?: () => Date;
   /** Resolves after `ms`, or as soon as the signal aborts. */
@@ -24,6 +31,8 @@ export interface TickerOptions {
 }
 
 export const ACTIVE_MS = 5_000;
+/** An idle run that is asked to leave when idle still waits for an open this near: queued orders are not "open" until the market is, so an empty reply before 9:30 is not the end of the work. */
+export const EXIT_SOON_MS = 15 * 60_000;
 /** The longest wait while nothing is open. Every call reaches Postgres, and Neon suspends the compute only after 5 minutes without activity, so a shorter wait keeps it awake all month (ADR-0018, raised to 60 minutes by ADR-0021). */
 export const MAX_MS = 60 * 60_000;
 /** The longest wait after failures: shorter, so a transient failure heals quickly. */
@@ -63,6 +72,11 @@ export function nextWait(previous: number, outcome: "open" | "idle" | "failed", 
   return Math.min(Math.max(previous * 2, activeMs * 2), outcome === "failed" ? Math.min(failedMaxMs, maxMs) : maxMs);
 }
 
+/** Whether the next open is near enough that an idle run should wait for it. An open that is already due counts as near: it is not a reason to leave. */
+export function openIsNear(nextOpen: Date | null, now: Date, soonMs = EXIT_SOON_MS): boolean {
+  return nextOpen !== null && nextOpen.getTime() - now.getTime() < soonMs;
+}
+
 const parse = (body: unknown): TickReply | null => {
   const { open, nextOpen } = (body ?? {}) as { open?: unknown; nextOpen?: unknown };
   if (!(typeof open === "number" && Number.isInteger(open) && open >= 0)) return null;
@@ -94,6 +108,8 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
     const started = Date.now();
     let outcome: "open" | "idle" | "failed" = "failed";
     let detail: Record<string, unknown>;
+    /** What this reply said about the next open, not what an earlier one did: leaving rests on the answer just given. */
+    let replyNextOpen: Date | null = null;
     try {
       const response = await doFetch(url, {
         method: "POST",
@@ -106,6 +122,7 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
         const reply = parse(await response.json().catch(() => null));
         if (reply) {
           outcome = reply.open > 0 ? "open" : "idle";
+          replyNextOpen = reply.nextOpen;
           if (reply.nextOpen) nextOpen = reply.nextOpen;
           detail = { open: reply.open };
         } else detail = { status: 200, problem: "the reply is not a sweep reply" };
@@ -118,6 +135,10 @@ export async function run(options: TickerOptions, signal: AbortSignal): Promise<
     wait = nextWait(wait, outcome, activeMs, maxMs);
     if (outcome === "failed" || outcome !== mode || calls % 60 === 0) log({ at: new Date().toISOString(), outcome, ms: Date.now() - started, nextMs: wait, calls, ...detail });
     mode = outcome;
+    if (options.exitWhenIdle && outcome === "idle" && !openIsNear(replyNextOpen, clock(), options.exitSoonMs)) {
+      log({ at: new Date().toISOString(), outcome: "idle-exit", calls });
+      return;
+    }
     await sleep(sleepFor(wait, clock(), nextOpen), signal);
   }
 }
