@@ -41,8 +41,8 @@ A server-sent event route, `/api/prices/stream`, in the Trading App, and a clien
 
 ## Consequences
 
-Measured on a local stack on Postgres 18.7 (`post-facts/part-05.md`; not on Vercel):
-one instance held 990 viewers and read the stored prices once per 5 s (0.33 reads a second; the polling fallback at the same viewers is 100), made no provider call, and held 1,130 file descriptors, so about 880 viewers fit in
+Measured on a local stack on Postgres 16 and 18.7 (`post-facts/part-05.md`; not on Vercel):
+one instance held 990 viewers and read the stored prices once per 5 s (0.33 reads a second; the polling fallback at the same viewers is 100), made no provider call, and held 1,131 file descriptors on 16 and 1,130 on 18.7, so about 880 viewers fit in
 Vercel's 1,024. Three real streams closed themselves after 246, 253 and 270 s, each with a `bye`, and a reconnect with the last event id repeated no prices.
 
 - Database reads for prices are one per instance per 5 s, plus one per polling client every 10 s only while the stream is failing. The report measures reads per second against the number of viewers and against the polling path.
