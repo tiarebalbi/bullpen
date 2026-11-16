@@ -51,6 +51,8 @@ export type {
 } from "./components/ArchitectureExplorer.js";
 
 export { MarketDataBanner } from "./components/MarketDataBanner.js";
+export { TicketGuard } from "./components/TicketGuard.js";
+export type { TicketGuardKind, TicketGuardProps } from "./components/TicketGuard.js";
 export type { MarketDataBannerKind, MarketDataBannerProps } from "./components/MarketDataBanner.js";
 export { TerminalHeader, TerminalShell } from "./components/TerminalShell.js";
 export type { TerminalHeaderProps, TerminalShellProps } from "./components/TerminalShell.js";

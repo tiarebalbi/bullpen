@@ -144,7 +144,7 @@ describe("the portfolio and the orders", () => {
 describe("the ticket while the market is closed (ADR-0028; the design system's TicketGuard)", () => {
   it("shows the design's guard: the closed glyph, 'Stocks are closed', and when the order will go, announced as an alert", () => {
     render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW })} />);
-    const guard = screen.getByTestId("ticket-queued");
+    const guard = screen.getByTestId("ticket-guard");
     expect(guard).toHaveAttribute("role", "alert");
     expect(guard).toHaveTextContent("☾");
     expect(guard).toHaveTextContent("Stocks are closed");
@@ -162,20 +162,22 @@ describe("the ticket while the market is closed (ADR-0028; the design system's T
   it("gives way to the shortfall: one guard at a time, the shortfall first", () => {
     render(<OrderTicket {...props(ok(view([], { buyingPower: "500.00000000" })), { now: CLOSED_NOW })} />);
     fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
-    expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("ticket-guard")).toHaveLength(1);
+    expect(screen.getByTestId("ticket-guard")).toHaveAttribute("data-kind", "shortfall");
     expect(screen.getByText(/more than your buying power/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Not enough buying power" })).toBeInTheDocument();
   });
 
   it("says nothing of a queue, and keeps the ordinary label, while the market is open", () => {
     render(<OrderTicket {...props(ok(view()))} />);
     fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "10" } });
-    expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ticket-guard")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Buy 10 AAPL/ })).toBeInTheDocument();
   });
 
   it("says nothing of a queue for a symbol that cannot be ordered", () => {
     render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW, price: null })} />);
-    expect(screen.queryByTestId("ticket-queued")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ticket-guard")).not.toBeInTheDocument();
   });
 
   it("after a buy, says it is queued with its reserve and can be cancelled until the open", async () => {
@@ -195,5 +197,71 @@ describe("a queued order's row", () => {
     render(<AccountPanels account={ok(view([queued]))} refresh={() => undefined} />);
     expect(screen.getByText(/Queued for the open \(Mon 9:30 ET\)/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancel/ })).toBeEnabled();
+  });
+});
+
+describe("the ticket's guards (the design system's TicketGuard, in its priority)", () => {
+  const type = (value: string): void => void fireEvent.change(screen.getByLabelText("Quantity"), { target: { value } });
+
+  it("a shortfall names the amount over and the fix, and 'Set quantity to N' fits to the cent", () => {
+    render(<OrderTicket {...props(ok(view([], { buyingPower: "1050.00000000" })))} />);
+    type("11");
+    const guard = screen.getByTestId("ticket-guard");
+    expect(guard).toHaveTextContent("$105.00 more than your buying power");
+    expect(guard).toHaveTextContent("10 AAPL fits in $1,050.00, with the 5% reserve.");
+    fireEvent.click(screen.getByRole("button", { name: "Set quantity to 10" }));
+    expect(screen.getByLabelText("Quantity")).toHaveValue("10");
+    expect(screen.queryByTestId("ticket-guard")).not.toBeInTheDocument(); // exactly the buying power: the server accepts it
+    expect(screen.getByRole("button", { name: "Buy 10 AAPL · $1,000.00" })).toBeInTheDocument();
+  });
+
+  it("when not even one share fits it says so and offers no fix", () => {
+    render(<OrderTicket {...props(ok(view([], { buyingPower: "50.00000000" })))} />);
+    type("1");
+    expect(screen.getByTestId("ticket-guard")).toHaveTextContent("Not even one AAPL fits in $50.00");
+    expect(screen.queryByRole("button", { name: /Set quantity/ })).not.toBeInTheDocument();
+  });
+
+  it("a stale price is named with its date, offers no way to buy anyway, and blocks the order", () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    render(<OrderTicket {...props(ok(view()), { staleAsOf: "2026-11-06T21:00:00.000Z" })} />);
+    type("2");
+    const guard = screen.getByTestId("ticket-guard");
+    expect(guard).toHaveAttribute("data-kind", "stale");
+    expect(guard).toHaveTextContent("AAPL’s price is stale");
+    expect(guard).toHaveTextContent("Last priced Nov 6.");
+    expect(screen.queryByRole("button", { name: /anyway/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Price is stale" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.submit(screen.getByRole("form", { name: "Order ticket" }));
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("while the price link is offline the ticket waits for prices, and says it once", () => {
+    render(<OrderTicket {...props(ok(view()), { linkOffline: true, price: null })} />);
+    const guard = screen.getByTestId("ticket-guard");
+    expect(guard).toHaveAttribute("data-kind", "waiting");
+    expect(guard).toHaveTextContent("Waiting for prices");
+    expect(guard).toHaveTextContent("No price for AAPL has arrived yet.");
+    expect(screen.getByRole("button", { name: "Waiting for prices" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByText(/There is no price for AAPL yet/)).not.toBeInTheDocument();
+  });
+
+  it("waiting comes before every other guard, and Bitcoin does not wait on the stock prices", () => {
+    const { rerender } = render(<OrderTicket {...props(ok(view()), { linkOffline: true, now: CLOSED_NOW, staleAsOf: "2026-11-06T21:00:00.000Z" })} />);
+    expect(screen.getByTestId("ticket-guard")).toHaveAttribute("data-kind", "waiting");
+    rerender(<OrderTicket {...props(ok(view()), { linkOffline: true, symbol: "BTC-USD", price: null })} />);
+    expect(screen.queryByTestId("ticket-guard")).not.toBeInTheDocument();
+  });
+
+  it("stale comes before closed", () => {
+    render(<OrderTicket {...props(ok(view()), { now: CLOSED_NOW, staleAsOf: "2026-11-06T21:00:00.000Z" })} />);
+    expect(screen.getByTestId("ticket-guard")).toHaveAttribute("data-kind", "stale");
+  });
+
+  it("the help note no longer carries the shortfall sentence; the guard does", () => {
+    render(<OrderTicket {...props(ok(view([], { buyingPower: "500.00000000" })))} />);
+    type("10");
+    expect(screen.queryByText("That is more than your buying power, with the 5% reserve.")).not.toBeInTheDocument();
   });
 });

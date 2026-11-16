@@ -619,6 +619,33 @@ html[data-consent-open] body {
 .bp-ticket__guard-text {
   color: var(--foreground-muted);
 }
+.bp-ticket__guard[data-kind="shortfall"] {
+  background: color-mix(in oklch, var(--destructive) 12%, var(--background));
+}
+.bp-ticket__guard[data-kind="waiting"],
+.bp-ticket__guard[data-kind="stale"] {
+  background: color-mix(in oklch, var(--warning) 14%, var(--background));
+}
+.bp-ticket__guard[data-kind="shortfall"] .bp-ticket__guard-glyph {
+  color: var(--destructive);
+}
+.bp-ticket__guard[data-kind="waiting"] .bp-ticket__guard-glyph,
+.bp-ticket__guard[data-kind="stale"] .bp-ticket__guard-glyph {
+  color: var(--bp-stale, var(--foreground));
+}
+.bp-ticket__guard-action {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: var(--space-1);
+  min-height: 32px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--background);
+  font: 700 12px/1 var(--font-body);
+  cursor: pointer;
+}
 
 /* MarketDataBanner (Bullpen Terminal and Mobile Trading, `banner`): a strip under the header on the desktop, a card with a 14px radius on a phone.
    The tints are the design's: the warning at 13% and the destructive at 12% over the page background. Glyph and words carry the meaning. */

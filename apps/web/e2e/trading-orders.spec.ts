@@ -76,7 +76,7 @@ for (const viewport of [
       await page.goto("/");
       await page.getByRole("button", { name: /^AAPL/ }).click();
       if (!wide) await page.getByRole("button", { name: "Trade" }).click();
-      const guard = page.getByTestId("ticket-queued").locator("visible=true");
+      const guard = page.getByTestId("ticket-guard").locator("visible=true");
       await expect(guard).toContainText("Stocks are closed");
       await expect(guard).toContainText("A market order queues for the open, Mon 9:30 ET.");
       await expect(guard).toHaveAttribute("role", "alert");

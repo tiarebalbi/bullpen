@@ -30,6 +30,12 @@ function storedPrice(stocks: Polled<StockPriceSnapshot>, symbol: string): string
   return row ? row.price : null;
 }
 
+/** The ISO time of a stock's stored close when that close is stale, else null. */
+function staleSince(stocks: Polled<StockPriceSnapshot>, symbol: string): string | null {
+  const row = stocks.status === "ok" ? stocks.data.rows.find((r) => r.symbol === symbol) : undefined;
+  return row && row.stale ? row.asOf : null;
+}
+
 /** The three feeds the page reads: the live price, the stored closes and the ranking. */
 function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceSnapshot>; stocksLink: LinkState; retryStocks: () => void; leaderboard: Polled<LeaderboardSnapshot> } {
   const { stocks, link, retryNow } = useLivePrices();
@@ -62,7 +68,7 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
   const view = account.status === "ok" ? account.account : null;
   const { confirming, setConfirming, help, setHelp } = useTerminalShortcuts(cancellableOrderId(view));
 
-  const ticket = { symbol: selected, price: storedPrice(stocks, selected), account, signIn: signInWithProvider, onAccount: apply, refresh };
+  const ticket = { symbol: selected, price: storedPrice(stocks, selected), account, signIn: signInWithProvider, onAccount: apply, refresh, linkOffline: stocksLink.status === "offline", staleAsOf: staleSince(stocks, selected) };
   const rank = rankLabel(leaderboard.status === "ok" ? leaderboard.data : null, view ? view.label : null);
   const approvedHandle = approvedHandleOf(leaderboard.status === "ok" ? leaderboard.data : null);
 
