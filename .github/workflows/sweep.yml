@@ -1,11 +1,26 @@
 name: Sweep
 
-# Until 2026-12-01 the sweep runs from here, because the production daemon is stopped for the month (ADR-0033). The same sweeper, the same route.
+# Until 2026-12-01 the sweep runs from here, because the production daemon is stopped for the month (ADR-0033). The same sweeper, the same route, but only when there is work:
+# every run is SWEEPER_EXIT_WHEN_IDLE, so it leaves as soon as nothing is open and no open is near. Three schedules, all UTC (the US is on standard time until then, so 9:30 ET is
+# 14:30 UTC), with minutes off the hour on purpose because GitHub delays top-of-hour runs most:
+#   22 14 * * 1-5      9:22 ET on weekdays: the open run. It waits for 9:30, admits the queue, and leaves when it is drained.
+#   7,37 15-20 * * 1-5 10:07 to 15:37 ET, every 30 minutes: one pass for what is stuck (cancels, releases).
+#   17 */6 * * *       every 6 hours, all week: one pass for recovery.
 # It does nothing unless the repository variable SWEEP_FROM_ACTIONS is "on"; delete the variable, or set it to anything else, to stop it with no commit.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "22 14 * * 1-5"
+    - cron: "7,37 15-20 * * 1-5"
+    - cron: "17 */6 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "single: one pass, up to 2 minutes. open: wait for the open and drain the queue, up to 15 minutes."
+        type: choice
+        options:
+          - single
+          - open
+        default: single
 
 permissions: {}
 
@@ -17,7 +32,8 @@ jobs:
   sweep:
     if: vars.SWEEP_FROM_ACTIONS == 'on'
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    # The open run (its cron, or a hand run with mode open) gets 17 minutes; every other run gets 4. fromJSON makes the choice a number.
+    timeout-minutes: ${{ fromJSON((github.event.schedule == '22 14 * * 1-5' || inputs.mode == 'open') && '17' || '4') }}
     steps:
       # The end date: the quota resets on 1 December (UTC), so a forgotten workflow cannot outlive it.
       - name: Check the window
@@ -43,16 +59,24 @@ jobs:
         with:
           node-version: 22.23.3
 
-      # The sweeper has no dependencies: Node 22 runs the TypeScript source as it is, as the container does. It loops every 5 s while orders are open, waits for the
-      # open when it is near, and leaves cleanly on SIGTERM; `timeout` ends it before the next run starts. 124 is that ending, not a failure.
+      # The sweeper has no dependencies: Node 22 runs the TypeScript source as it is, as the container does. `timeout` ends it before the job's own limit; 124 is that ending, not a failure.
+      # 900 s for the open run, 120 s for a single pass.
       - name: Run the sweeper
         if: steps.window.outputs.open == 'true'
         env:
           SWEEPER_TARGET_URL: ${{ vars.SWEEPER_TARGET_URL }}
           SWEEPER_TOKEN: ${{ secrets.SWEEPER_TOKEN }}
+          SWEEPER_EXIT_WHEN_IDLE: "1"
+          OPEN_RUN: ${{ (github.event.schedule == '22 14 * * 1-5' || inputs.mode == 'open') && 'yes' || 'no' }}
+          INPUT_MODE: ${{ inputs.mode }}
+          JOB_MINUTES: ${{ fromJSON((github.event.schedule == '22 14 * * 1-5' || inputs.mode == 'open') && '17' || '4') }}
         run: |
+          case "$INPUT_MODE" in single|open|"") ;; *) echo "::error::Unknown mode."; exit 1 ;; esac
+          if [ "$OPEN_RUN" = "yes" ]; then limit=900; else limit=120; fi
+          # The limits this run was given, in the log, so the first real run shows 17 for the open and 4 for the rest.
+          echo "::notice::open run: $OPEN_RUN; sweeper limit $limit s; job limit $JOB_MINUTES min"
           set +e
-          timeout --signal=TERM 280 node apps/sweeper/src/main.ts
+          timeout --signal=TERM "$limit" node apps/sweeper/src/main.ts
           code=$?
           if [ "$code" -eq 124 ]; then exit 0; fi
           exit "$code"

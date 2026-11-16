@@ -128,6 +128,31 @@ describe("released in batches", () => {
   });
 });
 
+describe("what the sweeper's exit-when-idle reads (apps/sweeper, ADR-0033)", () => {
+  it("with only queued orders, the reply before the open says open 0 and still names the next open; after it, open stays above 0 until the queue is admitted and settled", async () => {
+    const { symbol, accountId } = await stock("100000");
+    let baseline = await pass({}, {}, false);
+    for (let i = 0; i < 10; i += 1) {
+      const again = await pass({}, {}, false);
+      if (again.open === baseline.open && again.errors === 0) break;
+      baseline = again;
+    }
+    for (let n = 0; n < 3; n += 1) await place(accountId, symbol, "1", `idle${n}`, SATURDAY);
+    // Closed: the queue is not work, so `open` alone would say "nothing to do". The sweeper must read `nextOpen` and not exit when the open is near.
+    const before = await pass({}, {}, false);
+    expect(before.queued).toBeGreaterThanOrEqual(3);
+    expect(before.open).toBe(baseline.open);
+    expect(Number.isNaN(new Date(before.nextOpen).getTime())).toBe(false);
+    // Open: the queue is open work, so the sweeper keeps sweeping until it is drained, and only then does `open` fall back.
+    const first = await pass({ batchSize: 1 }, {}, true);
+    expect(first.open).toBeGreaterThan(baseline.open);
+    let last = first;
+    for (let i = 0; i < 12 && last.open > baseline.open; i += 1) last = await pass({}, {}, true);
+    expect(last.open).toBe(baseline.open);
+    expect(last.queued).toBe(0);
+  });
+});
+
 describe("duplicate release and retry are idempotent", () => {
   it("admitting twice admits once; the second call finds it already admitted", async () => {
     const { symbol, accountId } = await stock("10000");
