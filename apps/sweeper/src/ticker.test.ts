@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { validateSweepTick, type SweepTick } from "@bullpen/contracts";
-import { nextWait, run } from "./ticker.ts";
+import { OPEN_MARGIN_MS, nextWait, run, sleepFor } from "./ticker.ts";
 
-const reply = (open: number): SweepTick => ({ at: "2026-10-20T12:00:00.000Z", open, flagged: 0, fills: 0, cancels: 0, placed: 0, cancelRequested: 0, released: 0, releaseFailed: 0, errors: 0 });
+const reply = (open: number): SweepTick => ({ at: "2026-10-20T12:00:00.000Z", open, flagged: 0, fills: 0, cancels: 0, placed: 0, cancelRequested: 0, released: 0, releaseFailed: 0, queued: 0, admitted: 0, toppedUp: 0, admissionRejected: 0, nextOpen: "2026-10-21T13:30:00.000Z", errors: 0 });
 
 /** Drives the loop with a scripted sequence of replies and a sleep that records the wait and aborts after `calls` calls. */
 async function drive(script: (() => Response | Promise<Response>)[], options: { activeMs?: number; maxMs?: number } = {}) {
@@ -99,5 +99,71 @@ describe("the sweeper's cadence", () => {
 describe("the reply the sweeper reads", () => {
   it("is a reply the contract accepts: the field it needs is in the contract", () => {
     expect(validateSweepTick(reply(4))).toEqual({ valid: true, errors: null });
+  });
+});
+
+describe("the sweeper is awake for the open (ADR-0028)", () => {
+  const open = new Date("2026-11-16T14:30:00Z"); // Monday 9:30 ET
+  const tenBefore = new Date("2026-11-16T14:20:00Z");
+
+  it("keeps its backoff while the open is far off, or not known", () => {
+    expect(sleepFor(3_600_000, new Date("2026-11-13T23:00:00Z"), open)).toBe(3_600_000);
+    expect(sleepFor(3_600_000, tenBefore, null)).toBe(3_600_000);
+  });
+
+  it("cuts a long sleep short so the call lands just after 9:30 ET, even after the 60-minute backoff", () => {
+    expect(sleepFor(3_600_000, tenBefore, open)).toBe(10 * 60_000 + OPEN_MARGIN_MS);
+    expect(new Date(tenBefore.getTime() + sleepFor(3_600_000, tenBefore, open)).toISOString()).toBe("2026-11-16T14:30:00.500Z");
+  });
+
+  it("never wakes before the open: the margin is on the late side", () => {
+    expect(sleepFor(3_600_000, new Date("2026-11-16T14:29:59.900Z"), open)).toBe(100 + OPEN_MARGIN_MS);
+  });
+
+  it("ignores an open that has already passed", () => {
+    expect(sleepFor(60_000, new Date("2026-11-16T14:31:00Z"), open)).toBe(60_000);
+  });
+
+  /** Drives the loop with replies that name the next open, and a clock that stays where the test puts it. */
+  async function driveAt(now: Date, replies: Response[]): Promise<number[]> {
+    const waits: number[] = [];
+    const controller = new AbortController();
+    let index = 0;
+    await run(
+      {
+        url: "http://sweep.test/api/internal/sweep",
+        token: "T",
+        fetch: (async () => replies[index++]!.clone()) as typeof fetch,
+        now: () => now,
+        sleep: async (ms) => {
+          waits.push(ms);
+          if (index >= replies.length) controller.abort();
+        },
+        log: () => {},
+      },
+      controller.signal,
+    );
+    return waits;
+  }
+
+  it("the loop sleeps to the open once the route has named it, and its backoff was not shortened by the cut", async () => {
+    const same = Response.json({ ...reply(0), nextOpen: open.toISOString() });
+    const waits = await driveAt(tenBefore, Array.from({ length: 12 }, () => same));
+    // The first call is answered before any open is known; from then on every wait longer than ten minutes is cut to the open.
+    expect(waits.slice(0, 6)).toEqual([10000, 20000, 40000, 80000, 160000, 320000]);
+    expect(waits.slice(6)).toEqual(Array(6).fill(10 * 60_000 + OPEN_MARGIN_MS));
+  });
+
+  it("keeps the open it was told through a failed call", async () => {
+    const waits = await driveAt(tenBefore, [Response.json({ ...reply(0), nextOpen: open.toISOString() }), new Response("no", { status: 500 }), new Response("no", { status: 500 })]);
+    expect(waits.length).toBe(3);
+    expect(waits.every((ms) => ms <= 10 * 60_000 + OPEN_MARGIN_MS)).toBe(true);
+  });
+
+  it("works with a reply that names no open: the backoff alone", async () => {
+    const bare: Partial<SweepTick> = reply(0);
+    delete bare.nextOpen;
+    const waits = await driveAt(tenBefore, [Response.json(bare), Response.json(bare)]);
+    expect(waits).toEqual([10000, 20000]);
   });
 });

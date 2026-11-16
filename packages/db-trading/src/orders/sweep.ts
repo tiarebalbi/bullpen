@@ -1,5 +1,6 @@
 import type { Pool } from "pg";
-import { CrashError, bookFill, confirmCancel, markWorking, recordReleaseFailure, rejectOrder, releaseReservation, requestCancel, type Hooks } from "./lifecycle.js";
+import { isMarketOpen } from "@bullpen/contracts";
+import { CrashError, admitQueuedOrder, bookFill, confirmCancel, markWorking, recordReleaseFailure, rejectOrder, releaseReservation, requestCancel, type Hooks } from "./lifecycle.js";
 import type { Venue } from "./venue.js";
 
 export const ACCEPT_TIMEOUT_MS = 30_000;
@@ -8,6 +9,23 @@ export const WORKING_DEADLINE_MS = 15 * 60_000;
 export const CANCEL_RESEND_MS = 10_000;
 export const CANCEL_STUCK_MS = 5 * 60_000;
 export const MAX_RELEASE_FAILURES = 3;
+/**
+ * The opening makes the backlog eligible; it does not execute it all at 9:30:00 (ADR-0028). Each sweep pass admits at most this many queued orders, oldest first.
+ * At the sweeper's 5 s cadence that is 20 orders a second, so 1,000 queued orders are all admitted in 50 s. Chosen from the cost of an admission (one short
+ * transaction and one dispatch, measured in post-facts/part-05.md) so that a pass is far shorter than the cadence on the smallest compute.
+ */
+export const ADMIT_BATCH_SIZE = 100;
+/** A pass stops starting admissions after this long, so a slow database makes a short batch, not a request that outlives the sweeper's timeout (20 s). */
+export const ADMIT_BUDGET_MS = 8_000;
+
+export interface SweepOptions {
+  batchSize?: number;
+  budgetMs?: number;
+  /** Milliseconds now; a test passes a slow one. */
+  clock?: () => number;
+  /** Whether the market is open at an instant. The calendar's answer by default; a test whose database clock is the real one passes its own. */
+  isOpen?: (at: Date) => boolean;
+}
 
 export interface SweepResult {
   placed: number;
@@ -16,6 +34,9 @@ export interface SweepResult {
   released: number;
   releaseFailed: number;
   flagged: number;
+  admitted: number;
+  toppedUp: number;
+  admissionRejected: number;
   errors: string[];
 }
 
@@ -50,8 +71,8 @@ export async function pump(pool: Pool, venue: Venue, now: Date, hooks: Hooks = {
  * Finds what is stuck and moves it on or flags it. Every step it takes is idempotent and conditional on the order's
  * state, so it can be killed at any point and run again, and two sweeps at once do no harm.
  */
-export async function sweep(pool: Pool, venue: Venue, now: Date, hooks: Hooks = {}): Promise<SweepResult> {
-  const result: SweepResult = { placed: 0, cancelRequested: 0, cancelResent: 0, released: 0, releaseFailed: 0, flagged: 0, errors: [] };
+export async function sweep(pool: Pool, venue: Venue, now: Date, hooks: Hooks = {}, options: SweepOptions = {}): Promise<SweepResult> {
+  const result: SweepResult = { placed: 0, cancelRequested: 0, cancelResent: 0, released: 0, releaseFailed: 0, flagged: 0, admitted: 0, toppedUp: 0, admissionRejected: 0, errors: [] };
   const guard = async (work: () => Promise<void>): Promise<void> => {
     try {
       await work();
@@ -61,6 +82,31 @@ export async function sweep(pool: Pool, venue: Venue, now: Date, hooks: Hooks = 
     }
   };
   const ago = (ms: number): Date => new Date(now.getTime() - ms);
+
+  // The queue for the open: only while the market is open, and one batch a pass, oldest first (ADR-0028).
+  const isOpen = options.isOpen ?? isMarketOpen;
+  if (isOpen(now)) {
+    const clock = options.clock ?? Date.now;
+    const started = clock();
+    const budgetMs = options.budgetMs ?? ADMIT_BUDGET_MS;
+    const queued = await pool.query<{ order_id: string; symbol: string; quantity: string }>(
+      "SELECT order_id, symbol, quantity::text FROM trading.orders WHERE status = 'queued_for_open' ORDER BY created_at, order_id LIMIT $1",
+      [options.batchSize ?? ADMIT_BATCH_SIZE],
+    );
+    for (const row of queued.rows) {
+      if (clock() - started >= budgetMs) break;
+      await guard(async () => {
+        const admitted = await admitQueuedOrder(pool, row.order_id, now, hooks, isOpen);
+        if (admitted.outcome === "rejected") result.admissionRejected += 1;
+        if (admitted.outcome !== "admitted") return;
+        result.admitted += 1;
+        if (admitted.toppedUp !== null) result.toppedUp += 1;
+        // Hand it to the venue now; if the pass dies here, the accepted-order step below finds it after ACCEPT_TIMEOUT_MS.
+        await dispatchOrder(pool, venue, { orderId: row.order_id, symbol: row.symbol, quantity: row.quantity, capPrice: admitted.capPrice }, now);
+        result.placed += 1;
+      });
+    }
+  }
 
   const accepted = await pool.query<{ order_id: string; symbol: string; quantity: string; cap_price: string }>(
     "SELECT order_id, symbol, quantity::text, cap_price::text FROM trading.orders WHERE status = 'accepted' AND updated_at < $1 ORDER BY updated_at LIMIT 100",

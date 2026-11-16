@@ -3,7 +3,7 @@ import { join } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-// The signed-in trading app: the ticket, the portfolio and the seven order states. /api/orders is answered at the browser network layer with
+// The signed-in trading app: the ticket, the portfolio and the eight order states. /api/orders is answered at the browser network layer with
 // accounts made in this file (a test fixture, never a page's data). Set SCREENSHOT_DIR to keep a picture of each state in both themes.
 const shotDir = process.env.SCREENSHOT_DIR;
 async function shot(page: Page, name: string, width: number): Promise<void> {
@@ -23,7 +23,8 @@ const order = (state: string, over: Record<string, unknown> = {}) => ({
 const account = (orders: unknown[] = [], over: Record<string, unknown> = {}) => ({
   label: "Player 4F2A", buyingPower: "98000.00000000", reserved: "2000.00000000", cash: "100000.00000000", positionsValue: "0.00000000", equity: "100000.00000000", positions: [], orders, latestOrder: null, fills: [], asOf: new Date().toISOString(), ...over,
 });
-const allSeven = [
+const allEight = [
+  order("queued_for_open", { createdAt: "2026-10-24T15:00:00.000Z" }), // a Saturday: released Monday at 9:30 ET
   order("accepted"),
   order("working"),
   order("partially_filled", { filledQty: "4.00000000", openQty: "6.00000000", avgPrice: "190.12000000", spent: "760.48000000" }),
@@ -64,11 +65,11 @@ for (const viewport of [
       await shot(page, "ticket-signed-out", viewport.width);
     });
 
-    test("shows all seven order states, and 'cancel requested' does not look like 'cancelled'", async ({ page }) => {
-      await mock(page, signedIn(allSeven));
+    test("shows all eight order states, and 'cancel requested' does not look like 'cancelled'", async ({ page }) => {
+      await mock(page, signedIn(allEight));
       await page.goto("/");
       const orders = page.getByRole("list", { name: "Your orders" });
-      await expect(orders.getByRole("listitem")).toHaveCount(7);
+      await expect(orders.getByRole("listitem")).toHaveCount(8);
       const badge = (state: string) => orders.locator(`.bp-order[data-state="${state}"] .bp-state`);
       await expect(badge("cancel_requested")).toContainText("Cancel requested…");
       await expect(badge("cancelled")).toHaveText(/Cancelled$/);
@@ -78,7 +79,9 @@ for (const viewport of [
       // a finished order is one line: a short summary, with the whole sentence in its tooltip
       await expect(orders.locator('.bp-order[data-state="cancelled"]')).toContainText("4 of 10");
       await expect(orders.locator('.bp-order[data-state="cancelled"]')).toHaveAttribute("title", "4 of 10 filled at $190.12. $1,235.78 back in buying power.");
-      await expect(orders.getByRole("button", { name: "Cancel order" })).toHaveCount(3);
+      await expect(orders.locator('.bp-order[data-state="queued_for_open"]')).toContainText("Queued for the open (Mon 9:30 ET)");
+      await expect(badge("queued_for_open")).toHaveText(/Queued for the open$/);
+      await expect(orders.getByRole("button", { name: "Cancel order" })).toHaveCount(4);
       await shot(page, "orders-seven-states", viewport.width);
     });
 
@@ -126,7 +129,7 @@ for (const viewport of [
     });
 
     test("the controls are at least 44 px, nothing overflows, and there are no accessibility violations in either theme", async ({ page }) => {
-      await mock(page, signedIn(allSeven));
+      await mock(page, signedIn(allEight));
       await page.goto("/");
       await page.getByRole("button", { name: /^AAPL/ }).click();
       if (!wide) {
@@ -154,7 +157,7 @@ for (const viewport of [
 
     test("the colour-blind palette changes the colours and keeps the words and glyphs; reduced motion stops the pending pulse", async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "reduce" });
-      await mock(page, signedIn(allSeven));
+      await mock(page, signedIn(allEight));
       await page.goto("/");
       const filled = page.locator('.bp-order[data-state="filled"] .bp-state');
       const before = await filled.evaluate((el) => getComputedStyle(el).borderTopColor);

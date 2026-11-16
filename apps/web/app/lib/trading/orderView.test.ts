@@ -8,12 +8,12 @@ const order = (over: Partial<OrderView>): OrderView => ({
   createdAt: "2026-10-20T10:00:00.000Z", cancelRequestedAt: null, ...over,
 });
 
-describe("the seven states", () => {
+describe("the eight states", () => {
   it("each has its own label and glyph", () => {
     const states = Object.keys(STATE_LOOK) as (keyof typeof STATE_LOOK)[];
-    expect(states).toHaveLength(7);
-    expect(new Set(states.map((s) => STATE_LOOK[s].label)).size).toBe(7);
-    expect(new Set(states.map((s) => STATE_LOOK[s].glyph)).size).toBe(7);
+    expect(states).toHaveLength(8);
+    expect(new Set(states.map((s) => STATE_LOOK[s].label)).size).toBe(8);
+    expect(new Set(states.map((s) => STATE_LOOK[s].glyph)).size).toBe(8);
   });
 
   it("'cancel requested' differs from 'cancelled' in words, glyph and tone, and says it is waiting", () => {
@@ -24,10 +24,11 @@ describe("the seven states", () => {
   });
 
   it("only an order that can change is open, and only one not yet asked to stop can be cancelled", () => {
-    expect((["accepted", "working", "partially_filled", "cancel_requested"] as const).every(isOpenState)).toBe(true);
+    expect((["queued_for_open", "accepted", "working", "partially_filled", "cancel_requested"] as const).every(isOpenState)).toBe(true);
     expect((["cancelled", "filled", "rejected"] as const).some(isOpenState)).toBe(false);
     expect(canCancel("cancel_requested")).toBe(false);
     expect(canCancel("working")).toBe(true);
+    expect(canCancel("queued_for_open")).toBe(true);
     expect(canCancel("filled")).toBe(false);
   });
 });
@@ -41,6 +42,24 @@ describe("what an order says about itself", () => {
   it("a partial fill shows what is still open, a rejection shows nothing was spent", () => {
     expect(orderDetail(order({ state: "partially_filled", filledQty: "4.00000000", openQty: "6.00000000", avgPrice: "100.00000000" }))).toBe("4 of 10 filled at $100.00. 6 still open.");
     expect(orderDetail(order({ state: "rejected", releaseDone: true, released: "1050.00000000" }))).toMatch(/nothing was spent.*\$1,050\.00 back/);
+  });
+});
+
+describe("an order queued for the open", () => {
+  // Created Saturday 2026-11-14 10:00 ET; the open is Monday 9:30 ET.
+  const queued = order({ state: "queued_for_open", createdAt: "2026-11-14T15:00:00.000Z" });
+  it("says it is queued, when it will be released, that the money is set aside and that it can be cancelled", () => {
+    expect(stateLook("queued_for_open").label).toBe("Queued for the open");
+    expect(orderDetail(queued)).toBe("Queued for the open (Mon 9:30 ET). $1,050.00 set aside; nothing goes to the venue until then, and you can cancel before.");
+  });
+  it("is open work on the screen, shown among the open orders, not among the finished ones", () => {
+    const { open, finished } = splitOrders([queued, order({ orderId: "o2", state: "filled" })]);
+    expect(open.map((o) => o.orderId)).toEqual(["o1"]);
+    expect(finished.map((o) => o.orderId)).toEqual(["o2"]);
+  });
+  it("reads Friday evening's order as Monday's, and a Thursday-before-Thanksgiving evening's as Friday's", () => {
+    expect(orderDetail(order({ state: "queued_for_open", createdAt: "2026-11-13T23:00:00.000Z" }))).toMatch(/\(Mon 9:30 ET\)/);
+    expect(orderDetail(order({ state: "queued_for_open", createdAt: "2026-11-26T16:00:00.000Z" }))).toMatch(/\(Fri 9:30 ET\)/);
   });
 });
 

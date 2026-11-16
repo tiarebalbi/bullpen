@@ -3,7 +3,7 @@ import accountViewSchema from "../schemas/account-view.schema.json" with { type:
 import orderRequestSchema from "../schemas/order-request.schema.json" with { type: "json" };
 import type { ValidationResult } from "./cost.js";
 
-export type OrderState = "accepted" | "working" | "partially_filled" | "cancel_requested" | "cancelled" | "filled" | "rejected";
+export type OrderState = "queued_for_open" | "accepted" | "working" | "partially_filled" | "cancel_requested" | "cancelled" | "filled" | "rejected";
 
 /** The body of POST /api/orders: a market buy, made idempotent by the client's key. */
 export interface OrderRequest {
@@ -36,7 +36,7 @@ export interface OrderView {
 
 /** One step of an order's history, from the order's own events. */
 export interface OrderEventView {
-  kind: "accepted" | "working" | "fill" | "cancel_requested" | "cancelled" | "rejected" | "released";
+  kind: "queued_for_open" | "accepted" | "working" | "fill" | "cancel_requested" | "cancelled" | "rejected" | "released";
   at: string;
   state: OrderState | null;
   /** On a fill: how much, and at what price. */

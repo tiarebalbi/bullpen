@@ -38,7 +38,7 @@ export interface PositionRow {
 
 /** One step of an order's own history, from `trading.order_events`: what happened, when, and the state it moved to. */
 export interface OrderEventRow {
-  kind: "accepted" | "working" | "fill" | "cancel_requested" | "cancelled" | "rejected" | "released";
+  kind: "queued_for_open" | "accepted" | "working" | "fill" | "cancel_requested" | "cancelled" | "rejected" | "released";
   at: string;
   /** The state the order moved to, when the event is a transition. */
   state: OrderState | null;
@@ -113,7 +113,7 @@ export async function readAccountView(pool: Pool, accountId: string, now: Date =
   const latest = orders.rows[0];
   const events = latest
     ? await pool.query<{ kind: OrderEventRow["kind"]; at: Date; to_state: OrderState | null; detail: { quantity?: string; price?: string } }>(
-        "SELECT kind, at, to_state, detail FROM trading.order_events WHERE order_id = $1 AND kind IN ('accepted', 'working', 'fill', 'cancel_requested', 'cancelled', 'rejected', 'released') ORDER BY event_id",
+        "SELECT kind, at, to_state, detail FROM trading.order_events WHERE order_id = $1 AND kind IN ('queued_for_open', 'accepted', 'working', 'fill', 'cancel_requested', 'cancelled', 'rejected', 'released') ORDER BY event_id",
         [latest.order_id],
       )
     : null;

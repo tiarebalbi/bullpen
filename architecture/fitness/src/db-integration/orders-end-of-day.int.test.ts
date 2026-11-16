@@ -23,7 +23,7 @@ describe("a market buy at an end-of-day price", () => {
     const symbol = w.symbol();
     await w.endOfDayPrice(symbol, "100", { ageHours: 20 });
     const accountId = await w.account("10000");
-    const { orderId } = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "10", clientOrderId: `eod-${symbol}` });
+    const { orderId } = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "10", clientOrderId: `eod-${symbol}` }, new Date(), { queueUntilOpen: false });
     await settle(accountId, orderId);
     expect(await w.order(orderId)).toMatchObject({ status: "filled", filled_qty: "10.00000000" });
     expect((await w.trading.query("SELECT price::text FROM trading.fills WHERE order_id = $1", [orderId])).rows[0].price).toBe("100.00000000");
@@ -34,7 +34,7 @@ describe("a market buy at an end-of-day price", () => {
     const symbol = w.symbol();
     await w.endOfDayPrice(symbol, "100", { ageHours: 68 });
     const accountId = await w.account("10000");
-    const { orderId } = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "3", clientOrderId: `eod-${symbol}` });
+    const { orderId } = await placePlayerOrder(w.trading, accountId, { symbol, quantity: "3", clientOrderId: `eod-${symbol}` }, new Date(), { queueUntilOpen: false });
     await settle(accountId, orderId);
     expect(await w.order(orderId)).toMatchObject({ status: "filled" });
   });

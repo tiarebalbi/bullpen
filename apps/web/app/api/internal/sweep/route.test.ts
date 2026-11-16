@@ -12,7 +12,7 @@ vi.mock("../../../lib/trading/sweepAuth.js", () => ({ authorizeSweep: (...args: 
 
 const { POST, GET } = (await import("./route.js")) as { POST: (r: Request) => Promise<Response>; GET?: unknown };
 
-const reply = { at: "2026-10-20T12:00:00.000Z", open: 3, flagged: 0, fills: 1, cancels: 0, placed: 0, cancelRequested: 0, released: 1, releaseFailed: 0, errors: 0 };
+const reply = { at: "2026-10-20T12:00:00.000Z", open: 3, flagged: 0, fills: 1, cancels: 0, placed: 0, cancelRequested: 0, released: 1, releaseFailed: 0, queued: 0, admitted: 0, toppedUp: 0, admissionRejected: 0, nextOpen: "2026-10-21T13:30:00.000Z", errors: 0 };
 const call = () => POST(new Request("http://x/api/internal/sweep", { method: "POST" }));
 
 describe("POST /api/internal/sweep", () => {

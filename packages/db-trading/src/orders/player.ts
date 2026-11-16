@@ -66,14 +66,22 @@ export interface PlacedOrder {
 }
 
 /** A player's market buy: accept and reserve (idempotent by the client's key), hand it to the venue, and run one advance so a fill shows at once. */
-export async function placePlayerOrder(pool: Pool, accountId: string, order: Omit<SubmitOrder, "accountId">, now: Date = new Date()): Promise<PlacedOrder> {
-  const submitted = await submitOrder(pool, { ...order, accountId });
+export async function placePlayerOrder(
+  pool: Pool,
+  accountId: string,
+  order: Omit<SubmitOrder, "accountId">,
+  now: Date = new Date(),
+  /** Off only for a test or a measurement of the venue itself, which places stock orders at any hour; the app never turns it off. */
+  options: { queueUntilOpen?: boolean } = {},
+): Promise<PlacedOrder> {
+  // marketHoursAt makes a stock order placed while the market is closed wait for the open (ADR-0028); a crypto order is never held.
+  const submitted = await submitOrder(pool, { ...order, accountId }, {}, options.queueUntilOpen === false ? {} : { marketHoursAt: now });
   await advanceAccount(pool, accountId, now);
   return { orderId: submitted.orderId, duplicate: submitted.duplicate };
 }
 
-/** A player's cancel request on their own order: "requested", "already", "too-late", or "not-found" for an order that is not theirs. */
-export async function cancelPlayerOrder(pool: Pool, accountId: string, orderId: string, now: Date = new Date()): Promise<"requested" | "already" | "too-late" | "not-found"> {
+/** A player's cancel request on their own order: "requested" (the venue will confirm), "cancelled" (an order queued for the open: cancelled at once, the whole reservation back), "already", "too-late", or "not-found" for an order that is not theirs. */
+export async function cancelPlayerOrder(pool: Pool, accountId: string, orderId: string, now: Date = new Date()): Promise<"requested" | "cancelled" | "already" | "too-late" | "not-found"> {
   const owned = await pool.query("SELECT 1 FROM trading.orders WHERE order_id = $1 AND account_id = $2", [orderId, accountId]);
   if (owned.rowCount === 0) return "not-found";
   const outcome = await requestCancel(pool, orderId, now);

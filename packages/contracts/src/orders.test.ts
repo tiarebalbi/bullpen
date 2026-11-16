@@ -102,4 +102,10 @@ describe("the order request contract", () => {
     expect(validateOrderRequest({ ...request, symbol: "aapl" }).valid).toBe(false);
     expect(validateOrderRequest({ ...request, clientOrderId: "not-a-uuid" }).valid).toBe(false);
   });
+
+  it("accepts an order queued for the open, with its reservation and no fills", () => {
+    const queued: OrderView = { ...order, state: "queued_for_open", filledQty: "0.00000000", openQty: "10.00000000", avgPrice: null, spent: "0.00000000", reserved: "1050.00000000" };
+    const queuedView: AccountView = { ...view, orders: [queued], fills: [], latestOrder: { orderId: queued.orderId, events: [{ kind: "queued_for_open", at: queued.createdAt, state: "queued_for_open", quantity: "10.00000000", price: null }] } };
+    expect(validateAccountView(queuedView)).toEqual({ valid: true, errors: null });
+  });
 });

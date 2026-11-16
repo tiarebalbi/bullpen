@@ -120,7 +120,10 @@
       "details": {
         "detailed-architecture": "planned/part-05.architecture.json",
         "required-pattern": "bullpen.pattern.json"
-      }
+      },
+      "adrs": [
+        "architecture/adr/0028-queued-orders-are-admitted-in-batches-at-the-open.md"
+      ]
     },
     {
       "unique-id": "part-06",

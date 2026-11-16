@@ -25,6 +25,7 @@
     },
     "state": {
       "enum": [
+        "queued_for_open",
         "accepted",
         "working",
         "partially_filled",
@@ -254,6 +255,7 @@
                 "properties": {
                   "kind": {
                     "enum": [
+                      "queued_for_open",
                       "accepted",
                       "working",
                       "fill",

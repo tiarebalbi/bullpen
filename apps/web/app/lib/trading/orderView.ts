@@ -1,4 +1,4 @@
-import type { OrderState, OrderView } from "@bullpen/contracts";
+import { queuedLabel, type OrderState, type OrderView } from "@bullpen/contracts";
 
 /** The reserve a market buy holds above the last price (packages/db-trading CAP_MARGIN, 1.05). The ticket shows it as a ceiling, not a price. */
 export const RESERVE_MARGIN = 1.05;
@@ -13,8 +13,9 @@ export interface StateLook {
   tone: StateTone;
 }
 
-/** How each of the seven states reads. "Cancel requested" and "Cancelled" differ in words, glyph and tone: a request is not a cancel. */
+/** How each of the eight states reads. "Cancel requested" and "Cancelled" differ in words, glyph and tone: a request is not a cancel. */
 export const STATE_LOOK: Record<OrderState, StateLook> = {
+  queued_for_open: { label: "Queued for the open", glyph: "◷", tone: "pending" },
   accepted: { label: "Accepted", glyph: "○", tone: "neutral" },
   working: { label: "Working", glyph: "◐", tone: "working" },
   partially_filled: { label: "Partially filled", glyph: "◑", tone: "working" },
@@ -29,10 +30,10 @@ export function stateLook(state: OrderState): StateLook {
 }
 
 /** An order that can still change, so that the screen keeps polling and offers Cancel. */
-export const isOpenState = (state: OrderState): boolean => state === "accepted" || state === "working" || state === "partially_filled" || state === "cancel_requested";
+export const isOpenState = (state: OrderState): boolean => state === "queued_for_open" || state === "accepted" || state === "working" || state === "partially_filled" || state === "cancel_requested";
 
-/** Cancel is offered while the order can still be asked to stop: not once it is asked, and not once it is finished. */
-export const canCancel = (state: OrderState): boolean => state === "accepted" || state === "working" || state === "partially_filled";
+/** Cancel is offered while the order can still be asked to stop: not once it is asked, and not once it is finished. A queued order cancels at once. */
+export const canCancel = (state: OrderState): boolean => state === "queued_for_open" || state === "accepted" || state === "working" || state === "partially_filled";
 
 const trim = (decimal: string): string => {
   const [whole = "0", fraction = ""] = decimal.split(".");
@@ -49,6 +50,8 @@ export function orderDetail(o: OrderView): string {
   const filled = `${quantityLabel(o.filledQty)} of ${quantityLabel(o.quantity)} filled`;
   const average = o.avgPrice ? ` at ${formatMoney(o.avgPrice)}` : "";
   switch (o.state) {
+    case "queued_for_open":
+      return `${queuedLabel(new Date(o.createdAt))}. ${formatMoney(o.reserved)} set aside; nothing goes to the venue until then, and you can cancel before.`;
     case "accepted":
       return `${formatMoney(o.reserved)} set aside. Waiting to reach the venue.`;
     case "working":
