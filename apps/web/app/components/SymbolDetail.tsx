@@ -48,5 +48,5 @@ export function SymbolDetail({ selected, crypto, stocks }: { selected: string; c
 }
 
 function NoHistory(): ReactNode {
-  return <div className="bp-chart-empty"><EmptyState title="No chart yet" description="A chart needs price history; it arrives in Part 5." /></div>;
+  return <div className="bp-chart-empty"><EmptyState title="No chart yet" description="A chart needs price history, which Bullpen doesn’t store yet." /></div>;
 }

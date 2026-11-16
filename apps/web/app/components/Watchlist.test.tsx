@@ -52,8 +52,15 @@ describe("StocksSection", () => {
 
   it("labels a stale price in words, and only the stale one", () => {
     render(<StocksSection polled={stocks(rows)} selected="" onSelect={() => undefined} />);
-    expect(screen.getAllByText(/^Stale · /)).toHaveLength(1);
-    expect(screen.getByText("Stale · Oct 8")).toBeInTheDocument();
+    expect(screen.getAllByText(/Stale · /)).toHaveLength(1);
+    const status = screen.getByText("◷ Stale · Oct 8"); // the design's stale row: the clock glyph and the time it is as of, in the stale tone
+    expect(status).toHaveAttribute("data-stale");
+    expect(screen.getByText("190.12")).not.toHaveAttribute("data-stale");
+  });
+
+  it("keeps a stale close visible while the market is closed: the design hides it behind 'Close', but a missed close is not a close", () => {
+    render(<StocksSection polled={stocks(rows)} selected="" onSelect={() => undefined} />);
+    expect(screen.getByRole("button", { name: /^MSFT/ })).toHaveTextContent("Stale");
   });
 
   it("marks the selected row pressed and reports a click with the symbol", () => {

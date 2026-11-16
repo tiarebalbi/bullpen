@@ -1,4 +1,5 @@
 import { CHANGE_LIMIT, CHANGE_WINDOW_HOURS, readOwnHandle, recordDecision, submitHandle } from "@bullpen/db-handles";
+import { isOff } from "../../lib/degradation/switches.js";
 import { handlesPool } from "../../lib/handles/pool.js";
 import { handleError, limitMessage, logHandleFailure, noStore } from "../../lib/handles/respond.js";
 import { requirePlayer } from "../../lib/handles/session.js";
@@ -45,7 +46,8 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (!outcome.ok && outcome.kind === "revoked") return handleError(409, { error: "handle-unavailable", message: "That handle cannot be used. Try another." });
     if (!outcome.ok) return handleError(409, { error: "handle-taken", message: "Someone already has that handle. Try another." });
-    return Response.json({ status: outcome.status }, { headers: noStore });
+    // With the handle-moderation switch off (ADR-0031) no model was asked: say so, so the screen does not claim a check that did not happen.
+    return Response.json({ status: outcome.status, ...(isOff("handle-moderation") ? { moderation: "paused" } : {}) }, { headers: noStore });
   } catch (error) {
     logHandleFailure("handle.POST", error);
     return handleError(503, UNAVAILABLE);

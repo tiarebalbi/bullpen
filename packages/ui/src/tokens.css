@@ -147,7 +147,7 @@
   --bp-gain: oklch(50% 0.12 166);
   --bp-loss: oklch(52% 0.2 27);
   --bp-stale: oklch(51% 0.012 238);
-  --bp-accent-text: oklch(54% 0.16 50);
+  --bp-accent-text: oklch(52% 0.16 50);
   --bp-hair: color-mix(in oklch, var(--foreground) 11%, transparent);
   --bp-panel: oklch(100% 0 0);
   --bp-panel-2: oklch(96.5% 0.008 238);

@@ -76,7 +76,7 @@ for (const viewport of [
       await page.goto("/");
       await page.getByRole("button", { name: /^AAPL/ }).click();
       if (!wide) await page.getByRole("button", { name: "Trade" }).click();
-      const guard = page.getByTestId("ticket-queued").locator("visible=true");
+      const guard = page.getByTestId("ticket-guard").locator("visible=true");
       await expect(guard).toContainText("Stocks are closed");
       await expect(guard).toContainText("A market order queues for the open, Mon 9:30 ET.");
       await expect(guard).toHaveAttribute("role", "alert");
@@ -180,6 +180,18 @@ for (const viewport of [
         await shot(page, `trading-${theme}`, viewport.width);
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    });
+
+    test("the queued order's moon does not pulse, with or without reduced motion; only the pending state pulses, and it stops when motion is reduced", async ({ page }) => {
+      for (const reducedMotion of ["no-preference", "reduce"] as const) {
+        await page.emulateMedia({ reducedMotion });
+        await mock(page, signedIn(allEight));
+        await page.goto("/");
+        const animation = (state: string) => page.locator(`.bp-order[data-state="${state}"] .bp-state`).evaluate((el) => getComputedStyle(el).animationName);
+        await expect(page.locator('.bp-order[data-state="queued_for_open"] .bp-state')).toContainText("☾");
+        expect(await animation("queued_for_open")).toBe("none");
+        expect(await animation("cancel_requested")).toBe(reducedMotion === "reduce" ? "none" : "bp-pending");
+      }
     });
 
     test("the colour-blind palette changes the colours and keeps the words and glyphs; reduced motion stops the pending pulse", async ({ page }) => {

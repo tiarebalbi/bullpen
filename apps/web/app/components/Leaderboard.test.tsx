@@ -19,6 +19,18 @@ const snapshot = (overrides: Partial<LeaderboardSnapshot> = {}): LeaderboardSnap
 const ok = (data: LeaderboardSnapshot): Polled<LeaderboardSnapshot> => ({ status: "ok", data });
 
 describe("Leaderboard", () => {
+  it("says a paused refresh in words and a glyph, and that this is the last good ranking (the leaderboard-refresh switch)", () => {
+    render(<Leaderboard polled={ok(snapshot({ refresh: "paused" }))} />);
+    expect(screen.getByTestId("leaderboard-paused")).toHaveTextContent("❚❚ Paused");
+    expect(screen.getByTestId("leaderboard-paused-note")).toHaveTextContent("not refreshing right now. This is the last good one");
+  });
+
+  it("says nothing of a pause while it refreshes", () => {
+    render(<Leaderboard polled={ok(snapshot())} />);
+    expect(screen.queryByTestId("leaderboard-paused")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("leaderboard-paused-note")).not.toBeInTheDocument();
+  });
+
   it("shows the ranking with its as-of time, and no stale or failure label when fresh", () => {
     render(<Leaderboard polled={ok(snapshot())} />);
     expect(screen.getByRole("list", { name: "Players ranked by equity" })).toBeInTheDocument();

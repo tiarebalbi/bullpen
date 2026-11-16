@@ -91,7 +91,7 @@ for (const viewport of [
       await expect(stocks.getByRole("button")).toHaveCount(2);
       await expect(stocks.getByText("Close · Oct 13")).toBeVisible();
       await expect(stocks.getByText("190.12")).toHaveCSS("font-variant-numeric", "tabular-nums");
-      await expect(stocks.getByText(/^Stale · Oct 8$/)).toHaveCount(1);
+      await expect(stocks.getByText(/^◷ Stale · Oct 8$/)).toHaveCount(1);
       await expect(stocks.getByText(/[▲▼]/)).toHaveCount(0);
       await expect(stocks.getByRole("link", { name: "Alpha Vantage" })).toBeVisible();
       expect(await noOverflow(page)).toBe(true);
@@ -128,7 +128,7 @@ for (const viewport of [
     test("watchlist: stale prices (a stale close and a stale crypto price) pass axe's colour contrast in light and dark", async ({ page }) => {
       await mock(page, { stocks: { rows }, btc: btcAt(0.5, 20 * 60_000) });
       await page.goto("/");
-      await expect(watchlist(page).getByText(/^Stale · Oct 8$/)).toHaveCount(1);
+      await expect(watchlist(page).getByText(/^◷ Stale · Oct 8$/)).toHaveCount(1);
       await expect(watchlist(page).getByText("Stale", { exact: true }).first()).toBeVisible();
       for (const theme of ["light", "dark"]) {
         if (!(await page.locator("html").evaluate((el, t) => el.classList.contains("dark") === (t === "dark"), theme))) await page.getByRole("button", { name: /Switch to (light|dark) theme/ }).click();
@@ -174,7 +174,7 @@ for (const viewport of [
       await expect(detail.getByTestId("price-cell-price")).toHaveText("190.12");
       await expect(detail.getByText("Close · Oct 13")).toBeVisible();
       await expect(detail.getByTestId("price-cell-change")).toHaveCount(0);
-      await expect(detail.getByText("A chart needs price history; it arrives in Part 5.")).toBeVisible();
+      await expect(detail.getByText("A chart needs price history, which Bullpen doesn’t store yet.")).toBeVisible();
       await shot(page, "detail-stock-close", viewport.width);
       await watchlist(page).getByRole("button", { name: /^MSFT/ }).click();
       await expect(detail.getByTestId("price-cell-stale-label")).toContainText("stale · as of Oct 8");

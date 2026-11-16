@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setSwitches } from "../../lib/degradation/testing.js";
 
 const readPrices = vi.fn();
 vi.mock("@bullpen/db-trading", () => ({ readPrices }));
@@ -7,8 +8,19 @@ vi.mock("../../lib/trading/reads/pool.js", () => ({ readPool: () => ({}) }));
 const { GET } = await import("./route.js");
 
 describe("GET /api/stock-prices", () => {
+  let restore = (): void => undefined;
   beforeEach(() => {
     readPrices.mockReset();
+    restore = setSwitches(undefined);
+  });
+  afterEach(() => restore());
+
+  it("says nothing about the stream while it is on, and says it is off when the price-stream switch is off", async () => {
+    readPrices.mockResolvedValue([{ symbol: "AAPL", price: "1", asOf: new Date(), source: "alphavantage", stale: false, previous: null }]);
+    expect((await GET()).headers.get("x-bullpen-stream")).toBeNull();
+    restore();
+    restore = setSwitches("price-stream");
+    expect((await GET()).headers.get("x-bullpen-stream")).toBe("off");
   });
 
   it("returns each symbol's price with its as-of time and stale flag, and never caches it", async () => {

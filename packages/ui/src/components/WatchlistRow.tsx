@@ -61,7 +61,7 @@ export function WatchlistRow(props: WatchlistRowProps): ReactNode {
         <span className="bp-watchlist__price" data-stale={stale || undefined}>
           {priceText}
         </span>
-        {status ? <span className="bp-watchlist__status">{status}</span> : null}
+        {status ? <span className="bp-watchlist__status" data-stale={stale || undefined}>{status}</span> : null}
       </span>
       {fullDetail ? <span className="bp-visually-hidden">. {fullDetail}</span> : null}
     </button>

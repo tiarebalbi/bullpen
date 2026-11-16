@@ -18,16 +18,28 @@ function token(scope: string, name: string): string {
   return match[1]!.trim();
 }
 
+/** Linear sRGB of an oklch() colour; a colour outside sRGB is brought in by reducing its chroma, as the browser does, not by clipping each channel. */
 function linearRgb(value: string): [number, number, number] {
   const m = /^oklch\(\s*([\d.]+)%\s+([\d.]+)\s+([\d.]+)\s*\)$/.exec(value);
   if (!m) throw new Error(`not an oklch() colour: ${value}`);
-  const L = Number(m[1]) / 100, C = Number(m[2]), h = (Number(m[3]) * Math.PI) / 180;
-  const a = C * Math.cos(h), b = C * Math.sin(h);
-  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  const clamp = (x: number): number => Math.max(0, Math.min(1, x));
-  return [clamp(4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s), clamp(-1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s), clamp(-0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s)];
+  const L = Number(m[1]) / 100, h = (Number(m[3]) * Math.PI) / 180;
+  const at = (C: number): [number, number, number] => {
+    const a = C * Math.cos(h), b = C * Math.sin(h);
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    return [4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s];
+  };
+  const inGamut = (c: [number, number, number]): boolean => c.every((x) => x >= -1e-6 && x <= 1 + 1e-6);
+  const requested = Number(m[2]);
+  if (inGamut(at(requested))) return at(requested).map((x) => Math.max(0, Math.min(1, x))) as [number, number, number];
+  let [low, high] = [0, requested];
+  for (let i = 0; i < 40; i += 1) {
+    const mid = (low + high) / 2;
+    if (inGamut(at(mid))) low = mid;
+    else high = mid;
+  }
+  return at(low).map((x) => Math.max(0, Math.min(1, x))) as [number, number, number];
 }
 const luminance = ([r, g, b]: [number, number, number]): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 export function contrast(foreground: string, background: string): number {
@@ -51,6 +63,28 @@ describe.each([
 
   it("stale stays dimmer than normal text, so it still reads as stale", () => {
     expect(contrast(token(scope, "--bp-stale"), token(scope, "--background"))).toBeLessThan(contrast(token(scope, "--foreground"), token(scope, "--background")));
+  });
+});
+
+/** A token's colour, following one `var(--other)` alias through the scope and then `:root`. */
+function resolved(scope: string, name: string): string {
+  const value = token(scope, name);
+  const alias = /^var\((--[\w-]+)\)$/.exec(value);
+  if (!alias) return value;
+  try {
+    return token(scope, alias[1]!);
+  } catch {
+    return token(":root", alias[1]!);
+  }
+}
+
+describe.each([
+  ["light", ":root"],
+  ["dark", ".dark"],
+])("%s mode: --bp-accent-text, which colours small text such as Retry now and NEW", (_mode, scope) => {
+  it("reaches 4.5:1 on every surface", () => {
+    const accent = resolved(scope, "--bp-accent-text");
+    for (const surface of SURFACES) expect(contrast(accent, token(scope, surface)), `${accent} on ${surface}`).toBeGreaterThanOrEqual(4.5);
   });
 });
 

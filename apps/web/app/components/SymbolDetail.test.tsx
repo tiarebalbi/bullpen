@@ -14,7 +14,7 @@ describe("SymbolDetail", () => {
     expect(screen.getByTestId("price-cell-price")).toHaveTextContent("65,000.00");
     expect(screen.getByRole("link", { name: "Powered by CoinGecko" })).toBeInTheDocument();
     expect(screen.getByText("No chart yet")).toBeInTheDocument();
-    expect(screen.getByText("A chart needs price history; it arrives in Part 5.")).toBeInTheDocument();
+    expect(screen.getByText("A chart needs price history, which Bullpen doesn’t store yet.")).toBeInTheDocument();
   });
 
   it("shows a stock's close in the market-closed form, with no change figure, and says it is not live", () => {

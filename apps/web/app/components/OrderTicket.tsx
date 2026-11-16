@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type RefObject } from "react";
 import { formatOpen, isMarketOpen, nextMarketOpen, queuedLabel, type AccountView, type ApiError } from "@bullpen/contracts";
-import { BTC_SYMBOL } from "./Watchlist.js";
-import { buyLabel, estimate, formatMoney, newAttemptKey, parseQuantity, queueLabel, stepQuantity } from "../lib/trading/orderView.js";
+import { TicketGuard } from "@bullpen/ui";
+import { BTC_SYMBOL, closeLabel } from "./Watchlist.js";
+import { confirmLabel, estimate, formatMoney, maxAffordableQuantity, newAttemptKey, parseQuantity, selectGuard, shortfallAmount, stepQuantity, type TicketGuardState } from "../lib/trading/orderView.js";
 import { FOCUS_TICKET_EVENT } from "../lib/trading/shortcuts.js";
 import type { AccountState } from "../lib/trading/useAccount.js";
 
@@ -18,6 +19,10 @@ export interface OrderTicketProps {
   /** An account a request already returned, so the screen shows the order at once. */
   onAccount: (account: AccountView) => void;
   refresh: () => void;
+  /** The price link has failed and nothing has answered: the ticket waits for prices (the design's first guard). */
+  linkOffline?: boolean;
+  /** The stored close of the selected stock is stale (ADR-0024: the server refuses an order against it); its ISO time. */
+  staleAsOf?: string | null;
   /** The time the ticket reads the market's hours at. Absent, the ticket reads the browser's clock once mounted (a test passes a fixed one). */
   now?: Date;
 }
@@ -69,7 +74,7 @@ export function OrderTicket(props: OrderTicketProps): ReactNode {
   return <TicketForm {...props} view={account.account} />;
 }
 
-function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & { view: AccountView }): ReactNode {
+function TicketForm({ symbol, price, view, onAccount, now, linkOffline = false, staleAsOf = null }: OrderTicketProps & { view: AccountView }): ReactNode {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
@@ -90,7 +95,12 @@ function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & 
   const queuedFor = orderable && clock !== null && !isMarketOpen(clock) ? queuedLabel(clock) : null;
   const parsed = parseQuantity(text);
   const sums = parsed.ok && price !== null ? estimate(parsed.quantity, price) : null;
-  const short = sums !== null && sums.reserve > Number(view.buyingPower);
+  const over = parsed.ok && price !== null ? shortfallAmount(parsed.quantity, price, view.buyingPower) : null;
+  const stockSelected = symbol !== BTC_SYMBOL;
+  const guard = orderable || (linkOffline && stockSelected)
+    ? selectGuard({ linkOffline: linkOffline && stockSelected, over, maxQuantity: price === null ? null : maxAffordableQuantity(price, view.buyingPower), staleAsOf: orderable ? staleAsOf : null, opens: queuedFor && clock !== null ? formatOpen(nextMarketOpen(clock)) : null })
+    : null;
+  const blocked = guard !== null && guard.kind !== "closed";
 
   const edit = (next: string): void => {
     setText(next);
@@ -101,7 +111,7 @@ function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & 
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (!orderable || !parsed.ok || short || busy) return;
+    if (!orderable || !parsed.ok || blocked || busy) return;
     key.current ??= newAttemptKey();
     setBusy(true);
     setMessage(null);
@@ -121,27 +131,20 @@ function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & 
     setBusy(false);
   }
 
-  const why = symbol === BTC_SYMBOL ? "Bitcoin is a price only here. Orders are for the stocks in the watchlist." : price === null ? `There is no price for ${symbol} yet, so it cannot be ordered.` : null;
+  const why = guard?.kind === "waiting" ? null : symbol === BTC_SYMBOL ? "Bitcoin is a price only here. Orders are for the stocks in the watchlist." : price === null ? `There is no price for ${symbol} yet, so it cannot be ordered.` : null;
 
   return (
     <form className="bp-ticket" onSubmit={(e) => void submit(e)} aria-label="Order ticket" noValidate>
       <h3 className="bp-ticket__title">Market buy · {symbol}</h3>
       <fieldset disabled={!orderable} className="bp-ticket__fields">
-        {/* TicketGuard, one at a time and in the design's priority order: the shortfall (shown in the note below) comes before this one. */}
-        {queuedFor && !short ? (
-          <p className="bp-ticket__guard" role="alert" data-testid="ticket-queued">
-            <span className="bp-ticket__guard-glyph" aria-hidden="true">☾</span>
-            <span className="bp-ticket__guard-title">Stocks are closed</span>
-            <span className="bp-ticket__guard-text">A market order queues for the open, {formatOpen(nextMarketOpen(clock!))}.</span>
-          </p>
-        ) : null}
+        {guard ? <GuardView guard={guard} symbol={symbol} buyingPower={view.buyingPower} onQuantity={edit} /> : null}
         <QuantityField id={id} inputRef={input} value={{ text, invalid: text !== "" && !parsed.ok }} onStep={step} onText={edit} />
         <TicketSums sums={sums} buyingPower={view.buyingPower} />
         <p id={`${id}-help`} className="bp-ticket__note">
-          {text !== "" && !parsed.ok ? parsed.why : short ? "That is more than your buying power, with the 5% reserve." : "A market buy fills at the latest stored price. 5% above it is held until it fills, and what is unused comes back."}
+          {text !== "" && !parsed.ok ? parsed.why : "A market buy fills at the latest stored price. 5% above it is held until it fills, and what is unused comes back."}
         </p>
-        <button type="submit" className="bp-ticket__cta" data-ready={orderable && parsed.ok && !short ? "" : undefined} aria-disabled={!orderable || !parsed.ok || short || busy ? true : undefined}>
-          {busy ? "Placing…" : queuedFor && parsed.ok && sums ? queueLabel(sums.cost) : buyLabel(symbol, parsed.ok ? parsed.quantity : null, sums ? sums.cost : null)}
+        <button type="submit" className="bp-ticket__cta" data-ready={orderable && parsed.ok && !blocked ? "" : undefined} aria-disabled={!orderable || !parsed.ok || blocked || busy ? true : undefined}>
+          {busy ? "Placing…" : confirmLabel(guard, symbol, parsed.ok ? parsed.quantity : null, sums ? sums.cost : null)}
         </button>
       </fieldset>
       {why ? <p className="bp-ticket__why" role="status">{why}</p> : null}
@@ -152,6 +155,24 @@ function TicketForm({ symbol, price, view, onAccount, now }: OrderTicketProps & 
       ) : null}
     </form>
   );
+}
+
+/** The guard the ticket shows, with the design's words: the shortfall names the amount and the fix, the stale price names its date, and nothing offers to place the order anyway. */
+function GuardView({ guard, symbol, buyingPower, onQuantity }: { guard: TicketGuardState; symbol: string; buyingPower: string; onQuantity: (text: string) => void }): ReactNode {
+  switch (guard.kind) {
+    case "waiting":
+      return <TicketGuard kind="waiting" title="Waiting for prices">No price for {symbol} has arrived yet. Orders open when the app answers.</TicketGuard>;
+    case "shortfall":
+      return (
+        <TicketGuard kind="shortfall" title={`${formatMoney(guard.over)} more than your buying power`} action={guard.maxQuantity ? { label: `Set quantity to ${guard.maxQuantity}`, onClick: () => onQuantity(guard.maxQuantity!) } : undefined}>
+          {guard.maxQuantity ? `${guard.maxQuantity} ${symbol} fits in ${formatMoney(buyingPower)}, with the 5% reserve.` : `Not even one ${symbol} fits in ${formatMoney(buyingPower)}, with the 5% reserve.`}
+        </TicketGuard>
+      );
+    case "stale":
+      return <TicketGuard kind="stale" title={`${symbol}’s price is stale`}>Last priced {closeLabel(guard.asOf)}. Orders are refused until a fresh price is stored.</TicketGuard>;
+    case "closed":
+      return <TicketGuard kind="closed" title="Stocks are closed">A market order queues for the open, {guard.opens}.</TicketGuard>;
+  }
 }
 
 /** The phone's bar: what the ticket would say in one line, and one button that opens the ticket as a sheet. */
