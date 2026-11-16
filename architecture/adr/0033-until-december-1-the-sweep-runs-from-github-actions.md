@@ -55,6 +55,27 @@ A fitness test (`architecture/fitness/src/sweep-workflow-check.test.ts`) holds t
 - 2026-12-01 (UTC), when the quota resets: the workflow's guard ends it and the variable is deleted.
 - A sweeper sized to fit the memory quota is deployed and running: the workflow is then switched off and removed.
 
+## Schedule cut to match the work (2026-11-16)
+
+The first schedule ran the sweeper every five minutes, for up to 280 seconds, around the clock: about 1,400 runner-minutes a day, which the owner's GitHub Actions allowance cannot carry until December. The Decision above stands (the same sweeper, the same route, `main` only, the same gate and end date); only when it runs changes. This section supersedes "every five minutes" in it.
+
+Every run is now `SWEEPER_EXIT_WHEN_IDLE=1`: it leaves as soon as a reply says nothing is open and no open is within 15 minutes. A queued order counts as open only while the market is open, so an empty reply before 9:30 is not the end of the work; the exit reads the reply's next open as well, and an open run waits for it. Three schedules, in UTC (the US is on standard time until December, so 9:30 ET is 14:30 UTC), with minutes off the hour because GitHub delays top-of-hour runs most:
+
+| Cron | ET | Run |
+|---|---|---|
+| `22 14 * * 1-5` | 9:22 on weekdays | The open run: waits for 9:30, admits the queue in batches while orders are open, leaves when it is drained. `timeout 900`, job limit 17 minutes. |
+| `7,37 15-20 * * 1-5` | 10:07 to 15:37, every 30 minutes | One pass in market hours for what is stuck: cancels, releases. `timeout 120`, job limit 4 minutes. |
+| `17 */6 * * *` | every 6 hours, all week | One pass for recovery. The same limits. |
+
+A hand run (`workflow_dispatch`) takes a `mode`: `single` (the default) gets a single pass's limits and `open` gets the open run's. On a holiday the open run reads the route's next open, finds it more than 15 minutes away, and leaves after one call. The expected cost for 16 to 30 November is about 280 runner-minutes (at most 350), from about 90 for the open runs, 132 for the market-hours passes and 59 for recovery.
+
+What this costs, in plain words:
+
+- **Reservations are released later.** A market buy placed during market hours still fills at once without the sweeper: the order route places it, hands it to the venue, books the fill and releases the unused reservation in the same request, and the screen's poll does the same (`placePlayerOrder` and `advanceAccount`). What waits for the sweeper is what no player's request moves: a cancel's unused reservation can stay held up to 30 minutes in market hours and up to 6 hours outside them.
+- **The 15-minute cancel of idle orders now happens later as well**, up to 30 minutes in market hours and up to 6 hours outside them, since the sweeper is what notices an order that has seen no fill.
+- **The open run can start late if GitHub delays it.** A late start still admits the queue, because from 9:30 the queue counts as open work, but an order is admitted later than 9:30 by as long as the delay lasts. A run that starts more than 15 minutes late has the same limit of 900 seconds, which is enough for a queue of a thousand orders (50 seconds at 100 a pass).
+- **A skipped scheduled run is not retried.** The next run is the next entry in the table.
+
 ## Links
 
 - ADR-0018 (the sweeper is a daemon that calls a route), ADR-0032 (the Hobby daemon quota; it recorded the memory limit but tracked only Active CPU), ADR-0028 (queued orders are admitted at the open).
