@@ -3,6 +3,7 @@
 ## Status
 
 Accepted
+Amended by ADR-0032
 
 ## Date
 
