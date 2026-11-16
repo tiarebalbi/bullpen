@@ -11,7 +11,7 @@ const allowances = parseAllowances(readFileSync(join(repoRoot, "cost", "allowanc
 const daemon = allowances.find((a) => a.service === "vercel-daemons" && a.metric === "active_cpu_time");
 
 const contentDir = join(repoRoot, "content", "architecture");
-const files = [...readdirSync(contentDir).filter((f) => f.endsWith(".json")).map((f) => join(contentDir, f)), ...readdirSync(join(contentDir, "staged")).filter((f) => f.endsWith(".json")).map((f) => join(contentDir, "staged", f))];
+const files = readdirSync(contentDir).filter((f) => f.endsWith(".json")).map((f) => join(contentDir, f));
 
 /** Every "Hobby quota: N Active CPU-hours" cost note, with the file it is in. */
 function quotaNotes(): Array<{ file: string; hours: number }> {
@@ -38,7 +38,7 @@ describe("the sweeper's Hobby daemon quota", () => {
   });
 
   it("is stated by the notes of Part 4, the bonus and the built Part 5, which all show the sweeper", () => {
-    expect(quotaNotes().map((n) => n.file).sort()).toEqual(["content/architecture/bonus-handles.json", "content/architecture/part-04.json", "content/architecture/staged/part-05.json"]);
+    expect(quotaNotes().map((n) => n.file).sort()).toEqual(["content/architecture/bonus-handles.json", "content/architecture/part-04.json", "content/architecture/part-05.json"]);
   });
 
   it("is told apart from the other Hobby allowances: Active CPU for functions stays 4 hours", () => {

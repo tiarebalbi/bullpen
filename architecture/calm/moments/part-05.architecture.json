@@ -2,7 +2,7 @@
   "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
   "unique-id": "bullpen-part-05",
   "name": "Bullpen — Part 5: The market open: where the work waits",
-  "description": "What runs at the end of Part 5's build. At the market open every request runs now, waits for capacity, or degrades. Orders wait in Postgres (a queued_for_open state the sweeper admits in batches at 9:30 ET), reads and orders use separate bounded pools on one compute, live prices reach every open screen by server-sent events from one read per instance, and three kill switches decide in advance what gives way first. Week one predicted a Market Open Queue and an Order Saga workflow engine; neither was built, because the order is already durable in Postgres before anything else happens.",
+  "description": "What runs at the end of Part 5's build. At the market open every request runs now, waits for capacity, or degrades. Orders wait in Postgres (a queued_for_open state the sweeper admits in batches at 9:30 ET), reads and orders use separate bounded pools on one compute, live prices reach every open screen by server-sent events from one read per instance, and three kill switches decide in advance what gives way first. Week one predicted a Market Open Queue and an Order Saga workflow engine; neither was built, because the order is already durable in Postgres before anything else happens. Every measurement behind this is a local run on one machine, which shows what the application can carry and says nothing about Vercel or Neon; the hosted 1,000-player run and the cost table come in Part 6.",
   "metadata": {
     "status": "current",
     "part": 5

@@ -45,9 +45,9 @@ describe("parseCalmDoc", () => {
 });
 
 describe("the real repo", () => {
-  it("has a built moment for Parts 1 to 4 and a planned one for Parts 5 and 6", () => {
+  it("has a built moment for Parts 1 to 5 and a planned one for Part 6", () => {
     const docs = loadCalmDocs(repoRoot);
-    expect([...docs].map(([part, doc]) => `${part}:${doc.origin}`)).toEqual(["1:moments", "2:moments", "3:moments", "4:moments", "5:planned", "6:planned"]);
+    expect([...docs].map(([part, doc]) => `${part}:${doc.origin}`)).toEqual(["1:moments", "2:moments", "3:moments", "4:moments", "5:moments", "6:planned"]);
   });
 
   it("reads Part 2's controls and the check that enforces each", () => {

@@ -43,26 +43,6 @@
       "costNote": "Planned"
     },
     {
-      "id": "order-saga-workflow",
-      "label": "Order Saga",
-      "kind": "infra",
-      "meta": "Workflow",
-      "purpose": "Durable workflow driving each queued order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together.",
-      "x": 560,
-      "y": 950,
-      "costNote": "Planned"
-    },
-    {
-      "id": "market-open-queue",
-      "label": "Market Open Queue",
-      "kind": "infra",
-      "meta": "Queue",
-      "purpose": "Buffers the burst of order requests at market open so the Order Saga consumes them at a sustainable rate.",
-      "x": 560,
-      "y": 830,
-      "costNote": "Planned"
-    },
-    {
       "id": "market-data-service",
       "label": "Market Data Service",
       "kind": "service",
@@ -129,18 +109,6 @@
       }
     },
     {
-      "id": "trading-app-to-queue",
-      "a": "trading-app",
-      "b": "market-open-queue",
-      "type": "async"
-    },
-    {
-      "id": "queue-to-saga",
-      "a": "market-open-queue",
-      "b": "order-saga-workflow",
-      "type": "async"
-    },
-    {
       "id": "trading-app-to-market-data",
       "a": "trading-app",
       "b": "market-data-service",
@@ -198,17 +166,18 @@
     }
   ],
   "request": {
-    "name": "an order, from the queue to the ledger",
+    "name": "a price request",
     "steps": [
       {
-        "edge": "trading-app-to-queue",
-        "caption": "Queue it",
-        "detail": "The trading app publishes the request onto the market-open queue instead of starting the saga directly."
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Fetch upstream",
+        "detail": "The service counts the call against its monthly budget, then calls CoinGecko server-side with the Demo API key in a header, never the URL."
       },
       {
-        "edge": "queue-to-saga",
-        "caption": "Consume",
-        "detail": "The Order Saga picks up queued orders at a sustainable rate; each step is one transaction in the trading schema."
+        "edge": "market-data-to-crypto-provider",
+        "caption": "Return the snapshot",
+        "detail": "Bullpen's own shape: symbol, price, changePercent, time, source, fetchedAt. The response says it varies by Origin.",
+        "reverse": true
       }
     ]
   }

@@ -53,7 +53,8 @@ describe("buildArchitecturePage, from the real repo", () => {
     expect(page.scrubber[1]).toEqual({ part: 2, title: "Architecture as code", status: "built" });
     expect(page.scrubber[2]).toEqual({ part: 3, title: "Who owns the data", status: "built" });
     expect(page.scrubber[3]).toMatchObject({ part: 4, status: "built" });
-    expect(page.scrubber[4]!.status).toBe("planned");
+    expect(page.scrubber[4]).toMatchObject({ part: 5, status: "built" });
+    expect(page.scrubber[5]!.status).toBe("planned");
   });
 
   describe("services", () => {
@@ -113,17 +114,12 @@ describe("buildArchitecturePage, from the real repo", () => {
       expect(build(null).services[2]!.built.flatMap((s) => s.rules).every((r) => r.passed === null)).toBe(true);
     });
 
-    it("adds the planned services for a planned part, with the part they arrive in", () => {
+    it("lists no planned service once Part 5 is built: the Order Saga and the Market Open Queue are not in the plan, because no decision supports them", () => {
       expect(page.services[3]!.planned).toEqual([]); // Part 3 is built as written: it predicts nothing more
-      const saga = page.services[5]!.planned.find((s) => s.name === "Order Saga");
-      // Part 4 was built without it (a Postgres state machine and a sweeper); the Part 5 plan still lists it, and planned files change when the part starts.
-      expect(saga?.arrives).toBe(5);
-      // The current plan has no Prices or Market History service and no separate Orders or Ledger service.
-      const planned = page.services[5]!.planned.map((s) => s.name);
-      expect(planned).toEqual(["Order Saga", "Market Open Queue"]);
-      expect(planned.filter((name) => /Prices|History|Orders|Ledger/.test(name))).toEqual([]);
+      // Part 4 built a Postgres state machine and a sweeper, and Part 5 kept the wait in Postgres (ADR-0017, ADR-0028): neither service was built, so the plan for Part 6 does not name them.
+      for (const part of [5, 6]) expect(page.services[part]!.planned, `Part ${part}`).toEqual([]);
       expect(page.services[3]!.built.map((s) => s.name)).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service"]);
-      expect(page.services[4]!.built.map((s) => s.name)).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service", "Sweeper"]);
+      for (const part of [4, 5]) expect(page.services[part]!.built.map((s) => s.name), `Part ${part}`).toEqual(["Bullpen Landing", "Bullpen Trading App", "Market Data Service", "Sweeper"]);
     });
 
     it("every control that names a check names one the snapshot can report on", () => {
@@ -210,8 +206,8 @@ describe("buildArchitecturePage, from the real repo", () => {
     });
 
     it("marks a planned part's flow as planned, and a built part's as not", () => {
-      expect(page.flows[4]!.planned).toBe(false);
-      expect(page.flows[5]!.planned).toBe(true);
+      expect(page.flows[5]!.planned).toBe(false);
+      expect(page.flows[6]!.planned).toBe(true);
     });
   });
 

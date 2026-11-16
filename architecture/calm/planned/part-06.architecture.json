@@ -38,18 +38,6 @@
       "description": "The trading app where players view prices and submit paper trade orders. It owns orders, the ledger, positions and the leaderboard view in the trading schema."
     },
     {
-      "unique-id": "order-saga-workflow",
-      "node-type": "workflow-engine",
-      "name": "Order Saga",
-      "description": "Durable workflow driving each queued order to a fill, a cancel or a retry. Each step is one transaction in the trading schema, so the order and the ledger change together."
-    },
-    {
-      "unique-id": "market-open-queue",
-      "node-type": "queue",
-      "name": "Market Open Queue",
-      "description": "Buffers the burst of order requests at market open so the Order Saga consumes them at a sustainable rate."
-    },
-    {
       "unique-id": "market-data-service",
       "node-type": "service",
       "name": "Market Data Service",
@@ -91,42 +79,6 @@
             "trading-app"
           ]
         }
-      }
-    },
-    {
-      "unique-id": "trading-app-to-queue",
-      "description": "Trading app publishes each accepted order onto the market-open queue.",
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "trading-app"
-          },
-          "destination": {
-            "node": "market-open-queue"
-          }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": {
-        "interaction": "asynchronous"
-      }
-    },
-    {
-      "unique-id": "queue-to-saga",
-      "description": "Order saga consumes queued orders at a sustainable rate.",
-      "relationship-type": {
-        "connects": {
-          "source": {
-            "node": "market-open-queue"
-          },
-          "destination": {
-            "node": "order-saga-workflow"
-          }
-        }
-      },
-      "protocol": "HTTPS",
-      "metadata": {
-        "interaction": "asynchronous"
       }
     },
     {

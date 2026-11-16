@@ -241,6 +241,7 @@ interface TimelineMoment {
   "unique-id": string;
   details?: { "detailed-architecture"?: string };
   adrs?: string[];
+  metadata?: { kind?: string; before?: string };
 }
 
 function readCalmDoc(calmDir: string, moment: TimelineMoment | undefined): CalmChangeDoc | undefined {
@@ -275,8 +276,10 @@ export function predictionOfPart(part: number, plannedDir: string, calmDir: stri
 
 function changesOfPart(part: ArchPartData, previous: ArchPartData | undefined, moments: Map<string, TimelineMoment>, calmDir: string): ArchPartData {
   if (part.status !== "built" || previous?.status !== "built") return part;
-  const prevMoment = moments.get(momentIdOfPart(previous.part));
   const moment = moments.get(momentIdOfPart(part.part));
+  // A bonus moment published between two parts is what the next part grew from, so its additions are the bonus's, not the part's.
+  const bonus = [...moments.values()].find((m) => m.metadata?.kind === "bonus" && m.metadata.before === momentIdOfPart(part.part));
+  const prevMoment = bonus ?? moments.get(momentIdOfPart(previous.part));
   const [prevDoc, doc] = [readCalmDoc(calmDir, prevMoment), readCalmDoc(calmDir, moment)];
   if (!prevDoc || !doc) return part;
   const changes = momentChanges(prevDoc, doc, prevMoment?.adrs ?? [], moment?.adrs ?? []);
