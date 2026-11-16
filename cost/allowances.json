@@ -72,6 +72,15 @@
     "note": "Hobby quota for daemons (the sweeper), per team across all its projects, production deployments only. When a Hobby team reaches it, Vercel stops the team's daemons until the first of the next month (UTC). ADR-0032 corrects the 10 hours ADR-0018 gave."
   },
   {
+    "service": "vercel-daemons",
+    "metric": "provisioned_memory",
+    "allowance": 420,
+    "unit": "GB-hours/month",
+    "source_url": "https://vercel.com/docs/daemons/limits",
+    "checked_on": "2026-11-15",
+    "note": "Hobby quota for daemons (the sweeper), per team across all its projects: provisioned memory, counted for every hour an instance is provisioned. At 2 GiB around the clock the sweeper needs 1,440 GB-hours a month, so the team's daemons stopped on 2026-11-15 and stay stopped until the first of the next month (UTC). ADR-0033 runs the sweep from GitHub Actions until then."
+  },
+  {
     "service": "vercel-queues",
     "metric": "api_operations",
     "allowance": 1000000,

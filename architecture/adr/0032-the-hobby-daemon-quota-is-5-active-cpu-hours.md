@@ -3,6 +3,7 @@
 ## Status
 
 Accepted
+Incomplete: see ADR-0033 for the memory quota.
 
 ## Date
 
