@@ -18,15 +18,22 @@ export function ageText(ms: number): string {
  *   offline: nothing has answered, `retry in N s`;
  *   a closed market says when it opens, and a stale price is past its close.
  */
+/** The stream dropped: which attempt it is on once it has failed, else whether the screen still holds prices. */
+function reconnectingDetail(link: LinkState): string {
+  if (link.attempt > 0) return `stocks · attempt ${Math.min(link.attempt, POLL_AFTER_FAILURES)} of ${POLL_AFTER_FAILURES}`;
+  return link.snapshot ? "last prices kept" : "connecting";
+}
+
+/** Nothing has answered: the seconds to the next automatic try, if one is scheduled. */
+function offlineDetail(link: LinkState, now: Date): string {
+  const seconds = secondsUntil(link.nextRetryAt, now.getTime());
+  return seconds === null ? "retrying" : `retry in ${seconds} s`;
+}
+
+// metrics-gate: ignore[nesting] -- the counter reads each `${…}` in a template literal as a block; the function is a flat chain of guard returns, one per state.
 export function liveDetail(link: LinkState, now: Date): string {
-  if (link.status === "offline") {
-    const seconds = secondsUntil(link.nextRetryAt, now.getTime());
-    return seconds === null ? "retrying" : `retry in ${seconds} s`;
-  }
-  if (link.status === "reconnecting") {
-    if (link.attempt > 0) return `stocks · attempt ${Math.min(link.attempt, POLL_AFTER_FAILURES)} of ${POLL_AFTER_FAILURES}`;
-    return link.snapshot ? "last prices kept" : "connecting";
-  }
+  if (link.status === "offline") return offlineDetail(link, now);
+  if (link.status === "reconnecting") return reconnectingDetail(link);
   if (link.status === "delayed") return link.streamPaused ? "live prices paused" : `refreshes every ${POLL_MS / 1000} s`;
   if (!isMarketOpen(now)) return `closed · ${formatOpen(nextMarketOpen(now))}`;
   if (link.status === "stale") return "past its close";

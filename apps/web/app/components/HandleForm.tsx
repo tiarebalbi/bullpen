@@ -24,6 +24,12 @@ const SAVED: Record<string, string> = {
   pending: "Saved, but I could not finish checking it. Save it again to retry.",
 };
 
+/** What a save tells the player: where the handle stands, or that no automatic check ran. */
+export function savedNotice(status: OwnHandleView["status"] | undefined, moderation: "paused" | undefined): string {
+  if (moderation === "paused") return MODERATION_PAUSED;
+  return SAVED[status ?? "pending"] ?? SAVED.pending!;
+}
+
 /** The switch is off (ADR-0031): no model checked the handle, and a person reviews it. */
 export const MODERATION_PAUSED = "Saved. Automatic checks are paused right now, so a person reviews every handle. It shows on the leaderboard once it’s approved.";
 
@@ -46,7 +52,7 @@ export function HandleForm({ initial, label }: { initial: OwnHandleView | null; 
         setError(body.message ?? "I could not save that. Try again in a moment.");
       } else {
         setOwn({ handle: text.trim(), status: body.status ?? "pending" });
-        setNotice(body.moderation === "paused" ? MODERATION_PAUSED : (SAVED[body.status ?? "pending"] ?? SAVED.pending!));
+        setNotice(savedNotice(body.status, body.moderation));
       }
     } catch {
       setError("I could not reach the server. Try again in a moment.");

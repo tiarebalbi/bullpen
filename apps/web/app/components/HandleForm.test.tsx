@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HandleForm, statusLine } from "./HandleForm.js";
+import { HandleForm, MODERATION_PAUSED, savedNotice, statusLine } from "./HandleForm.js";
 
 afterEach(() => vi.unstubAllGlobals());
 const reply = (status: number, body: unknown) => vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status })));
@@ -86,5 +86,17 @@ describe("a handle that was taken down", () => {
     expect(line).toContain("you appear as Player 4F2A");
     expect(line).toContain("It cannot be used again");
     expect(line).toContain("Choose another");
+  });
+});
+
+describe("savedNotice", () => {
+  it("says no automatic check ran when moderation is paused, whatever the status", () => {
+    expect(savedNotice("review", "paused")).toBe(MODERATION_PAUSED);
+    expect(savedNotice(undefined, "paused")).toBe(MODERATION_PAUSED);
+  });
+
+  it("otherwise says where the handle stands, and pending when the answer names no status", () => {
+    expect(savedNotice("approved", undefined)).toContain("Approved.");
+    expect(savedNotice(undefined, undefined)).toBe(savedNotice("pending", undefined));
   });
 });
