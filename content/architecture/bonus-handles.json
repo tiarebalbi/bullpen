@@ -204,7 +204,7 @@
       "adrs": [
         "ADR-0018"
       ],
-      "costNote": "Hobby quota: 10 Active CPU-hours"
+      "costNote": "Hobby quota: 5 Active CPU-hours"
     },
     {
       "id": "neon-auth",
