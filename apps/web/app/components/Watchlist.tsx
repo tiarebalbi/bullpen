@@ -56,7 +56,7 @@ export function StocksSection({ polled, selected, onSelect, positions = [], link
         detail={held ?? `Close · ${closeLabel(row.asOf)}`}
         fullDetail={held ? `Close · ${closeLabel(row.asOf)}` : undefined}
         price={Number(row.price)}
-        status={row.stale ? `Stale · ${closeLabel(row.asOf)}` : change ? `${change.up ? "▲" : "▼"} ${signed(change.percent, 2, "", "%")}` : undefined}
+        status={row.stale ? `◷ Stale · ${closeLabel(row.asOf)}` : change ? `${change.up ? "▲" : "▼"} ${signed(change.percent, 2, "", "%")}` : undefined}
         stale={row.stale}
         marketClosed={closed}
         selected={selected === row.symbol}
