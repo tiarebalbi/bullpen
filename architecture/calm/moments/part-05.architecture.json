@@ -31,7 +31,8 @@
     "architecture/adr/0029-live-prices-by-server-sent-events.md",
     "architecture/adr/0030-reads-and-orders-get-separate-pools.md",
     "architecture/adr/0031-degradation-is-decided-in-advance.md",
-    "architecture/adr/0032-the-hobby-daemon-quota-is-5-active-cpu-hours.md"
+    "architecture/adr/0032-the-hobby-daemon-quota-is-5-active-cpu-hours.md",
+    "architecture/adr/0033-until-december-1-the-sweep-runs-from-github-actions.md"
   ],
   "nodes": [
     {
@@ -433,7 +434,7 @@
       "unique-id": "sweeper",
       "node-type": "service",
       "name": "Sweeper",
-      "description": "A Vercel Daemon whose only job is to call the Trading App's sweep route and wait: every 5 seconds while an order is open (a queued order counts only while the market is open), backing off to every 60 minutes when none is, and never sleeping past the next 9:30 ET open the route names, so the queued backlog is released on time. It reads no database URL and holds no data. It is built and tested locally, declared in vercel.json, and runs in production deployments only.",
+      "description": "A Vercel Daemon whose only job is to call the Trading App's sweep route and wait: every 5 seconds while an order is open (a queued order counts only while the market is open), backing off to every 60 minutes when none is, and never sleeping past the next 9:30 ET open the route names, so the queued backlog is released on time. It reads no database URL and holds no data. It is built and tested locally, declared in vercel.json, and runs in production deployments only. Until 2026-12-01 a scheduled GitHub Actions workflow runs this same sweeper against production (ADR-0033), because the daemon's 420 GB-hour memory quota ran out on 2026-11-15.",
       "metadata": {
         "bullpen:path": "apps/sweeper",
         "bullpen:libraries": [],

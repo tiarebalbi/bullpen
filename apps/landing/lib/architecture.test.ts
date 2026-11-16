@@ -223,6 +223,7 @@ describe("parseArchitecturePart / loadArchitectureParts", () => {
         "ADR-0030",
         "ADR-0031",
         "ADR-0032",
+        "ADR-0033",
       ]);
     });
 
