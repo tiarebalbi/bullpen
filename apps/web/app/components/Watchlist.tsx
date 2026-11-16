@@ -36,7 +36,7 @@ interface SelectProps {
   onSelect: (symbol: string) => void;
 }
 
-export function StocksSection({ polled, selected, onSelect, positions = [], link }: { polled: Polled<StockPriceSnapshot>; positions?: PositionView[]; link?: LinkState } & SelectProps): ReactNode {
+export function StocksSection({ polled, selected, onSelect, positions = [], link, onRetry }: { polled: Polled<StockPriceSnapshot>; positions?: PositionView[]; link?: LinkState; onRetry?: () => void } & SelectProps): ReactNode {
   const now = useNow();
   const closed = isUsMarketClosed(now);
   let body: ReactNode;
@@ -66,7 +66,7 @@ export function StocksSection({ polled, selected, onSelect, positions = [], link
     });
   }
   return (
-    <WatchlistSection title="Stocks" note={link ? <LiveBadge link={link} /> : "end of day"}>
+    <WatchlistSection title="Stocks" note={link ? <LiveBadge link={link} onRetry={onRetry} /> : "end of day"}>
       {body}
       {polled.status === "ok" && polled.data.rows.length > 0 ? (
         <p className="bp-credit">

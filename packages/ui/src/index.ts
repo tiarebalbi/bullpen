@@ -50,6 +50,8 @@ export type {
   ArchPrediction,
 } from "./components/ArchitectureExplorer.js";
 
+export { MarketDataBanner } from "./components/MarketDataBanner.js";
+export type { MarketDataBannerKind, MarketDataBannerProps } from "./components/MarketDataBanner.js";
 export { TerminalHeader, TerminalShell } from "./components/TerminalShell.js";
 export type { TerminalHeaderProps, TerminalShellProps } from "./components/TerminalShell.js";
 

@@ -13,14 +13,17 @@ export interface TerminalShellProps {
   watchlist: ReactNode;
   main: ReactNode;
   rail: ReactNode;
+  /** Under the header, across the whole width: market data that is not flowing (MarketDataBanner). Absent, nothing is drawn. */
+  banner?: ReactNode;
   /** Pinned to the bottom of a phone's screen. Hidden at desktop widths. */
   bar?: ReactNode;
 }
 
-export function TerminalShell({ header, watchlist, main, rail, bar }: TerminalShellProps): ReactNode {
+export function TerminalShell({ header, watchlist, main, rail, banner, bar }: TerminalShellProps): ReactNode {
   return (
     <div className="bp-terminal" data-has-bar={bar ? "" : undefined}>
       <header className="bp-terminal__header">{header}</header>
+      {banner ? <div className="bp-terminal__banner">{banner}</div> : null}
       <aside className="bp-terminal__watchlist" aria-label="Watchlist">
         {watchlist}
       </aside>

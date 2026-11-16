@@ -178,7 +178,7 @@ describe("polling is the fallback", () => {
     expect(poll).toHaveBeenCalledTimes(1);
   });
 
-  it("after three failures in a row polls /api/stock-prices every 10 s, keeps trying the stream once a minute, and is Live from the poll", async () => {
+  it("after three failures in a row polls /api/stock-prices every 10 s, keeps trying the stream once a minute, and is Delayed from the poll (the polling fallback is not the stream)", async () => {
     const { link, streams, poll, last } = setup({ random: 0 });
     link.start();
     streams[0]!.prices(snap(), "1.1.0");
@@ -187,7 +187,7 @@ describe("polling is the fallback", () => {
       await vi.advanceTimersByTimeAsync(5);
     }
     expect(poll).toHaveBeenCalledTimes(1);
-    expect(last()).toMatchObject({ via: "polling", status: "live", snapshot: snap("101.00000000") });
+    expect(last()).toMatchObject({ via: "polling", status: "delayed", snapshot: snap("101.00000000") });
     await vi.advanceTimersByTimeAsync(POLL_MS * 3);
     expect(poll.mock.calls.length).toBeGreaterThanOrEqual(4);
     const before = streams.length;
@@ -231,6 +231,74 @@ describe("polling is the fallback", () => {
     fail = true;
     await vi.advanceTimersByTimeAsync(POLL_MS);
     expect(last().snapshot).toEqual(snap("103.00000000"));
+  });
+
+  it("is Offline when the poll fails with nothing to show, Delayed once a poll answers, and counts down to the next try", async () => {
+    let fail = true;
+    const { link, last } = setup({ stream: false, poll: async (): Promise<PollResult> => (fail ? { httpStatus: 503 } : { snapshot: snap("103.00000000") }) });
+    link.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(last()).toMatchObject({ status: "offline", snapshot: null, failed: { httpStatus: 503 } });
+    expect(last().nextRetryAt).toBe(Date.now() + POLL_MS);
+    await vi.advanceTimersByTimeAsync(4_000);
+    expect(last().nextRetryAt).toBe(Date.now() + POLL_MS - 4_000);
+    fail = false;
+    await vi.advanceTimersByTimeAsync(POLL_MS);
+    expect(last()).toMatchObject({ status: "delayed", failed: null, streamPaused: false });
+  });
+
+  it("says the stream is paused when the poll says the price-stream switch is off, and not when the stream is back", async () => {
+    const { link, streams, last } = setup({ random: 0, poll: async (): Promise<PollResult> => ({ snapshot: snap("101.00000000"), streamPaused: true }) });
+    link.start();
+    streams[0]!.prices(snap(), "1.1.0");
+    for (let i = 0; i < POLL_AFTER_FAILURES; i += 1) {
+      streams[i]!.emit("error");
+      await vi.advanceTimersByTimeAsync(5);
+    }
+    expect(last()).toMatchObject({ status: "delayed", streamPaused: true });
+    await vi.advanceTimersByTimeAsync(RETRY_WHILE_POLLING_MS);
+    streams[streams.length - 1]!.prices(snap("102.00000000"), "9.1.0");
+    expect(last()).toMatchObject({ status: "live", streamPaused: false });
+  });
+
+  it("counts the stream's failures in a row for the indicator (attempt N of 3), and a planned close is not one", async () => {
+    const { link, streams, last } = setup({ random: 0 });
+    link.start();
+    streams[0]!.prices(snap(), "1.1.0");
+    expect(last().attempt).toBe(0);
+    streams[0]!.emit("bye");
+    expect(last()).toMatchObject({ status: "reconnecting", attempt: 0 });
+    await vi.advanceTimersByTimeAsync(5);
+    streams[1]!.emit("error");
+    expect(last()).toMatchObject({ status: "reconnecting", attempt: 1 });
+    expect(last().nextRetryAt).toBeGreaterThanOrEqual(Date.now());
+    streams[1]!.emit("error");
+    await vi.advanceTimersByTimeAsync(5);
+    expect(last().attempt).toBeGreaterThanOrEqual(2);
+  });
+
+  it("Retry now opens the stream again and asks for the prices at once, without waiting for the countdown", async () => {
+    const { link, streams, poll, last } = setup({ stream: true, random: 0.9, poll: async (): Promise<PollResult> => ({ httpStatus: 503 }) });
+    link.start();
+    streams[0]!.emit("error");
+    await vi.advanceTimersByTimeAsync(0);
+    expect(last().status).toBe("offline");
+    await vi.advanceTimersByTimeAsync(2_000); // the stream's own retry has fired by now; the next poll is still eight seconds away
+    const opened = streams.length;
+    const polled = poll.mock.calls.length;
+    link.retryNow();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(streams.length).toBe(opened + 1);
+    expect(poll.mock.calls.length).toBe(polled + 1);
+    expect(last().nextRetryAt).not.toBeNull();
+  });
+
+  it("Retry now does nothing once the link is stopped", async () => {
+    const { link, streams } = setup();
+    link.start();
+    link.stop();
+    link.retryNow();
+    expect(streams.length).toBe(1);
   });
 
   it("falls back at once when the price-stream switch is off and the stream answers 503, which an event stream reports as an error", async () => {

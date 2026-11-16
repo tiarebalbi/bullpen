@@ -410,12 +410,14 @@ html[data-consent-open] body {
     grid-template-columns: 19.5rem minmax(0, 1fr) 20.5rem;
     grid-template-areas:
       "header header header"
+      "banner banner banner"
       "watchlist main rail";
   }
   .bp-terminal[data-has-bar] {
     padding-bottom: 0;
   }
   .bp-terminal__header { grid-area: header; }
+  .bp-terminal__banner { grid-area: banner; }
   .bp-terminal__watchlist { grid-area: watchlist; border-bottom: 0; border-right: 1px solid var(--bp-hair); }
   .bp-terminal__main { grid-area: main; border-bottom: 0; }
   .bp-terminal__rail { grid-area: rail; border-left: 1px solid var(--bp-hair); }
@@ -616,6 +618,68 @@ html[data-consent-open] body {
 }
 .bp-ticket__guard-text {
   color: var(--foreground-muted);
+}
+
+/* MarketDataBanner (Bullpen Terminal and Mobile Trading, `banner`): a strip under the header on the desktop, a card with a 14px radius on a phone.
+   The tints are the design's: the warning at 13% and the destructive at 12% over the page background. Glyph and words carry the meaning. */
+.bp-market-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  font: 500 13px/1.4 var(--font-body);
+  color: var(--foreground);
+}
+.bp-market-banner[data-kind="reconnecting"] {
+  background: color-mix(in oklch, var(--warning) 13%, var(--background));
+}
+.bp-market-banner[data-kind="offline"] {
+  background: color-mix(in oklch, var(--destructive) 12%, var(--background));
+}
+.bp-market-banner__glyph {
+  flex: none;
+  font: 700 13px/1 var(--font-mono);
+}
+.bp-market-banner[data-kind="reconnecting"] .bp-market-banner__glyph {
+  color: var(--warning);
+}
+.bp-market-banner[data-kind="offline"] .bp-market-banner__glyph {
+  color: var(--destructive);
+}
+.bp-market-banner__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.bp-market-banner__title {
+  font-weight: 700;
+}
+.bp-market-banner__text {
+  color: var(--foreground-muted);
+}
+.bp-market-banner__retry {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--background);
+  font: 600 13px/1 var(--font-body);
+  cursor: pointer;
+}
+.bp-market-banner__retry:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+@media (max-width: 63.99rem) {
+  .bp-terminal__banner {
+    padding: var(--space-3) var(--space-5) 0;
+  }
+  .bp-market-banner {
+    align-items: flex-start;
+    padding: var(--space-4);
+    border-radius: 14px;
+  }
 }
 
 /* Trade bar (phone) */

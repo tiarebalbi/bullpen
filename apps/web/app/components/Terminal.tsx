@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { TerminalShell } from "@bullpen/ui";
+import { MarketDataBanner, TerminalShell, useNow } from "@bullpen/ui";
 import type { AccountView, LeaderboardSnapshot, PriceSnapshot, StockPriceSnapshot } from "@bullpen/contracts";
 import { signInWithProvider } from "../lib/auth/actions.js";
+import { marketBanner } from "../lib/trading/marketBanner.js";
 import { approvedHandleOf, cancellableOrderId, rankLabel } from "../lib/trading/terminalView.js";
 import { useAccount } from "../lib/trading/useAccount.js";
 import { useTerminalShortcuts } from "../lib/trading/useTerminalShortcuts.js";
@@ -30,12 +31,13 @@ function storedPrice(stocks: Polled<StockPriceSnapshot>, symbol: string): string
 }
 
 /** The three feeds the page reads: the live price, the stored closes and the ranking. */
-function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceSnapshot>; stocksLink: LinkState; leaderboard: Polled<LeaderboardSnapshot> } {
-  const { stocks, link } = useLivePrices();
+function useFeeds(): { crypto: Polled<PriceSnapshot>; stocks: Polled<StockPriceSnapshot>; stocksLink: LinkState; retryStocks: () => void; leaderboard: Polled<LeaderboardSnapshot> } {
+  const { stocks, link, retryNow } = useLivePrices();
   return {
     crypto: usePolled<PriceSnapshot>(`/api/price/${BTC_SYMBOL}`, 60_000, "Price unavailable."),
     stocks,
     stocksLink: link,
+    retryStocks: retryNow,
     leaderboard: usePolled<LeaderboardSnapshot>("/api/leaderboard", 60_000, "Leaderboard unavailable."),
   };
 }
@@ -51,7 +53,9 @@ function OrderPanels({ view, refresh, confirming, onConfirming }: { view: Accoun
 }
 
 export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the depth is the shell's JSX: four regions composed in one place, with the data and the keys already moved into hooks.
-  const { crypto, stocks, stocksLink, leaderboard } = useFeeds();
+  const { crypto, stocks, stocksLink, retryStocks, leaderboard } = useFeeds();
+  const now = useNow();
+  const banner = marketBanner(stocksLink, now);
   const { state: account, apply, refresh } = useAccount();
   const [selected, setSelected] = useState(BTC_SYMBOL);
   const wide = useWide();
@@ -73,9 +77,17 @@ export function Terminal(): ReactNode { // metrics-gate: ignore[nesting] -- the 
         header={
           <HeaderBar view={view} rank={rank} approvedHandle={approvedHandle} crypto={crypto} />
         }
+        banner={
+          banner ? (
+            <MarketDataBanner kind={banner.kind} title={banner.title} onRetry={banner.kind === "offline" ? retryStocks : undefined}>
+              {banner.text}
+              {banner.retryInSeconds !== null ? ` Retrying in ${banner.retryInSeconds} s.` : ""}
+            </MarketDataBanner>
+          ) : null
+        }
         watchlist={
           <>
-            <StocksSection polled={stocks} link={stocksLink} selected={selected} onSelect={setSelected} positions={view?.positions ?? []} />
+            <StocksSection polled={stocks} link={stocksLink} onRetry={retryStocks} selected={selected} onSelect={setSelected} positions={view?.positions ?? []} />
             <CryptoSection polled={crypto} selected={selected} onSelect={setSelected} />
           </>
         }
